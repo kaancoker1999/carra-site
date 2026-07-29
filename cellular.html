@@ -56,6 +56,18 @@
   .chip .chipsub{display:block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.06em;color:var(--muted);margin-top:3px}
   .chip.on .chipsub{color:#B9BDC0}
 
+  .optgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;max-width:680px}
+  .optcard{cursor:pointer;border:1px solid var(--line2);border-radius:12px;padding:10px 10px 12px;background:var(--white);
+    font:inherit;text-align:center;transition:border-color .15s,box-shadow .15s}
+  .optcard:hover{border-color:var(--ink)}
+  .optcard.on{border-color:var(--ink);box-shadow:0 0 0 1.5px var(--ink)}
+  .optcard img{width:100%;aspect-ratio:3/4;object-fit:contain;display:block;background:#fff;border-radius:8px}
+  .optcard .nm{font-size:13px;margin-top:8px;color:var(--ink)}
+
+  .sumgrid{display:grid;grid-template-columns:1fr 300px;gap:40px;align-items:start}
+  .sumimg img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1px solid var(--line2);display:block}
+  .sumimg .cap{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:10px;text-align:center}
+
   .fabmeta{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--muted);margin:16px 0 14px}
   .swgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
   .swatch{cursor:pointer;border:1px solid var(--line2);border-radius:10px;padding:7px 7px 9px;background:var(--white);
@@ -97,6 +109,8 @@
     nav a:not(.partner){display:none}
     .swgrid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}
     .sum{padding:24px 22px}
+    .sumgrid{grid-template-columns:1fr}
+    .sumimg{max-width:340px}
   }
 </style>
 </head>
@@ -141,11 +155,19 @@
   <aside class="sum">
     <div class="code">Specification</div>
     <h3>Your configuration</h3>
-    <div class="kv" id="sumkv"></div>
-    <p class="sumnote">No retail pricing is shown online — quotations are issued from your trade price list, usually within one working day.</p>
-    <div class="btns">
-      <a class="btn solid" id="mailbtn" href="#">Request quotation</a>
-      <button class="btn ghost" id="copybtn" type="button">Copy spec</button>
+    <div class="sumgrid">
+      <div>
+        <div class="kv" id="sumkv"></div>
+        <p class="sumnote">No retail pricing is shown online — quotations are issued from your trade price list, usually within one working day.</p>
+        <div class="btns">
+          <a class="btn solid" id="mailbtn" href="#">Request quotation</a>
+          <button class="btn ghost" id="copybtn" type="button">Copy spec</button>
+        </div>
+      </div>
+      <div class="sumimg" id="sumimg" hidden>
+        <img id="sumimg-img" src="" alt="Selected colour">
+        <div class="cap" id="sumimg-cap"></div>
+      </div>
     </div>
   </aside>
 </div>
@@ -206,6 +228,17 @@ var CONFIG = {"code": "02", "name": "Cellular Shades", "img": "assets/product-ce
       renderSwatches();
       return;
     }
+    var hasImg = g.options.some(function(o){ return typeof o === 'object' && o.img; });
+    if(hasImg){
+      var cards = g.options.map(function(o,i){
+        return '<button type="button" class="optcard' + (i===0?' on':'') + '" data-g="' + g.key + '" data-v="' + o.n + '">' +
+          '<img loading="lazy" src="' + o.img + '" alt="' + o.n + '"><div class="nm">' + o.n + '</div></button>';
+      }).join('');
+      form.insertAdjacentHTML('beforeend',
+        '<div class="grp"><div class="code">' + stepCode(step++) + '</div><h3>' + g.label + '</h3>' +
+        '<div class="optgrid">' + cards + '</div></div>');
+      return;
+    }
     var chips = g.options.map(function(o,i){
       var name = optName(o);
       var sw = (typeof o === 'object' && o.c) ? '<span class="sw" style="background:' + o.c + '"></span>' : '';
@@ -230,9 +263,9 @@ var CONFIG = {"code": "02", "name": "Cellular Shades", "img": "assets/product-ce
       document.querySelectorAll('.swatch').forEach(function(x){ x.classList.toggle('on', x === sw); });
       update(); return;
     }
-    var c = e.target.closest('.chip[data-g]'); if(!c) return;
+    var c = e.target.closest('.chip[data-g], .optcard[data-g]'); if(!c) return;
     state[c.dataset.g] = c.dataset.v;
-    document.querySelectorAll('.chip[data-g="' + c.dataset.g + '"]').forEach(function(x){ x.classList.toggle('on', x === c); });
+    document.querySelectorAll('[data-g="' + c.dataset.g + '"]').forEach(function(x){ x.classList.toggle('on', x === c); });
     update();
   });
 
@@ -279,6 +312,14 @@ var CONFIG = {"code": "02", "name": "Cellular Shades", "img": "assets/product-ce
 
   function update(){
     refreshRuleSubs();
+    if(F){
+      var col = findColour();
+      var box = document.getElementById('sumimg');
+      box.hidden = false;
+      document.getElementById('sumimg-img').src = col.lg || col.img;
+      document.getElementById('sumimg-cap').textContent =
+        findCollection(state.collection).label + ' — ' + col.label + (col.code ? ' · ' + col.code : '');
+    }
     sumkv.innerHTML = rows().map(function(r){
       return '<div><span>' + r[0] + '</span><b>' + r[1] + '</b></div>';
     }).join('');
