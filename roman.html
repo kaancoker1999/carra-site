@@ -42,9 +42,8 @@
   .ptit .mono{color:var(--bronze-lt)}
   .ptit h1{font-size:clamp(34px,5vw,60px);color:#fff;margin-top:10px}
   .pdesc{max-width:62ch;color:#3D4246;font-size:17px;margin:0;padding:44px 0 10px}
-  .chip .sw{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:9px;vertical-align:-1px;border:1px solid rgba(0,0,0,.18)}
 
-  .cfg{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:start;padding-bottom:90px}
+  .cfg{padding-bottom:20px}
   .grp{padding:26px 0 30px;border-top:1px solid var(--line)}
   .grp .code{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--bronze);text-transform:uppercase}
   .grp h3{font-size:18px;margin:8px 0 16px}
@@ -53,6 +52,18 @@
     padding:10px 17px;border-radius:10px;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
   .chip:hover{border-color:var(--ink)}
   .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .chip .sw{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:9px;vertical-align:-1px;border:1px solid rgba(0,0,0,.18)}
+
+  .fabmeta{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--muted);margin:16px 0 14px}
+  .swgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+  .swatch{cursor:pointer;border:1px solid var(--line2);border-radius:10px;padding:7px 7px 9px;background:var(--white);
+    font:inherit;text-align:center;transition:border-color .15s,box-shadow .15s}
+  .swatch:hover{border-color:var(--ink)}
+  .swatch.on{border-color:var(--ink);box-shadow:0 0 0 1.5px var(--ink)}
+  .swatch img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:7px;display:block}
+  .swatch .nm{font-size:11px;line-height:1.35;margin-top:6px;color:var(--ink)}
+  .swatch .cd{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;color:var(--muted)}
+
   .dims{display:flex;gap:16px;flex-wrap:wrap}
   .dim{display:flex;flex-direction:column;gap:7px}
   .dim .cap{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
@@ -60,10 +71,8 @@
   .dim input:focus{outline:none;border-color:var(--ink)}
   .dim input.err{border-color:var(--bronze)}
   .dim .rng{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--muted)}
-  .wide input{width:100%}
-  .proj{display:grid;grid-template-columns:150px 1fr;gap:16px}
 
-  .sum{position:sticky;top:96px;border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:30px 32px}
+  .sum{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:32px 36px;margin:26px 0 90px}
   .sum .code{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--bronze);text-transform:uppercase}
   .sum h3{font-size:19px;margin:8px 0 18px}
   .kv{border-top:1px solid var(--line2)}
@@ -84,9 +93,8 @@
   @media(max-width:980px){
     .wrap{padding:0 22px}
     nav a:not(.partner){display:none}
-    .pageh,.cfg{grid-template-columns:1fr;gap:34px}
-    .sum{position:static}
-    .pageh{padding-top:36px}
+    .swgrid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}
+    .sum{padding:24px 22px}
   }
 </style>
 </head>
@@ -126,17 +134,18 @@
 
   <div class="cfg">
     <form id="form" onsubmit="return false"></form>
-    <aside class="sum">
-      <div class="code">Specification</div>
-      <h3>Your configuration</h3>
-      <div class="kv" id="sumkv"></div>
-      <p class="sumnote">No retail pricing is shown online — quotations are issued from your trade price list, usually within one working day.</p>
-      <div class="btns">
-        <a class="btn solid" id="mailbtn" href="#">Request quotation</a>
-        <button class="btn ghost" id="copybtn" type="button">Copy spec</button>
-      </div>
-    </aside>
   </div>
+
+  <aside class="sum">
+    <div class="code">Specification</div>
+    <h3>Your configuration</h3>
+    <div class="kv" id="sumkv"></div>
+    <p class="sumnote">No retail pricing is shown online — quotations are issued from your trade price list, usually within one working day.</p>
+    <div class="btns">
+      <a class="btn solid" id="mailbtn" href="#">Request quotation</a>
+      <button class="btn ghost" id="copybtn" type="button">Copy spec</button>
+    </div>
+  </aside>
 </div>
 
 <footer>
@@ -147,20 +156,54 @@
 </footer>
 
 <script>
-var CONFIG = {"code": "01", "name": "Roman Shades", "img": "assets/product-roman.jpg", "desc": "Four fold styles across every fabric group \u2014 back rods, front rods, relaxed and hobbled \u2014 with square hems and a consistent stack at any width. Lining, interlining and blackout backing are all made in house.", "hLabel": "Height", "width": [12, 96], "height": [12, 120], "groups": [{"key": "fold", "label": "Fold style", "options": ["Back rods", "Front rods", "Relaxed", "Hobbled"]}, {"key": "lining", "label": "Lining", "options": ["Unlined", "Lined", "Interlined", "Blackout backing"]}, {"key": "colour", "label": "Colour", "options": [{"n": "Ivory", "c": "#F4EFE6"}, {"n": "Natural linen", "c": "#E3D7C2"}, {"n": "Sand", "c": "#D9C7A7"}, {"n": "Clay", "c": "#C2A17B"}, {"n": "Slate", "c": "#6E7B85"}, {"n": "Graphite", "c": "#3E4247"}]}, {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]}, {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorised"]}, {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]}]};
+var CONFIG = {"code": "01", "name": "Roman Shades", "img": "assets/product-roman.jpg", "desc": "Four fold styles across every fabric group \u2014 back rods, front rods, relaxed and hobbled \u2014 with square hems and a consistent stack at any width. Lining, interlining and blackout backing are all made in house.", "hLabel": "Height", "width": [12, 96], "height": [12, 120], "groups": [{"key": "fold", "label": "Fold style", "options": ["Back rods", "Front rods", "Relaxed", "Hobbled"]}, {"key": "lining", "label": "Lining", "options": ["Unlined", "Lined", "Interlined", "Blackout backing"]}, {"type": "fabrics"}, {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]}, {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorised"]}, {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]}], "fabrics": {"collections": [{"id": "outlander", "label": "Outlander", "transparency": "Light-filtering fabric", "material": "%100 Polyester"}, {"id": "marlow", "label": "Marlow", "transparency": "Semi-transparent", "material": "%93 Polyester, %7 Linen"}, {"id": "soho", "label": "Soho", "transparency": "Sheer", "material": "%100 Polyester"}, {"id": "lazuli", "label": "Lazuli", "transparency": "Semi-transparent", "material": "%100 Polyester"}, {"id": "piero", "label": "Piero", "transparency": "Sheer", "material": "%80 Acrylic, %20 Wool"}, {"id": "lucetta", "label": "Lucetta", "transparency": "Sheer", "material": "%100 Polyester"}, {"id": "obscura", "label": "Obscura", "transparency": "Blackout", "material": "%100 Polyester"}, {"id": "carillo", "label": "Carillo", "transparency": "Semi-transparent", "material": "%100 Polyester"}, {"id": "nomad", "label": "Nomad", "transparency": "Light-filtering cotton blend", "material": "Cotton blend"}, {"id": "umberto", "label": "Umberto", "transparency": "Sheer", "material": "%100 Polyester"}, {"id": "arrow", "label": "Arrow", "transparency": "Semi-transparent", "material": "%100 Polyester"}, {"id": "periscope", "label": "Periscope", "transparency": "Linen", "material": "%100 Linen"}, {"id": "atmosphere", "label": "Atmosphere", "transparency": "Semi-transparent", "material": "%100 Polyester"}, {"id": "hesperia", "label": "Hesperia", "transparency": "Room darkening", "material": "%100 Polyester"}], "colors": {"outlander": [{"id": "ivory-cloud-f109", "label": "Ivory Cloud", "code": "F109", "img": "assets/fabrics/outlander/ivory-cloud-f109.jpg"}, {"id": "soft-sand-110", "label": "Soft Sand", "code": "110", "img": "assets/fabrics/outlander/soft-sand-110.jpg"}, {"id": "linen-mist-f108", "label": "Linen Mist", "code": "F108", "img": "assets/fabrics/outlander/linen-mist-f108.jpg"}, {"id": "almond-shell-111", "label": "Almond Shell", "code": "111", "img": "assets/fabrics/outlander/almond-shell-111.jpg"}, {"id": "oyster-white-f112", "label": "Oyster White", "code": "F112", "img": "assets/fabrics/outlander/oyster-white-f112.jpg"}, {"id": "moonstone-107", "label": "Moonstone", "code": "107", "img": "assets/fabrics/outlander/moonstone-107.jpg"}, {"id": "ash-plum-f106", "label": "Ash Plum", "code": "F106", "img": "assets/fabrics/outlander/ash-plum-f106.jpg"}, {"id": "pebble-beige-115", "label": "Pebble Beige", "code": "115", "img": "assets/fabrics/outlander/pebble-beige-115.jpg"}, {"id": "sunlit-sand-f116", "label": "Sunlit Sand", "code": "F116", "img": "assets/fabrics/outlander/sunlit-sand-f116.jpg"}, {"id": "toasted-honey-117", "label": "Toasted Honey", "code": "117", "img": "assets/fabrics/outlander/toasted-honey-117.jpg"}, {"id": "burnt-sienna-f118", "label": "Burnt Sienna", "code": "F118", "img": "assets/fabrics/outlander/burnt-sienna-f118.jpg"}, {"id": "cinnamon-clay-119", "label": "Cinnamon Clay", "code": "119", "img": "assets/fabrics/outlander/cinnamon-clay-119.jpg"}, {"id": "terracotta-flame-f120", "label": "Terracotta Flame", "code": "F120", "img": "assets/fabrics/outlander/terracotta-flame-f120.jpg"}, {"id": "crimson-bloom-121", "label": "Crimson Bloom", "code": "121", "img": "assets/fabrics/outlander/crimson-bloom-121.jpg"}, {"id": "ruby-red-f122", "label": "Ruby Red", "code": "F122", "img": "assets/fabrics/outlander/ruby-red-f122.jpg"}, {"id": "berry-blush-123", "label": "Berry Blush", "code": "123", "img": "assets/fabrics/outlander/berry-blush-123.jpg"}, {"id": "mauve-mist-f124", "label": "Mauve Mist", "code": "F124", "img": "assets/fabrics/outlander/mauve-mist-f124.jpg"}, {"id": "lavender-dust-125", "label": "Lavender Dust", "code": "125", "img": "assets/fabrics/outlander/lavender-dust-125.jpg"}, {"id": "plum-velvet-f126", "label": "Plum Velvet", "code": "F126", "img": "assets/fabrics/outlander/plum-velvet-f126.jpg"}, {"id": "rosewood-blush-127", "label": "Rosewood Blush", "code": "127", "img": "assets/fabrics/outlander/rosewood-blush-127.jpg"}, {"id": "mulberry-dusk-f128", "label": "Mulberry Dusk", "code": "F128", "img": "assets/fabrics/outlander/mulberry-dusk-f128.jpg"}, {"id": "storm-indigo-129", "label": "Storm Indigo", "code": "129", "img": "assets/fabrics/outlander/storm-indigo-129.jpg"}, {"id": "ocean-teal-f130", "label": "Ocean Teal", "code": "F130", "img": "assets/fabrics/outlander/ocean-teal-f130.jpg"}, {"id": "mineral-aqua-131", "label": "Mineral Aqua", "code": "131", "img": "assets/fabrics/outlander/mineral-aqua-131.jpg"}, {"id": "slate-blue-f132", "label": "Slate Blue", "code": "F132", "img": "assets/fabrics/outlander/slate-blue-f132.jpg"}, {"id": "cool-horizon-f136", "label": "Cool Horizon", "code": "F136", "img": "assets/fabrics/outlander/cool-horizon-f136.jpg"}, {"id": "olive-ash-f134", "label": "Olive Ash", "code": "F134", "img": "assets/fabrics/outlander/olive-ash-f134.jpg"}, {"id": "urban-smoke-135", "label": "Urban Smoke", "code": "135", "img": "assets/fabrics/outlander/urban-smoke-135.jpg"}, {"id": "fog-steel-133", "label": "Fog Steel", "code": "133", "img": "assets/fabrics/outlander/fog-steel-133.jpg"}, {"id": "kelly-green-114", "label": "Kelly Green", "code": "114", "img": "assets/fabrics/outlander/kelly-green-114.jpg"}, {"id": "sage-dust-f113", "label": "Sage Dust", "code": "F113", "img": "assets/fabrics/outlander/sage-dust-f113.jpg"}, {"id": "ash-grey-105", "label": "Ash Grey", "code": "105", "img": "assets/fabrics/outlander/ash-grey-105.jpg"}, {"id": "dust-grey-f104", "label": "Dust Grey", "code": "F104", "img": "assets/fabrics/outlander/dust-grey-f104.jpg"}, {"id": "truffle-101", "label": "Truffle", "code": "101", "img": "assets/fabrics/outlander/truffle-101.jpg"}, {"id": "stone-bark-f102", "label": "Stone Bark", "code": "F102", "img": "assets/fabrics/outlander/stone-bark-f102.jpg"}, {"id": "coffee-charcoal-103", "label": "Coffee Charcoal", "code": "103", "img": "assets/fabrics/outlander/coffee-charcoal-103.jpg"}, {"id": "graphite-blue-f137", "label": "Graphite Blue", "code": "F137", "img": "assets/fabrics/outlander/graphite-blue-f137.jpg"}, {"id": "midnight-shadow-139", "label": "Midnight Shadow", "code": "139", "img": "assets/fabrics/outlander/midnight-shadow-139.jpg"}], "marlow": [{"id": "pale-drift", "label": "Pale Drift", "code": "", "img": "assets/fabrics/marlow/pale-drift.jpg"}, {"id": "cotton-dust", "label": "Cotton Dust", "code": "", "img": "assets/fabrics/marlow/cotton-dust.jpg"}, {"id": "linen-fog", "label": "Linen Fog", "code": "", "img": "assets/fabrics/marlow/linen-fog.jpg"}, {"id": "clay-whisper", "label": "Clay Whisper", "code": "", "img": "assets/fabrics/marlow/clay-whisper.jpg"}, {"id": "natural-husk", "label": "Natural Husk", "code": "", "img": "assets/fabrics/marlow/natural-husk.jpg"}, {"id": "pebble-tone", "label": "Pebble Tone", "code": "", "img": "assets/fabrics/marlow/pebble-tone.jpg"}, {"id": "sandstone-veil", "label": "Sandstone Veil", "code": "", "img": "assets/fabrics/marlow/sandstone-veil.jpg"}, {"id": "twilight-moss", "label": "Twilight Moss", "code": "", "img": "assets/fabrics/marlow/twilight-moss.jpg"}, {"id": "sage-cloud", "label": "Sage Cloud", "code": "", "img": "assets/fabrics/marlow/sage-cloud.jpg"}, {"id": "slate-dune", "label": "Slate Dune", "code": "", "img": "assets/fabrics/marlow/slate-dune.jpg"}, {"id": "driftwood-grey", "label": "Driftwood Grey", "code": "", "img": "assets/fabrics/marlow/driftwood-grey.jpg"}, {"id": "warm-flint", "label": "Warm Flint", "code": "", "img": "assets/fabrics/marlow/warm-flint.jpg"}, {"id": "dune-smoke", "label": "Dune Smoke", "code": "", "img": "assets/fabrics/marlow/dune-smoke.jpg"}, {"id": "olive-mist", "label": "Olive Mist", "code": "", "img": "assets/fabrics/marlow/olive-mist.jpg"}, {"id": "cobblestone", "label": "Cobblestone", "code": "", "img": "assets/fabrics/marlow/cobblestone.jpg"}, {"id": "arctic-haze", "label": "Arctic Haze", "code": "", "img": "assets/fabrics/marlow/arctic-haze.jpg"}, {"id": "lavender-ash", "label": "Lavender Ash", "code": "", "img": "assets/fabrics/marlow/lavender-ash.jpg"}, {"id": "rose-dust", "label": "Rose Dust", "code": "", "img": "assets/fabrics/marlow/rose-dust.jpg"}, {"id": "canyon-clay", "label": "Canyon Clay", "code": "", "img": "assets/fabrics/marlow/canyon-clay.jpg"}, {"id": "dusty-cedar", "label": "Dusty Cedar", "code": "", "img": "assets/fabrics/marlow/dusty-cedar.jpg"}, {"id": "brickwood", "label": "Brickwood", "code": "", "img": "assets/fabrics/marlow/brickwood.jpg"}, {"id": "cinnamon-clay", "label": "Cinnamon Clay", "code": "", "img": "assets/fabrics/marlow/cinnamon-clay.jpg"}, {"id": "olive-grove", "label": "Olive Grove", "code": "", "img": "assets/fabrics/marlow/olive-grove.jpg"}], "soho": [{"id": "glacial-veil", "label": "Glacial Veil", "code": "", "img": "assets/fabrics/soho/glacial-veil.jpg"}, {"id": "riverstone-drift", "label": "Riverstone Drift", "code": "", "img": "assets/fabrics/soho/riverstone-drift.jpg"}, {"id": "mist-alloy", "label": "Mist Alloy", "code": "", "img": "assets/fabrics/soho/mist-alloy.jpg"}, {"id": "sage-linea", "label": "Sage Linea", "code": "", "img": "assets/fabrics/soho/sage-linea.jpg"}, {"id": "reed-texture", "label": "Reed Texture", "code": "", "img": "assets/fabrics/soho/reed-texture.jpg"}, {"id": "graphite-flow", "label": "Graphite Flow", "code": "", "img": "assets/fabrics/soho/graphite-flow.jpg"}, {"id": "sandline", "label": "Sandline", "code": "", "img": "assets/fabrics/soho/sandline.jpg"}, {"id": "ashline", "label": "Ashline", "code": "", "img": "assets/fabrics/soho/ashline.jpg"}, {"id": "graphite-edge", "label": "Graphite Edge", "code": "", "img": "assets/fabrics/soho/graphite-edge.jpg"}, {"id": "white-trace", "label": "White Trace", "code": "", "img": "assets/fabrics/soho/white-trace.jpg"}, {"id": "crimson-pin", "label": "Crimson Pin", "code": "", "img": "assets/fabrics/soho/crimson-pin.jpg"}, {"id": "olive-bark", "label": "Olive Bark", "code": "", "img": "assets/fabrics/soho/olive-bark.jpg"}, {"id": "char-thread", "label": "Char Thread", "code": "", "img": "assets/fabrics/soho/char-thread.jpg"}, {"id": "redline", "label": "Redline", "code": "", "img": "assets/fabrics/soho/redline.jpg"}], "lazuli": [{"id": "loom", "label": "Loom", "code": "", "img": "assets/fabrics/lazuli/loom.jpg"}, {"id": "wisp", "label": "Wisp", "code": "", "img": "assets/fabrics/lazuli/wisp.jpg"}, {"id": "drift", "label": "Drift", "code": "", "img": "assets/fabrics/lazuli/drift.jpg"}, {"id": "grain", "label": "Grain", "code": "", "img": "assets/fabrics/lazuli/grain.jpg"}, {"id": "shade", "label": "Shade", "code": "", "img": "assets/fabrics/lazuli/shade.jpg"}, {"id": "thread", "label": "Thread", "code": "", "img": "assets/fabrics/lazuli/thread.jpg"}, {"id": "glint", "label": "Glint", "code": "", "img": "assets/fabrics/lazuli/glint.jpg"}, {"id": "taupe", "label": "Taupe", "code": "", "img": "assets/fabrics/lazuli/taupe.jpg"}], "piero": [{"id": "iron-shadow", "label": "Iron Shadow", "code": "", "img": "assets/fabrics/piero/iron-shadow.jpg"}, {"id": "graphite-drift", "label": "Graphite Drift", "code": "", "img": "assets/fabrics/piero/graphite-drift.jpg"}, {"id": "ash-fog", "label": "Ash Fog", "code": "", "img": "assets/fabrics/piero/ash-fog.jpg"}, {"id": "stone-smoke", "label": "Stone Smoke", "code": "", "img": "assets/fabrics/piero/stone-smoke.jpg"}, {"id": "dust-taupe", "label": "Dust Taupe", "code": "", "img": "assets/fabrics/piero/dust-taupe.jpg"}, {"id": "cloud-zinc", "label": "Cloud Zinc", "code": "", "img": "assets/fabrics/piero/cloud-zinc.jpg"}, {"id": "marble-grey", "label": "Marble Grey", "code": "", "img": "assets/fabrics/piero/marble-grey.jpg"}, {"id": "mist-silver", "label": "Mist Silver", "code": "", "img": "assets/fabrics/piero/mist-silver.jpg"}, {"id": "steel-veil", "label": "Steel Veil", "code": "", "img": "assets/fabrics/piero/steel-veil.jpg"}], "lucetta": [{"id": "dune-mist", "label": "Dune Mist", "code": "", "img": "assets/fabrics/lucetta/dune-mist.jpg"}, {"id": "twin-bark", "label": "Twin Bark", "code": "", "img": "assets/fabrics/lucetta/twin-bark.jpg"}, {"id": "pinstripe", "label": "Pinstripe", "code": "", "img": "assets/fabrics/lucetta/pinstripe.jpg"}, {"id": "bold-stripe", "label": "Bold Stripe", "code": "", "img": "assets/fabrics/lucetta/bold-stripe.jpg"}, {"id": "chevron-stripe", "label": "Chevron Stripe", "code": "", "img": "assets/fabrics/lucetta/chevron-stripe.jpg"}, {"id": "dense-stripe", "label": "Dense Stripe", "code": "", "img": "assets/fabrics/lucetta/dense-stripe.jpg"}, {"id": "natural-weave", "label": "Natural Weave", "code": "", "img": "assets/fabrics/lucetta/natural-weave.jpg"}], "obscura": [{"id": "14-graphite-fog-1", "label": "14 \u2014 Graphite Fog (1)", "code": "", "img": "assets/fabrics/obscura/14-graphite-fog-1.jpg"}, {"id": "13-iron-smoke-1", "label": "13 \u2014 Iron Smoke (1)", "code": "", "img": "assets/fabrics/obscura/13-iron-smoke-1.jpg"}, {"id": "12-flint-beige-1", "label": "12 \u2014 Flint Beige (1)", "code": "", "img": "assets/fabrics/obscura/12-flint-beige-1.jpg"}, {"id": "11-drift-sand-1", "label": "11 \u2014 Drift Sand (1)", "code": "", "img": "assets/fabrics/obscura/11-drift-sand-1.jpg"}, {"id": "10-char-blend", "label": "10 \u2014 Char Blend", "code": "", "img": "assets/fabrics/obscura/10-char-blend.jpg"}, {"id": "09-shadow-burl", "label": "09 \u2014 Shadow Burl", "code": "", "img": "assets/fabrics/obscura/09-shadow-burl.jpg"}, {"id": "08-urban-veil", "label": "08 \u2014 Urban Veil", "code": "", "img": "assets/fabrics/obscura/08-urban-veil.jpg"}, {"id": "07-ash-stone", "label": "07 \u2014 Ash Stone", "code": "", "img": "assets/fabrics/obscura/07-ash-stone.jpg"}, {"id": "06-soft-flint", "label": "06 \u2014 Soft Flint", "code": "", "img": "assets/fabrics/obscura/06-soft-flint.jpg"}, {"id": "05-taupe-trace", "label": "05 \u2014 Taupe Trace", "code": "", "img": "assets/fabrics/obscura/05-taupe-trace.jpg"}, {"id": "04-pale-drift", "label": "04 \u2014 Pale Drift", "code": "", "img": "assets/fabrics/obscura/04-pale-drift.jpg"}, {"id": "03-dune-fog", "label": "03 \u2014 Dune Fog", "code": "", "img": "assets/fabrics/obscura/03-dune-fog.jpg"}, {"id": "02-mist-linen", "label": "02 \u2014 Mist Linen", "code": "", "img": "assets/fabrics/obscura/02-mist-linen.jpg"}, {"id": "01-cloudline", "label": "01 \u2014 Cloudline", "code": "", "img": "assets/fabrics/obscura/01-cloudline.jpg"}], "carillo": [{"id": "ash-dune", "label": "Ash Dune", "code": "", "img": "assets/fabrics/carillo/ash-dune.jpg"}, {"id": "stone-veil", "label": "Stone Veil", "code": "", "img": "assets/fabrics/carillo/stone-veil.jpg"}, {"id": "woven-taupe", "label": "Woven Taupe", "code": "", "img": "assets/fabrics/carillo/woven-taupe.jpg"}, {"id": "whisper-fawn", "label": "Whisper Fawn", "code": "", "img": "assets/fabrics/carillo/whisper-fawn.jpg"}, {"id": "birch-flax", "label": "Birch Flax", "code": "", "img": "assets/fabrics/carillo/birch-flax.jpg"}, {"id": "limestone-mist", "label": "Limestone Mist", "code": "", "img": "assets/fabrics/carillo/limestone-mist.jpg"}, {"id": "pale-reed", "label": "Pale Reed", "code": "", "img": "assets/fabrics/carillo/pale-reed.jpg"}, {"id": "graphite-ember", "label": "Graphite Ember", "code": "", "img": "assets/fabrics/carillo/graphite-ember.jpg"}, {"id": "shadow-tusk", "label": "Shadow Tusk", "code": "", "img": "assets/fabrics/carillo/shadow-tusk.jpg"}], "nomad": [{"id": "amber-frost", "label": "Amber Frost", "code": "", "img": "assets/fabrics/nomad/amber-frost.jpg"}, {"id": "ochre", "label": "Ochre", "code": "", "img": "assets/fabrics/nomad/ochre.jpg"}, {"id": "savanna-gold", "label": "Savanna Gold", "code": "", "img": "assets/fabrics/nomad/savanna-gold.jpg"}, {"id": "sandstone-drift", "label": "Sandstone Drift", "code": "", "img": "assets/fabrics/nomad/sandstone-drift.jpg"}, {"id": "stone", "label": "Stone", "code": "", "img": "assets/fabrics/nomad/stone.jpg"}, {"id": "dust-linen", "label": "Dust Linen", "code": "", "img": "assets/fabrics/nomad/dust-linen.jpg"}, {"id": "basalt-grey", "label": "Basalt Grey", "code": "", "img": "assets/fabrics/nomad/basalt-grey.jpg"}, {"id": "eucalyptus-shadow", "label": "Eucalyptus Shadow", "code": "", "img": "assets/fabrics/nomad/eucalyptus-shadow.jpg"}, {"id": "mintstone", "label": "Mintstone", "code": "", "img": "assets/fabrics/nomad/mintstone.jpg"}, {"id": "fossil-beige", "label": "Fossil Beige", "code": "", "img": "assets/fabrics/nomad/fossil-beige.jpg"}, {"id": "nordic-steel", "label": "Nordic Steel", "code": "", "img": "assets/fabrics/nomad/nordic-steel.jpg"}, {"id": "nightfall", "label": "Nightfall", "code": "", "img": "assets/fabrics/nomad/nightfall.jpg"}, {"id": "ash-mist", "label": "Ash Mist", "code": "", "img": "assets/fabrics/nomad/ash-mist.jpg"}, {"id": "iron-thread", "label": "Iron Thread", "code": "", "img": "assets/fabrics/nomad/iron-thread.jpg"}, {"id": "ashline-granite", "label": "Ashline Granite", "code": "", "img": "assets/fabrics/nomad/ashline-granite.jpg"}, {"id": "slate-mist", "label": "Slate Mist", "code": "", "img": "assets/fabrics/nomad/slate-mist.jpg"}, {"id": "obsidian", "label": "Obsidian", "code": "", "img": "assets/fabrics/nomad/obsidian.jpg"}], "umberto": [{"id": "chalk", "label": "Chalk", "code": "", "img": "assets/fabrics/umberto/chalk.jpg"}, {"id": "bone", "label": "Bone", "code": "", "img": "assets/fabrics/umberto/bone.jpg"}, {"id": "olive", "label": "Olive", "code": "", "img": "assets/fabrics/umberto/olive.jpg"}, {"id": "mist", "label": "Mist", "code": "", "img": "assets/fabrics/umberto/mist.jpg"}, {"id": "graphite", "label": "Graphite", "code": "", "img": "assets/fabrics/umberto/graphite.jpg"}, {"id": "clay", "label": "Clay", "code": "", "img": "assets/fabrics/umberto/clay.jpg"}, {"id": "dust", "label": "Dust", "code": "", "img": "assets/fabrics/umberto/dust.jpg"}, {"id": "ash", "label": "Ash", "code": "", "img": "assets/fabrics/umberto/ash.jpg"}, {"id": "flint", "label": "Flint", "code": "", "img": "assets/fabrics/umberto/flint.jpg"}, {"id": "frost", "label": "Frost", "code": "", "img": "assets/fabrics/umberto/frost.jpg"}, {"id": "charcoal", "label": "Charcoal", "code": "", "img": "assets/fabrics/umberto/charcoal.jpg"}, {"id": "obsidian", "label": "Obsidian", "code": "", "img": "assets/fabrics/umberto/obsidian.jpg"}], "arrow": [{"id": "mist", "label": "Mist", "code": "", "img": "assets/fabrics/arrow/mist.jpg"}, {"id": "clay", "label": "Clay", "code": "", "img": "assets/fabrics/arrow/clay.jpg"}, {"id": "graphite", "label": "Graphite", "code": "", "img": "assets/fabrics/arrow/graphite.jpg"}, {"id": "ridge", "label": "Ridge", "code": "", "img": "assets/fabrics/arrow/ridge.jpg"}], "periscope": [{"id": "persicope-frost-linen", "label": "Persicope Frost Linen", "code": "", "img": "assets/fabrics/periscope/persicope-frost-linen.jpg"}, {"id": "morning-ash", "label": "Morning Ash", "code": "", "img": "assets/fabrics/periscope/morning-ash.jpg"}, {"id": "dawn-mist", "label": "Dawn mist", "code": "", "img": "assets/fabrics/periscope/dawn-mist.jpg"}, {"id": "cloud-veil", "label": "Cloud Veil", "code": "", "img": "assets/fabrics/periscope/cloud-veil.jpg"}, {"id": "quiet-pewter", "label": "Quiet Pewter", "code": "", "img": "assets/fabrics/periscope/quiet-pewter.jpg"}, {"id": "gravel-dust", "label": "Gravel Dust", "code": "", "img": "assets/fabrics/periscope/gravel-dust.jpg"}, {"id": "ash-harbor", "label": "Ash Harbor", "code": "", "img": "assets/fabrics/periscope/ash-harbor.jpg"}, {"id": "slate-dune", "label": "Slate Dune", "code": "", "img": "assets/fabrics/periscope/slate-dune.jpg"}, {"id": "dust-taupe", "label": "Dust Taupe", "code": "", "img": "assets/fabrics/periscope/dust-taupe.jpg"}, {"id": "greige-calm", "label": "Greige Calm", "code": "", "img": "assets/fabrics/periscope/greige-calm.jpg"}, {"id": "flint-mist", "label": "Flint Mist", "code": "", "img": "assets/fabrics/periscope/flint-mist.jpg"}, {"id": "pale-clay", "label": "Pale Clay", "code": "", "img": "assets/fabrics/periscope/pale-clay.jpg"}, {"id": "sunkissed-earth", "label": "Sunkissed Earth", "code": "", "img": "assets/fabrics/periscope/sunkissed-earth.jpg"}, {"id": "terracotta-bloom", "label": "Terracotta Bloom", "code": "", "img": "assets/fabrics/periscope/terracotta-bloom.jpg"}, {"id": "bronze-haze", "label": "Bronze Haze", "code": "", "img": "assets/fabrics/periscope/bronze-haze.jpg"}, {"id": "desert-olive", "label": "Desert Olive", "code": "", "img": "assets/fabrics/periscope/desert-olive.jpg"}, {"id": "stone-bark", "label": "Stone Bark", "code": "", "img": "assets/fabrics/periscope/stone-bark.jpg"}, {"id": "golden-soil", "label": "Golden Soil", "code": "", "img": "assets/fabrics/periscope/golden-soil.jpg"}, {"id": "rust-ember", "label": "Rust Ember", "code": "", "img": "assets/fabrics/periscope/rust-ember.jpg"}, {"id": "burnt-mocha", "label": "Burnt Mocha", "code": "", "img": "assets/fabrics/periscope/burnt-mocha.jpg"}, {"id": "fogstone", "label": "Fogstone", "code": "", "img": "assets/fabrics/periscope/fogstone.jpg"}, {"id": "storm-flint", "label": "Storm Flint", "code": "", "img": "assets/fabrics/periscope/storm-flint.jpg"}, {"id": "deep-graphite", "label": "Deep Graphite", "code": "", "img": "assets/fabrics/periscope/deep-graphite.jpg"}, {"id": "steel-current", "label": "Steel Current", "code": "", "img": "assets/fabrics/periscope/steel-current.jpg"}, {"id": "indigo-night", "label": "Indigo Night", "code": "", "img": "assets/fabrics/periscope/indigo-night.jpg"}], "atmosphere": [{"id": "mist-silver", "label": "Mist Silver", "code": "", "img": "assets/fabrics/atmosphere/mist-silver.jpg"}, {"id": "pale-flint", "label": "Pale Flint", "code": "", "img": "assets/fabrics/atmosphere/pale-flint.jpg"}, {"id": "steel-dusk", "label": "Steel Dusk", "code": "", "img": "assets/fabrics/atmosphere/steel-dusk.jpg"}, {"id": "glacier-teal", "label": "Glacier Teal", "code": "", "img": "assets/fabrics/atmosphere/glacier-teal.jpg"}, {"id": "nordic-lake", "label": "Nordic Lake", "code": "", "img": "assets/fabrics/atmosphere/nordic-lake.jpg"}, {"id": "baltic-stone", "label": "Baltic Stone", "code": "", "img": "assets/fabrics/atmosphere/baltic-stone.jpg"}, {"id": "storm-fjord", "label": "Storm Fjord", "code": "", "img": "assets/fabrics/atmosphere/storm-fjord.jpg"}, {"id": "harbor-ink", "label": "Harbor Ink", "code": "", "img": "assets/fabrics/atmosphere/harbor-ink.jpg"}, {"id": "twilight-navy", "label": "Twilight Navy", "code": "", "img": "assets/fabrics/atmosphere/twilight-navy.jpg"}, {"id": "obsidian-fog", "label": "Obsidian Fog", "code": "", "img": "assets/fabrics/atmosphere/obsidian-fog.jpg"}, {"id": "iron-eclipse", "label": "Iron Eclipse", "code": "", "img": "assets/fabrics/atmosphere/iron-eclipse.jpg"}], "hesperia": [{"id": "slateforge", "label": "Slateforge", "code": "", "img": "assets/fabrics/hesperia/slateforge.jpg"}, {"id": "graphite-veil", "label": "Graphite Veil", "code": "", "img": "assets/fabrics/hesperia/graphite-veil.jpg"}, {"id": "iron-mist", "label": "Iron Mist", "code": "", "img": "assets/fabrics/hesperia/iron-mist.jpg"}, {"id": "silver-thatch", "label": "Silver Thatch", "code": "", "img": "assets/fabrics/hesperia/silver-thatch.jpg"}, {"id": "ash-drift", "label": "Ash Drift", "code": "", "img": "assets/fabrics/hesperia/ash-drift.jpg"}, {"id": "dune-mist", "label": "Dune Mist", "code": "", "img": "assets/fabrics/hesperia/dune-mist.jpg"}, {"id": "olive-grain", "label": "Olive Grain", "code": "", "img": "assets/fabrics/hesperia/olive-grain.jpg"}, {"id": "oatshade", "label": "Oatshade", "code": "", "img": "assets/fabrics/hesperia/oatshade.jpg"}, {"id": "carbon-weave", "label": "Carbon Weave", "code": "", "img": "assets/fabrics/hesperia/carbon-weave.jpg"}, {"id": "blue-dusk", "label": "Blue Dusk", "code": "", "img": "assets/fabrics/hesperia/blue-dusk.jpg"}]}}};
 
 (function(){
   var form = document.getElementById('form');
-  var state = {w:'', h:'', qty:1, ref:''};
-  CONFIG.groups.forEach(function(g){ state[g.key] = (typeof g.options[0] === 'string' ? g.options[0] : g.options[0].n); });
+  var state = {w:'', h:''};
+  CONFIG.groups.forEach(function(g){
+    if(g.type === 'fabrics') return;
+    state[g.key] = (typeof g.options[0] === 'string' ? g.options[0] : g.options[0].n);
+  });
+  var F = CONFIG.fabrics || null;
+  if(F){
+    state.collection = F.collections[0].id;
+    state.colour = F.colors[state.collection][0].id;
+  }
 
   function stepCode(n){ return 'Step ' + (n < 10 ? '0' + n : n); }
   var step = 1;
 
   function optName(o){ return typeof o === 'string' ? o : o.n; }
 
-  /* option groups first */
+  function findCollection(id){ return F.collections.filter(function(c){ return c.id === id; })[0]; }
+  function findColour(){ return F.colors[state.collection].filter(function(c){ return c.id === state.colour; })[0]; }
+
+  function renderSwatches(){
+    var meta = findCollection(state.collection);
+    document.getElementById('fabmeta').innerHTML = meta.transparency + ' &middot; ' + meta.material;
+    document.getElementById('swgrid').innerHTML = F.colors[state.collection].map(function(c){
+      return '<button type="button" class="swatch' + (c.id === state.colour ? ' on' : '') + '" data-c="' + c.id + '">' +
+        '<img loading="lazy" src="' + c.img + '" alt="' + c.label + '">' +
+        '<div class="nm">' + c.label + '</div>' +
+        (c.code ? '<div class="cd">' + c.code + '</div>' : '') + '</button>';
+    }).join('');
+  }
+
+  /* option groups (fabric step rendered in place) */
   CONFIG.groups.forEach(function(g){
+    if(g.type === 'fabrics'){
+      var chips = F.collections.map(function(c,i){
+        return '<button type="button" class="chip' + (i===0?' on':'') + '" data-col="' + c.id + '">' + c.label + '</button>';
+      }).join('');
+      form.insertAdjacentHTML('beforeend',
+        '<div class="grp"><div class="code">' + stepCode(step++) + '</div><h3>Fabric &amp; colour</h3>' +
+        '<div class="chips" id="colchips">' + chips + '</div>' +
+        '<div class="fabmeta" id="fabmeta"></div>' +
+        '<div class="swgrid" id="swgrid"></div></div>');
+      renderSwatches();
+      return;
+    }
     var chips = g.options.map(function(o,i){
       var name = optName(o);
       var sw = (typeof o === 'object' && o.c) ? '<span class="sw" style="background:' + o.c + '"></span>' : '';
@@ -172,29 +215,32 @@ var CONFIG = {"code": "01", "name": "Roman Shades", "img": "assets/product-roman
   });
 
   /* dimensions */
-  var dimHtml =
+  form.insertAdjacentHTML('beforeend',
     '<div class="grp"><div class="code">' + stepCode(step++) + '</div><h3>Dimensions</h3>' +
     '<div class="dims">' +
     '<div class="dim"><span class="cap">Width</span><input id="w" type="number" step="0.125" min="' + CONFIG.width[0] + '" max="' + CONFIG.width[1] + '" placeholder="in">' +
     '<span class="rng">' + CONFIG.width[0] + '&quot; &ndash; ' + CONFIG.width[1] + '&quot;</span></div>' +
     '<div class="dim"><span class="cap">' + CONFIG.hLabel + '</span><input id="h" type="number" step="0.125" min="' + CONFIG.height[0] + '" max="' + CONFIG.height[1] + '" placeholder="in">' +
     '<span class="rng">' + CONFIG.height[0] + '&quot; &ndash; ' + CONFIG.height[1] + '&quot;</span></div>' +
-    '</div></div>';
-  form.insertAdjacentHTML('beforeend', dimHtml);
-
-  /* project */
-  form.insertAdjacentHTML('beforeend',
-    '<div class="grp"><div class="code">' + stepCode(step++) + '</div><h3>Project</h3>' +
-    '<div class="proj">' +
-    '<div class="dim"><span class="cap">Quantity</span><input id="qty" type="number" min="1" step="1" value="1"></div>' +
-    '<div class="dim wide"><span class="cap">Reference (room, window, PO&hellip;)</span><input id="ref" type="text" maxlength="80" placeholder="e.g. Master bedroom W2"></div>' +
     '</div></div>');
 
   form.addEventListener('click', function(e){
-    var c = e.target.closest('.chip'); if(!c) return;
+    var col = e.target.closest('.chip[data-col]');
+    if(col){
+      state.collection = col.dataset.col;
+      state.colour = F.colors[state.collection][0].id;
+      document.querySelectorAll('#colchips .chip').forEach(function(x){ x.classList.toggle('on', x === col); });
+      renderSwatches(); update(); return;
+    }
+    var sw = e.target.closest('.swatch');
+    if(sw){
+      state.colour = sw.dataset.c;
+      document.querySelectorAll('.swatch').forEach(function(x){ x.classList.toggle('on', x === sw); });
+      update(); return;
+    }
+    var c = e.target.closest('.chip[data-g]'); if(!c) return;
     state[c.dataset.g] = c.dataset.v;
-    var sib = form.querySelectorAll('.chip[data-g="' + c.dataset.g + '"]');
-    sib.forEach(function(x){ x.classList.toggle('on', x === c); });
+    document.querySelectorAll('.chip[data-g="' + c.dataset.g + '"]').forEach(function(x){ x.classList.toggle('on', x === c); });
     update();
   });
 
@@ -204,7 +250,7 @@ var CONFIG = {"code": "01", "name": "Roman Shades", "img": "assets/product-roman
     if(v < lo || v > hi){ el.classList.add('err'); return ''; }
     el.classList.remove('err'); return v;
   }
-  ['w','h','qty','ref'].forEach(function(id){
+  ['w','h'].forEach(function(id){
     document.getElementById(id).addEventListener('input', update);
   });
 
@@ -213,11 +259,17 @@ var CONFIG = {"code": "01", "name": "Roman Shades", "img": "assets/product-roman
 
   function rows(){
     var r = [['Product', CONFIG.name]];
-    CONFIG.groups.forEach(function(g){ r.push([g.label, state[g.key]]); });
+    CONFIG.groups.forEach(function(g){
+      if(g.type === 'fabrics'){
+        var col = findColour();
+        r.push(['Collection', findCollection(state.collection).label]);
+        r.push(['Colour', col.label + (col.code ? ' (' + col.code + ')' : '')]);
+        return;
+      }
+      r.push([g.label, state[g.key]]);
+    });
     r.push(['Width', state.w === '' ? '—' : state.w + '"']);
     r.push([CONFIG.hLabel, state.h === '' ? '—' : state.h + '"']);
-    r.push(['Quantity', String(state.qty)]);
-    if(state.ref) r.push(['Reference', state.ref]);
     if(CONFIG.note) r.push(['Included', CONFIG.note]);
     return r;
   }
@@ -225,9 +277,6 @@ var CONFIG = {"code": "01", "name": "Roman Shades", "img": "assets/product-roman
   function update(){
     state.w = num(document.getElementById('w'), CONFIG.width[0], CONFIG.width[1]);
     state.h = num(document.getElementById('h'), CONFIG.height[0], CONFIG.height[1]);
-    var q = parseInt(document.getElementById('qty').value, 10);
-    state.qty = (isNaN(q) || q < 1) ? 1 : q;
-    state.ref = document.getElementById('ref').value.trim();
 
     sumkv.innerHTML = rows().map(function(r){
       return '<div><span>' + r[0] + '</span><b>' + r[1] + '</b></div>';
