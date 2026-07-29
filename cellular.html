@@ -53,6 +53,8 @@
   .chip:hover{border-color:var(--ink)}
   .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
   .chip .sw{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:9px;vertical-align:-1px;border:1px solid rgba(0,0,0,.18)}
+  .chip .chipsub{display:block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.06em;color:var(--muted);margin-top:3px}
+  .chip.on .chipsub{color:#B9BDC0}
 
   .fabmeta{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--muted);margin:16px 0 14px}
   .swgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
@@ -252,6 +254,22 @@ var CONFIG = {"code": "02", "name": "Cellular Shades", "img": "assets/product-ce
     return CONFIG.width;
   }
 
+  function setChipSub(ch, b){
+    var s = ch.querySelector('.chipsub');
+    if(!s){ s = document.createElement('span'); s.className = 'chipsub'; ch.appendChild(s); }
+    s.innerHTML = 'W ' + b[0] + '&quot; &ndash; ' + b[1] + '&quot;';
+  }
+  function refreshRuleSubs(){
+    if(!CONFIG.widthRules) return;
+    var R = CONFIG.widthRules;
+    document.querySelectorAll('.chip[data-g="' + R.drive + '"]').forEach(function(ch){
+      var b = R.rules[ch.dataset.v + '|' + state[R.tdbu]]; if(b) setChipSub(ch, b);
+    });
+    document.querySelectorAll('.chip[data-g="' + R.tdbu + '"]').forEach(function(ch){
+      var b = R.rules[state[R.drive] + '|' + ch.dataset.v]; if(b) setChipSub(ch, b);
+    });
+  }
+
   function num(el, lo, hi){
     var v = parseFloat(el.value);
     if(el.value === '' || isNaN(v)){ el.classList.remove('err'); return ''; }
@@ -283,6 +301,7 @@ var CONFIG = {"code": "02", "name": "Cellular Shades", "img": "assets/product-ce
   }
 
   function update(){
+    refreshRuleSubs();
     var wb = widthBounds();
     var wEl = document.getElementById('w');
     wEl.min = wb[0]; wEl.max = wb[1];
