@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CARRA — Pleated Shades</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --white:#FFFFFF; --paper:#F8F8F6; --paper2:#F1F1EE; --ink:#14171A; --muted:#767A7E;
+    --line:#E4E3DE; --line2:#D3D2CC; --bronze:#8A6220; --bronze-lt:#C79A45;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--white);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.62;
+    -webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.025em;margin:0;line-height:1.05}
+  a{color:inherit}
+  .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .wrap{max-width:1180px;padding:0 44px;margin:0 auto}
+
+  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;gap:24px}
+  .logo{font-family:'Archivo',sans-serif;font-weight:700;font-size:20px;letter-spacing:.28em;text-decoration:none}
+  nav{display:flex;gap:34px;align-items:center}
+  nav a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s}
+  nav a:hover{color:var(--ink)}
+  .partner{border:1px solid var(--line2);padding:8px 15px;color:var(--bronze)!important}
+  .partner:hover{border-color:var(--bronze)}
+
+  .crumbs{border-bottom:1px solid var(--line);background:var(--paper)}
+  .crumbs .wrap{display:flex;align-items:center;gap:16px;height:52px}
+  .crumbs a{text-decoration:none}
+  .crumbs a:hover{color:var(--ink)}
+
+  .phero{position:relative;height:56vh;min-height:400px;overflow:hidden;background:var(--paper2)}
+  .phero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .pveil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 38%,rgba(8,10,12,.66) 100%)}
+  .ptit{position:absolute;left:50%;transform:translateX(-50%);bottom:38px;width:100%;max-width:1180px;padding:0 44px}
+  .ptit .mono{color:var(--bronze-lt)}
+  .ptit h1{font-size:clamp(34px,5vw,60px);color:#fff;margin-top:10px}
+  .pdesc{max-width:62ch;color:#3D4246;font-size:17px;margin:0;padding:44px 0 10px}
+  .chip .sw{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:9px;vertical-align:-1px;border:1px solid rgba(0,0,0,.18)}
+
+  .cfg{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:start;padding-bottom:90px}
+  .grp{padding:26px 0 30px;border-top:1px solid var(--line)}
+  .grp .code{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--bronze);text-transform:uppercase}
+  .grp h3{font-size:18px;margin:8px 0 16px}
+  .chips{display:flex;flex-wrap:wrap;gap:10px}
+  .chip{font:inherit;font-size:14.5px;border:1px solid var(--line2);background:var(--white);color:var(--ink);
+    padding:10px 17px;border-radius:10px;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+  .chip:hover{border-color:var(--ink)}
+  .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .dims{display:flex;gap:16px;flex-wrap:wrap}
+  .dim{display:flex;flex-direction:column;gap:7px}
+  .dim .cap{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .dim input{font:inherit;font-size:15px;width:150px;padding:12px 14px;border:1px solid var(--line2);border-radius:10px;background:var(--white)}
+  .dim input:focus{outline:none;border-color:var(--ink)}
+  .dim input.err{border-color:var(--bronze)}
+  .dim .rng{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--muted)}
+  .wide input{width:100%}
+  .proj{display:grid;grid-template-columns:150px 1fr;gap:16px}
+
+  .sum{position:sticky;top:96px;border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:30px 32px}
+  .sum .code{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--bronze);text-transform:uppercase}
+  .sum h3{font-size:19px;margin:8px 0 18px}
+  .kv{border-top:1px solid var(--line2)}
+  .kv div{display:flex;justify-content:space-between;gap:18px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .kv span{color:var(--muted)}
+  .kv b{font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12.5px;text-align:right}
+  .sumnote{font-size:13px;color:var(--muted);margin:16px 0 20px}
+  .btns{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    padding:14px 22px;border:1px solid var(--ink);border-radius:10px;text-decoration:none;cursor:pointer;font-weight:500;transition:opacity .15s}
+  .btn.solid{background:var(--ink);color:#fff}
+  .btn.ghost{background:transparent;color:var(--ink)}
+  .btn:hover{opacity:.85}
+
+  footer{border-top:1px solid var(--line);background:var(--paper)}
+  footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
+
+  @media(max-width:980px){
+    .wrap{padding:0 22px}
+    nav a:not(.partner){display:none}
+    .pageh,.cfg{grid-template-columns:1fr;gap:34px}
+    .sum{position:static}
+    .pageh{padding-top:36px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="index.html">CARRA</a>
+    <nav>
+      <a href="index.html#products">Products</a>
+      <a href="index.html#motorization">Motorization</a>
+      <a href="index.html#about">About us</a>
+      <a href="index.html#contact">Contact</a>
+      <a class="partner" href="index.html#contact">Trade login</a>
+    </nav>
+  </div>
+</header>
+
+<div class="crumbs">
+  <div class="wrap">
+    <a class="mono" href="index.html#products">&larr; All products</a>
+    <span class="mono" style="color:var(--ink)">03 &middot; Pleated Shades</span>
+  </div>
+</div>
+
+<section class="phero">
+  <img src="assets/product-pleated.jpg" alt="Pleated Shades room scene">
+  <div class="pveil"></div>
+  <div class="ptit">
+    <div class="mono">03 — Made to measure</div>
+    <h1>Pleated Shades</h1>
+  </div>
+</section>
+
+<div class="wrap">
+  <p class="pdesc">Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range — the shallowest option when the reveal is tight.</p>
+
+  <div class="cfg">
+    <form id="form" onsubmit="return false"></form>
+    <aside class="sum">
+      <div class="code">Specification</div>
+      <h3>Your configuration</h3>
+      <div class="kv" id="sumkv"></div>
+      <p class="sumnote">No retail pricing is shown online — quotations are issued from your trade price list, usually within one working day.</p>
+      <div class="btns">
+        <a class="btn solid" id="mailbtn" href="#">Request quotation</a>
+        <button class="btn ghost" id="copybtn" type="button">Copy spec</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span class="mono">&copy; 2026 CARRA &middot; All rights reserved</span>
+    <span class="mono">hello@carra.com</span>
+  </div>
+</footer>
+
+<script>
+var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-pleated.jpg", "desc": "Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range \u2014 the shallowest option when the reveal is tight.", "hLabel": "Height", "width": [18, 105], "height": [24, 120], "groups": [{"key": "fabric", "label": "Fabric", "options": ["Plain", "Crashed"]}, {"key": "opacity", "label": "Opacity", "options": ["Light-filtering"]}, {"key": "colour", "label": "Colour", "options": [{"n": "White", "c": "#FAFAF7"}, {"n": "Pearl", "c": "#F1EDE4"}, {"n": "Linen", "c": "#E6DCC8"}, {"n": "Mist grey", "c": "#C9CBC9"}, {"n": "Graphite", "c": "#5A5E62"}]}, {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]}, {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorised"]}, {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]}]};
+
+(function(){
+  var form = document.getElementById('form');
+  var state = {w:'', h:'', qty:1, ref:''};
+  CONFIG.groups.forEach(function(g){ state[g.key] = (typeof g.options[0] === 'string' ? g.options[0] : g.options[0].n); });
+
+  function stepCode(n){ return 'Step ' + (n < 10 ? '0' + n : n); }
+  var step = 1;
+
+  function optName(o){ return typeof o === 'string' ? o : o.n; }
+
+  /* option groups first */
+  CONFIG.groups.forEach(function(g){
+    var chips = g.options.map(function(o,i){
+      var name = optName(o);
+      var sw = (typeof o === 'object' && o.c) ? '<span class="sw" style="background:' + o.c + '"></span>' : '';
+      return '<button type="button" class="chip' + (i===0?' on':'') + '" data-g="' + g.key + '" data-v="' + name + '">' + sw + name + '</button>';
+    }).join('');
+    form.insertAdjacentHTML('beforeend',
+      '<div class="grp"><div class="code">' + stepCode(step++) + '</div><h3>' + g.label + '</h3>' +
+      '<div class="chips">' + chips + '</div></div>');
+  });
+
+  /* dimensions */
+  var dimHtml =
+    '<div class="grp"><div class="code">' + stepCode(step++) + '</div><h3>Dimensions</h3>' +
+    '<div class="dims">' +
+    '<div class="dim"><span class="cap">Width</span><input id="w" type="number" step="0.125" min="' + CONFIG.width[0] + '" max="' + CONFIG.width[1] + '" placeholder="in">' +
+    '<span class="rng">' + CONFIG.width[0] + '&quot; &ndash; ' + CONFIG.width[1] + '&quot;</span></div>' +
+    '<div class="dim"><span class="cap">' + CONFIG.hLabel + '</span><input id="h" type="number" step="0.125" min="' + CONFIG.height[0] + '" max="' + CONFIG.height[1] + '" placeholder="in">' +
+    '<span class="rng">' + CONFIG.height[0] + '&quot; &ndash; ' + CONFIG.height[1] + '&quot;</span></div>' +
+    '</div></div>';
+  form.insertAdjacentHTML('beforeend', dimHtml);
+
+  /* project */
+  form.insertAdjacentHTML('beforeend',
+    '<div class="grp"><div class="code">' + stepCode(step++) + '</div><h3>Project</h3>' +
+    '<div class="proj">' +
+    '<div class="dim"><span class="cap">Quantity</span><input id="qty" type="number" min="1" step="1" value="1"></div>' +
+    '<div class="dim wide"><span class="cap">Reference (room, window, PO&hellip;)</span><input id="ref" type="text" maxlength="80" placeholder="e.g. Master bedroom W2"></div>' +
+    '</div></div>');
+
+  form.addEventListener('click', function(e){
+    var c = e.target.closest('.chip'); if(!c) return;
+    state[c.dataset.g] = c.dataset.v;
+    var sib = form.querySelectorAll('.chip[data-g="' + c.dataset.g + '"]');
+    sib.forEach(function(x){ x.classList.toggle('on', x === c); });
+    update();
+  });
+
+  function num(el, lo, hi){
+    var v = parseFloat(el.value);
+    if(el.value === '' || isNaN(v)){ el.classList.remove('err'); return ''; }
+    if(v < lo || v > hi){ el.classList.add('err'); return ''; }
+    el.classList.remove('err'); return v;
+  }
+  ['w','h','qty','ref'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', update);
+  });
+
+  var sumkv = document.getElementById('sumkv');
+  var mailbtn = document.getElementById('mailbtn');
+
+  function rows(){
+    var r = [['Product', CONFIG.name]];
+    CONFIG.groups.forEach(function(g){ r.push([g.label, state[g.key]]); });
+    r.push(['Width', state.w === '' ? '—' : state.w + '"']);
+    r.push([CONFIG.hLabel, state.h === '' ? '—' : state.h + '"']);
+    r.push(['Quantity', String(state.qty)]);
+    if(state.ref) r.push(['Reference', state.ref]);
+    if(CONFIG.note) r.push(['Included', CONFIG.note]);
+    return r;
+  }
+
+  function update(){
+    state.w = num(document.getElementById('w'), CONFIG.width[0], CONFIG.width[1]);
+    state.h = num(document.getElementById('h'), CONFIG.height[0], CONFIG.height[1]);
+    var q = parseInt(document.getElementById('qty').value, 10);
+    state.qty = (isNaN(q) || q < 1) ? 1 : q;
+    state.ref = document.getElementById('ref').value.trim();
+
+    sumkv.innerHTML = rows().map(function(r){
+      return '<div><span>' + r[0] + '</span><b>' + r[1] + '</b></div>';
+    }).join('');
+
+    var body = rows().map(function(r){ return r[0] + ': ' + r[1]; }).join('\n');
+    mailbtn.href = 'mailto:hello@carra.com?subject=' +
+      encodeURIComponent('Quotation request — ' + CONFIG.name) +
+      '&body=' + encodeURIComponent(body + '\n\n—\nSent from the CARRA product configurator');
+  }
+
+  document.getElementById('copybtn').addEventListener('click', function(){
+    var txt = 'CARRA — ' + CONFIG.name + '\n' + rows().map(function(r){ return r[0] + ': ' + r[1]; }).join('\n');
+    navigator.clipboard.writeText(txt).then(function(){
+      var b = document.getElementById('copybtn');
+      b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy spec'; }, 1400);
+    });
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>

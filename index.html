@@ -285,12 +285,11 @@
   <div class="wrap">
     <div class="head"><h2>What we make</h2><div class="mono">— Select a range</div></div>
     <div class="prods" id="prods">
-      <button class="p on" data-i="0"><div class="art"><img src="assets/card-roman.jpg" alt="Roman shades in a living room"></div><div class="txt"><div class="code">01</div><h3>Roman Shades</h3><p>Back-rod, front-rod, relaxed and hobbled folds in every fabric group.</p><div class="more">Open &rarr;</div></div></button>
-      <button class="p" data-i="1"><div class="art"><img src="assets/card-cellular.jpg" alt="Cellular shades in a bedroom"></div><div class="txt"><div class="code">02</div><h3>Cellular Shades</h3><p>Single, double and triple cell honeycomb, sheer to blackout.</p><div class="more">Open &rarr;</div></div></button>
-      <button class="p" data-i="2"><div class="art"><img src="assets/card-pleated.jpg" alt="Pleated shades in a kitchen"></div><div class="txt"><div class="code">03</div><h3>Pleated Shades</h3><p>Single-layer pleat, crisp and slim in the stack.</p><div class="more">Open &rarr;</div></div></button>
-      <button class="p" data-i="3"><div class="art"><img src="assets/card-drapery.jpg" alt="Wave-fold drapery in a dining room"></div><div class="txt"><div class="code">04</div><h3>Drapery</h3><p>Wave fold, single pinch pleat, double pinch pleat, triple pinch pleat and euro pleat headings.</p><div class="more">Open &rarr;</div></div></button>
+      <button class="p" data-i="0"><div class="art"><img src="assets/card-roman.jpg" alt="Roman shades in a living room"></div><div class="txt"><div class="code">01</div><h3>Roman Shades</h3><p>Back-rod, front-rod, relaxed and hobbled folds in every fabric group.</p><div class="more">Configure &rarr;</div></div></button>
+      <button class="p" data-i="1"><div class="art"><img src="assets/card-cellular.jpg" alt="Cellular shades in a bedroom"></div><div class="txt"><div class="code">02</div><h3>Cellular Shades</h3><p>Single, double and triple cell honeycomb, sheer to blackout.</p><div class="more">Configure &rarr;</div></div></button>
+      <button class="p" data-i="2"><div class="art"><img src="assets/card-pleated.jpg" alt="Pleated shades in a kitchen"></div><div class="txt"><div class="code">03</div><h3>Pleated Shades</h3><p>Single-layer pleat, crisp and slim in the stack.</p><div class="more">Configure &rarr;</div></div></button>
+      <button class="p" data-i="3"><div class="art"><img src="assets/card-drapery.jpg" alt="Wave-fold drapery in a dining room"></div><div class="txt"><div class="code">04</div><h3>Drapery</h3><p>Wave fold, single pinch pleat, double pinch pleat, triple pinch pleat and euro pleat headings.</p><div class="more">Configure &rarr;</div></div></button>
     </div>
-    <div class="panel on" id="panel"></div>
   </div>
 </section>
 
@@ -572,47 +571,11 @@
   })();
 
   /* ── products ── */
-  var DATA=[
-    {h:'Roman Shades',shot:'assets/product-roman.jpg',slot:'Room scene &mdash; Roman',
-     p:['Four fold styles across every fabric group &mdash; back rods, front rods, relaxed and hobbled &mdash; with square hems and a consistent stack at any width. Lining, interlining and blackout backing are all made in house.',
-        'The range that carries our TDBU work &mdash; available cordless, on a continuous cord loop, and motorised.'],
-     kv:[['Folds','Back rods / front rods / relaxed / hobbled'],['Width','12" – 96"'],['Height','12" – 120"'],['Drives','Cordless / cord loop / motorised'],['TDBU','All three drives']]},
-
-    {h:'Cellular Shades',shot:'assets/product-cellular.jpg',slot:'Room scene &mdash; Cellular',
-     p:['Single, double and triple cell honeycomb in sheer, light-filtering and blackout, bonded so the cell holds its shape for the life of the shade.',
-        'The most energy-efficient range we build, and the one most often specified for whole-house programmes.'],
-     kv:[['Cell','Single / double / triple'],['Opacity','Sheer / light-filtering / blackout'],['Width','18" – 105"'],['Height','24" – 120"'],['TDBU','All drives']]},
-
-    {h:'Pleated Shades',shot:'assets/product-pleated.jpg',slot:'Room scene &mdash; Pleated',
-     p:['Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range &mdash; the shallowest option when the reveal is tight.',
-        'Available cordless, on a continuous cord loop, and motorised &mdash; all with top-down bottom-up travel.'],
-     kv:[['Pleat','Single layer'],['Fabric','Plain / crashed'],['Opacity','Light-filtering'],['Width','18" – 105"'],['Height','24" – 120"'],['Drives','Cordless / cord loop / motorised'],['TDBU','All drives']]},
-
-    {h:'Drapery',shot:'assets/product-drapery.jpg',slot:'Room scene &mdash; Drapery',
-     p:['Five heading styles &mdash; wave fold, single, double and triple pinch pleat, and euro pleat &mdash; on concealed hook gliders, hung on a slim aluminium track with flat end caps. Wall or ceiling mount, no rings and no decorative rod.',
-        'Made to the drop, hemmed and steamed before it is packed, so it hangs straight out of the box.'],
-     kv:[['Heading','<span class="compact">Wave fold / single pinch pleat / double pinch pleat / triple pinch pleat / euro pleat</span>'],['Track','Wall / ceiling mount'],['Glider','Concealed hook, 1.5 kg per carrier'],['Width','18" – 192"'],['Drop','24" – 120"']]}
-  ];
-  var prods=document.getElementById('prods'),panel=document.getElementById('panel');
-  function render(i){
-    var d=DATA[i];
-    var shot = d.shot
-      ? '<div class="shot"><img src="'+d.shot+'" alt=""></div>'
-      : '<div class="shot"><div class="slot"><span>'+d.slot+'</span></div></div>';
-    panel.innerHTML =
-      '<div><h4>'+d.h+'</h4>'+d.p.map(function(x){return '<p>'+x+'</p>';}).join('')+
-      '<div class="kv" style="margin-top:22px">'+d.kv.map(function(r){
-        return '<div><span>'+r[0]+'</span><b>'+r[1]+'</b></div>';}).join('')+'</div>'+
-      '<a class="btn ghost" href="#contact" style="margin-top:22px">Request specification</a></div>'+
-      '<div>'+shot+'</div>';
-    panel.classList.add('on');
-  }
-  prods.addEventListener('click',function(e){
+  var PAGES=['roman.html','cellular.html','pleated.html','drapery.html'];
+  document.getElementById('prods').addEventListener('click',function(e){
     var b=e.target.closest('.p');if(!b)return;
-    [].slice.call(prods.children).forEach(function(x){x.classList.remove('on');});
-    b.classList.add('on');render(+b.dataset.i);
+    window.location.href=PAGES[+b.dataset.i];
   });
-  render(0);
 
   /* ── motorised window loop ── */
   var mw=document.querySelector('.mwin');
