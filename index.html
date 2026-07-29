@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CARRA — Motorised made-to-measure window treatments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --white:#FFFFFF;
+    --paper:#F8F8F6;
+    --paper2:#F1F1EE;
+    --ink:#14171A;
+    --muted:#767A7E;
+    --line:#E4E3DE;
+    --line2:#D3D2CC;
+    --bronze:#8A6220;
+    --bronze-lt:#C79A45;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--white);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.025em;margin:0;line-height:1.05}
+  a{color:inherit}
+  .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .wrap{max-width:1180px;padding:0 44px;margin:0 auto}
+
+  /* 1 ── top bar ─────────────────────────────────────── */
+  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;gap:24px}
+  .logo{font-family:'Archivo',sans-serif;font-weight:700;font-size:20px;letter-spacing:.28em}
+  nav{display:flex;gap:34px;align-items:center}
+  nav a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s}
+  nav a:hover{color:var(--ink)}
+  .partner{border:1px solid var(--line2);padding:8px 15px;color:var(--bronze)!important}
+  .partner:hover{border-color:var(--bronze)}
+
+  /* 2 ── hero: photographs cross-faded by cursor ──────── */
+  .hero{position:relative;height:88vh;min-height:540px;overflow:hidden;cursor:crosshair;
+    background:linear-gradient(150deg,#E8DCCB,#CFB69A 55%,#A98C6B)}
+  .plates{position:absolute;inset:0}
+  .plate{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:64% 48%;
+    opacity:0;will-change:opacity}
+  .plate:first-child{opacity:1}
+  .sunwash{position:absolute;top:0;left:50%;pointer-events:none;mix-blend-mode:soft-light;
+    background:radial-gradient(closest-side,rgba(255,231,170,.55),rgba(255,231,170,0) 70%);
+    width:80%;height:120%;transform:translate(-50%,-50%);opacity:.35}
+  .veil{position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(96deg,
+      rgba(250,248,243,.80) 0%, rgba(250,248,243,.62) 22%,
+      rgba(250,248,243,.28) 40%, rgba(250,248,243,.04) 56%, rgba(250,248,243,0) 68%)}
+  .veil2{position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(252,251,247,.28) 0%,transparent 16%,transparent 76%,rgba(60,50,36,.26) 100%)}
+  .hero .wrap{position:relative;z-index:6;height:100%;display:flex;flex-direction:column;justify-content:center;pointer-events:none}
+  .hero h1{font-size:clamp(38px,5.6vw,80px);max-width:13ch;font-weight:600;
+    text-shadow:0 1px 22px rgba(250,248,243,.95),0 1px 3px rgba(250,248,243,.9)}
+  .hero h1 em{font-style:normal;color:var(--bronze)}
+  .hero .sub{margin:24px 0 0;font-size:18px;color:#33383C;max-width:38ch;
+    text-shadow:0 1px 16px rgba(250,248,243,.95)}
+
+  .warnbox{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;display:none;
+    max-width:520px;background:rgba(255,255,255,.96);border:1px solid var(--line2);padding:24px 26px;
+    font-size:14.5px;line-height:1.6;color:#33383C}
+  .warnbox.on{display:block}
+  .warnbox b{display:block;font-family:'Archivo',sans-serif;font-size:16px;margin-bottom:8px}
+  .warnbox code{font-family:'IBM Plex Mono',monospace;font-size:12px;background:#F1F0EB;padding:2px 5px}
+  .track{position:absolute;left:44px;bottom:34px;z-index:7;pointer-events:none;
+    font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#6E7276}
+  .track b{color:var(--bronze);font-weight:500}
+  .ladder{position:absolute;right:38px;top:50%;transform:translateY(-50%);z-index:7;pointer-events:none;
+    display:flex;flex-direction:column;gap:9px;align-items:flex-end}
+  .ladder i{display:block;width:22px;height:2px;background:rgba(255,252,244,.5);transition:width .3s,background .3s;
+    box-shadow:0 1px 4px rgba(40,30,16,.35)}
+  .ladder i.on{width:40px;background:#F0C97A}
+
+  .btn{display:inline-block;padding:15px 30px;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;transition:.25s}
+  .btn.solid{background:var(--ink);color:#fff;border:0;cursor:pointer;font-family:'IBM Plex Mono',monospace}
+  .btn.solid:hover{background:var(--bronze)}
+  .btn.ghost{border:1px solid var(--line2)}
+  .btn.ghost:hover{border-color:var(--ink)}
+
+  @media(max-width:760px){
+    .hero{height:78vh}
+    .plate{object-position:70% 50%}
+    .veil{background:linear-gradient(180deg,rgba(250,248,243,.86) 0%,rgba(250,248,243,.62) 44%,rgba(250,248,243,.20) 70%,rgba(250,248,243,0) 100%)}
+    .track{left:22px;font-size:9px}
+    .ladder{right:18px}
+  }
+
+  section{padding:96px 0;border-top:1px solid var(--line)}
+  .alt{background:var(--paper)}
+  .head{display:flex;align-items:baseline;gap:20px;margin-bottom:48px;flex-wrap:wrap}
+  .head h2{font-size:clamp(27px,3.2vw,42px)}
+
+  /* 3 ── products ────────────────────────────────────── */
+  .prods{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .p{background:var(--white);padding:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;text-align:left;cursor:pointer;font:inherit;color:inherit;transition:background .25s;
+    display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start}
+  .p .art{flex:none;width:100%}
+  .p:hover{background:var(--paper)}
+  .p.on{background:var(--ink);color:#fff}
+  .p .art{aspect-ratio:4/3;position:relative;overflow:hidden;border-bottom:1px solid var(--line);
+    background:linear-gradient(160deg,#FBF8F1,#EDE7DA)}
+  .p.on .art{border-bottom-color:#2A2E31}
+  .p .art img{position:absolute;top:-1px;left:-1px;width:calc(100% + 2px);height:calc(100% + 2px);object-fit:cover;object-position:center;display:block}
+  .p .art .slot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 16px}
+  .p .art .slot span{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:#A9A395;line-height:1.7}
+  .p .txt{padding:22px 22px 26px}
+  .p .code{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--bronze)}
+  .p.on .code{color:var(--bronze-lt)}
+  .p h3{font-size:17px;margin:10px 0 8px}
+  .p p{font-size:14px;color:var(--muted);margin:0}
+  .p.on p{color:#B9BDC0}
+  .p .more{margin-top:14px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze)}
+
+  .panel{border:1px solid var(--line);border-radius:14px;margin-top:16px;background:var(--paper);padding:38px 40px;display:none}
+  .panel.on{display:grid;grid-template-columns:1.1fr .9fr;gap:48px}
+  .panel .shot{position:relative;aspect-ratio:4/3;overflow:hidden;border:1px solid var(--line2);border-radius:12px;
+    background:linear-gradient(160deg,#FBF8F1,#EDE7DA);margin-bottom:18px}
+  .panel .shot img{position:absolute;top:-1px;left:-1px;width:calc(100% + 2px);height:calc(100% + 2px);object-fit:cover}
+  .panel .shot .slot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 24px}
+  .panel .shot .slot span{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:#A9A395;line-height:1.8}
+  .panel h4{font-family:'Archivo',sans-serif;font-size:21px;font-weight:600;margin:0 0 14px;letter-spacing:-.02em}
+  .panel p{margin:0 0 14px;font-size:15.5px;color:#3D4246;max-width:56ch}
+  .kv{border-top:1px solid var(--line2)}
+  .kv div{display:flex;justify-content:space-between;gap:18px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .kv .compact{font-size:11.5px;letter-spacing:-.01em;white-space:nowrap}
+  .kv span{color:var(--muted)}
+  .kv b{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:500}
+
+  /* 4 ── about ───────────────────────────────────────── */
+  .about{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start}
+  .lede{font-size:20px;line-height:1.58;color:#26292C;margin:0 0 20px}
+  .about p{color:#4A4E52;margin:0 0 16px;font-size:16px}
+  .figs{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}
+  .figs div{background:var(--white);padding:26px 24px 28px}
+  .figs b{display:block;font-family:'Archivo',sans-serif;font-size:34px;font-weight:600;letter-spacing:-.03em}
+  .figs span{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+
+  /* 5 ── motorization ────────────────────────────────── */
+  .motor{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+  .mspecs{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:44px}
+  .mspecs div{background:var(--white);padding:22px 24px}
+  .mspecs b{display:block;font-family:'Archivo',sans-serif;font-size:26px;font-weight:600;letter-spacing:-.02em}
+  .mspecs span{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+  .mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:44px}
+  .mrow div{background:var(--white);padding:26px 24px 28px}
+  .mrow .code{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.18em;color:var(--bronze)}
+  .mrow h3{font-size:16px;margin:12px 0 8px}
+  .mrow p{font-size:14px;color:var(--muted);margin:0}
+  .trade{border:1px solid var(--bronze);background:#FCF9F2;padding:32px 34px;margin-top:44px;display:grid;grid-template-columns:1fr auto;gap:36px;align-items:center}
+  .trade h3{font-size:20px;margin:0 0 10px}
+  .trade p{margin:0;color:#43484C;font-size:15.5px;max-width:64ch}
+
+  /* animated motor window */
+  .mwin{position:relative;aspect-ratio:4/3;background:linear-gradient(180deg,#FFFCF3,#F4EEDE);border:1px solid var(--line2);overflow:hidden}
+  .mwin i{position:absolute;left:0;right:0;top:0;height:20%;background:#EFEDE6;border-bottom:2px solid var(--bronze-lt);
+          background-image:repeating-linear-gradient(180deg,rgba(20,23,26,.06) 0 1px,transparent 1px 8px);transition:height 3.4s cubic-bezier(.4,0,.2,1)}
+  .mwin u{position:absolute;left:0;right:0;bottom:0;height:0;background:#EFEDE6;border-top:2px solid var(--bronze-lt);
+          background-image:repeating-linear-gradient(180deg,rgba(20,23,26,.06) 0 1px,transparent 1px 8px);transition:height 3.4s cubic-bezier(.4,0,.2,1)}
+  .mwin .lbl{position:absolute;right:12px;bottom:10px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A857A}
+
+  /* 6-7 ── tdbu ──────────────────────────────────────── */
+  .tdbu{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:start}
+  .drawing{border:1px solid var(--line2);background:var(--white);position:relative;padding:22px}
+  .drawing .cap{position:absolute;left:22px;bottom:15px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:#8B877D}
+  .drawing .phase{position:absolute;right:22px;top:18px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--bronze)}
+  svg{display:block;width:100%;height:auto}
+  .first{border:1px solid var(--ink);padding:34px 36px;margin-top:56px;background:var(--white)}
+  .first .mono{color:var(--bronze);margin-bottom:14px}
+  .first h3{font-size:clamp(21px,2.6vw,30px);margin-bottom:16px;max-width:22ch}
+  .first p{color:#43484C;margin:0 0 24px;font-size:16px;max-width:70ch}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+  .three div{background:var(--paper);padding:22px 22px 24px}
+  .three b{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;color:var(--bronze);display:block;margin-bottom:9px}
+  .three h4{font-family:'Archivo',sans-serif;font-size:15px;margin:0 0 7px;font-weight:600}
+  .three p{font-size:13.5px;color:var(--muted);margin:0}
+
+  /* 8 ── room scenes ─────────────────────────────────── */
+  .scenes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .scene{position:relative;aspect-ratio:4/5;overflow:hidden;border:1px solid var(--line2);background:linear-gradient(160deg,#FBFAF6,#EFECE3)}
+  .scene:first-child{grid-column:span 2;aspect-ratio:8/5}
+  .scene .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .scene .ph span{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#A8A499}
+  .scene .cap{position:absolute;left:0;right:0;bottom:0;padding:16px 18px;background:linear-gradient(0deg,rgba(255,255,255,.94),transparent);font-size:14px}
+  .scene .cap b{display:block;font-weight:500}
+  .scene .cap i{font-style:normal;color:var(--muted);font-size:12.5px}
+
+  /* 9 ── contact ─────────────────────────────────────── */
+  .contact{display:grid;grid-template-columns:.9fr 1.1fr;gap:60px;align-items:start}
+  .contact h2{margin-bottom:18px}
+  .contact .note{color:#4A4E52;font-size:16px;max-width:44ch}
+  .addr{margin-top:34px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:2.1;color:var(--muted)}
+  .form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .form .full{grid-column:1/-1}
+  .form label{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .form input,.form select,.form textarea{
+    width:100%;padding:13px 14px;border:1px solid var(--line2);background:var(--white);
+    font-family:'IBM Plex Sans',sans-serif;font-size:15px;color:var(--ink);border-radius:0;
+  }
+  .form input:focus,.form select:focus,.form textarea:focus{outline:0;border-color:var(--bronze)}
+  .form textarea{min-height:110px;resize:vertical}
+  .form .sub{grid-column:1/-1;display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:6px}
+  .form .fine{font-size:12.5px;color:var(--muted)}
+  .sent{grid-column:1/-1;border:1px solid var(--bronze);background:#FCF9F2;padding:16px 18px;font-size:14.5px;display:none}
+  .sent.on{display:block}
+
+  /* 10 ── footer ─────────────────────────────────────── */
+  footer{background:var(--paper2);border-top:1px solid var(--line);padding:70px 0 34px}
+  .fgrid{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:40px}
+  .fbrand .logo{margin-bottom:16px}
+  .fbrand p{font-size:14px;color:var(--muted);max-width:34ch;margin:0 0 20px}
+  .fcol h5{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);margin:0 0 14px;font-weight:500}
+  .fcol a{display:block;font-size:14px;color:var(--muted);text-decoration:none;padding:5px 0;transition:color .2s}
+  .fcol a:hover{color:var(--ink)}
+  .certs{display:flex;flex-wrap:wrap;gap:8px;margin-top:52px;padding-top:30px;border-top:1px solid var(--line2)}
+  .certs span{border:1px solid var(--line2);padding:7px 13px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .fbot{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:30px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#8E9296}
+  .fbot a{text-decoration:none}
+
+  @media(max-width:960px){
+    .wrap{padding:0 22px}
+    nav{gap:18px}nav a{font-size:10px}
+    .prods{grid-template-columns:1fr 1fr}
+    .mrow{grid-template-columns:1fr 1fr}
+    .mspecs b{font-size:20px}
+    .panel.on,.about,.motor,.tdbu,.contact{grid-template-columns:1fr;gap:36px}
+    .scenes{grid-template-columns:1fr 1fr}
+    .scene:first-child{grid-column:span 2}
+    .fgrid{grid-template-columns:1fr 1fr;gap:32px}
+    .trade{grid-template-columns:1fr;gap:20px}
+    .room{padding:0 4vw}
+  }
+  @media(max-width:620px){
+    nav .lnk{display:none}
+    .prods,.three,.mrow,.mspecs,.form,.scenes{grid-template-columns:1fr}
+    .kv .compact{white-space:normal}
+    .scene:first-child{grid-column:span 1}
+    .figs{grid-template-columns:1fr}
+  }
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- 1 ── TOP BAR ───────────────────────────────────────────────────── -->
+<header>
+  <div class="wrap">
+    <div class="logo">CARRA</div>
+    <nav>
+      <a href="#products" class="lnk">Products</a>
+      <a href="#motorization" class="lnk">Motorization</a>
+      <a href="#about" class="lnk">About Us</a>
+      <a href="#contact" class="lnk">Contact</a>
+      <a href="#" class="partner">Trade login</a>
+    </nav>
+  </div>
+</header>
+
+<!-- 2 ── HERO : the shade follows the sun ─────────────────────────── -->
+<div class="hero" id="hero">
+  <div class="plates" id="plates"></div>
+  <div class="sunwash" id="sunwash"></div>
+  <div class="veil"></div>
+  <div class="veil2"></div>
+  <div class="wrap">
+    <h1>Sunrise, <em>without getting up.</em></h1>
+    <p class="sub">Motorised made-to-measure shades and drapery, engineered and built under one roof in T&uuml;rkiye.</p>
+  </div>
+  <div class="ladder" id="ladder"></div>
+  <div class="track" id="track">Honeycomb TDBU &mdash; <b>move your cursor to move the sun</b></div>
+</div>
+
+<!-- 3 ── PRODUCTS ──────────────────────────────────────────────────── -->
+<section id="products">
+  <div class="wrap">
+    <div class="head"><h2>What we make</h2><div class="mono">— Select a range</div></div>
+    <div class="prods" id="prods">
+      <button class="p on" data-i="0"><div class="art"><img src="assets/card-roman.jpg" alt="Roman shades in a living room"></div><div class="txt"><div class="code">01</div><h3>Roman Shades</h3><p>Back-rod, front-rod, relaxed and hobbled folds in every fabric group.</p><div class="more">Open &rarr;</div></div></button>
+      <button class="p" data-i="1"><div class="art"><img src="assets/card-cellular.jpg" alt="Cellular shades in a bedroom"></div><div class="txt"><div class="code">02</div><h3>Cellular Shades</h3><p>Single, double and triple cell honeycomb, sheer to blackout.</p><div class="more">Open &rarr;</div></div></button>
+      <button class="p" data-i="2"><div class="art"><img src="assets/card-pleated.jpg" alt="Pleated shades in a kitchen"></div><div class="txt"><div class="code">03</div><h3>Pleated Shades</h3><p>Single-layer pleat, crisp and slim in the stack.</p><div class="more">Open &rarr;</div></div></button>
+      <button class="p" data-i="3"><div class="art"><img src="assets/card-drapery.jpg" alt="Wave-fold drapery in a dining room"></div><div class="txt"><div class="code">04</div><h3>Drapery</h3><p>Wave fold, single pinch pleat, double pinch pleat, triple pinch pleat and euro pleat headings.</p><div class="more">Open &rarr;</div></div></button>
+    </div>
+    <div class="panel on" id="panel"></div>
+  </div>
+</section>
+
+<!-- 4 ── ABOUT ─────────────────────────────────────────────────────── -->
+<section id="about" class="alt">
+  <div class="wrap">
+    <div class="head"><h2>About us</h2><div class="mono">— The company</div></div>
+    <div class="about">
+      <div>
+        <p class="lede">CARRA has been building made-to-measure window treatments since 1999. Not assembling them — building them, mechanism included.</p>
+        <p>Cutting, sewing, cell bonding, motor and mechanism assembly and final cycle testing all happen in one plant. Orders leave the line as finished, boxed units, addressed to the window they were measured for.</p>
+        <p>We supply large online retailers, independent dealers and distributors across North America and Europe, under our own brands and as private label. What the buyer gets from us is not a catalogue — it is a production slot with a lead time they can publish on their own site.</p>
+      </div>
+      <div class="figs">
+        <div><b>1999</b><span>Founded</span></div>
+        <div><b>21,500 sq ft</b><span>Production area</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 ── MOTORIZATION + TRADE ──────────────────────────────────────── -->
+<section id="motorization">
+  <div class="wrap">
+    <div class="head"><h2>Motion, built in</h2><div class="mono">— Motorization</div></div>
+    <div class="motor">
+      <div>
+        <p class="lede">A motorised shade is only as good as the quietest moment in its travel.</p>
+        <p style="color:#4A4E52;margin:0 0 16px">We design and assemble our own drives rather than buying them in, which means the motor is matched to the mechanism it has to carry — not the other way round. Rechargeable lithium or hardwired, built on Matter over Thread, with app, remote and hub control — and both rails addressable independently on top-down bottom-up units.</p>
+        <p style="color:var(--muted);font-size:15px;margin:0">Every motorised unit is cycle-tested before it is boxed, and every drive is serviceable in the field without taking the shade off the wall.</p>
+      </div>
+      <div class="mwin"><i></i><u></u><span class="lbl">Scheduled — 07:12</span></div>
+    </div>
+
+    <div class="mspecs">
+      <div><b>&lt;38 dB</b><span>In travel, measured at 1 m</span></div>
+      <div><b>6 months</b><span>Typical charge interval</span></div>
+      <div><b>Matter · Thread</b><span>Native — no bridge required</span></div>
+    </div>
+
+    <div class="mrow">
+      <div><div class="code">M · BATTERY</div><h3>Rechargeable</h3><p>Lithium pack concealed in the headrail. USB-C service port, no visible wiring.</p></div>
+      <div><div class="code">M · WIRED</div><h3>Hardwired</h3><p>Low-voltage for new build and specification work, with a common bracket set.</p></div>
+      <div><div class="code">M · SMART</div><h3>Every ecosystem</h3><p>Works with Apple Home, Google Home, Amazon Alexa and SmartThings out of the box.</p></div>
+      <div><div class="code">M · CONTROL</div><h3>App, remote, hub</h3><p>Scheduling, scenes and group control. Pairing is scan, connect and go.</p></div>
+    </div>
+
+    <div class="trade">
+      <div>
+        <h3>Trade and home automation partners</h3>
+        <p>Integrators, dealers and distributors get their own price list, sample support and a technical contact who answers in the same working day. If you sell home automation and want motorised window treatments that install without surprises, this is the door.</p>
+      </div>
+      <a class="btn solid" href="#contact">Apply for trade access</a>
+    </div>
+  </div>
+</section>
+
+<!-- 6 ── TDBU ──────────────────────────────────────────────────────── -->
+<section id="tdbu" class="alt">
+  <div class="wrap">
+    <div class="head"><h2>Two rails, one window</h2><div class="mono">— Top-down bottom-up</div></div>
+    <div class="tdbu">
+      <div>
+        <p class="lede">Daylight at the top, privacy at the bottom, on the same shade.</p>
+        <p style="color:#4A4E52;margin:0 0 16px">Top-down bottom-up lets a room keep both at once — the light comes over the top of the fabric while the lower half of the window stays covered. It is the single feature homeowners ask for by name once they have seen it work.</p>
+        <p style="color:var(--muted);font-size:15px;margin:0">It is also the hardest thing to build well, because a second moving rail has to travel true, hold position at any height, and do it without an accessible cord.</p>
+      </div>
+      <div class="drawing">
+        <div class="phase" id="phase">Closed</div>
+        <svg viewBox="0 0 300 400" role="img" aria-label="Cross-section of a top-down bottom-up shade in motion">
+          <rect x="46" y="30" width="208" height="340" fill="none" stroke="#D3D2CC"/>
+          <rect x="54" y="38" width="192" height="324" fill="#FFFDF7" stroke="#E4E3DE"/>
+          <rect id="light" x="55" y="39" width="190" height="322" fill="#C79A45" opacity=".18"/>
+          <line x1="30" y1="30" x2="30" y2="370" stroke="#C6C4BC"/>
+          <line x1="26" y1="30" x2="34" y2="30" stroke="#C6C4BC"/>
+          <line x1="26" y1="370" x2="34" y2="370" stroke="#C6C4BC"/>
+          <text x="18" y="205" fill="#9B978C" font-family="IBM Plex Mono" font-size="9" transform="rotate(-90 18 205)" text-anchor="middle">HEIGHT</text>
+          <g id="cells" stroke="#A6ABAF" stroke-width="1"></g>
+          <rect id="head" x="50" y="30" width="200" height="11" fill="#31363A"/>
+          <rect id="topbar" x="56" y="41" width="188" height="7" fill="#8A6220"/>
+          <rect id="botbar" x="56" y="355" width="188" height="7" fill="#8A6220"/>
+          <text id="lblTop" x="262" y="50" fill="#8A6220" font-family="IBM Plex Mono" font-size="8.5">TOP</text>
+          <text id="lblBot" x="262" y="364" fill="#8A6220" font-family="IBM Plex Mono" font-size="8.5">BTM</text>
+        </svg>
+        <div class="cap">Fig. 01 — TDBU travel</div>
+      </div>
+    </div>
+
+    <!-- 7 ── ROMAN FIRST ─────────────────────────────────────────── -->
+    <div class="first">
+      <div class="mono">— An industry first</div>
+      <h3>Top-down bottom-up, on a Roman shade.</h3>
+      <p>TDBU has been available on cellular shades for years. On Roman shades it has effectively not existed, because the fabric is heavier, the fold has to stay square, and the second rail has nowhere to hide. CARRA was the first manufacturer to bring it to market on Roman shades — and we did it on all three drive types rather than one.</p>
+      <div class="three">
+        <div><b>TD · C</b><h4>Cordless</h4><p>Spring-balanced on both rails. No accessible cord anywhere on the unit.</p></div>
+        <div><b>TD · L</b><h4>Cord loop</h4><p>Tensioned continuous loop with wall anchor. For heavier fabrics and tall drops.</p></div>
+        <div><b>TD · M</b><h4>Motorised</h4><p>Both rails driven and addressable independently, by app, remote or schedule.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 ── ROOM SCENES ───────────────────────────────────────────────── -->
+<section id="scenes">
+  <div class="wrap">
+    <div class="head"><h2>In the room</h2><div class="mono">— Installed work</div></div>
+    <div class="scenes">
+      <div class="scene"><div class="ph"><span>Photography — living room, motorised Roman</span></div><div class="cap"><b>Motorised Roman shade, TDBU</b><i>Back-rod fold, light-filtering linen</i></div></div>
+      <div class="scene"><div class="ph"><span>Photography — bedroom</span></div><div class="cap"><b>Blackout cellular</b><i>Double cell, cordless</i></div></div>
+      <div class="scene"><div class="ph"><span>Photography — dining</span></div><div class="cap"><b>Wave fold drapery</b><i>Slim aluminium track</i></div></div>
+      <div class="scene"><div class="ph"><span>Photography — kitchen</span></div><div class="cap"><b>Pleated shade</b><i>Cordless, TDBU</i></div></div>
+      <div class="scene"><div class="ph"><span>Photography — tall window</span></div><div class="cap"><b>Roman on cord loop</b><i>Hobbled fold, 118" drop</i></div></div>
+      <div class="scene"><div class="ph"><span>Photography — office</span></div><div class="cap"><b>Hardwired motorised cellular</b><i>Grouped, scheduled</i></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 ── CONTACT ───────────────────────────────────────────────────── -->
+<section id="contact" class="alt">
+  <div class="wrap">
+    <div class="contact">
+      <div>
+        <div class="mono" style="margin-bottom:14px">— Contact</div>
+        <h2>Tell us the window.</h2>
+        <p class="note">Retailer, dealer, distributor or integrator — send us what you are trying to build and you will get a real answer from a person who works on the line, usually the same working day.</p>
+        <div class="addr">
+          CARRA<br>
+          Istanbul, Türkiye<br>
+          hello@carra.com<br>
+          +90 000 000 00 00
+        </div>
+      </div>
+      <div class="form" id="form">
+        <div><label>Name</label><input type="text" placeholder="Full name"></div>
+        <div><label>Company</label><input type="text" placeholder="Company name"></div>
+        <div><label>Email</label><input type="email" placeholder="you@company.com"></div>
+        <div><label>Country</label><input type="text" placeholder="Country"></div>
+        <div class="full"><label>I am a</label>
+          <select>
+            <option>Retailer</option><option>Independent dealer</option>
+            <option>Distributor</option><option>Home automation integrator</option>
+            <option>Architect or specifier</option><option>Other</option>
+          </select>
+        </div>
+        <div class="full"><label>What do you need</label><textarea placeholder="Product, volumes, market, timing"></textarea></div>
+        <div class="sub">
+          <button class="btn solid" id="send" type="button">Send message</button>
+          <span class="fine">We reply within one working day.</span>
+        </div>
+        <div class="sent" id="sent">Thanks — your message is with the team. Demo form: not connected to a mailbox yet.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 ── FOOTER ───────────────────────────────────────────────────── -->
+<footer>
+  <div class="wrap">
+    <div class="fgrid">
+      <div class="fbrand">
+        <div class="logo">CARRA</div>
+        <p>Made-to-measure shades, drapery and motorization. Built in Türkiye since 1999.</p>
+        <a class="btn ghost" href="#contact" style="padding:12px 22px">Trade enquiries</a>
+      </div>
+      <div class="fcol">
+        <h5>Products</h5>
+        <a href="#products">Roman shades</a>
+        <a href="#products">Cellular &amp; pleated</a>
+        <a href="#products">Drapery &amp; track</a>
+        <a href="#tdbu">Top-down bottom-up</a>
+      </div>
+      <div class="fcol">
+        <h5>Motorization</h5>
+        <a href="#motorization">Rechargeable drives</a>
+        <a href="#motorization">Hardwired systems</a>
+        <a href="#motorization">App &amp; hub control</a>
+        <a href="#motorization">Integrator programme</a>
+      </div>
+      <div class="fcol">
+        <h5>Trade</h5>
+        <a href="#">Become a dealer</a>
+        <a href="#">Private label</a>
+        <a href="#">Technical resources</a>
+        <a href="#">Trade login</a>
+      </div>
+      <div class="fcol">
+        <h5>Company</h5>
+        <a href="#about">About CARRA</a>
+        <a href="#">Quality &amp; testing</a>
+        <a href="#">Child safety</a>
+        <a href="#">Careers</a>
+      </div>
+    </div>
+
+    <div class="certs">
+      <span>EN 13120</span><span>ANSI/WCMA A100.1</span><span>OEKO-TEX 100</span><span>REACH</span><span>ISO 9001</span>
+    </div>
+
+    <div class="fbot">
+      <div>© 2026 CARRA · All rights reserved</div>
+      <div><a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Cookies</a> · EN</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── hero: the shade tracks the sun across three plates ── */
+  (function(){
+    var hero=document.getElementById('hero');if(!hero)return;
+    var plates=document.getElementById('plates'),ladder=document.getElementById('ladder'),
+        track=document.getElementById('track'),wash=document.getElementById('sunwash');
+
+    /* Frame order = sun travelling from high to low.
+       To add or replace a position, just edit this list. */
+    var FRAMES=[
+      {src:"assets/hero-1.webp", label:'High sun &mdash; lowered halfway, view open below'},
+      {src:"assets/hero-2.webp", label:'Sun straight on &mdash; fully closed'},
+      {src:"assets/hero-3.webp", label:'Low sun &mdash; bottom closed, daylight above'}
+    ].filter(function(f){return f.src;});
+
+    var loaded=0,failed=0;
+    function check(){
+      /* frames live in assets/, nothing else to do on failure */
+    }
+    var imgs=FRAMES.map(function(f,i){
+      var im=document.createElement('img');
+      im.className='plate';im.alt='';im.decoding='async';
+      im.loading='eager';im.referrerPolicy='no-referrer';
+      im.addEventListener('error',function(){failed++;check();});
+      im.addEventListener('load',function(){loaded++;});
+      im.src=f.src;
+      plates.appendChild(im);return im;
+    });
+    FRAMES.forEach(function(){var i=document.createElement('i');ladder.appendChild(i);});
+    var pips=[].slice.call(ladder.children);
+
+    if(!imgs.length)return;
+    var N=FRAMES.length, last=-1;
+    var reduceM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var tx=.5,ty=.18,cx=tx,cy=ty,live=false,idle=0;
+
+    function paint(x,y){
+      /* which two frames we sit between */
+      var pos=y*(N-1), i=Math.min(N-2,Math.floor(pos)), t=N>1?pos-i:0;
+      /* ease the blend so it settles like a motor rather than sliding linearly */
+      var e=t*t*(3-2*t);
+      imgs.forEach(function(im,k){im.style.opacity = k===i ? 1 : (k===i+1 ? e : 0);});
+
+      /* horizontal sun: a soft warm wash that follows the cursor sideways */
+      wash.style.left=(x*100)+'%';
+      wash.style.top=(18+y*46)+'%';
+      wash.style.opacity=(.30+(1-y)*.38).toFixed(3);
+
+      var nearest=Math.round(pos);
+      if(nearest!==last){
+        last=nearest;
+        pips.forEach(function(p,k){p.classList.toggle('on',k===nearest);});
+        track.innerHTML='Honeycomb TDBU &mdash; <b>'+FRAMES[nearest].label+'</b>';
+      }
+    }
+
+    hero.addEventListener('pointermove',function(e){
+      var r=hero.getBoundingClientRect();
+      tx=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));
+      ty=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height));
+      live=true;
+    });
+    hero.addEventListener('pointerleave',function(){live=false;});
+
+    (function loop(){
+      if(!live){ idle+=0.0042; tx=.5+Math.sin(idle*.7)*.28; ty=.5-Math.cos(idle)*.42; }
+      cx+=(tx-cx)*.07; cy+=(ty-cy)*.07;
+      paint(cx,cy);
+      if(!reduceM)requestAnimationFrame(loop);
+    })();
+  })();
+
+  /* ── products ── */
+  var DATA=[
+    {h:'Roman Shades',shot:'assets/product-roman.jpg',slot:'Room scene &mdash; Roman',
+     p:['Four fold styles across every fabric group &mdash; back rods, front rods, relaxed and hobbled &mdash; with square hems and a consistent stack at any width. Lining, interlining and blackout backing are all made in house.',
+        'The range that carries our TDBU work &mdash; available cordless, on a continuous cord loop, and motorised.'],
+     kv:[['Folds','Back rods / front rods / relaxed / hobbled'],['Width','12" – 96"'],['Height','12" – 120"'],['Drives','Cordless / cord loop / motorised'],['TDBU','All three drives']]},
+
+    {h:'Cellular Shades',shot:'assets/product-cellular.jpg',slot:'Room scene &mdash; Cellular',
+     p:['Single, double and triple cell honeycomb in sheer, light-filtering and blackout, bonded so the cell holds its shape for the life of the shade.',
+        'The most energy-efficient range we build, and the one most often specified for whole-house programmes.'],
+     kv:[['Cell','Single / double / triple'],['Opacity','Sheer / light-filtering / blackout'],['Width','18" – 105"'],['Height','24" – 120"'],['TDBU','All drives']]},
+
+    {h:'Pleated Shades',shot:'assets/product-pleated.jpg',slot:'Room scene &mdash; Pleated',
+     p:['Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range &mdash; the shallowest option when the reveal is tight.',
+        'Available cordless, on a continuous cord loop, and motorised &mdash; all with top-down bottom-up travel.'],
+     kv:[['Pleat','Single layer'],['Fabric','Plain / crashed'],['Opacity','Light-filtering'],['Width','18" – 105"'],['Height','24" – 120"'],['Drives','Cordless / cord loop / motorised'],['TDBU','All drives']]},
+
+    {h:'Drapery',shot:'assets/product-drapery.jpg',slot:'Room scene &mdash; Drapery',
+     p:['Five heading styles &mdash; wave fold, single, double and triple pinch pleat, and euro pleat &mdash; on concealed hook gliders, hung on a slim aluminium track with flat end caps. Wall or ceiling mount, no rings and no decorative rod.',
+        'Made to the drop, hemmed and steamed before it is packed, so it hangs straight out of the box.'],
+     kv:[['Heading','<span class="compact">Wave fold / single pinch pleat / double pinch pleat / triple pinch pleat / euro pleat</span>'],['Track','Wall / ceiling mount'],['Glider','Concealed hook, 1.5 kg per carrier'],['Width','18" – 192"'],['Drop','24" – 120"']]}
+  ];
+  var prods=document.getElementById('prods'),panel=document.getElementById('panel');
+  function render(i){
+    var d=DATA[i];
+    var shot = d.shot
+      ? '<div class="shot"><img src="'+d.shot+'" alt=""></div>'
+      : '<div class="shot"><div class="slot"><span>'+d.slot+'</span></div></div>';
+    panel.innerHTML =
+      '<div><h4>'+d.h+'</h4>'+d.p.map(function(x){return '<p>'+x+'</p>';}).join('')+
+      '<div class="kv" style="margin-top:22px">'+d.kv.map(function(r){
+        return '<div><span>'+r[0]+'</span><b>'+r[1]+'</b></div>';}).join('')+'</div>'+
+      '<a class="btn ghost" href="#contact" style="margin-top:22px">Request specification</a></div>'+
+      '<div>'+shot+'</div>';
+    panel.classList.add('on');
+  }
+  prods.addEventListener('click',function(e){
+    var b=e.target.closest('.p');if(!b)return;
+    [].slice.call(prods.children).forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');render(+b.dataset.i);
+  });
+  render(0);
+
+  /* ── motorised window loop ── */
+  var mw=document.querySelector('.mwin');
+  if(mw&&!reduce){
+    var top=mw.querySelector('i'),bot=mw.querySelector('u'),lbl=mw.querySelector('.lbl');
+    var steps=[[20,0,'Scheduled — 07:12'],[20,46,'Privacy — 12:40'],[62,0,'Open — 17:05'],[8,0,'Sunset — 20:30']],s=0;
+    setInterval(function(){s=(s+1)%steps.length;
+      top.style.height=steps[s][0]+'%';bot.style.height=steps[s][1]+'%';lbl.textContent=steps[s][2];},3900);
+  }
+
+  /* ── TDBU drawing ── */
+  (function(){
+    var head=document.getElementById('topbar'),bot=document.getElementById('botbar'),
+        cellsG=document.getElementById('cells'),light=document.getElementById('light'),
+        phase=document.getElementById('phase'),lblTop=document.getElementById('lblTop'),lblBot=document.getElementById('lblBot');
+    if(!head)return;
+    var TOP0=41,BOT0=355,N=16,lines=[];
+    for(var k=0;k<N;k++){var l=document.createElementNS('http://www.w3.org/2000/svg','line');
+      l.setAttribute('x1',58);l.setAttribute('x2',242);cellsG.appendChild(l);lines.push(l);}
+    function draw(t,b){
+      head.setAttribute('y',t);bot.setAttribute('y',b);
+      lblTop.setAttribute('y',t+9);lblBot.setAttribute('y',b+9);
+      var span=b-t-7;
+      for(var i=0;i<N;i++){var y=t+9+(span/N)*(i+.5);
+        lines[i].setAttribute('y1',y);lines[i].setAttribute('y2',y);
+        lines[i].setAttribute('opacity',span<40?.15:.55);}
+      light.setAttribute('y',39);light.setAttribute('height',Math.max(0,t-39));
+    }
+    if(reduce){draw(140,250);phase.textContent='Both rails';return;}
+    var ease=function(x){return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;};
+    var kf=[[TOP0,BOT0,'Closed',900],[TOP0,228,'Bottom up',1500],[TOP0,BOT0,'Closed',1300],
+            [142,BOT0,'Top down',1500],[142,242,'Both rails',1700],[TOP0,BOT0,'Closed',1400]];
+    var idx=0,t0=performance.now();
+    function frame(now){
+      var a=kf[idx],b=kf[(idx+1)%kf.length],p=Math.min(1,(now-t0)/b[3]),e=ease(p);
+      draw(a[0]+(b[0]-a[0])*e,a[1]+(b[1]-a[1])*e);
+      if(phase.textContent!==b[2]&&p>.3)phase.textContent=b[2];
+      if(p>=1){idx=(idx+1)%kf.length;t0=now;}
+      requestAnimationFrame(frame);
+    }
+    draw(TOP0,BOT0);requestAnimationFrame(frame);
+  })();
+
+  /* ── form ── */
+  var send=document.getElementById('send');
+  if(send)send.addEventListener('click',function(){document.getElementById('sent').classList.add('on');});
+})();
+</script>
+</body>
+</html>
