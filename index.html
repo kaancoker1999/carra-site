@@ -152,6 +152,11 @@
   .mspecs div{background:var(--white);padding:22px 24px}
   .mspecs b{display:block;font-family:'Archivo',sans-serif;font-size:26px;font-weight:600;letter-spacing:-.02em}
   .mspecs span{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+  .mvideo{position:relative;aspect-ratio:16/9;border:1px solid var(--line2);border-radius:14px;overflow:hidden;background:#000}
+  .mvideo iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .poweredby{display:inline-flex;align-items:baseline;gap:12px;border:1px solid var(--line2);border-radius:12px;padding:12px 20px;margin-top:20px;background:var(--white)}
+  .poweredby .pbcap{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .poweredby .pbword{font-family:'Archivo',sans-serif;font-weight:700;font-size:20px;letter-spacing:-.02em;color:var(--ink)}
   .mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:44px}
   .mrow div{background:var(--white);padding:26px 24px 28px}
   .mrow .code{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.18em;color:var(--bronze)}
@@ -318,10 +323,11 @@
     <div class="motor">
       <div>
         <p class="lede">A motorised shade is only as good as the quietest moment in its travel.</p>
-        <p style="color:#4A4E52;margin:0 0 16px">We design and assemble our own drives rather than buying them in, which means the motor is matched to the mechanism it has to carry — not the other way round. Rechargeable lithium or hardwired, built on Matter over Thread, with app, remote and hub control — and both rails addressable independently on top-down bottom-up units.</p>
+        <p style="color:#4A4E52;margin:0 0 16px">Every CARRA motorised unit is driven by <b>Motionblinds</b> — the smart motor technology by Coulisse — matched to our own mechanisms and assembled in our plant. Rechargeable lithium or hardwired, built on Matter over Thread, with app, remote and hub control — and both rails addressable independently on top-down bottom-up units. For Apple Home over Thread, we also build with <b>Eve MotionBlinds</b> drives.</p>
         <p style="color:var(--muted);font-size:15px;margin:0">Every motorised unit is cycle-tested before it is boxed, and every drive is serviceable in the field without taking the shade off the wall.</p>
+        <div class="poweredby"><span class="pbcap">Powered by</span><span class="pbword">motionblinds</span></div>
       </div>
-      <div class="mwin"><i></i><u></u><span class="lbl">Scheduled — 07:12</span></div>
+      <div class="mvideo"><iframe src="https://www.youtube-nocookie.com/embed/RJLYtb-lJsE?rel=0&modestbranding=1" title="Motionblinds — smart motors" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
     </div>
 
     <div class="mspecs">
