@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CARRA — Motorization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --white:#FFFFFF; --paper:#F8F8F6; --paper2:#F1F1EE; --ink:#14171A; --muted:#767A7E;
+    --line:#E4E3DE; --line2:#D3D2CC; --bronze:#8A6220; --bronze-lt:#C79A45;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--white);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.62;
+    -webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.025em;margin:0;line-height:1.05}
+  a{color:inherit}
+  .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .wrap{max-width:1180px;padding:0 44px;margin:0 auto}
+
+  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;gap:24px}
+  .logo{font-family:'Archivo',sans-serif;font-weight:700;font-size:20px;letter-spacing:.28em;text-decoration:none}
+  nav{display:flex;gap:34px;align-items:center}
+  nav a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s}
+  nav a:hover{color:var(--ink)}
+  .partner{border:1px solid var(--line2);padding:8px 15px;color:var(--bronze)!important}
+  .partner:hover{border-color:var(--bronze)}
+
+  .crumbs{border-bottom:1px solid var(--line);background:var(--paper)}
+  .crumbs .wrap{display:flex;align-items:center;gap:16px;height:52px}
+  .crumbs a{text-decoration:none}
+  .crumbs a:hover{color:var(--ink)}
+
+  .pagehead{padding:64px 0 8px}
+  .pagehead h1{font-size:clamp(32px,4.2vw,54px);margin:12px 0 0}
+
+  section{padding:56px 0}
+  .lede{font-family:'Archivo',sans-serif;font-weight:500;font-size:clamp(19px,2vw,24px);letter-spacing:-.015em;line-height:1.3;margin:0 0 18px}
+  .motor{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+
+  .mvideo{position:relative;aspect-ratio:16/9;border:1px solid var(--line2);border-radius:14px;overflow:hidden;background:#000}
+  .mvideo video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+
+  .poweredby{display:inline-block;border:2px solid var(--ink);border-radius:18px;padding:14px 24px 13px;margin-top:22px;background:#fff;line-height:1.12}
+  .poweredby .pbcap{display:block;font-family:'Archivo',sans-serif;font-weight:400;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+  .poweredby .pbword{display:block;font-family:'Archivo',sans-serif;font-weight:400;font-size:27px;letter-spacing:.02em;text-transform:uppercase;color:var(--ink)}
+  .poweredby .pbword b{font-weight:700}
+
+  .mspecs{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:56px}
+  .mspecs div{background:var(--white);padding:22px 24px}
+  .mspecs b{display:block;font-family:'Archivo',sans-serif;font-size:26px;font-weight:600;letter-spacing:-.02em}
+  .mspecs span{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+
+  .mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:44px}
+  .mrow div{background:var(--white);padding:26px 24px 28px}
+  .mrow .code{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--bronze);text-transform:uppercase}
+  .mrow h3{font-size:17px;margin:10px 0 8px}
+  .mrow p{font-size:14px;color:var(--muted);margin:0}
+
+  .remotes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:44px}
+  .remotes>div{border:1px solid var(--line);border-radius:14px;background:var(--white);padding:18px 18px 20px;text-align:center}
+  .remotes img{width:100%;aspect-ratio:1;object-fit:contain;display:block}
+  .remotes b{display:block;font-family:'Archivo',sans-serif;font-size:16px;font-weight:600;margin-top:6px}
+  .remotes span{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+  .head2{display:flex;align-items:baseline;gap:18px;margin:0 0 34px;flex-wrap:wrap}
+  .head2 h2{font-size:clamp(24px,2.8vw,36px)}
+  .alt{background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+
+  .trade{border:1px solid var(--bronze);background:#FCF9F2;padding:32px 34px;margin:56px 0 90px;display:grid;grid-template-columns:1fr auto;gap:36px;align-items:center;border-radius:14px}
+  .trade h3{font-size:19px;margin:0 0 8px}
+  .trade p{margin:0;font-size:15px;color:#4A4E52}
+  .btn{display:inline-block;padding:15px 30px;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;transition:.25s;border-radius:10px}
+  .btn.solid{background:var(--ink);color:#fff}
+  .btn.solid:hover{background:var(--bronze)}
+
+  footer{border-top:1px solid var(--line);background:var(--paper)}
+  footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
+
+  @media(max-width:980px){
+    .wrap{padding:0 22px}
+    nav a:not(.partner){display:none}
+    .motor{grid-template-columns:1fr;gap:34px}
+    .mrow{grid-template-columns:1fr 1fr}
+    .mspecs b{font-size:20px}
+    .trade{grid-template-columns:1fr}
+  }
+  @media(max-width:560px){
+    .mrow,.mspecs,.remotes{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="index.html">CARRA</a>
+    <nav>
+      <a href="index.html#products">Products</a>
+      <a href="motorization.html">Motorization</a>
+      <a href="index.html#about">About us</a>
+      <a href="index.html#contact">Contact</a>
+      <a class="partner" href="index.html#contact">Trade login</a>
+    </nav>
+  </div>
+</header>
+
+<div class="crumbs">
+  <div class="wrap">
+    <a class="mono" href="index.html">&larr; Home</a>
+    <span class="mono" style="color:var(--ink)">Motorization</span>
+  </div>
+</div>
+
+<div class="wrap pagehead">
+  <div class="mono">— Motorization</div>
+  <h1>Motion, built in</h1>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="motor">
+      <div>
+        <p class="lede">A motorised shade is only as good as the quietest moment in its travel.</p>
+        <p style="color:#4A4E52;margin:0 0 16px">Every CARRA motorised unit is driven by <b>Motionblinds</b> — the smart motor technology by Coulisse — matched to our own mechanisms and assembled in our plant. Rechargeable lithium or hardwired, built on Matter over Thread, with app, remote and hub control — and both rails addressable independently on top-down bottom-up units. For Apple Home over Thread, we also build with <b>Eve MotionBlinds</b> drives.</p>
+        <p style="color:var(--muted);font-size:15px;margin:0">Every motorised unit is cycle-tested before it is boxed, and every drive is serviceable in the field without taking the shade off the wall.</p>
+        <div class="poweredby"><span class="pbcap">Powered by</span><span class="pbword"><b>Motion</b>blinds</span></div>
+      </div>
+      <div class="mvideo"><video src="assets/video/motion-honeycomb-540.mp4" autoplay muted loop playsinline controls preload="metadata"></video></div>
+    </div>
+
+    <div class="mspecs">
+      <div><b>&lt;38 dB</b><span>In travel, measured at 1 m</span></div>
+      <div><b>6 months</b><span>Typical charge interval</span></div>
+      <div><b>Matter &middot; Thread</b><span>Native — no bridge required</span></div>
+    </div>
+
+    <div class="mrow">
+      <div><div class="code">M &middot; BATTERY</div><h3>Rechargeable</h3><p>Lithium pack concealed in the headrail. USB-C service port, no visible wiring.</p></div>
+      <div><div class="code">M &middot; WIRED</div><h3>Hardwired</h3><p>Low-voltage for new build and specification work, with a common bracket set.</p></div>
+      <div><div class="code">M &middot; SMART</div><h3>Every ecosystem</h3><p>Works with Apple Home, Google Home, Amazon Alexa and SmartThings out of the box.</p></div>
+      <div><div class="code">M &middot; CONTROL</div><h3>App, remote, hub</h3><p>Scheduling, scenes and group control. Pairing is scan, connect and go.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <div class="head2"><h2>The Motionblinds app</h2><div class="mono">— Scan, connect, go</div></div>
+    <div class="motor">
+      <div class="mvideo"><video src="assets/video/motion-app-roman-540.mp4" controls playsinline preload="metadata"></video></div>
+      <div>
+        <p class="lede">Paired in a minute, controlled for years.</p>
+        <p style="color:#4A4E52;margin:0 0 16px">Pairing a CARRA shade takes about a minute: scan the code on the motor, name the shade, and it is live in the app. Rooms, scenes, schedules and group control follow — this walkthrough shows a Bluetooth Roman shade being paired and driven from the app.</p>
+        <p style="color:var(--muted);font-size:15px;margin:0">The same app runs every CARRA motorised product, so a whole-house programme behaves as one system.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="head2"><h2>Hand remotes</h2><div class="mono">— 1, 5 and 15 channel</div></div>
+    <div class="remotes" style="margin-top:0">
+      <div><img src="assets/remotes/cm-11.jpg" alt="CM-11 hand remote, 1 channel"><b>CM-11</b><span>Hand remote &middot; 1 channel</span></div>
+      <div><img src="assets/remotes/cm-12.jpg" alt="CM-12 hand remote, 5 channel"><b>CM-12</b><span>Hand remote &middot; 5 channel</span></div>
+      <div><img src="assets/remotes/cm-13.jpg" alt="CM-13 hand remote, 15 channel"><b>CM-13</b><span>Hand remote &middot; 15 channel</span></div>
+    </div>
+
+    <div class="trade">
+      <div>
+        <h3>Trade and home automation partners</h3>
+        <p>Integrators, dealers and distributors get their own price list, sample support and a technical contact who answers in the same working day.</p>
+      </div>
+      <a class="btn solid" href="index.html#contact">Apply for trade access</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="mono">&copy; 2026 CARRA &middot; All rights reserved</span>
+    <span class="mono">hello@carra.com</span>
+  </div>
+</footer>
+
+</body>
+</html>
