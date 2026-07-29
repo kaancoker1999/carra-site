@@ -158,11 +158,11 @@
 </footer>
 
 <script>
-var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-pleated.jpg", "desc": "Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range \u2014 the shallowest option when the reveal is tight.", "hLabel": "Height", "width": [18, 105], "height": [24, 120], "groups": [{"key": "fabric", "label": "Fabric", "options": ["Plain", "Crashed"]}, {"key": "opacity", "label": "Opacity", "options": ["Light-filtering"]}, {"key": "colour", "label": "Colour", "options": [{"n": "White", "c": "#FAFAF7"}, {"n": "Pearl", "c": "#F1EDE4"}, {"n": "Linen", "c": "#E6DCC8"}, {"n": "Mist grey", "c": "#C9CBC9"}, {"n": "Graphite", "c": "#5A5E62"}]}, {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]}, {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorised"]}, {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]}]};
+var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-pleated.jpg", "desc": "Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range \u2014 the shallowest option when the reveal is tight.", "hLabel": "Height", "width": [18, 105], "height": [24, 120], "sizeRange": "W 18\" \u2013 105\" \u00b7 H 24\" \u2013 120\"", "groups": [{"key": "fabric", "label": "Fabric", "options": ["Plain", "Crashed"]}, {"key": "opacity", "label": "Opacity", "options": ["Light-filtering"]}, {"key": "colour", "label": "Colour", "options": [{"n": "White", "c": "#FAFAF7"}, {"n": "Pearl", "c": "#F1EDE4"}, {"n": "Linen", "c": "#E6DCC8"}, {"n": "Mist grey", "c": "#C9CBC9"}, {"n": "Graphite", "c": "#5A5E62"}]}, {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]}, {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorised"]}, {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]}]};
 
 (function(){
   var form = document.getElementById('form');
-  var state = {w:'', h:''};
+  var state = {};
   CONFIG.groups.forEach(function(g){
     if(g.type === 'fabrics') return;
     state[g.key] = (typeof g.options[0] === 'string' ? g.options[0] : g.options[0].n);
@@ -216,16 +216,6 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
       '<div class="chips">' + chips + '</div></div>');
   });
 
-  /* dimensions */
-  form.insertAdjacentHTML('beforeend',
-    '<div class="grp"><div class="code">' + stepCode(step++) + '</div><h3>Dimensions</h3>' +
-    '<div class="dims">' +
-    '<div class="dim"><span class="cap">Width</span><input id="w" type="number" step="0.125" min="' + CONFIG.width[0] + '" max="' + CONFIG.width[1] + '" placeholder="in">' +
-    '<span class="rng" id="wrng">' + CONFIG.width[0] + '&quot; &ndash; ' + CONFIG.width[1] + '&quot;</span></div>' +
-    '<div class="dim"><span class="cap">' + CONFIG.hLabel + '</span><input id="h" type="number" step="0.125" min="' + CONFIG.height[0] + '" max="' + CONFIG.height[1] + '" placeholder="in">' +
-    '<span class="rng">' + CONFIG.height[0] + '&quot; &ndash; ' + CONFIG.height[1] + '&quot;</span></div>' +
-    '</div></div>');
-
   form.addEventListener('click', function(e){
     var col = e.target.closest('.chip[data-col]');
     if(col){
@@ -246,39 +236,27 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
     update();
   });
 
-  function widthBounds(){
-    if(CONFIG.widthRules){
-      var k = state[CONFIG.widthRules.drive] + '|' + state[CONFIG.widthRules.tdbu];
-      return CONFIG.widthRules.rules[k] || CONFIG.width;
-    }
-    return CONFIG.width;
-  }
-
-  function setChipSub(ch, b){
+  function setChipSub(ch, wb, hb){
     var s = ch.querySelector('.chipsub');
     if(!s){ s = document.createElement('span'); s.className = 'chipsub'; ch.appendChild(s); }
-    s.innerHTML = 'W ' + b[0] + '&quot; &ndash; ' + b[1] + '&quot;';
+    var t = 'W ' + wb[0] + '&quot;&ndash;' + wb[1] + '&quot;';
+    if(hb) t += ' &middot; H ' + hb[0] + '&quot;&ndash;' + hb[1] + '&quot;';
+    s.innerHTML = t;
   }
   function refreshRuleSubs(){
     if(!CONFIG.widthRules) return;
-    var R = CONFIG.widthRules;
+    var R = CONFIG.widthRules, HR = CONFIG.heightRules;
     document.querySelectorAll('.chip[data-g="' + R.drive + '"]').forEach(function(ch){
-      var b = R.rules[ch.dataset.v + '|' + state[R.tdbu]]; if(b) setChipSub(ch, b);
+      var wb = R.rules[ch.dataset.v + '|' + state[R.tdbu]];
+      var hb = HR ? HR.rules[ch.dataset.v] : null;
+      if(wb) setChipSub(ch, wb, hb);
     });
     document.querySelectorAll('.chip[data-g="' + R.tdbu + '"]').forEach(function(ch){
-      var b = R.rules[state[R.drive] + '|' + ch.dataset.v]; if(b) setChipSub(ch, b);
+      var wb = R.rules[state[R.drive] + '|' + ch.dataset.v];
+      var hb = HR ? HR.rules[state[R.drive]] : null;
+      if(wb) setChipSub(ch, wb, hb);
     });
   }
-
-  function num(el, lo, hi){
-    var v = parseFloat(el.value);
-    if(el.value === '' || isNaN(v)){ el.classList.remove('err'); return ''; }
-    if(v < lo || v > hi){ el.classList.add('err'); return ''; }
-    el.classList.remove('err'); return v;
-  }
-  ['w','h'].forEach(function(id){
-    document.getElementById(id).addEventListener('input', update);
-  });
 
   var sumkv = document.getElementById('sumkv');
   var mailbtn = document.getElementById('mailbtn');
@@ -294,21 +272,13 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
       }
       r.push([g.label, state[g.key]]);
     });
-    r.push(['Width', state.w === '' ? '—' : state.w + '"']);
-    r.push([CONFIG.hLabel, state.h === '' ? '—' : state.h + '"']);
+    if(CONFIG.sizeRange) r.push(['Size range', CONFIG.sizeRange]);
     if(CONFIG.note) r.push(['Included', CONFIG.note]);
     return r;
   }
 
   function update(){
     refreshRuleSubs();
-    var wb = widthBounds();
-    var wEl = document.getElementById('w');
-    wEl.min = wb[0]; wEl.max = wb[1];
-    document.getElementById('wrng').innerHTML = wb[0] + '&quot; &ndash; ' + wb[1] + '&quot;';
-    state.w = num(wEl, wb[0], wb[1]);
-    state.h = num(document.getElementById('h'), CONFIG.height[0], CONFIG.height[1]);
-
     sumkv.innerHTML = rows().map(function(r){
       return '<div><span>' + r[0] + '</span><b>' + r[1] + '</b></div>';
     }).join('');
