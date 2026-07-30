@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CARRA — Drapery</title>
+<title>LUMIA — Drapery</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
@@ -117,7 +117,7 @@
 
 <header>
   <div class="wrap">
-    <a class="logo" href="index.html">CARRA</a>
+    <a class="logo" href="index.html">LUMIA</a>
     <nav>
       <a href="index.html#products">Products</a>
       <a href="motorization.html">Motorization</a>
@@ -173,8 +173,8 @@
 
 <footer>
   <div class="wrap">
-    <span class="mono">&copy; 2026 CARRA &middot; All rights reserved</span>
-    <span class="mono">hello@carra.com</span>
+    <span class="mono">&copy; 2026 LUMIA &middot; All rights reserved</span>
+    <span class="mono">hello@lumia.com</span>
   </div>
 </footer>
 
@@ -324,13 +324,13 @@ var CONFIG = {"code": "04", "name": "Drapery", "img": "assets/product-drapery.jp
     }).join('');
 
     var body = rows().map(function(r){ return r[0] + ': ' + r[1]; }).join('\n');
-    mailbtn.href = 'mailto:hello@carra.com?subject=' +
+    mailbtn.href = 'mailto:hello@lumia.com?subject=' +
       encodeURIComponent('Quotation request — ' + CONFIG.name) +
-      '&body=' + encodeURIComponent(body + '\n\n—\nSent from the CARRA product configurator');
+      '&body=' + encodeURIComponent(body + '\n\n—\nSent from the LUMIA product configurator');
   }
 
   document.getElementById('copybtn').addEventListener('click', function(){
-    var txt = 'CARRA — ' + CONFIG.name + '\n' + rows().map(function(r){ return r[0] + ': ' + r[1]; }).join('\n');
+    var txt = 'LUMIA — ' + CONFIG.name + '\n' + rows().map(function(r){ return r[0] + ': ' + r[1]; }).join('\n');
     navigator.clipboard.writeText(txt).then(function(){
       var b = document.getElementById('copybtn');
       b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy spec'; }, 1400);
