@@ -204,7 +204,7 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
 
   function renderSwatches(){
     var meta = findCollection(state.collection);
-    document.getElementById('fabmeta').innerHTML = meta.transparency + ' &middot; ' + meta.material;
+    document.getElementById('fabmeta').innerHTML = [meta.transparency, meta.material].filter(Boolean).join(' &middot; ');
     document.getElementById('swgrid').innerHTML = F.colors[state.collection].map(function(c){
       return '<button type="button" class="swatch' + (c.id === state.colour ? ' on' : '') + '" data-c="' + c.id + '">' +
         '<img loading="lazy" src="' + c.img + '" alt="' + c.label + '">' +
