@@ -199,12 +199,11 @@
 
   /* 8 ── room scenes ─────────────────────────────────── */
   .scenes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  .scene{position:relative;aspect-ratio:3/2;overflow:hidden;border:1px solid var(--line2);border-radius:14px;background:linear-gradient(160deg,#FBFAF6,#EFECE3)}
-  .scene>img{position:absolute;top:-1px;left:-1px;width:calc(100% + 2px);height:calc(100% + 2px);object-fit:cover;display:block}
-  .scene:first-child{grid-column:span 2;aspect-ratio:8/5}
-  .scene .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .scene{border:1px solid var(--line2);border-radius:14px;overflow:hidden;background:var(--white)}
+  .scene>img{width:100%;aspect-ratio:3/2;object-fit:cover;display:block}
+  .scene .ph{aspect-ratio:3/2;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#FBFAF6,#EFECE3)}
   .scene .ph span{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#A8A499}
-  .scene .cap{position:absolute;left:0;right:0;bottom:0;padding:16px 18px;background:linear-gradient(0deg,rgba(255,255,255,.94),transparent);font-size:14px}
+  .scene .cap{padding:13px 18px 15px;border-top:1px solid var(--line);font-size:14px}
   .scene .cap b{display:block;font-weight:500}
   .scene .cap i{font-style:normal;color:var(--muted);font-size:12.5px}
 
@@ -248,7 +247,6 @@
     .mspecs b{font-size:20px}
     .panel.on,.about,.motor,.tdbu,.contact{grid-template-columns:1fr;gap:36px}
     .scenes{grid-template-columns:1fr 1fr}
-    .scene:first-child{grid-column:span 2}
     .fgrid{grid-template-columns:1fr 1fr;gap:32px}
     .trade{grid-template-columns:1fr;gap:20px}
     .room{padding:0 4vw}
@@ -257,7 +255,6 @@
     nav .lnk{display:none}
     .prods,.three,.mrow,.mspecs,.form,.scenes,.remotes{grid-template-columns:1fr}
     .kv .compact{white-space:normal}
-    .scene:first-child{grid-column:span 1}
     .figs{grid-template-columns:1fr}
   }
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
