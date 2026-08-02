@@ -187,7 +187,7 @@
 </footer>
 
 <script>
-var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-pleated.jpg", "desc": "Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range \u2014 the shallowest option when the reveal is tight.", "hLabel": "Height", "width": [18, 105], "height": [24, 120], "sizeRange": "W 18\" \u2013 105\" \u00b7 H 24\" \u2013 120\"", "groups": [{"key": "fabric", "label": "Fabric", "options": ["Plain", "Crashed"]}, {"key": "opacity", "label": "Opacity", "options": ["Light-filtering"]}, {"key": "colour", "label": "Colour", "options": [{"n": "White", "c": "#FAFAF7"}, {"n": "Pearl", "c": "#F1EDE4"}, {"n": "Linen", "c": "#E6DCC8"}, {"n": "Mist grey", "c": "#C9CBC9"}, {"n": "Graphite", "c": "#5A5E62"}]}, {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]}, {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorised"]}, {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]}]};
+var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-pleated.jpg", "desc": "Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range \u2014 the shallowest option when the reveal is tight.", "hLabel": "Height", "width": [18, 105], "height": [24, 120], "sizeRange": "W 18\" \u2013 105\" \u00b7 H 24\" \u2013 120\"", "groups": [{"key": "fabric", "label": "Fabric", "options": ["Plain", "Crashed"]}, {"key": "opacity", "label": "Opacity", "options": ["Light-filtering"]}, {"key": "colour", "label": "Colour", "options": [{"n": "White", "c": "#FAFAF7"}, {"n": "Pearl", "c": "#F1EDE4"}, {"n": "Linen", "c": "#E6DCC8"}, {"n": "Mist grey", "c": "#C9CBC9"}, {"n": "Graphite", "c": "#5A5E62"}]}, {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]}, {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorised"]}, {"key": "chain", "label": "Chain side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": "Cord loop"}}, {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]}]};
 
 (function(){
   var form = document.getElementById('form');
@@ -235,6 +235,7 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
       renderSwatches();
       return;
     }
+    var si = g.showIf ? ' data-si-key="' + g.showIf.key + '" data-si-val="' + g.showIf.value + '"' : '';
     var hasImg = g.options.some(function(o){ return typeof o === 'object' && o.img; });
     if(hasImg){
       var cards = g.options.map(function(o,i){
@@ -242,7 +243,7 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
           '<img loading="lazy" src="' + o.img + '" alt="' + o.n + '"><div class="nm">' + o.n + '</div></button>';
       }).join('');
       form.insertAdjacentHTML('beforeend',
-        '<div class="grp"><div class="code">' + stepCode(step++) + '</div><h3>' + g.label + '</h3>' +
+        '<div class="grp"' + si + '><div class="code">' + stepCode(step++) + '</div><h3>' + g.label + '</h3>' +
         '<div class="optgrid">' + cards + '</div></div>');
       return;
     }
@@ -252,7 +253,7 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
       return '<button type="button" class="chip' + (i===0?' on':'') + '" data-g="' + g.key + '" data-v="' + name + '">' + sw + name + '</button>';
     }).join('');
     form.insertAdjacentHTML('beforeend',
-      '<div class="grp"><div class="code">' + stepCode(step++) + '</div><h3>' + g.label + '</h3>' +
+      '<div class="grp"' + si + '><div class="code">' + stepCode(step++) + '</div><h3>' + g.label + '</h3>' +
       '<div class="chips">' + chips + '</div></div>');
   });
 
@@ -310,6 +311,7 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
         r.push(['Colour', col.label + (col.code ? ' (' + col.code + ')' : '')]);
         return;
       }
+      if(g.showIf && state[g.showIf.key] !== g.showIf.value) return;
       r.push([g.label, state[g.key]]);
     });
     if(CONFIG.sizeRange) r.push(['Size range', CONFIG.sizeRange]);
@@ -318,6 +320,13 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
   }
 
   function update(){
+    document.querySelectorAll('.grp[data-si-key]').forEach(function(grp){
+      grp.hidden = state[grp.dataset.siKey] !== grp.dataset.siVal;
+    });
+    var n = 1;
+    document.querySelectorAll('#form .grp').forEach(function(grp){
+      if(!grp.hidden) grp.querySelector('.code').textContent = 'Step ' + (n < 10 ? '0' + n : n), n++;
+    });
     refreshRuleSubs();
     if(F){
       var col = findColour();

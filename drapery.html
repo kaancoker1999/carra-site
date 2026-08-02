@@ -235,6 +235,7 @@ var CONFIG = {"code": "04", "name": "Drapery", "img": "assets/product-drapery.jp
       renderSwatches();
       return;
     }
+    var si = g.showIf ? ' data-si-key="' + g.showIf.key + '" data-si-val="' + g.showIf.value + '"' : '';
     var hasImg = g.options.some(function(o){ return typeof o === 'object' && o.img; });
     if(hasImg){
       var cards = g.options.map(function(o,i){
@@ -242,7 +243,7 @@ var CONFIG = {"code": "04", "name": "Drapery", "img": "assets/product-drapery.jp
           '<img loading="lazy" src="' + o.img + '" alt="' + o.n + '"><div class="nm">' + o.n + '</div></button>';
       }).join('');
       form.insertAdjacentHTML('beforeend',
-        '<div class="grp"><div class="code">' + stepCode(step++) + '</div><h3>' + g.label + '</h3>' +
+        '<div class="grp"' + si + '><div class="code">' + stepCode(step++) + '</div><h3>' + g.label + '</h3>' +
         '<div class="optgrid">' + cards + '</div></div>');
       return;
     }
@@ -252,7 +253,7 @@ var CONFIG = {"code": "04", "name": "Drapery", "img": "assets/product-drapery.jp
       return '<button type="button" class="chip' + (i===0?' on':'') + '" data-g="' + g.key + '" data-v="' + name + '">' + sw + name + '</button>';
     }).join('');
     form.insertAdjacentHTML('beforeend',
-      '<div class="grp"><div class="code">' + stepCode(step++) + '</div><h3>' + g.label + '</h3>' +
+      '<div class="grp"' + si + '><div class="code">' + stepCode(step++) + '</div><h3>' + g.label + '</h3>' +
       '<div class="chips">' + chips + '</div></div>');
   });
 
@@ -310,6 +311,7 @@ var CONFIG = {"code": "04", "name": "Drapery", "img": "assets/product-drapery.jp
         r.push(['Colour', col.label + (col.code ? ' (' + col.code + ')' : '')]);
         return;
       }
+      if(g.showIf && state[g.showIf.key] !== g.showIf.value) return;
       r.push([g.label, state[g.key]]);
     });
     if(CONFIG.sizeRange) r.push(['Size range', CONFIG.sizeRange]);
@@ -318,6 +320,13 @@ var CONFIG = {"code": "04", "name": "Drapery", "img": "assets/product-drapery.jp
   }
 
   function update(){
+    document.querySelectorAll('.grp[data-si-key]').forEach(function(grp){
+      grp.hidden = state[grp.dataset.siKey] !== grp.dataset.siVal;
+    });
+    var n = 1;
+    document.querySelectorAll('#form .grp').forEach(function(grp){
+      if(!grp.hidden) grp.querySelector('.code').textContent = 'Step ' + (n < 10 ? '0' + n : n), n++;
+    });
     refreshRuleSubs();
     if(F){
       var col = findColour();
