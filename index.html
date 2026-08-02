@@ -198,8 +198,15 @@
   .three p{font-size:13.5px;color:var(--muted);margin:0}
 
   /* 8 ── room scenes ─────────────────────────────────── */
-  .scenes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  .scene{border:1px solid var(--line2);border-radius:14px;overflow:hidden;background:var(--white)}
+  .scenes{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;
+    scrollbar-width:none;-ms-overflow-style:none;padding-bottom:6px}
+  .scenes::-webkit-scrollbar{display:none}
+  .scene{flex:0 0 auto;width:min(520px,80vw);scroll-snap-align:start;
+    border:1px solid var(--line2);border-radius:14px;overflow:hidden;background:var(--white)}
+  .snav{margin-left:auto;display:flex;gap:10px}
+  .sbtn{width:44px;height:44px;border:1px solid var(--line2);border-radius:10px;background:var(--white);
+    cursor:pointer;font-size:17px;color:var(--ink);transition:border-color .15s}
+  .sbtn:hover{border-color:var(--ink)}
   .scene>img{width:100%;aspect-ratio:3/2;object-fit:cover;display:block}
   .scene .ph{aspect-ratio:3/2;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#FBFAF6,#EFECE3)}
   .scene .ph span{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#A8A499}
@@ -246,14 +253,13 @@
     .mrow{grid-template-columns:1fr 1fr}
     .mspecs b{font-size:20px}
     .panel.on,.about,.motor,.tdbu,.contact{grid-template-columns:1fr;gap:36px}
-    .scenes{grid-template-columns:1fr 1fr}
     .fgrid{grid-template-columns:1fr 1fr;gap:32px}
     .trade{grid-template-columns:1fr;gap:20px}
     .room{padding:0 4vw}
   }
   @media(max-width:620px){
     nav .lnk{display:none}
-    .prods,.three,.mrow,.mspecs,.form,.scenes,.remotes{grid-template-columns:1fr}
+    .prods,.three,.mrow,.mspecs,.form,.remotes{grid-template-columns:1fr}
     .kv .compact{white-space:normal}
     .figs{grid-template-columns:1fr}
   }
@@ -406,8 +412,13 @@
 <!-- 8 ── ROOM SCENES ───────────────────────────────────────────────── -->
 <section id="scenes">
   <div class="wrap">
-    <div class="head"><h2>In the room</h2><div class="mono">— Installed work</div></div>
-    <div class="scenes">
+    <div class="head"><h2>In the room</h2><div class="mono">— Installed work</div>
+      <div class="snav">
+        <button class="sbtn" id="sprev" aria-label="Previous">&larr;</button>
+        <button class="sbtn" id="snext" aria-label="Next">&rarr;</button>
+      </div>
+    </div>
+    <div class="scenes" id="scenestrip">
       <div class="scene"><img src="assets/scene-tdbu.jpg" alt="Top-down bottom-up pleated shade in a kitchen"><div class="cap"><b>Pleated shade, top-down bottom-up</b><i>Daylight above, privacy below</i></div></div>
       <div class="scene"><img src="assets/scene-blackout.jpg" alt="Blackout cellular shade in a dark bedroom"><div class="cap"><b>Blackout cellular</b><i>Honeycomb, full darkness</i></div></div>
       <div class="scene"><img src="assets/scene-wave.jpg" alt="Wave fold drapery in a living room"><div class="cap"><b>Wave fold drapery</b><i>Concealed hook gliders</i></div></div>
@@ -426,10 +437,11 @@
         <h2>Tell us the window.</h2>
         <p class="note">Retailer, dealer, distributor or integrator — send us what you are trying to build and you will get a real answer from a person who works on the line, usually the same working day.</p>
         <div class="addr">
-          LUMIA<br>
-          Istanbul, Türkiye<br>
+          LUMIA Blinds &amp; Shades<br>
+          Houston, Texas, United States<br>
+          Production — Istanbul, Türkiye<br>
           hello@lumia.com<br>
-          +90 000 000 00 00
+          Mon&ndash;Fri, 9:00 AM &ndash; 5:00 PM
         </div>
       </div>
       <div class="form" id="form">
@@ -579,6 +591,15 @@
       if(!reduceM)requestAnimationFrame(loop);
     })();
   })();
+
+  /* ── room scenes slider ── */
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('#sprev,#snext'); if(!b)return;
+    var strip=document.getElementById('scenestrip'); if(!strip)return;
+    var c=strip.querySelector('.scene');
+    var w=c?c.getBoundingClientRect().width+16:400;
+    strip.scrollBy({left: b.id==='sprev' ? -w : w, behavior:'smooth'});
+  });
 
   /* ── products ── */
   var PAGES=['roman.html','cellular.html','pleated.html','drapery.html'];
