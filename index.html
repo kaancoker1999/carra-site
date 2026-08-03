@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LUMIA — Motorised made-to-measure window treatments</title>
-<meta name="description" content="LUMIA Blinds & Shades — made-to-measure Roman, cellular and pleated shades and drapery, motorised with Motionblinds. Trade and home-automation partners welcome.">
+<title>LUMIA — Motorized made-to-measure window treatments</title>
+<meta name="description" content="LUMIA Blinds & Shades — made-to-measure Roman, cellular and pleated shades and drapery, motorized with Motionblinds. Trade and home-automation partners welcome.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
-<meta property="og:title" content="LUMIA — Motorised made-to-measure window treatments">
-<meta property="og:description" content="Made-to-measure Roman, cellular and pleated shades and drapery, motorised with Motionblinds.">
+<meta property="og:title" content="LUMIA — Motorized made-to-measure window treatments">
+<meta property="og:description" content="Made-to-measure Roman, cellular and pleated shades and drapery, motorized with Motionblinds.">
 <meta property="og:image" content="https://kaancoker1999.github.io/carra-site/assets/product-roman.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -110,7 +110,7 @@
 
   /* 3 ── products ────────────────────────────────────── */
   .prods{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-  .p{background:var(--white);padding:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;text-align:left;cursor:pointer;font:inherit;color:inherit;transition:background .25s;
+  .p{background:var(--white);padding:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;text-align:left;cursor:pointer;font:inherit;color:inherit;text-decoration:none;transition:background .25s;
     display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start}
   .p .art{flex:none;width:100%}
   .p:hover{background:var(--paper)}
@@ -173,6 +173,8 @@
   .remotes img{width:100%;aspect-ratio:1;object-fit:contain;display:block}
   .remotes b{display:block;font-family:'Archivo',sans-serif;font-size:16px;font-weight:600;margin-top:6px}
   .remotes span{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .ecos{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .ecos span{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line2);border-radius:999px;padding:4px 10px;color:#4A4E52}
   .mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:44px}
   .mrow div{background:var(--white);padding:26px 24px 28px}
   .mrow .code{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.18em;color:var(--bronze)}
@@ -280,7 +282,7 @@
 <!-- 1 ── TOP BAR ───────────────────────────────────────────────────── -->
 <header>
   <div class="wrap">
-    <div class="logo"><img src="assets/logo.jpg" alt="LUMIA"></div>
+    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="LUMIA"></a>
     <nav>
       <a href="#products" class="lnk">Products</a>
       <a href="motorization.html" class="lnk">Motorization</a>
@@ -298,8 +300,8 @@
   <div class="veil"></div>
   <div class="veil2"></div>
   <div class="wrap">
-    <h1>Sunrise, <em>without getting up.</em></h1>
-    <p class="sub">Motorised made-to-measure shades and drapery, engineered and built under one roof.</p>
+    <h1>Sunrise, <em>on your schedule.</em></h1>
+    <p class="sub">Made-to-measure shades and drapery &mdash; motorized or manual &mdash; engineered and built under one roof.</p>
   </div>
   <div class="ladder" id="ladder"></div>
   <div class="track" id="track">Honeycomb TDBU &mdash; <b>move your cursor to move the sun</b></div>
@@ -308,12 +310,12 @@
 <!-- 3 ── PRODUCTS ──────────────────────────────────────────────────── -->
 <section id="products">
   <div class="wrap">
-    <div class="head"><h2>What we make</h2><div class="mono">— Select a range</div></div>
+    <div class="head"><h2>What we make</h2><div class="mono">— Select a line</div></div>
     <div class="prods" id="prods">
-      <button class="p" data-i="0"><div class="art"><img src="assets/card-roman.jpg" alt="Roman shades in a living room"></div><div class="txt"><div class="code">01</div><h3>Roman Shades</h3><p>Back-rod, front-rod, relaxed and hobbled folds in every fabric group.</p><div class="more">Configure &rarr;</div></div></button>
-      <button class="p" data-i="1"><div class="art"><img src="assets/card-cellular.jpg" alt="Cellular shades in a bedroom"></div><div class="txt"><div class="code">02</div><h3>Cellular Shades</h3><p>Single, double and triple cell honeycomb, sheer to blackout.</p><div class="more">Configure &rarr;</div></div></button>
-      <button class="p" data-i="2"><div class="art"><img src="assets/card-pleated.jpg" alt="Pleated shades in a kitchen"></div><div class="txt"><div class="code">03</div><h3>Pleated Shades</h3><p>Single-layer pleat, crisp and slim in the stack.</p><div class="more">Configure &rarr;</div></div></button>
-      <button class="p" data-i="3"><div class="art"><img src="assets/card-drapery.jpg" alt="Wave-fold drapery in a dining room"></div><div class="txt"><div class="code">04</div><h3>Drapery</h3><p>Wave fold, single pinch pleat, double pinch pleat, triple pinch pleat and euro pleat headings.</p><div class="more">Configure &rarr;</div></div></button>
+      <a class="p" href="roman.html"><div class="art"><img src="assets/card-roman.jpg" alt="Roman shades in a living room"></div><div class="txt"><div class="code">01</div><h3>Roman Shades</h3><p>Back-rod, front-rod, relaxed and hobbled folds in every fabric group.</p><div class="more">Configure &rarr;</div></div></a>
+      <a class="p" href="cellular.html"><div class="art"><img src="assets/card-cellular.jpg" alt="Cellular shades in a bedroom"></div><div class="txt"><div class="code">02</div><h3>Cellular Shades</h3><p>Single, double and triple cell honeycomb, sheer to blackout.</p><div class="more">Configure &rarr;</div></div></a>
+      <a class="p" href="pleated.html"><div class="art"><img src="assets/card-pleated.jpg" alt="Pleated shades in a kitchen"></div><div class="txt"><div class="code">03</div><h3>Pleated Shades</h3><p>Single-layer pleat, crisp and slim in the stack.</p><div class="more">Configure &rarr;</div></div></a>
+      <a class="p" href="drapery.html"><div class="art"><img src="assets/card-drapery.jpg" alt="Wave-fold drapery in a dining room"></div><div class="txt"><div class="code">04</div><h3>Drapery</h3><p>Wave fold, single pinch pleat, double pinch pleat, triple pinch pleat and euro pleat headings.</p><div class="more">Configure &rarr;</div></div></a>
     </div>
   </div>
 </section>
@@ -326,7 +328,7 @@
       <div>
         <p class="lede">LUMIA has been building made-to-measure window treatments since 1999. Not assembling them — building them, mechanism included.</p>
         <p>Cutting, sewing, cell bonding, motor and mechanism assembly and final cycle testing all happen in one plant. Orders leave the line as finished, boxed units, addressed to the window they were measured for.</p>
-        <p>We supply large online retailers, independent dealers and distributors across North America and Europe, under our own brands and as private label. What the buyer gets from us is not a catalogue — it is a production slot with a lead time they can publish on their own site.</p>
+        <p>We supply large online retailers, independent dealers and distributors across North America and Europe, under our own brands and as private label.</p>
       </div>
       <div class="figs">
         <div><b>1999</b><span>Founded</span></div>
@@ -342,9 +344,9 @@
     <div class="head"><h2>Motion, built in</h2><div class="mono">— Motorization</div></div>
     <div class="motor">
       <div>
-        <p class="lede">A motorised shade is only as good as the quietest moment in its travel.</p>
-        <p style="color:#4A4E52;margin:0 0 16px">Every LUMIA motorised unit is driven by <b>Motionblinds</b> — the smart motor technology by Coulisse — matched to our own mechanisms and assembled in our plant. Rechargeable lithium or hardwired, built on Matter over Thread, with app, remote and hub control — and both rails addressable independently on top-down bottom-up units. For Apple Home over Thread, we also build with <b>Eve MotionBlinds</b> drives.</p>
-        <p style="color:var(--muted);font-size:15px;margin:0">Every motorised unit is cycle-tested before it is boxed, and every drive is serviceable in the field without taking the shade off the wall.</p>
+        <p class="lede">A motorized shade whose quality can be seen and (barely) heard.</p>
+        <p style="color:#4A4E52;margin:0 0 16px">Every LUMIA motorized unit is driven by <b>Motionblinds</b> — the smart motor technology by Coulisse — matched to our own mechanisms and assembled in our plant. Rechargeable lithium or hardwired, built on Matter over Thread, with app, remote and hub control — and both rails addressable independently on top-down bottom-up units. For Apple Home over Thread, we also build with <b>Eve MotionBlinds</b> drives.</p>
+        <p style="color:var(--muted);font-size:15px;margin:0">Every motorized unit is cycle-tested before it is boxed, and every drive is serviceable in the field without taking the shade off the wall.</p>
         <div class="poweredby"><span class="pbcap">Powered by</span><span class="pbword"><b>Motion</b>blinds</span></div>
       </div>
       <div class="mvideo"><video src="assets/video/motion-honeycomb-540.mp4" poster="assets/video/poster-honeycomb.jpg" autoplay muted loop playsinline controls preload="metadata"></video></div>
@@ -358,14 +360,14 @@
     <div class="mrow">
       <div><div class="code">M · BATTERY</div><h3>Rechargeable</h3><p>Lithium pack concealed in the headrail. USB-C service port, no visible wiring.</p></div>
       <div><div class="code">M · WIRED</div><h3>Hardwired</h3><p>Low-voltage for new build and specification work, with a common bracket set.</p></div>
-      <div><div class="code">M · SMART</div><h3>Every ecosystem</h3><p>Works with Apple Home, Google Home, Amazon Alexa and SmartThings out of the box.</p></div>
+      <div><div class="code">M · SMART</div><h3>Every ecosystem</h3><p>Works out of the box with:</p><div class="ecos"><span>&#63743; Apple Home</span><span>Google Home</span><span>Amazon Alexa</span><span>SmartThings</span><span>Matter</span></div></div>
       <div><div class="code">M · CONTROL</div><h3>App, remote, hub</h3><p>Scheduling, scenes and group control. Pairing is scan, connect and go.</p></div>
     </div>
 
     <div class="trade">
       <div>
         <h3>Trade and home automation partners</h3>
-        <p>Integrators, dealers and distributors get their own price list, sample support and a technical contact who answers in the same working day. If you sell home automation and want motorised window treatments that install without surprises, this is the door.</p>
+        <p>Integrators, dealers and distributors get their own price list, sample support and a technical contact who answers in the same working day. If you sell home automation and want motorized window treatments that install without surprises, this is the door.</p>
       </div>
       <a class="btn solid" href="#contact">Apply for trade access</a>
     </div>
@@ -380,7 +382,6 @@
       <div>
         <p class="lede">Daylight at the top, privacy at the bottom, on the same shade.</p>
         <p style="color:#4A4E52;margin:0 0 16px">Top-down bottom-up lets a room keep both at once — the light comes over the top of the fabric while the lower half of the window stays covered. It is the single feature homeowners ask for by name once they have seen it work.</p>
-        <p style="color:var(--muted);font-size:15px;margin:0">It is also the hardest thing to build well, because a second moving rail has to travel true, hold position at any height, and do it without an accessible cord.</p>
       </div>
       <div class="drawing">
         <div class="phase" id="phase">Closed</div>
@@ -411,7 +412,7 @@
       <div class="three">
         <div><b>TD · C</b><h4>Cordless</h4><p>Spring-balanced on both rails. No accessible cord anywhere on the unit.</p></div>
         <div><b>TD · L</b><h4>Cord loop</h4><p>Tensioned continuous loop with wall anchor. For heavier fabrics and tall drops.</p></div>
-        <div><b>TD · M</b><h4>Motorised</h4><p>Both rails driven and addressable independently, by app, remote or schedule.</p></div>
+        <div><b>TD · M</b><h4>Motorized</h4><p>Both rails driven and addressable independently, by app, remote or schedule.</p></div>
       </div>
     </div>
   </div>
@@ -427,7 +428,7 @@
       </div>
     </div>
     <div class="scenes" id="scenestrip">
-      <div class="scene"><img src="assets/scene-tdbu.jpg" alt="Top-down bottom-up pleated shade in a kitchen"><div class="cap"><b>Pleated shade, top-down bottom-up</b><i>Daylight above, privacy below</i></div></div>
+      <div class="scene"><img src="assets/scene-tdbu.jpg" alt="Top-down bottom-up cellular shade in a kitchen"><div class="cap"><b>Cellular shade, top-down bottom-up</b><i>Daylight above, privacy below</i></div></div>
       <div class="scene"><img src="assets/scene-blackout.jpg" alt="Blackout cellular shade in a dark bedroom"><div class="cap"><b>Blackout cellular</b><i>Honeycomb, full darkness</i></div></div>
       <div class="scene"><img src="assets/scene-wave.jpg" alt="Wave fold drapery in a living room"><div class="cap"><b>Wave fold drapery</b><i>Concealed hook gliders</i></div></div>
       <div class="scene"><img src="assets/scene-pleated.jpg" alt="Pleated shade, close detail"><div class="cap"><b>Pleated shade</b><i>Single layer, light-filtering</i></div></div>
@@ -442,12 +443,12 @@
     <div class="contact">
       <div>
         <div class="mono" style="margin-bottom:14px">— Contact</div>
-        <h2>Tell us the window.</h2>
-        <p class="note">Retailer, dealer, distributor or integrator — send us what you are trying to build and you will get a real answer from a person who works on the line, usually the same working day.</p>
+        <h2>Let&rsquo;s create a window of opportunity.</h2>
+        <p class="note">Retailer, dealer, distributor or integrator: we work with companies from bulk programmes to highly custom and specialized work. Let&rsquo;s talk.</p>
         <div class="addr">
           LUMIA Blinds &amp; Shades<br>
           Houston, Texas, United States<br>
-          hello@lumia.com<br>
+          hello@lumiashades.com<br>
           Mon&ndash;Fri, 9:00 AM &ndash; 5:00 PM
         </div>
       </div>
@@ -480,7 +481,7 @@
     <div class="fgrid">
       <div class="fbrand">
         <div class="logo"><img src="assets/logo.jpg" alt="LUMIA"></div>
-        <p>Made-to-measure shades, drapery and motorization. Built under one roof since 1999.</p>
+        <p>Made-to-measure shades, drapery and motorization. Built under one roof since 1999. LUMIA is a TDC company.</p>
         <a class="btn ghost" href="#contact" style="padding:12px 22px">Trade enquiries</a>
       </div>
       <div class="fcol">
@@ -493,24 +494,24 @@
       </div>
       <div class="fcol">
         <h5>Motorization</h5>
-        <a href="#motorization">Rechargeable drives</a>
-        <a href="#motorization">Hardwired systems</a>
-        <a href="#motorization">App &amp; hub control</a>
-        <a href="#motorization">Integrator programme</a>
+        <a href="motorization.html">Rechargeable drives</a>
+        <a href="motorization.html">Hardwired systems</a>
+        <a href="motorization.html">App &amp; hub control</a>
+        <a href="#contact">Integrator programme</a>
       </div>
       <div class="fcol">
         <h5>Trade</h5>
-        <a href="#">Become a dealer</a>
-        <a href="#">Private label</a>
-        <a href="#">Technical resources</a>
-        <a href="#">Trade login</a>
+        <a href="#contact">Become a dealer</a>
+        <a href="#contact">Private label</a>
+        <a href="motorization.html">Technical resources</a>
+        <a href="#contact">Trade login</a>
       </div>
       <div class="fcol">
         <h5>Company</h5>
         <a href="#about">About LUMIA</a>
-        <a href="#">Quality &amp; testing</a>
-        <a href="#">Child safety</a>
-        <a href="#">Careers</a>
+        <a href="#about">Quality &amp; testing</a>
+        <a href="#contact">Child safety</a>
+        <a href="#contact">Careers</a>
       </div>
     </div>
 
@@ -529,75 +530,35 @@
 (function(){
   var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ── hero: the shade tracks the sun across three plates ── */
+  /* ── hero: cycle through the product lines ── */
   (function(){
-    var hero=document.getElementById('hero');if(!hero)return;
     var plates=document.getElementById('plates'),ladder=document.getElementById('ladder'),
-        track=document.getElementById('track'),wash=document.getElementById('sunwash');
-
-    /* Frame order = sun travelling from high to low.
-       To add or replace a position, just edit this list. */
+        track=document.querySelector('.track'),wash=document.querySelector('.sunwash');
+    if(!plates)return;
     var FRAMES=[
-      {src:"assets/hero-1.webp", label:'High sun &mdash; lowered halfway, view open below'},
-      {src:"assets/hero-2.webp", label:'Sun straight on &mdash; fully closed'},
-      {src:"assets/hero-3.webp", label:'Low sun &mdash; bottom closed, daylight above'}
-    ].filter(function(f){return f.src;});
-
-    var loaded=0,failed=0;
-    function check(){
-      /* frames live in assets/, nothing else to do on failure */
-    }
-    var imgs=FRAMES.map(function(f,i){
+      {src:"assets/product-roman.jpg", label:'Roman shades'},
+      {src:"assets/product-cellular.jpg", label:'Cellular shades'},
+      {src:"assets/product-drapery.jpg", label:'Drapery'}
+    ];
+    var imgs=FRAMES.map(function(f){
       var im=document.createElement('img');
-      im.className='plate';im.alt='';im.decoding='async';
-      im.loading='eager';im.referrerPolicy='no-referrer';
-      im.addEventListener('error',function(){failed++;check();});
-      im.addEventListener('load',function(){loaded++;});
-      im.src=f.src;
-      plates.appendChild(im);return im;
+      im.className='plate';im.alt='';im.decoding='async';im.loading='eager';
+      im.style.transition='opacity 1.4s ease';
+      im.src=f.src;plates.appendChild(im);return im;
     });
     FRAMES.forEach(function(){var i=document.createElement('i');ladder.appendChild(i);});
     var pips=[].slice.call(ladder.children);
-
-    if(!imgs.length)return;
-    var N=FRAMES.length, last=-1;
-    var reduceM=matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var tx=.5,ty=.18,cx=tx,cy=ty,live=false,idle=0;
-
-    function paint(x,y){
-      /* which two frames we sit between */
-      var pos=y*(N-1), i=Math.min(N-2,Math.floor(pos)), t=N>1?pos-i:0;
-      /* ease the blend so it settles like a motor rather than sliding linearly */
-      var e=t*t*(3-2*t);
-      imgs.forEach(function(im,k){im.style.opacity = k===i ? 1 : (k===i+1 ? e : 0);});
-
-      /* horizontal sun: a soft warm wash that follows the cursor sideways */
-      wash.style.left=(x*100)+'%';
-      wash.style.top=(18+y*46)+'%';
-      wash.style.opacity=(.30+(1-y)*.38).toFixed(3);
-
-      var nearest=Math.round(pos);
-      if(nearest!==last){
-        last=nearest;
-        pips.forEach(function(p,k){p.classList.toggle('on',k===nearest);});
-        track.innerHTML='Honeycomb TDBU &mdash; <b>'+FRAMES[nearest].label+'</b>';
-      }
+    function show(i){
+      imgs.forEach(function(im,k){im.style.opacity=k===i?1:0;});
+      pips.forEach(function(pp,k){pp.classList.toggle('on',k===i);});
+      if(track) track.innerHTML='Made to measure &mdash; <b>'+FRAMES[i].label+'</b>';
     }
-
-    hero.addEventListener('pointermove',function(e){
-      var r=hero.getBoundingClientRect();
-      tx=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));
-      ty=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height));
-      live=true;
-    });
-    hero.addEventListener('pointerleave',function(){live=false;});
-
-    (function loop(){
-      if(!live){ idle+=0.0042; tx=.5+Math.sin(idle*.7)*.28; ty=.5-Math.cos(idle)*.42; }
-      cx+=(tx-cx)*.07; cy+=(ty-cy)*.07;
-      paint(cx,cy);
-      if(!reduceM)requestAnimationFrame(loop);
-    })();
+    show(0);
+    if(wash) wash.style.opacity=.3;
+    var cur=0;
+    if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+      setInterval(function(){cur=(cur+1)%FRAMES.length;show(cur);},5000);
+    }
   })();
 
   /* ── room scenes slider ── */
@@ -609,14 +570,7 @@
     strip.scrollBy({left: b.id==='sprev' ? -w : w, behavior:'smooth'});
   });
 
-  /* ── products ── */
-  var PAGES=['roman.html','cellular.html','pleated.html','drapery.html'];
-  document.getElementById('prods').addEventListener('click',function(e){
-    var b=e.target.closest('.p');if(!b)return;
-    window.location.href=PAGES[+b.dataset.i];
-  });
-
-  /* ── motorised window loop ── */
+  /* ── motorized window loop ── */
   var mw=document.querySelector('.mwin');
   if(mw&&!reduce){
     var top=mw.querySelector('i'),bot=mw.querySelector('u'),lbl=mw.querySelector('.lbl');
