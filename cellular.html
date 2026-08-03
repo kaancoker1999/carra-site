@@ -215,10 +215,9 @@ var CONFIG = {"code": "02", "name": "Cellular Shades", "img": "assets/product-ce
     var meta = findCollection(state.collection);
     document.getElementById('fabmeta').innerHTML = [meta.transparency, meta.material].filter(Boolean).join(' &middot; ');
     document.getElementById('swgrid').innerHTML = F.colors[state.collection].map(function(c){
-      return '<button type="button" class="swatch' + (c.id === state.colour ? ' on' : '') + '" data-c="' + c.id + '">' +
-        '<img loading="lazy" src="' + c.img + '" alt="' + c.label + '">' +
-        '<div class="nm">' + c.label + '</div>' +
-        (c.code ? '<div class="cd">' + c.code + '</div>' : '') + '</button>';
+      return '<button type="button" class="swatch' + (c.id === state.colour ? ' on' : '') + '" data-c="' + c.id + '" title="' + (c.name || c.label) + '">' +
+        '<img loading="lazy" src="' + c.img + '" alt="' + (c.name || c.label) + '">' +
+        '<div class="nm">' + (c.code || c.label) + '</div></button>';
     }).join('');
   }
 
@@ -309,7 +308,7 @@ var CONFIG = {"code": "02", "name": "Cellular Shades", "img": "assets/product-ce
       if(g.type === 'fabrics'){
         var col = findColour();
         r.push(['Collection', findCollection(state.collection).label]);
-        r.push(['Colour', col.label + (col.code ? ' (' + col.code + ')' : '')]);
+        r.push(['Colour', col.code || col.label]);
         return;
       }
       if(g.showIf && state[g.showIf.key] !== g.showIf.value) return;
@@ -335,7 +334,7 @@ var CONFIG = {"code": "02", "name": "Cellular Shades", "img": "assets/product-ce
       box.hidden = false;
       document.getElementById('sumimg-img').src = col.lg || col.img;
       document.getElementById('sumimg-cap').textContent =
-        findCollection(state.collection).label + ' — ' + col.label + (col.code ? ' · ' + col.code : '');
+        findCollection(state.collection).label + ' — ' + (col.code || col.label);
     }
     sumkv.innerHTML = rows().map(function(r){
       return '<div><span>' + r[0] + '</span><b>' + r[1] + '</b></div>';

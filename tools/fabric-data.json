@@ -1,0 +1,1745 @@
+{
+ "collections": [
+  {
+   "id": "outlander",
+   "label": "Outlander",
+   "group": 1,
+   "letter": "A",
+   "transparency": "Light-filtering fabric",
+   "material": "%100 Polyester"
+  },
+  {
+   "id": "marlow",
+   "label": "Marlow",
+   "group": 1,
+   "letter": "A",
+   "transparency": "Semi-transparent",
+   "material": "%93 Polyester, %7 Linen"
+  },
+  {
+   "id": "soho",
+   "label": "Soho",
+   "group": 2,
+   "letter": "B",
+   "transparency": "Sheer",
+   "material": "%100 Polyester"
+  },
+  {
+   "id": "lazuli",
+   "label": "Lazuli",
+   "group": 2,
+   "letter": "B",
+   "transparency": "Semi-transparent",
+   "material": "%100 Polyester"
+  },
+  {
+   "id": "piero",
+   "label": "Piero",
+   "group": 2,
+   "letter": "B",
+   "transparency": "Sheer",
+   "material": "%80 Acrylic, %20 Wool"
+  },
+  {
+   "id": "lucetta",
+   "label": "Lucetta",
+   "group": 2,
+   "letter": "B",
+   "transparency": "Sheer",
+   "material": "%100 Polyester"
+  },
+  {
+   "id": "obscura",
+   "label": "Obscura",
+   "group": 2,
+   "letter": "B",
+   "transparency": "Blackout",
+   "material": "%100 Polyester"
+  },
+  {
+   "id": "carillo",
+   "label": "Carillo",
+   "group": 3,
+   "letter": "C",
+   "transparency": "Semi-transparent",
+   "material": "%100 Polyester"
+  },
+  {
+   "id": "nomad",
+   "label": "Nomad",
+   "group": 3,
+   "letter": "C",
+   "transparency": "Light-filtering cotton blend",
+   "material": "Cotton blend"
+  },
+  {
+   "id": "umberto",
+   "label": "Umberto",
+   "group": 3,
+   "letter": "C",
+   "transparency": "Sheer",
+   "material": "%100 Polyester"
+  },
+  {
+   "id": "arrow",
+   "label": "Arrow",
+   "group": 4,
+   "letter": "D",
+   "transparency": "Semi-transparent",
+   "material": "%100 Polyester"
+  },
+  {
+   "id": "periscope",
+   "label": "Periscope",
+   "group": 4,
+   "letter": "D",
+   "transparency": "Linen",
+   "material": "%100 Linen"
+  },
+  {
+   "id": "atmosphere",
+   "label": "Atmosphere",
+   "group": 4,
+   "letter": "D",
+   "transparency": "Semi-transparent",
+   "material": "%100 Linen"
+  },
+  {
+   "id": "hesperia",
+   "label": "Hesperia",
+   "group": 4,
+   "letter": "D",
+   "transparency": "Room darkening",
+   "material": "%100 Polyester"
+  }
+ ],
+ "colors": {
+  "outlander": [
+   {
+    "id": "ivory-cloud-f109",
+    "label": "Ivory Cloud",
+    "code": "F109",
+    "hex": "#BAC0C3",
+    "image": "/fabrics/outlander/ivory-cloud-f109.jpg",
+    "name": "Ivory Cloud"
+   },
+   {
+    "id": "soft-sand-110",
+    "label": "Soft Sand",
+    "code": "110",
+    "hex": "#C2C3BC",
+    "image": "/fabrics/outlander/soft-sand-110.jpg",
+    "name": "Soft Sand"
+   },
+   {
+    "id": "linen-mist-f108",
+    "label": "Linen Mist",
+    "code": "F108",
+    "hex": "#A9A8A6",
+    "image": "/fabrics/outlander/linen-mist-f108.jpg",
+    "name": "Linen Mist"
+   },
+   {
+    "id": "almond-shell-111",
+    "label": "Almond Shell",
+    "code": "111",
+    "hex": "#AFB5B1",
+    "image": "/fabrics/outlander/almond-shell-111.jpg",
+    "name": "Almond Shell"
+   },
+   {
+    "id": "oyster-white-f112",
+    "label": "Oyster White",
+    "code": "F112",
+    "hex": "#A1A395",
+    "image": "/fabrics/outlander/oyster-white-f112.jpg",
+    "name": "Oyster White"
+   },
+   {
+    "id": "moonstone-107",
+    "label": "Moonstone",
+    "code": "107",
+    "hex": "#969089",
+    "image": "/fabrics/outlander/moonstone-107.jpg",
+    "name": "Moonstone"
+   },
+   {
+    "id": "ash-plum-f106",
+    "label": "Ash Plum",
+    "code": "F106",
+    "hex": "#7E7871",
+    "image": "/fabrics/outlander/ash-plum-f106.jpg",
+    "name": "Ash Plum"
+   },
+   {
+    "id": "pebble-beige-115",
+    "label": "Pebble Beige",
+    "code": "115",
+    "hex": "#A08F76",
+    "image": "/fabrics/outlander/pebble-beige-115.jpg",
+    "name": "Pebble Beige"
+   },
+   {
+    "id": "sunlit-sand-f116",
+    "label": "Sunlit Sand",
+    "code": "F116",
+    "hex": "#B09354",
+    "image": "/fabrics/outlander/sunlit-sand-f116.jpg",
+    "name": "Sunlit Sand"
+   },
+   {
+    "id": "toasted-honey-117",
+    "label": "Toasted Honey",
+    "code": "117",
+    "hex": "#C29F6A",
+    "image": "/fabrics/outlander/toasted-honey-117.jpg",
+    "name": "Toasted Honey"
+   },
+   {
+    "id": "burnt-sienna-f118",
+    "label": "Burnt Sienna",
+    "code": "F118",
+    "hex": "#B87149",
+    "image": "/fabrics/outlander/burnt-sienna-f118.jpg",
+    "name": "Burnt Sienna"
+   },
+   {
+    "id": "cinnamon-clay-119",
+    "label": "Cinnamon Clay",
+    "code": "119",
+    "hex": "#B35842",
+    "image": "/fabrics/outlander/cinnamon-clay-119.jpg",
+    "name": "Cinnamon Clay"
+   },
+   {
+    "id": "terracotta-flame-f120",
+    "label": "Terracotta Flame",
+    "code": "F120",
+    "hex": "#C23733",
+    "image": "/fabrics/outlander/terracotta-flame-f120.jpg",
+    "name": "Terracotta Flame"
+   },
+   {
+    "id": "crimson-bloom-121",
+    "label": "Crimson Bloom",
+    "code": "121",
+    "hex": "#C71F32",
+    "image": "/fabrics/outlander/crimson-bloom-121.jpg",
+    "name": "Crimson Bloom"
+   },
+   {
+    "id": "ruby-red-f122",
+    "label": "Ruby Red",
+    "code": "F122",
+    "hex": "#A41528",
+    "image": "/fabrics/outlander/ruby-red-f122.jpg",
+    "name": "Ruby Red"
+   },
+   {
+    "id": "berry-blush-123",
+    "label": "Berry Blush",
+    "code": "123",
+    "hex": "#C59AAC",
+    "image": "/fabrics/outlander/berry-blush-123.jpg",
+    "name": "Berry Blush"
+   },
+   {
+    "id": "mauve-mist-f124",
+    "label": "Mauve Mist",
+    "code": "F124",
+    "hex": "#A08292",
+    "image": "/fabrics/outlander/mauve-mist-f124.jpg",
+    "name": "Mauve Mist"
+   },
+   {
+    "id": "lavender-dust-125",
+    "label": "Lavender Dust",
+    "code": "125",
+    "hex": "#8D7E97",
+    "image": "/fabrics/outlander/lavender-dust-125.jpg",
+    "name": "Lavender Dust"
+   },
+   {
+    "id": "plum-velvet-f126",
+    "label": "Plum Velvet",
+    "code": "F126",
+    "hex": "#A8577C",
+    "image": "/fabrics/outlander/plum-velvet-f126.jpg",
+    "name": "Plum Velvet"
+   },
+   {
+    "id": "rosewood-blush-127",
+    "label": "Rosewood Blush",
+    "code": "127",
+    "hex": "#C64C71",
+    "image": "/fabrics/outlander/rosewood-blush-127.jpg"
+   },
+   {
+    "id": "mulberry-dusk-f128",
+    "label": "Mulberry Dusk",
+    "code": "F128",
+    "hex": "#684459",
+    "image": "/fabrics/outlander/mulberry-dusk-f128.jpg"
+   },
+   {
+    "id": "storm-indigo-129",
+    "label": "Storm Indigo",
+    "code": "129",
+    "hex": "#415473",
+    "image": "/fabrics/outlander/storm-indigo-129.jpg",
+    "name": "Storm Indigo"
+   },
+   {
+    "id": "ocean-teal-f130",
+    "label": "Ocean Teal",
+    "code": "F130",
+    "hex": "#217292",
+    "image": "/fabrics/outlander/ocean-teal-f130.jpg",
+    "name": "Ocean Teal"
+   },
+   {
+    "id": "mineral-aqua-131",
+    "label": "Mineral Aqua",
+    "code": "131",
+    "hex": "#38989C",
+    "image": "/fabrics/outlander/mineral-aqua-131.jpg",
+    "name": "Mineral Aqua"
+   },
+   {
+    "id": "slate-blue-f132",
+    "label": "Slate Blue",
+    "code": "F132",
+    "hex": "#50788B",
+    "image": "/fabrics/outlander/slate-blue-f132.jpg",
+    "name": "Slate Blue"
+   },
+   {
+    "id": "cool-horizon-f136",
+    "label": "Cool Horizon",
+    "code": "F136",
+    "hex": "#767F88",
+    "image": "/fabrics/outlander/cool-horizon-f136.jpg"
+   },
+   {
+    "id": "olive-ash-f134",
+    "label": "Olive Ash",
+    "code": "F134",
+    "hex": "#9E9F9A",
+    "image": "/fabrics/outlander/olive-ash-f134.jpg",
+    "name": "Olive Ash"
+   },
+   {
+    "id": "urban-smoke-135",
+    "label": "Urban Smoke",
+    "code": "135",
+    "hex": "#7D7E80",
+    "image": "/fabrics/outlander/urban-smoke-135.jpg",
+    "name": "Urban Smoke"
+   },
+   {
+    "id": "fog-steel-133",
+    "label": "Fog Steel",
+    "code": "133",
+    "hex": "#739AB8",
+    "image": "/fabrics/outlander/fog-steel-133.jpg",
+    "name": "Fog Steel"
+   },
+   {
+    "id": "kelly-green-114",
+    "label": "Kelly Green",
+    "code": "114",
+    "hex": "#8BA858",
+    "image": "/fabrics/outlander/kelly-green-114.jpg",
+    "name": "Kelly Green"
+   },
+   {
+    "id": "sage-dust-f113",
+    "label": "Sage Dust",
+    "code": "F113",
+    "hex": "#AEAF88",
+    "image": "/fabrics/outlander/sage-dust-f113.jpg",
+    "name": "Sage Dust"
+   },
+   {
+    "id": "ash-grey-105",
+    "label": "Ash Grey",
+    "code": "105",
+    "hex": "#888880",
+    "image": "/fabrics/outlander/ash-grey-105.jpg",
+    "name": "Ash Grey"
+   },
+   {
+    "id": "dust-grey-f104",
+    "label": "Dust Grey",
+    "code": "f104",
+    "hex": "#938F86",
+    "image": "/fabrics/outlander/dust-grey-f104.jpg",
+    "name": "Dust Grey"
+   },
+   {
+    "id": "truffle-101",
+    "label": "Truffle",
+    "code": "101",
+    "hex": "#68544F",
+    "image": "/fabrics/outlander/truffle-101.jpg",
+    "name": "Truffle"
+   },
+   {
+    "id": "stone-bark-f102",
+    "label": "Stone Bark",
+    "code": "F102",
+    "hex": "#877F78",
+    "image": "/fabrics/outlander/stone-bark-f102.jpg",
+    "name": "Stone Bark"
+   },
+   {
+    "id": "coffee-charcoal-103",
+    "label": "Coffee Charcoal",
+    "code": "103",
+    "hex": "#574D49",
+    "image": "/fabrics/outlander/coffee-charcoal-103.jpg",
+    "name": "Coffee Charcoal"
+   },
+   {
+    "id": "graphite-blue-f137",
+    "label": "Graphite Blue",
+    "code": "F137",
+    "hex": "#4F5157",
+    "image": "/fabrics/outlander/graphite-blue-f137.jpg",
+    "name": "Graphite Blue"
+   },
+   {
+    "id": "midnight-shadow-139",
+    "label": "Midnight Shadow",
+    "code": "139",
+    "hex": "#36383C",
+    "image": "/fabrics/outlander/midnight-shadow-139.jpg",
+    "name": "Midnight Shadow"
+   }
+  ],
+  "marlow": [
+   {
+    "id": "pale-drift",
+    "label": "Pale Drift",
+    "hex": "#BEC8CB",
+    "image": "/fabrics/marlow/pale-drift.jpg",
+    "name": "Pale Drift",
+    "code": "1"
+   },
+   {
+    "id": "cotton-dust",
+    "label": "Cotton Dust",
+    "hex": "#AAA9A3",
+    "image": "/fabrics/marlow/cotton-dust.jpg",
+    "name": "Cotton Dust",
+    "code": "4"
+   },
+   {
+    "id": "linen-fog",
+    "label": "Linen Fog",
+    "hex": "#C5BFB3",
+    "image": "/fabrics/marlow/linen-fog.jpg",
+    "name": "Linen Fog",
+    "code": "3"
+   },
+   {
+    "id": "clay-whisper",
+    "label": "Clay Whisper",
+    "hex": "#C1C0B8",
+    "image": "/fabrics/marlow/clay-whisper.jpg",
+    "name": "Clay Whisper",
+    "code": "2"
+   },
+   {
+    "id": "natural-husk",
+    "label": "Natural Husk",
+    "hex": "#AFADA5",
+    "image": "/fabrics/marlow/natural-husk.jpg",
+    "name": "Natural Husk",
+    "code": "5"
+   },
+   {
+    "id": "pebble-tone",
+    "label": "Pebble Tone",
+    "hex": "#A9A79D",
+    "image": "/fabrics/marlow/pebble-tone.jpg",
+    "name": "Pebble Tone",
+    "code": "6"
+   },
+   {
+    "id": "sandstone-veil",
+    "label": "Sandstone Veil",
+    "hex": "#B3A897",
+    "image": "/fabrics/marlow/sandstone-veil.jpg",
+    "name": "Sandstone Veil",
+    "code": "7"
+   },
+   {
+    "id": "twilight-moss",
+    "label": "Twilight Moss",
+    "hex": "#A3998D",
+    "image": "/fabrics/marlow/twilight-moss.jpg",
+    "name": "Twilight Moss",
+    "code": "8"
+   },
+   {
+    "id": "sage-cloud",
+    "label": "Sage Cloud",
+    "hex": "#9DA7A3",
+    "image": "/fabrics/marlow/sage-cloud.jpg",
+    "name": "Sage Cloud",
+    "code": "9"
+   },
+   {
+    "id": "slate-dune",
+    "label": "Slate Dune",
+    "hex": "#A2A3A1",
+    "image": "/fabrics/marlow/slate-dune.jpg",
+    "name": "Slate Dune",
+    "code": "10"
+   },
+   {
+    "id": "driftwood-grey",
+    "label": "Driftwood Grey",
+    "hex": "#8D949C",
+    "image": "/fabrics/marlow/driftwood-grey.jpg",
+    "name": "Driftwood Grey",
+    "code": "11"
+   },
+   {
+    "id": "warm-flint",
+    "label": "Warm Flint",
+    "hex": "#8E948C",
+    "image": "/fabrics/marlow/warm-flint.jpg",
+    "name": "Warm Flint",
+    "code": "12"
+   },
+   {
+    "id": "dune-smoke",
+    "label": "Dune Smoke",
+    "hex": "#928C81",
+    "image": "/fabrics/marlow/dune-smoke.jpg",
+    "name": "Dune Smoke",
+    "code": "13"
+   },
+   {
+    "id": "olive-mist",
+    "label": "Olive Mist",
+    "hex": "#727273",
+    "image": "/fabrics/marlow/olive-mist.jpg",
+    "name": "Olive Mist",
+    "code": "14"
+   },
+   {
+    "id": "cobblestone",
+    "label": "Cobblestone",
+    "hex": "#977E76",
+    "image": "/fabrics/marlow/cobblestone.jpg",
+    "name": "Cobblestone",
+    "code": "15"
+   },
+   {
+    "id": "arctic-haze",
+    "label": "Arctic Haze",
+    "hex": "#4A6C9B",
+    "image": "/fabrics/marlow/arctic-haze.jpg",
+    "name": "Arctic Haze",
+    "code": "16"
+   },
+   {
+    "id": "lavender-ash",
+    "label": "Lavender Ash",
+    "hex": "#796482",
+    "image": "/fabrics/marlow/lavender-ash.jpg",
+    "name": "Lavender Ash",
+    "code": "17"
+   },
+   {
+    "id": "rose-dust",
+    "label": "Rose Dust",
+    "hex": "#B95C70",
+    "image": "/fabrics/marlow/rose-dust.jpg",
+    "name": "Rose Dust",
+    "code": "18"
+   },
+   {
+    "id": "canyon-clay",
+    "label": "Canyon Clay",
+    "hex": "#AF9393",
+    "image": "/fabrics/marlow/canyon-clay.jpg",
+    "name": "Canyon Clay",
+    "code": "19"
+   },
+   {
+    "id": "dusty-cedar",
+    "label": "Dusty Cedar",
+    "hex": "#BC989F",
+    "image": "/fabrics/marlow/dusty-cedar.jpg",
+    "name": "Dusty Cedar",
+    "code": "20"
+   },
+   {
+    "id": "brickwood",
+    "label": "Brickwood",
+    "hex": "#AD4544",
+    "image": "/fabrics/marlow/brickwood.jpg",
+    "name": "Brickwood",
+    "code": "21"
+   },
+   {
+    "id": "cinnamon-clay",
+    "label": "Cinnamon Clay",
+    "hex": "#C57D5D",
+    "image": "/fabrics/marlow/cinnamon-clay.jpg",
+    "name": "Cinnamon Clay",
+    "code": "22"
+   },
+   {
+    "id": "olive-grove",
+    "label": "Olive Grove",
+    "hex": "#6A755E",
+    "image": "/fabrics/marlow/olive-grove.jpg",
+    "name": "Olive Grove",
+    "code": "23"
+   }
+  ],
+  "soho": [
+   {
+    "id": "glacial-veil",
+    "label": "Glacial Veil",
+    "hex": "#A8ADAC",
+    "image": "/fabrics/soho/glacial-veil.jpg",
+    "name": "Glacial Veil",
+    "code": "17721/210"
+   },
+   {
+    "id": "riverstone-drift",
+    "label": "Riverstone Drift",
+    "hex": "#A7A39C",
+    "image": "/fabrics/soho/riverstone-drift.jpg",
+    "name": "Riverstone Drift",
+    "code": "17721/204"
+   },
+   {
+    "id": "mist-alloy",
+    "label": "Mist Alloy",
+    "hex": "#A1A5A1",
+    "image": "/fabrics/soho/mist-alloy.jpg",
+    "name": "Mist Alloy",
+    "code": "17721/203"
+   },
+   {
+    "id": "sage-linea",
+    "label": "Sage Linea",
+    "hex": "#B6B8B4",
+    "image": "/fabrics/soho/sage-linea.jpg",
+    "name": "Sage Linea",
+    "code": "18702/PFP"
+   },
+   {
+    "id": "reed-texture",
+    "label": "Reed Texture",
+    "hex": "#ADACA4",
+    "image": "/fabrics/soho/reed-texture.jpg",
+    "name": "Reed Texture",
+    "code": "15001/202"
+   },
+   {
+    "id": "graphite-flow",
+    "label": "Graphite Flow",
+    "hex": "#A0A198",
+    "image": "/fabrics/soho/graphite-flow.jpg",
+    "name": "Graphite Flow",
+    "code": "15001/218"
+   },
+   {
+    "id": "sandline",
+    "label": "Sandline",
+    "hex": "#A2A4A2",
+    "image": "/fabrics/soho/sandline.jpg",
+    "name": "Sandline",
+    "code": "17723/203"
+   },
+   {
+    "id": "ashline",
+    "label": "Ashline",
+    "hex": "#9E9C9B",
+    "image": "/fabrics/soho/ashline.jpg",
+    "name": "Ashline",
+    "code": "17723/204"
+   },
+   {
+    "id": "graphite-edge",
+    "label": "Graphite Edge",
+    "hex": "#9EA09C",
+    "image": "/fabrics/soho/graphite-edge.jpg",
+    "name": "Graphite Edge",
+    "code": "17723/201"
+   },
+   {
+    "id": "white-trace",
+    "label": "White Trace",
+    "hex": "#C2C4C0",
+    "image": "/fabrics/soho/white-trace.jpg",
+    "name": "White Trace",
+    "code": "17729/203"
+   },
+   {
+    "id": "crimson-pin",
+    "label": "Crimson Pin",
+    "hex": "#C0C1BD",
+    "image": "/fabrics/soho/crimson-pin.jpg",
+    "name": "Crimson Pin",
+    "code": "17824/202"
+   },
+   {
+    "id": "olive-bark",
+    "label": "Olive Bark",
+    "hex": "#9D9D98",
+    "image": "/fabrics/soho/olive-bark.jpg",
+    "name": "Olive Bark",
+    "code": "14141/205"
+   },
+   {
+    "id": "char-thread",
+    "label": "Char Thread",
+    "hex": "#B2B6B4",
+    "image": "/fabrics/soho/char-thread.jpg",
+    "name": "Char Thread",
+    "code": "17724/205"
+   },
+   {
+    "id": "redline",
+    "label": "Redline",
+    "hex": "#A6A8A4",
+    "image": "/fabrics/soho/redline.jpg",
+    "name": "Redline",
+    "code": "17724/207"
+   }
+  ],
+  "lazuli": [
+   {
+    "id": "loom",
+    "label": "Loom",
+    "hex": "#BBC0C0",
+    "image": "/fabrics/lazuli/loom.jpg",
+    "name": "Loom",
+    "code": "1"
+   },
+   {
+    "id": "wisp",
+    "label": "Wisp",
+    "hex": "#C1BDB0",
+    "image": "/fabrics/lazuli/wisp.jpg",
+    "name": "Wisp",
+    "code": "2"
+   },
+   {
+    "id": "drift",
+    "label": "Drift",
+    "hex": "#B9BAB1",
+    "image": "/fabrics/lazuli/drift.jpg",
+    "name": "Drift",
+    "code": "3"
+   },
+   {
+    "id": "grain",
+    "label": "Grain",
+    "hex": "#A9A79A",
+    "image": "/fabrics/lazuli/grain.jpg",
+    "name": "Grain",
+    "code": "4"
+   },
+   {
+    "id": "shade",
+    "label": "Shade",
+    "hex": "#A1A2A0",
+    "image": "/fabrics/lazuli/shade.jpg",
+    "name": "Shade",
+    "code": "5"
+   },
+   {
+    "id": "thread",
+    "label": "Thread",
+    "hex": "#A6A6A2",
+    "image": "/fabrics/lazuli/thread.jpg",
+    "name": "Thread",
+    "code": "6"
+   },
+   {
+    "id": "glint",
+    "label": "Glint",
+    "hex": "#979692",
+    "image": "/fabrics/lazuli/glint.jpg",
+    "name": "Glint",
+    "code": "7"
+   },
+   {
+    "id": "taupe",
+    "label": "Taupe",
+    "hex": "#ABABA2",
+    "image": "/fabrics/lazuli/taupe.jpg",
+    "name": "Taupe",
+    "code": "8"
+   }
+  ],
+  "piero": [
+   {
+    "id": "iron-shadow",
+    "label": "Iron Shadow",
+    "hex": "#828489",
+    "image": "/fabrics/piero/iron-shadow.jpg",
+    "name": "Iron Shadow",
+    "code": "34"
+   },
+   {
+    "id": "graphite-drift",
+    "label": "Graphite Drift",
+    "hex": "#818487",
+    "image": "/fabrics/piero/graphite-drift.jpg",
+    "name": "Graphite Drift",
+    "code": "29"
+   },
+   {
+    "id": "ash-fog",
+    "label": "Ash Fog",
+    "hex": "#9A9A98",
+    "image": "/fabrics/piero/ash-fog.jpg",
+    "name": "Ash Fog",
+    "code": "28"
+   },
+   {
+    "id": "stone-smoke",
+    "label": "Stone Smoke",
+    "hex": "#8B827B",
+    "image": "/fabrics/piero/stone-smoke.jpg",
+    "name": "Stone Smoke",
+    "code": "38"
+   },
+   {
+    "id": "dust-taupe",
+    "label": "Dust Taupe",
+    "hex": "#969692",
+    "image": "/fabrics/piero/dust-taupe.jpg",
+    "name": "Dust Taupe",
+    "code": "25"
+   },
+   {
+    "id": "cloud-zinc",
+    "label": "Cloud Zinc",
+    "hex": "#A5A5A5",
+    "image": "/fabrics/piero/cloud-zinc.jpg",
+    "name": "Cloud Zinc",
+    "code": "11"
+   },
+   {
+    "id": "marble-grey",
+    "label": "Marble Grey",
+    "hex": "#A6AFB3",
+    "image": "/fabrics/piero/marble-grey.jpg",
+    "name": "Marble Grey",
+    "code": "26"
+   },
+   {
+    "id": "mist-silver",
+    "label": "Mist Silver",
+    "hex": "#8F98A1",
+    "image": "/fabrics/piero/mist-silver.jpg",
+    "name": "Mist Silver",
+    "code": "14"
+   },
+   {
+    "id": "steel-veil",
+    "label": "Steel Veil",
+    "hex": "#80868E",
+    "image": "/fabrics/piero/steel-veil.jpg",
+    "name": "Steel Veil",
+    "code": "31"
+   }
+  ],
+  "lucetta": [
+   {
+    "id": "dune-mist",
+    "label": "Dune Mist",
+    "hex": "#ADB1B0",
+    "image": "/fabrics/lucetta/dune-mist.jpg",
+    "name": "Dune Mist",
+    "code": "1"
+   },
+   {
+    "id": "twin-bark",
+    "label": "Twin Bark",
+    "hex": "#BABFBE",
+    "image": "/fabrics/lucetta/twin-bark.jpg",
+    "name": "Twin Bark",
+    "code": "2"
+   },
+   {
+    "id": "pinstripe",
+    "label": "Pinstripe",
+    "hex": "#AFB1B1",
+    "image": "/fabrics/lucetta/pinstripe.jpg",
+    "name": "Pinstripe",
+    "code": "3"
+   },
+   {
+    "id": "bold-stripe",
+    "label": "Bold Stripe",
+    "hex": "#ABADAC",
+    "image": "/fabrics/lucetta/bold-stripe.jpg",
+    "name": "Bold Stripe",
+    "code": "4"
+   },
+   {
+    "id": "chevron-stripe",
+    "label": "Chevron Stripe",
+    "hex": "#ACADAD",
+    "image": "/fabrics/lucetta/chevron-stripe.jpg",
+    "name": "Chevron Stripe",
+    "code": "5"
+   },
+   {
+    "id": "dense-stripe",
+    "label": "Dense Stripe",
+    "hex": "#A09E9A",
+    "image": "/fabrics/lucetta/dense-stripe.jpg",
+    "name": "Dense Stripe",
+    "code": "6"
+   },
+   {
+    "id": "natural-weave",
+    "label": "Natural Weave",
+    "hex": "#B1B3B0",
+    "image": "/fabrics/lucetta/natural-weave.jpg",
+    "name": "Natural Weave",
+    "code": "7"
+   }
+  ],
+  "obscura": [
+   {
+    "id": "14-graphite-fog-1",
+    "label": "14 \u2014 Graphite Fog (1)",
+    "hex": "#848580",
+    "image": "/fabrics/obscura/14-graphite-fog-1.jpg",
+    "name": "14 \u2014 Graphite Fog (1)",
+    "code": "14"
+   },
+   {
+    "id": "13-iron-smoke-1",
+    "label": "13 \u2014 Iron Smoke (1)",
+    "hex": "#ACABA4",
+    "image": "/fabrics/obscura/13-iron-smoke-1.jpg",
+    "name": "13 \u2014 Iron Smoke (1)",
+    "code": "13"
+   },
+   {
+    "id": "12-flint-beige-1",
+    "label": "12 \u2014 Flint Beige (1)",
+    "hex": "#BDB39A",
+    "image": "/fabrics/obscura/12-flint-beige-1.jpg",
+    "name": "12 \u2014 Flint Beige (1)",
+    "code": "12"
+   },
+   {
+    "id": "11-drift-sand-1",
+    "label": "11 \u2014 Drift Sand (1)",
+    "hex": "#BFBBAF",
+    "image": "/fabrics/obscura/11-drift-sand-1.jpg",
+    "name": "11 \u2014 Drift Sand (1)",
+    "code": "11"
+   },
+   {
+    "id": "10-char-blend",
+    "label": "10 \u2014 Char Blend",
+    "hex": "#B7B9B8",
+    "image": "/fabrics/obscura/10-char-blend.jpg",
+    "name": "10 \u2014 Char Blend",
+    "code": "10"
+   },
+   {
+    "id": "09-shadow-burl",
+    "label": "09 \u2014 Shadow Burl",
+    "hex": "#938A7F",
+    "image": "/fabrics/obscura/09-shadow-burl.jpg",
+    "name": "09 \u2014 Shadow Burl",
+    "code": "9"
+   },
+   {
+    "id": "08-urban-veil",
+    "label": "08 \u2014 Urban Veil",
+    "hex": "#969896",
+    "image": "/fabrics/obscura/08-urban-veil.jpg",
+    "name": "08 \u2014 Urban Veil",
+    "code": "8"
+   },
+   {
+    "id": "07-ash-stone",
+    "label": "07 \u2014 Ash Stone",
+    "hex": "#A9A89F",
+    "image": "/fabrics/obscura/07-ash-stone.jpg",
+    "name": "07 \u2014 Ash Stone",
+    "code": "7"
+   },
+   {
+    "id": "06-soft-flint",
+    "label": "06 \u2014 Soft Flint",
+    "hex": "#BABAB8",
+    "image": "/fabrics/obscura/06-soft-flint.jpg",
+    "name": "06 \u2014 Soft Flint",
+    "code": "6"
+   },
+   {
+    "id": "05-taupe-trace",
+    "label": "05 \u2014 Taupe Trace",
+    "hex": "#B5B1A8",
+    "image": "/fabrics/obscura/05-taupe-trace.jpg",
+    "name": "05 \u2014 Taupe Trace",
+    "code": "5"
+   },
+   {
+    "id": "04-pale-drift",
+    "label": "04 \u2014 Pale Drift",
+    "hex": "#B5B2A1",
+    "image": "/fabrics/obscura/04-pale-drift.jpg",
+    "name": "04 \u2014 Pale Drift",
+    "code": "4"
+   },
+   {
+    "id": "03-dune-fog",
+    "label": "03 \u2014 Dune Fog",
+    "hex": "#9A8877",
+    "image": "/fabrics/obscura/03-dune-fog.jpg",
+    "name": "03 \u2014 Dune Fog",
+    "code": "3"
+   },
+   {
+    "id": "02-mist-linen",
+    "label": "02 \u2014 Mist Linen",
+    "hex": "#B4AD9F",
+    "image": "/fabrics/obscura/02-mist-linen.jpg",
+    "name": "02 \u2014 Mist Linen",
+    "code": "2"
+   },
+   {
+    "id": "01-cloudline",
+    "label": "01 \u2014 Cloudline",
+    "hex": "#B7C1BF",
+    "image": "/fabrics/obscura/01-cloudline.jpg",
+    "name": "01 \u2014 Cloudline",
+    "code": "1"
+   }
+  ],
+  "carillo": [
+   {
+    "id": "ash-dune",
+    "label": "Ash Dune",
+    "hex": "#8F8D8B",
+    "image": "/fabrics/carillo/ash-dune.jpg",
+    "name": "Ash Dune",
+    "code": "1"
+   },
+   {
+    "id": "stone-veil",
+    "label": "Stone Veil",
+    "hex": "#9F9A8F",
+    "image": "/fabrics/carillo/stone-veil.jpg",
+    "name": "Stone Veil",
+    "code": "2"
+   },
+   {
+    "id": "woven-taupe",
+    "label": "Woven Taupe",
+    "hex": "#9E9A90",
+    "image": "/fabrics/carillo/woven-taupe.jpg",
+    "name": "Woven Taupe",
+    "code": "3"
+   },
+   {
+    "id": "whisper-fawn",
+    "label": "Whisper Fawn",
+    "hex": "#B1ACA0",
+    "image": "/fabrics/carillo/whisper-fawn.jpg",
+    "name": "Whisper Fawn",
+    "code": "4"
+   },
+   {
+    "id": "birch-flax",
+    "label": "Birch Flax",
+    "hex": "#BCBCB7",
+    "image": "/fabrics/carillo/birch-flax.jpg",
+    "name": "Birch Flax",
+    "code": "5"
+   },
+   {
+    "id": "limestone-mist",
+    "label": "Limestone Mist",
+    "hex": "#9C9C97",
+    "image": "/fabrics/carillo/limestone-mist.jpg",
+    "name": "Limestone Mist",
+    "code": "6"
+   },
+   {
+    "id": "pale-reed",
+    "label": "Pale Reed",
+    "hex": "#6C6865",
+    "image": "/fabrics/carillo/pale-reed.jpg",
+    "name": "Pale Reed",
+    "code": "7"
+   },
+   {
+    "id": "graphite-ember",
+    "label": "Graphite Ember",
+    "hex": "#807F7B",
+    "image": "/fabrics/carillo/graphite-ember.jpg",
+    "name": "Graphite Ember",
+    "code": "8"
+   },
+   {
+    "id": "shadow-tusk",
+    "label": "Shadow Tusk",
+    "hex": "#646F79",
+    "image": "/fabrics/carillo/shadow-tusk.jpg",
+    "name": "Shadow Tusk",
+    "code": "9"
+   }
+  ],
+  "nomad": [
+   {
+    "id": "amber-frost",
+    "label": "Amber Frost",
+    "hex": "#B6AC9D",
+    "image": "/fabrics/nomad/amber-frost.jpg",
+    "name": "Amber Frost",
+    "code": "162059/1004"
+   },
+   {
+    "id": "ochre",
+    "label": "Ochre",
+    "hex": "#B6B0A4",
+    "image": "/fabrics/nomad/ochre.jpg",
+    "name": "Ochre",
+    "code": "162062/1003"
+   },
+   {
+    "id": "savanna-gold",
+    "label": "Savanna Gold",
+    "hex": "#B39B7A",
+    "image": "/fabrics/nomad/savanna-gold.jpg",
+    "name": "Savanna Gold",
+    "code": "162068/1007"
+   },
+   {
+    "id": "sandstone-drift",
+    "label": "Sandstone Drift",
+    "hex": "#B5AB9B",
+    "image": "/fabrics/nomad/sandstone-drift.jpg",
+    "name": "Sandstone Drift",
+    "code": "162059/1009"
+   },
+   {
+    "id": "stone",
+    "label": "Stone",
+    "hex": "#ABABA5",
+    "image": "/fabrics/nomad/stone.jpg",
+    "name": "Stone",
+    "code": "162062/1002"
+   },
+   {
+    "id": "dust-linen",
+    "label": "Dust Linen",
+    "hex": "#909697",
+    "image": "/fabrics/nomad/dust-linen.jpg",
+    "name": "Dust Linen",
+    "code": "162068/1013"
+   },
+   {
+    "id": "basalt-grey",
+    "label": "Basalt Grey",
+    "hex": "#A7A19A",
+    "image": "/fabrics/nomad/basalt-grey.jpg",
+    "name": "Basalt Grey",
+    "code": "162068/1005"
+   },
+   {
+    "id": "eucalyptus-shadow",
+    "label": "Eucalyptus Shadow",
+    "hex": "#ACABA8",
+    "image": "/fabrics/nomad/eucalyptus-shadow.jpg",
+    "name": "Eucalyptus Shadow",
+    "code": "162059/1001"
+   },
+   {
+    "id": "mintstone",
+    "label": "Mintstone",
+    "hex": "#A9A9A5",
+    "image": "/fabrics/nomad/mintstone.jpg",
+    "name": "Mintstone",
+    "code": "162062/1011"
+   },
+   {
+    "id": "fossil-beige",
+    "label": "Fossil Beige",
+    "hex": "#AAA69C",
+    "image": "/fabrics/nomad/fossil-beige.jpg",
+    "name": "Fossil Beige",
+    "code": "162068/1012"
+   },
+   {
+    "id": "nordic-steel",
+    "label": "Nordic Steel",
+    "hex": "#B3B1A9",
+    "image": "/fabrics/nomad/nordic-steel.jpg",
+    "name": "Nordic Steel",
+    "code": "162059/1002"
+   },
+   {
+    "id": "nightfall",
+    "label": "Nightfall",
+    "hex": "#9F9D96",
+    "image": "/fabrics/nomad/nightfall.jpg",
+    "name": "Nightfall",
+    "code": "162062/1007"
+   },
+   {
+    "id": "ash-mist",
+    "label": "Ash Mist",
+    "hex": "#A3A5A2",
+    "image": "/fabrics/nomad/ash-mist.jpg",
+    "name": "Ash Mist",
+    "code": "162068/1011"
+   },
+   {
+    "id": "iron-thread",
+    "label": "Iron Thread",
+    "hex": "#808081",
+    "image": "/fabrics/nomad/iron-thread.jpg",
+    "name": "Iron Thread",
+    "code": "162068/1014"
+   },
+   {
+    "id": "ashline-granite",
+    "label": "Ashline Granite",
+    "hex": "#A8A295",
+    "image": "/fabrics/nomad/ashline-granite.jpg",
+    "name": "Ashline Granite",
+    "code": "162059/1008"
+   },
+   {
+    "id": "slate-mist",
+    "label": "Slate Mist",
+    "hex": "#ACA797",
+    "image": "/fabrics/nomad/slate-mist.jpg",
+    "name": "Slate Mist",
+    "code": "162062/1009"
+   },
+   {
+    "id": "obsidian",
+    "label": "Obsidian",
+    "hex": "#7A7975",
+    "image": "/fabrics/nomad/obsidian.jpg",
+    "name": "Obsidian",
+    "code": "162068/1015"
+   }
+  ],
+  "umberto": [
+   {
+    "id": "chalk",
+    "label": "Chalk",
+    "hex": "#A4A6A5",
+    "image": "/fabrics/umberto/chalk.jpg",
+    "name": "Chalk",
+    "code": "305"
+   },
+   {
+    "id": "bone",
+    "label": "Bone",
+    "hex": "#A3A49D",
+    "image": "/fabrics/umberto/bone.jpg",
+    "name": "Bone",
+    "code": "1"
+   },
+   {
+    "id": "olive",
+    "label": "Olive",
+    "hex": "#B5B3A9",
+    "image": "/fabrics/umberto/olive.jpg",
+    "name": "Olive",
+    "code": "303"
+   },
+   {
+    "id": "mist",
+    "label": "Mist",
+    "hex": "#BCBDB6",
+    "image": "/fabrics/umberto/mist.jpg",
+    "name": "Mist",
+    "code": "301"
+   },
+   {
+    "id": "graphite",
+    "label": "Graphite",
+    "hex": "#B0A99D",
+    "image": "/fabrics/umberto/graphite.jpg",
+    "name": "Graphite",
+    "code": "306"
+   },
+   {
+    "id": "clay",
+    "label": "Clay",
+    "hex": "#A19C92",
+    "image": "/fabrics/umberto/clay.jpg",
+    "name": "Clay",
+    "code": "4"
+   },
+   {
+    "id": "dust",
+    "label": "Dust",
+    "hex": "#8D877E",
+    "image": "/fabrics/umberto/dust.jpg",
+    "name": "Dust",
+    "code": "104"
+   },
+   {
+    "id": "ash",
+    "label": "Ash",
+    "hex": "#7E7871",
+    "image": "/fabrics/umberto/ash.jpg",
+    "name": "Ash",
+    "code": "103"
+   },
+   {
+    "id": "flint",
+    "label": "Flint",
+    "hex": "#8E8A75",
+    "image": "/fabrics/umberto/flint.jpg",
+    "name": "Flint",
+    "code": "107"
+   },
+   {
+    "id": "frost",
+    "label": "Frost",
+    "hex": "#75838A",
+    "image": "/fabrics/umberto/frost.jpg",
+    "name": "Frost",
+    "code": "102"
+   },
+   {
+    "id": "charcoal",
+    "label": "Charcoal",
+    "hex": "#9FA3A4",
+    "image": "/fabrics/umberto/charcoal.jpg",
+    "name": "Charcoal",
+    "code": "105"
+   },
+   {
+    "id": "obsidian",
+    "label": "Obsidian",
+    "hex": "#7C8387",
+    "image": "/fabrics/umberto/obsidian.jpg",
+    "name": "Obsidian",
+    "code": "101"
+   }
+  ],
+  "arrow": [
+   {
+    "id": "mist",
+    "label": "Mist",
+    "hex": "#ACADAC",
+    "image": "/fabrics/arrow/mist.jpg",
+    "name": "Mist",
+    "code": "1"
+   },
+   {
+    "id": "clay",
+    "label": "Clay",
+    "hex": "#A1A19E",
+    "image": "/fabrics/arrow/clay.jpg",
+    "name": "Clay",
+    "code": "2"
+   },
+   {
+    "id": "graphite",
+    "label": "Graphite",
+    "hex": "#969692",
+    "image": "/fabrics/arrow/graphite.jpg",
+    "name": "Graphite",
+    "code": "3"
+   },
+   {
+    "id": "ridge",
+    "label": "Ridge",
+    "hex": "#AFB0AF",
+    "image": "/fabrics/arrow/ridge.jpg",
+    "name": "Ridge",
+    "code": "4"
+   }
+  ],
+  "periscope": [
+   {
+    "id": "persicope-frost-linen",
+    "label": "Frost Linen",
+    "hex": "#CACCC9",
+    "image": "/fabrics/periscope/persicope-frost-linen.jpg",
+    "name": "Frost Linen",
+    "code": "1"
+   },
+   {
+    "id": "morning-ash",
+    "label": "Morning Ash",
+    "hex": "#C2C6C5",
+    "image": "/fabrics/periscope/morning-ash.jpg",
+    "name": "Morning Ash",
+    "code": "4"
+   },
+   {
+    "id": "dawn-mist",
+    "label": "Dawn mist",
+    "hex": "#B2B7B6",
+    "image": "/fabrics/periscope/dawn-mist.jpg",
+    "name": "Dawn mist",
+    "code": "5"
+   },
+   {
+    "id": "cloud-veil",
+    "label": "Cloud Veil",
+    "hex": "#AEB2B1",
+    "image": "/fabrics/periscope/cloud-veil.jpg",
+    "name": "Cloud Veil",
+    "code": "6"
+   },
+   {
+    "id": "quiet-pewter",
+    "label": "Quiet Pewter",
+    "hex": "#ABADAC",
+    "image": "/fabrics/periscope/quiet-pewter.jpg",
+    "name": "Quiet Pewter",
+    "code": "7"
+   },
+   {
+    "id": "gravel-dust",
+    "label": "Gravel Dust",
+    "hex": "#9F9F9D",
+    "image": "/fabrics/periscope/gravel-dust.jpg",
+    "name": "Gravel Dust",
+    "code": "17"
+   },
+   {
+    "id": "ash-harbor",
+    "label": "Ash Harbor",
+    "hex": "#A49F96",
+    "image": "/fabrics/periscope/ash-harbor.jpg",
+    "name": "Ash Harbor",
+    "code": "8"
+   },
+   {
+    "id": "slate-dune",
+    "label": "Slate Dune",
+    "hex": "#9C9790",
+    "image": "/fabrics/periscope/slate-dune.jpg",
+    "name": "Slate Dune",
+    "code": "9"
+   },
+   {
+    "id": "dust-taupe",
+    "label": "Dust Taupe",
+    "hex": "#797975",
+    "image": "/fabrics/periscope/dust-taupe.jpg",
+    "name": "Dust Taupe",
+    "code": "10"
+   },
+   {
+    "id": "greige-calm",
+    "label": "Greige Calm",
+    "hex": "#8D8C88",
+    "image": "/fabrics/periscope/greige-calm.jpg",
+    "name": "Greige Calm",
+    "code": "11"
+   },
+   {
+    "id": "flint-mist",
+    "label": "Flint Mist",
+    "hex": "#AEAFAF",
+    "image": "/fabrics/periscope/flint-mist.jpg",
+    "name": "Flint Mist",
+    "code": "12"
+   },
+   {
+    "id": "pale-clay",
+    "label": "Pale Clay",
+    "hex": "#AE9684",
+    "image": "/fabrics/periscope/pale-clay.jpg",
+    "name": "Pale Clay",
+    "code": "13"
+   },
+   {
+    "id": "sunkissed-earth",
+    "label": "Sunkissed Earth",
+    "hex": "#C37660",
+    "image": "/fabrics/periscope/sunkissed-earth.jpg",
+    "name": "Sunkissed Earth",
+    "code": "14"
+   },
+   {
+    "id": "terracotta-bloom",
+    "label": "Terracotta Bloom",
+    "hex": "#BD6362",
+    "image": "/fabrics/periscope/terracotta-bloom.jpg",
+    "name": "Terracotta Bloom",
+    "code": "15"
+   },
+   {
+    "id": "bronze-haze",
+    "label": "Bronze Haze",
+    "hex": "#8D8D8E",
+    "image": "/fabrics/periscope/bronze-haze.jpg",
+    "name": "Bronze Haze",
+    "code": "16"
+   },
+   {
+    "id": "desert-olive",
+    "label": "Desert Olive",
+    "hex": "#ADAEAB",
+    "image": "/fabrics/periscope/desert-olive.jpg",
+    "name": "Desert Olive",
+    "code": "18"
+   },
+   {
+    "id": "stone-bark",
+    "label": "Stone Bark",
+    "hex": "#949695",
+    "image": "/fabrics/periscope/stone-bark.jpg",
+    "name": "Stone Bark",
+    "code": "19"
+   },
+   {
+    "id": "golden-soil",
+    "label": "Golden Soil",
+    "hex": "#A1A3A2",
+    "image": "/fabrics/periscope/golden-soil.jpg",
+    "name": "Golden Soil",
+    "code": "20"
+   },
+   {
+    "id": "rust-ember",
+    "label": "Rust Ember",
+    "hex": "#A7ACAD",
+    "image": "/fabrics/periscope/rust-ember.jpg",
+    "name": "Rust Ember",
+    "code": "21"
+   },
+   {
+    "id": "burnt-mocha",
+    "label": "Burnt Mocha",
+    "hex": "#9F9F9D",
+    "image": "/fabrics/periscope/burnt-mocha.jpg",
+    "name": "Burnt Mocha",
+    "code": "22"
+   },
+   {
+    "id": "fogstone",
+    "label": "Fogstone",
+    "hex": "#AAACAA",
+    "image": "/fabrics/periscope/fogstone.jpg",
+    "name": "Fogstone",
+    "code": "23"
+   },
+   {
+    "id": "storm-flint",
+    "label": "Storm Flint",
+    "hex": "#939A9D",
+    "image": "/fabrics/periscope/storm-flint.jpg",
+    "name": "Storm Flint",
+    "code": "24"
+   },
+   {
+    "id": "deep-graphite",
+    "label": "Deep Graphite",
+    "hex": "#5E7B91",
+    "image": "/fabrics/periscope/deep-graphite.jpg",
+    "name": "Deep Graphite",
+    "code": "25"
+   },
+   {
+    "id": "steel-current",
+    "label": "Steel Current",
+    "hex": "#526891",
+    "image": "/fabrics/periscope/steel-current.jpg",
+    "name": "Steel Current",
+    "code": "26"
+   },
+   {
+    "id": "indigo-night",
+    "label": "Indigo Night",
+    "hex": "#5D6693",
+    "image": "/fabrics/periscope/indigo-night.jpg",
+    "name": "Indigo Night",
+    "code": "27"
+   }
+  ],
+  "atmosphere": [
+   {
+    "id": "mist-silver",
+    "label": "Mist Silver",
+    "hex": "#CFD5D9",
+    "image": "/fabrics/atmosphere/mist-silver.jpg",
+    "name": "Mist Silver",
+    "code": "20"
+   },
+   {
+    "id": "pale-flint",
+    "label": "Pale Flint",
+    "hex": "#C8CAC7",
+    "image": "/fabrics/atmosphere/pale-flint.jpg",
+    "name": "Pale Flint",
+    "code": "1"
+   },
+   {
+    "id": "steel-dusk",
+    "label": "Steel Dusk",
+    "hex": "#BCBDB6",
+    "image": "/fabrics/atmosphere/steel-dusk.jpg",
+    "name": "Steel Dusk",
+    "code": "3"
+   },
+   {
+    "id": "glacier-teal",
+    "label": "Glacier Teal",
+    "hex": "#B8B6A5",
+    "image": "/fabrics/atmosphere/glacier-teal.jpg",
+    "name": "Glacier Teal",
+    "code": "5"
+   },
+   {
+    "id": "nordic-lake",
+    "label": "Nordic Lake",
+    "hex": "#9E988D",
+    "image": "/fabrics/atmosphere/nordic-lake.jpg",
+    "name": "Nordic Lake",
+    "code": "7"
+   },
+   {
+    "id": "baltic-stone",
+    "label": "Baltic Stone",
+    "hex": "#92886F",
+    "image": "/fabrics/atmosphere/baltic-stone.jpg",
+    "name": "Baltic Stone",
+    "code": "9"
+   },
+   {
+    "id": "storm-fjord",
+    "label": "Storm Fjord",
+    "hex": "#A7A597",
+    "image": "/fabrics/atmosphere/storm-fjord.jpg",
+    "name": "Storm Fjord",
+    "code": "11"
+   },
+   {
+    "id": "harbor-ink",
+    "label": "Harbor Ink",
+    "hex": "#B8BAB7",
+    "image": "/fabrics/atmosphere/harbor-ink.jpg",
+    "name": "Harbor Ink",
+    "code": "12"
+   },
+   {
+    "id": "twilight-navy",
+    "label": "Twilight Navy",
+    "hex": "#999F9E",
+    "image": "/fabrics/atmosphere/twilight-navy.jpg",
+    "name": "Twilight Navy",
+    "code": "14"
+   },
+   {
+    "id": "obsidian-fog",
+    "label": "Obsidian Fog",
+    "hex": "#696E72",
+    "image": "/fabrics/atmosphere/obsidian-fog.jpg",
+    "name": "Obsidian Fog",
+    "code": "16"
+   },
+   {
+    "id": "iron-eclipse",
+    "label": "Iron Eclipse",
+    "hex": "#526273",
+    "image": "/fabrics/atmosphere/iron-eclipse.jpg",
+    "name": "Iron Eclipse",
+    "code": "18"
+   }
+  ],
+  "hesperia": [
+   {
+    "id": "slateforge",
+    "label": "Slateforge",
+    "hex": "#7E8384",
+    "image": "/fabrics/hesperia/slateforge.jpg"
+   },
+   {
+    "id": "graphite-veil",
+    "label": "Graphite Veil",
+    "hex": "#8A8C8A",
+    "image": "/fabrics/hesperia/graphite-veil.jpg",
+    "name": "Graphite Veil",
+    "code": "1"
+   },
+   {
+    "id": "iron-mist",
+    "label": "Iron Mist",
+    "hex": "#93918B",
+    "image": "/fabrics/hesperia/iron-mist.jpg",
+    "name": "Iron Mist",
+    "code": "3"
+   },
+   {
+    "id": "silver-thatch",
+    "label": "Silver Thatch",
+    "hex": "#9D9D9A",
+    "image": "/fabrics/hesperia/silver-thatch.jpg",
+    "name": "Silver Thatch",
+    "code": "4"
+   },
+   {
+    "id": "ash-drift",
+    "label": "Ash Drift",
+    "hex": "#A7A7A1",
+    "image": "/fabrics/hesperia/ash-drift.jpg"
+   },
+   {
+    "id": "dune-mist",
+    "label": "Dune Mist",
+    "hex": "#B0ACA4",
+    "image": "/fabrics/hesperia/dune-mist.jpg",
+    "name": "Dune Mist",
+    "code": "6"
+   },
+   {
+    "id": "olive-grain",
+    "label": "Olive Grain",
+    "hex": "#A49F7C",
+    "image": "/fabrics/hesperia/olive-grain.jpg",
+    "name": "Olive Grain",
+    "code": "7"
+   },
+   {
+    "id": "oatshade",
+    "label": "Oatshade",
+    "hex": "#979692",
+    "image": "/fabrics/hesperia/oatshade.jpg",
+    "name": "Oatshade",
+    "code": "11"
+   },
+   {
+    "id": "carbon-weave",
+    "label": "Carbon Weave",
+    "hex": "#8A8A89",
+    "image": "/fabrics/hesperia/carbon-weave.jpg",
+    "name": "Carbon Weave",
+    "code": "2"
+   },
+   {
+    "id": "blue-dusk",
+    "label": "Blue Dusk",
+    "hex": "#7E8994",
+    "image": "/fabrics/hesperia/blue-dusk.jpg"
+   }
+  ]
+ }
+}

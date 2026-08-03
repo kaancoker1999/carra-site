@@ -1,16 +1,43 @@
-<!doctype html>
+#!/usr/bin/env python3
+"""Generate per-product configurator pages for the LUMIA site."""
+import json, pathlib
+
+SITE = pathlib.Path.home() / "carra-site"
+HERE = pathlib.Path(__file__).parent
+FABRICS = json.loads((HERE / "fabric-data.json").read_text())
+FAB_CELL = json.loads((HERE / "cellular-fabrics.json").read_text())
+
+# rewrite image paths for the static site and keep only what the page needs
+FAB = {
+    "collections": [
+        {"id": c["id"], "label": c["label"], "transparency": c["transparency"], "material": c["material"]}
+        for c in FABRICS["collections"]
+    ],
+    "colors": {
+        cid: [
+            {"id": col["id"], "label": col["label"], "code": col.get("code", ""),
+             "name": col.get("name", col["label"]),
+             "img": "assets" + col["image"],
+             "lg": "assets/fabrics-lg" + col["image"][len("/fabrics"):]}
+            for col in cols
+        ]
+        for cid, cols in FABRICS["colors"].items()
+    },
+}
+
+TEMPLATE = r"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LUMIA — Pleated Shades</title>
-<meta name="description" content="Configure LUMIA Pleated Shades — options, fabrics and specification. Request a trade quotation.">
+<title>LUMIA — @@NAME@@</title>
+<meta name="description" content="Configure LUMIA @@NAME@@ — options, fabrics and specification. Request a trade quotation.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
-<meta property="og:title" content="LUMIA — Pleated Shades">
-<meta property="og:description" content="Configure Pleated Shades — options, fabrics and specification.">
-<meta property="og:image" content="https://kaancoker1999.github.io/carra-site/assets/product-pleated.jpg">
+<meta property="og:title" content="LUMIA — @@NAME@@">
+<meta property="og:description" content="Configure @@NAME@@ — options, fabrics and specification.">
+<meta property="og:image" content="https://kaancoker1999.github.io/carra-site/@@IMG@@">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -140,21 +167,21 @@
 <div class="crumbs">
   <div class="wrap">
     <a class="mono" href="index.html#products">&larr; All products</a>
-    <span class="mono" style="color:var(--ink)">03 &middot; Pleated Shades</span>
+    <span class="mono" style="color:var(--ink)">@@CODE@@ &middot; @@NAME@@</span>
   </div>
 </div>
 
 <section class="phero">
-  <img src="assets/product-pleated.jpg" alt="Pleated Shades room scene">
+  <img src="@@IMG@@" alt="@@NAME@@ room scene">
   <div class="pveil"></div>
   <div class="ptit">
-    <div class="mono">03 — Made to measure</div>
-    <h1>Pleated Shades</h1>
+    <div class="mono">@@CODE@@ — Made to measure</div>
+    <h1>@@NAME@@</h1>
   </div>
 </section>
 
 <div class="wrap">
-  <p class="pdesc">Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range — the shallowest option when the reveal is tight.</p>
+  <p class="pdesc">@@DESC@@</p>
 
   <div class="cfg">
     <form id="form" onsubmit="return false"></form>
@@ -188,7 +215,7 @@
 </footer>
 
 <script>
-var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-pleated.jpg", "desc": "Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range \u2014 the shallowest option when the reveal is tight.", "hLabel": "Height", "width": [18, 105], "height": [24, 120], "sizeRange": "W 18\" \u2013 105\" \u00b7 H 24\" \u2013 120\"", "groups": [{"key": "fabric", "label": "Fabric", "options": ["Plain", "Crashed"]}, {"key": "opacity", "label": "Opacity", "options": ["Light-filtering"]}, {"key": "colour", "label": "Colour", "options": [{"n": "White", "c": "#FAFAF7"}, {"n": "Pearl", "c": "#F1EDE4"}, {"n": "Linen", "c": "#E6DCC8"}, {"n": "Mist grey", "c": "#C9CBC9"}, {"n": "Graphite", "c": "#5A5E62"}]}, {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]}, {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorized"]}, {"key": "chain", "label": "Chain side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": "Cord loop"}}, {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]}]};
+var CONFIG = @@CONFIG@@;
 
 (function(){
   var form = document.getElementById('form');
@@ -359,3 +386,96 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
 </script>
 </body>
 </html>
+"""
+
+PRODUCTS = {
+    "roman.html": {
+        "code": "01", "name": "Roman Shades", "img": "assets/product-roman.jpg",
+        "desc": "Four fold styles across every fabric group — back rods, front rods, relaxed and hobbled — with square hems and a consistent stack at any width. Lining and blackout backing are made in house.",
+        "hLabel": "Height", "width": [18, 96], "height": [24, 96],
+        "fabrics": True,
+        "heightRules": {"drive": "drive", "rules": {
+            "Cordless": [24, 96], "Continuous cord loop": [24, 120], "Motorized": [24, 120]}},
+        "widthRules": {"drive": "drive", "tdbu": "tdbu", "rules": {
+            "Cordless|No": [18, 96], "Cordless|Yes": [24, 96],
+            "Continuous cord loop|No": [18, 105], "Continuous cord loop|Yes": [24, 105],
+            "Motorized|No": [18, 105], "Motorized|Yes": [34, 105]}},
+        "groups": [
+            {"key": "fold", "label": "Fold style", "options": [
+                {"n": "Back rods", "img": "assets/fold-back-rods.jpg"},
+                {"n": "Front rods", "img": "assets/fold-front-rods.jpg"},
+                {"n": "Relaxed", "img": "assets/fold-relaxed.jpg"},
+                {"n": "Hobbled", "img": "assets/fold-hobbled.jpg"}]},
+            {"type": "fabrics"},
+            {"key": "drive", "label": "Mechanism", "options": ["Cordless", "Continuous cord loop", "Motorized"]},
+            {"key": "chain", "label": "Chain side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": "Continuous cord loop"}},
+            {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]},
+            {"key": "liner", "label": "Liner", "options": ["Unlined", "White liner", "Blackout liner"]},
+        ],
+    },
+    "cellular.html": {
+        "code": "02", "name": "Cellular Shades", "img": "assets/product-cellular.jpg",
+        "desc": "Single, double and triple cell honeycomb in sheer, light-filtering and blackout, bonded so the cell holds its shape for the life of the shade. The most energy-efficient range we build.",
+        "hLabel": "Height", "width": [18, 105], "height": [24, 120],
+        "sizeRange": 'W 18" – 105" · H 24" – 120"',
+        "fabrics": "cell",
+        "groups": [
+            {"key": "cell", "label": "Cell", "options": ["Single", "Double", "Triple"]},
+            {"key": "opacity", "label": "Opacity", "options": ["Sheer", "Light-filtering", "Blackout"]},
+            {"type": "fabrics"},
+            {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]},
+            {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorized"]},
+            {"key": "chain", "label": "Chain side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": "Cord loop"}},
+            {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]},
+        ],
+    },
+    "pleated.html": {
+        "code": "03", "name": "Pleated Shades", "img": "assets/product-pleated.jpg",
+        "desc": "Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range — the shallowest option when the reveal is tight.",
+        "hLabel": "Height", "width": [18, 105], "height": [24, 120],
+        "sizeRange": 'W 18" – 105" · H 24" – 120"',
+        "groups": [
+            {"key": "fabric", "label": "Fabric", "options": ["Plain", "Crashed"]},
+            {"key": "opacity", "label": "Opacity", "options": ["Light-filtering"]},
+            {"key": "colour", "label": "Colour", "options": [
+                {"n": "White", "c": "#FAFAF7"}, {"n": "Pearl", "c": "#F1EDE4"},
+                {"n": "Linen", "c": "#E6DCC8"}, {"n": "Mist grey", "c": "#C9CBC9"},
+                {"n": "Graphite", "c": "#5A5E62"}]},
+            {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]},
+            {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorized"]},
+            {"key": "chain", "label": "Chain side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": "Cord loop"}},
+            {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]},
+        ],
+    },
+    "drapery.html": {
+        "code": "04", "name": "Drapery", "img": "assets/product-drapery.jpg",
+        "desc": "Five heading styles on concealed hook gliders, hung on a slim aluminium track with flat end caps. Made to the drop, hemmed and steamed before it is packed, so it hangs straight out of the box.",
+        "hLabel": "Drop", "width": [18, 192], "height": [24, 120],
+        "sizeRange": 'W 18" – 192" · Drop 24" – 120"',
+        "note": "Concealed hook gliders, 1.5 kg per carrier",
+        "fabrics": True,
+        "groups": [
+            {"key": "heading", "label": "Heading", "options": ["Wave fold", "Single pinch pleat", "Double pinch pleat", "Triple pinch pleat", "Euro pleat"]},
+            {"key": "panel", "label": "Panels", "options": ["Single panel", "Pair, centre split"]},
+            {"type": "fabrics"},
+            {"key": "track", "label": "Track mount", "options": ["Wall", "Ceiling"]},
+            {"key": "operation", "label": "Operation", "options": ["Hand drawn", "Motorized"]},
+        ],
+    },
+}
+
+for fname, cfg in PRODUCTS.items():
+    page_cfg = dict(cfg)
+    fab = page_cfg.pop("fabrics", False)
+    if fab == "cell":
+        page_cfg["fabrics"] = FAB_CELL
+    elif fab:
+        page_cfg["fabrics"] = FAB
+    html = (TEMPLATE
+            .replace("@@NAME@@", cfg["name"])
+            .replace("@@CODE@@", cfg["code"])
+            .replace("@@DESC@@", cfg["desc"])
+            .replace("@@IMG@@", cfg["img"])
+            .replace("@@CONFIG@@", json.dumps(page_cfg)))
+    (SITE / fname).write_text(html)
+    print("wrote", fname, len(html), "bytes")
