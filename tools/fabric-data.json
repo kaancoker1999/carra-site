@@ -1667,12 +1667,6 @@
   ],
   "hesperia": [
    {
-    "id": "slateforge",
-    "label": "Slateforge",
-    "hex": "#7E8384",
-    "image": "/fabrics/hesperia/slateforge.jpg"
-   },
-   {
     "id": "graphite-veil",
     "label": "Graphite Veil",
     "hex": "#8A8C8A",
@@ -1695,12 +1689,6 @@
     "image": "/fabrics/hesperia/silver-thatch.jpg",
     "name": "Silver Thatch",
     "code": "4"
-   },
-   {
-    "id": "ash-drift",
-    "label": "Ash Drift",
-    "hex": "#A7A7A1",
-    "image": "/fabrics/hesperia/ash-drift.jpg"
    },
    {
     "id": "dune-mist",
@@ -1733,12 +1721,6 @@
     "image": "/fabrics/hesperia/carbon-weave.jpg",
     "name": "Carbon Weave",
     "code": "2"
-   },
-   {
-    "id": "blue-dusk",
-    "label": "Blue Dusk",
-    "hex": "#7E8994",
-    "image": "/fabrics/hesperia/blue-dusk.jpg"
    }
   ]
  }
