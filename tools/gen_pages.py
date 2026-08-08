@@ -99,6 +99,8 @@ TEMPLATE = r"""<!doctype html>
   .optcard.on{border-color:var(--ink);box-shadow:0 0 0 1.5px var(--ink)}
   .optcard img{width:100%;aspect-ratio:3/4;object-fit:contain;display:block;background:#fff;border-radius:8px}
   .optcard .nm{font-size:13px;margin-top:8px;color:var(--ink)}
+  .optgrid.ph{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));max-width:960px}
+  .optcard img.ph{aspect-ratio:4/3;object-fit:cover}
 
   .sumgrid{display:grid;grid-template-columns:1fr 300px;gap:40px;align-items:start}
   .sumimg img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1px solid var(--line2);display:block}
@@ -265,13 +267,14 @@ var CONFIG = @@CONFIG@@;
     var si = g.showIf ? ' data-si-key="' + g.showIf.key + '" data-si-val="' + g.showIf.value + '"' : '';
     var hasImg = g.options.some(function(o){ return typeof o === 'object' && o.img; });
     if(hasImg){
+      var isPh = g.options.some(function(o){ return typeof o === 'object' && o.ph; });
       var cards = g.options.map(function(o,i){
         return '<button type="button" class="optcard' + (i===0?' on':'') + '" data-g="' + g.key + '" data-v="' + o.n + '">' +
-          '<img loading="lazy" src="' + o.img + '" alt="' + o.n + '"><div class="nm">' + o.n + '</div></button>';
+          '<img loading="lazy"' + (o.ph ? ' class="ph"' : '') + ' src="' + o.img + '" alt="' + o.n + '"><div class="nm">' + o.n + '</div></button>';
       }).join('');
       form.insertAdjacentHTML('beforeend',
         '<div class="grp"' + si + '><div class="code">' + stepCode(step++) + '</div><h3>' + g.label + '</h3>' +
-        '<div class="optgrid">' + cards + '</div></div>');
+        '<div class="optgrid' + (isPh ? ' ph' : '') + '">' + cards + '</div></div>');
       return;
     }
     var chips = g.options.map(function(o,i){
@@ -455,7 +458,12 @@ PRODUCTS = {
         "note": "Concealed hook gliders, 1.5 kg per carrier",
         "fabrics": True,
         "groups": [
-            {"key": "heading", "label": "Heading", "options": ["Wave fold", "Single pinch pleat", "Double pinch pleat", "Triple pinch pleat", "Euro pleat"]},
+            {"key": "heading", "label": "Heading", "options": [
+                {"n": "Wave fold", "img": "assets/heading-wave-fold.jpg", "ph": True},
+                {"n": "Single pinch pleat", "img": "assets/heading-single-pinch.jpg", "ph": True},
+                {"n": "Double pinch pleat", "img": "assets/heading-double-pinch.jpg", "ph": True},
+                {"n": "Triple pinch pleat", "img": "assets/heading-triple-pinch.jpg", "ph": True},
+                {"n": "Euro pleat", "img": "assets/heading-euro-pleat.jpg", "ph": True}]},
             {"key": "panel", "label": "Panels", "options": ["Single panel", "Pair, centre split"]},
             {"type": "fabrics"},
             {"key": "track", "label": "Track mount", "options": ["Wall", "Ceiling"]},
