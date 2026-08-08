@@ -225,6 +225,25 @@
   .scene .cap b{display:block;font-weight:500}
   .scene .cap i{font-style:normal;color:var(--muted);font-size:12.5px}
 
+  /* 8b ── before / after slider ──────────────────────── */
+  .ba{--x:50%;position:relative;border:1px solid var(--line2);border-radius:14px;overflow:hidden;
+    margin:0 0 40px;cursor:ew-resize;user-select:none;-webkit-user-select:none;touch-action:none}
+  .ba img{width:100%;aspect-ratio:1264/848;object-fit:cover;display:block;pointer-events:none}
+  .ba .balayer{position:absolute;inset:0;clip-path:inset(0 calc(100% - var(--x)) 0 0)}
+  .ba .baline{position:absolute;top:0;bottom:0;left:var(--x);width:2px;margin-left:-1px;background:#fff;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 0 14px rgba(0,0,0,.35)}
+  .ba .bagrip{position:absolute;top:50%;left:var(--x);transform:translate(-50%,-50%);width:46px;height:46px;
+    border-radius:50%;background:#fff;box-shadow:0 1px 10px rgba(0,0,0,.3);display:flex;align-items:center;
+    justify-content:center;gap:5px;font-size:12px;color:var(--ink)}
+  .ba .batag{position:absolute;top:14px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:#fff;background:rgba(20,23,26,.55);padding:6px 11px;border-radius:6px;
+    backdrop-filter:blur(3px);transition:opacity .2s;pointer-events:none}
+  .ba .batag.b{left:14px}
+  .ba .batag.a{right:14px}
+  .ba .bacap{position:absolute;bottom:14px;right:14px;font-family:'IBM Plex Mono',monospace;font-size:10px;
+    letter-spacing:.14em;text-transform:uppercase;color:#fff;background:rgba(20,23,26,.55);padding:6px 11px;
+    border-radius:6px;backdrop-filter:blur(3px);pointer-events:none}
+
   /* 9 ── contact ─────────────────────────────────────── */
   .contact{display:grid;grid-template-columns:.9fr 1.1fr;gap:60px;align-items:start}
   .contact h2{margin-bottom:18px}
@@ -427,6 +446,15 @@
         <button class="sbtn" id="snext" aria-label="Next">&rarr;</button>
       </div>
     </div>
+    <div class="ba" id="ba" role="img" aria-label="Before and after: the same living room without and with LUMIA window treatments. Drag the line to compare.">
+      <img src="assets/ba-after.jpg" alt="Living room with LUMIA drapery and Roman shades installed">
+      <div class="balayer"><img src="assets/ba-before.jpg" alt="The same living room with bare windows"></div>
+      <div class="baline"></div>
+      <div class="bagrip">&#9664;&#9654;</div>
+      <div class="batag b">Before</div>
+      <div class="batag a">After</div>
+      <div class="bacap">Drag to compare</div>
+    </div>
     <div class="scenes" id="scenestrip">
       <div class="scene"><img src="assets/scene-tdbu.jpg" alt="Top-down bottom-up cellular shade in a kitchen"><div class="cap"><b>Cellular shade, top-down bottom-up</b><i>Daylight above, privacy below</i></div></div>
       <div class="scene"><img src="assets/scene-blackout.jpg" alt="Blackout cellular shade in a dark bedroom"><div class="cap"><b>Blackout cellular</b><i>Honeycomb, full darkness</i></div></div>
@@ -559,6 +587,28 @@
     if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
       setInterval(function(){cur=(cur+1)%FRAMES.length;show(cur);},5000);
     }
+  })();
+
+  /* ── before / after slider ── */
+  (function(){
+    var ba=document.getElementById('ba'); if(!ba)return;
+    var tb=ba.querySelector('.batag.b'), ta=ba.querySelector('.batag.a');
+    function setX(clientX){
+      var r=ba.getBoundingClientRect();
+      var p=Math.max(0,Math.min(1,(clientX-r.left)/r.width));
+      ba.style.setProperty('--x',(p*100).toFixed(2)+'%');
+      tb.style.opacity=p>.14?1:0;
+      ta.style.opacity=p<.86?1:0;
+    }
+    var down=false;
+    ba.addEventListener('pointerdown',function(e){down=true;ba.setPointerCapture(e.pointerId);setX(e.clientX);});
+    ba.addEventListener('pointermove',function(e){
+      if(!down)return;
+      if(e.pointerType==='mouse'&&!e.buttons){down=false;return;}
+      setX(e.clientX);
+    });
+    window.addEventListener('pointerup',function(){down=false;});
+    ba.addEventListener('pointercancel',function(){down=false;});
   })();
 
   /* ── room scenes slider ── */
