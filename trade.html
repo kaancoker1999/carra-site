@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUMIA — Trade login</title>
+<meta name="description" content="LUMIA trade partner login — price lists and ordering for dealers, integrators and distributors.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --white:#FFFFFF; --paper:#F8F8F6; --paper2:#F1F1EE; --ink:#14171A; --muted:#767A7E;
+    --line:#E4E3DE; --line2:#D3D2CC; --bronze:#8A6220; --bronze-lt:#C79A45;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.62;
+    -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+  h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.025em;margin:0;line-height:1.05}
+  a{color:inherit}
+  .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .wrap{max-width:1180px;padding:0 44px;margin:0 auto;width:100%}
+
+  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;gap:24px}
+  .logo{font-family:'Archivo',sans-serif;font-weight:700;font-size:20px;letter-spacing:.28em;text-decoration:none}
+  .logo img{height:26px;width:auto;display:block;mix-blend-mode:multiply}
+  nav{display:flex;gap:34px;align-items:center}
+  nav a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s}
+  nav a:hover{color:var(--ink)}
+  .partner{border:1px solid var(--line2);padding:8px 15px;color:var(--bronze)!important}
+  .partner:hover{border-color:var(--bronze)}
+
+  main{flex:1;display:flex;align-items:center;justify-content:center;padding:60px 22px}
+  .card{background:var(--white);border:1px solid var(--line2);border-radius:16px;padding:44px 46px 40px;max-width:440px;width:100%}
+  .card h1{font-size:26px;margin:10px 0 8px}
+  .card .sub{color:var(--muted);font-size:14.5px;margin:0 0 28px}
+  label{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+  input{font:inherit;font-size:16px;width:100%;padding:14px 16px;border:1px solid var(--line2);border-radius:10px;background:var(--white);letter-spacing:.04em}
+  input:focus{outline:none;border-color:var(--ink)}
+  .btn{display:block;width:100%;margin-top:18px;padding:16px 30px;border:0;cursor:pointer;border-radius:10px;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    background:var(--ink);color:#fff;transition:.25s}
+  .btn:hover{background:var(--bronze)}
+  .btn[disabled]{opacity:.55;cursor:wait}
+  .err{display:none;margin:16px 0 0;font-size:14px;color:#8A2620;background:#FBF1F0;border:1px solid #E5C9C6;border-radius:10px;padding:12px 14px}
+  .err.on{display:block}
+  .apply{margin:26px 0 0;padding:18px 0 0;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+  .apply a{color:var(--bronze)}
+
+  footer{border-top:1px solid var(--line);background:var(--paper)}
+  footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="LUMIA"></a>
+    <nav>
+      <a href="index.html#products">Products</a>
+      <a href="tdbu.html">TDBU</a>
+      <a href="motorization.html">Motorization</a>
+      <a href="about.html">About us</a>
+      <a href="index.html#contact">Contact</a>
+      <a class="partner" href="trade.html">Trade login</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <div class="mono">&mdash; Trade partners</div>
+    <h1>Trade login</h1>
+    <p class="sub">Enter your LUMIA access code to see your price list and place orders.</p>
+    <form id="loginform">
+      <label for="code">Access code</label>
+      <input id="code" type="password" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="LUMIA-XXXX-XX">
+      <button class="btn" id="loginbtn" type="submit">Log in</button>
+      <div class="err" id="err">That code was not recognized. Check it and try again, or contact us for access.</div>
+    </form>
+    <p class="apply">No code yet? <a href="index.html#contact">Apply for trade access</a> &mdash; dealers, integrators and distributors welcome.</p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="mono">&copy; 2026 LUMIA &middot; All rights reserved</span>
+    <span class="mono">hello@lumiashades.com</span>
+  </div>
+</footer>
+
+<script src="assets/trade.js"></script>
+<script>
+(function(){
+  if(LUMIA_TRADE.getSession()){ location.href = 'price-list.html'; return; }
+  var form = document.getElementById('loginform'), btn = document.getElementById('loginbtn'),
+      err = document.getElementById('err'), code = document.getElementById('code');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!code.value.trim()) return;
+    err.classList.remove('on');
+    btn.disabled = true; btn.textContent = 'Checking…';
+    LUMIA_TRADE.login(code.value).then(function(prices){
+      if(prices){ location.href = 'price-list.html'; }
+      else{
+        err.classList.add('on');
+        btn.disabled = false; btn.textContent = 'Log in';
+      }
+    }).catch(function(){
+      err.classList.add('on');
+      btn.disabled = false; btn.textContent = 'Log in';
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

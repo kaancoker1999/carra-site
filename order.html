@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUMIA — Place an order</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --white:#FFFFFF; --paper:#F8F8F6; --paper2:#F1F1EE; --ink:#14171A; --muted:#767A7E;
+    --line:#E4E3DE; --line2:#D3D2CC; --bronze:#8A6220; --bronze-lt:#C79A45;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--white);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.62;
+    -webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.025em;margin:0;line-height:1.05}
+  a{color:inherit}
+  .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .wrap{max-width:1180px;padding:0 44px;margin:0 auto}
+
+  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;gap:24px}
+  .logo{font-family:'Archivo',sans-serif;font-weight:700;font-size:20px;letter-spacing:.28em;text-decoration:none}
+  .logo img{height:26px;width:auto;display:block;mix-blend-mode:multiply}
+  nav{display:flex;gap:34px;align-items:center}
+  nav a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s}
+  nav a:hover{color:var(--ink)}
+  .partner{border:1px solid var(--line2);padding:8px 15px;color:var(--bronze)!important}
+  .partner:hover{border-color:var(--bronze)}
+
+  .crumbs{border-bottom:1px solid var(--line);background:var(--paper)}
+  .crumbs .wrap{display:flex;align-items:center;gap:16px;height:52px}
+  .crumbs a{text-decoration:none}
+  .crumbs a:hover{color:var(--ink)}
+
+  .pagehead{padding:56px 0 8px}
+  .pagehead h1{font-size:clamp(30px,4vw,48px);margin:12px 0 0}
+  .pagehead .note{margin:16px 0 0;font-size:14px;color:var(--muted);max-width:74ch}
+
+  section{padding:36px 0 90px}
+
+  /* ── the builder row: left-to-right like a spreadsheet row ── */
+  .rowbar{border:1px solid var(--line2);border-radius:14px;background:var(--paper);padding:20px 22px 22px;overflow-x:auto}
+  .cells{display:flex;gap:14px;align-items:flex-end;min-width:max-content}
+  .cell{display:flex;flex-direction:column;gap:7px}
+  .cell label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+  .cell select,.cell input{font:inherit;font-size:14.5px;padding:11px 12px;border:1px solid var(--line2);border-radius:9px;background:var(--white);min-width:120px}
+  .cell input[type=number]{width:96px;min-width:96px}
+  .cell select:focus,.cell input:focus{outline:none;border-color:var(--ink)}
+  .addbtn{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    background:var(--ink);color:#fff;border:0;border-radius:9px;padding:13px 22px;cursor:pointer;transition:.2s;white-space:nowrap}
+  .addbtn:hover{background:var(--bronze)}
+  .rowerr{display:none;margin:12px 0 0;font-size:13.5px;color:#8A2620}
+  .rowerr.on{display:block}
+
+  /* ── order lines ── */
+  .lineswrap{margin-top:36px;border:1px solid var(--line2);border-radius:12px;overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+  th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:500;background:var(--paper);text-transform:uppercase}
+  tr:last-child td{border-bottom:0}
+  .del{border:0;background:none;color:#8A2620;cursor:pointer;font-size:15px;padding:2px 6px}
+  .empty{padding:26px 20px;color:var(--muted);font-size:14.5px}
+
+  .actions{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap;align-items:center}
+  .btn{display:inline-block;padding:15px 30px;border:0;cursor:pointer;text-decoration:none;border-radius:10px;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;transition:.25s}
+  .btn.solid{background:var(--ink);color:#fff}
+  .btn.solid:hover{background:var(--bronze)}
+  .btn.ghost{background:var(--white);border:1px solid var(--line2);color:var(--ink)}
+  .btn.ghost:hover{border-color:var(--ink)}
+  .count{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--muted)}
+
+  footer{border-top:1px solid var(--line);background:var(--paper)}
+  footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
+
+  @media(max-width:980px){ .wrap{padding:0 22px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="LUMIA"></a>
+    <nav>
+      <a href="index.html#products">Products</a>
+      <a href="tdbu.html">TDBU</a>
+      <a href="motorization.html">Motorization</a>
+      <a href="about.html">About us</a>
+      <a href="index.html#contact">Contact</a>
+      <a class="partner" href="trade.html">Trade login</a>
+    </nav>
+  </div>
+</header>
+
+<div class="crumbs">
+  <div class="wrap">
+    <a class="mono" href="index.html">&larr; Home</a>
+    <span class="mono" style="color:var(--ink)">Place an order</span>
+  </div>
+</div>
+
+<div class="wrap pagehead">
+  <div class="mono">&mdash; Trade partners</div>
+  <h1>Place an order</h1>
+  <p class="note">Build the line left to right &mdash; product, options, size, quantity &mdash; then add it to the order. Repeat for every window. When the list is complete, send it and we confirm with your pricing the same working day.</p>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="rowbar">
+      <div class="cells" id="cells"></div>
+      <div class="rowerr" id="rowerr"></div>
+    </div>
+
+    <div class="lineswrap">
+      <table id="lines" hidden>
+        <thead><tr><th>#</th><th>Product</th><th>Specification</th><th>W &times; H</th><th>Qty</th><th></th></tr></thead>
+        <tbody id="linesbody"></tbody>
+      </table>
+      <div class="empty" id="empty">No lines yet &mdash; build the first one above and press Add to order.</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn solid" id="sendbtn" type="button">Send order</button>
+      <button class="btn ghost" id="copybtn" type="button">Copy as text</button>
+      <button class="btn ghost" id="clearbtn" type="button">Clear all</button>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="mono">&copy; 2026 LUMIA &middot; All rights reserved</span>
+    <span class="mono">hello@lumiashades.com</span>
+  </div>
+</footer>
+
+<script src="assets/trade.js"></script>
+<script>
+(function(){
+  if(!LUMIA_TRADE.require()) return;
+
+  var CFG = null, lines = [];
+  try{ lines = JSON.parse(sessionStorage.getItem('lumia_order') || '[]'); }catch(e){}
+
+  var cells = document.getElementById('cells'), rowerr = document.getElementById('rowerr');
+
+  function opt(v, t){ return '<option value="' + v + '">' + t + '</option>'; }
+
+  function buildRow(){
+    var pIdx = document.getElementById('c-product') ? +document.getElementById('c-product').value : 0;
+    var p = CFG.products[pIdx];
+    var html = '<div class="cell"><label>Product</label><select id="c-product">' +
+      CFG.products.map(function(pr,i){ return '<option value="'+i+'"'+(i===pIdx?' selected':'')+'>'+pr.name+'</option>'; }).join('') +
+      '</select></div>';
+
+    p.steps.forEach(function(st){
+      if(st.key === 'collection'){
+        html += '<div class="cell"><label>' + st.label + '</label><select id="c-collection" data-step="collection">' +
+          st.options.map(function(c){ return opt(c.id, c.label); }).join('') + '</select></div>';
+        html += '<div class="cell"><label>Colour</label><select id="c-colour"></select></div>';
+        return;
+      }
+      html += '<div class="cell" data-key="' + st.key + '"' +
+        (st.showIf ? ' data-si-key="' + st.showIf.key + '" data-si-val="' + st.showIf.value + '"' : '') +
+        '><label>' + st.label + '</label><select id="c-' + st.key + '" data-step="' + st.key + '">' +
+        st.options.map(function(o){ return opt(o, o); }).join('') + '</select></div>';
+    });
+
+    html += '<div class="cell"><label>Width (in) ' + p.width[0] + '&ndash;' + p.width[1] + '</label>' +
+      '<input id="c-w" type="number" step="0.125" min="' + p.width[0] + '" max="' + p.width[1] + '" placeholder="W"></div>';
+    html += '<div class="cell"><label>' + p.hLabel + ' (in) ' + p.height[0] + '&ndash;' + p.height[1] + '</label>' +
+      '<input id="c-h" type="number" step="0.125" min="' + p.height[0] + '" max="' + p.height[1] + '" placeholder="H"></div>';
+    html += '<div class="cell"><label>Qty</label><input id="c-qty" type="number" min="1" step="1" value="1"></div>';
+    html += '<div class="cell"><label>&nbsp;</label><button class="addbtn" id="addbtn" type="button">Add to order &darr;</button></div>';
+
+    cells.innerHTML = html;
+    fillColours();
+    refreshShowIf();
+  }
+
+  function fillColours(){
+    var colSel = document.getElementById('c-collection');
+    if(!colSel) return;
+    var p = CFG.products[+document.getElementById('c-product').value];
+    var st = p.steps.filter(function(s){ return s.key === 'collection'; })[0];
+    document.getElementById('c-colour').innerHTML =
+      st.colours[colSel.value].map(function(c){ return opt(c, c); }).join('');
+  }
+
+  function refreshShowIf(){
+    cells.querySelectorAll('.cell[data-si-key]').forEach(function(cell){
+      var dep = document.getElementById('c-' + cell.dataset.siKey);
+      cell.style.display = (dep && dep.value === cell.dataset.siVal) ? '' : 'none';
+    });
+  }
+
+  cells.addEventListener('change', function(e){
+    if(e.target.id === 'c-product'){ buildRow(); return; }
+    if(e.target.id === 'c-collection') fillColours();
+    refreshShowIf();
+  });
+
+  /* ── lines ── */
+  var linesTable = document.getElementById('lines'), linesBody = document.getElementById('linesbody'),
+      empty = document.getElementById('empty'), count = document.getElementById('count');
+
+  function saveLines(){ sessionStorage.setItem('lumia_order', JSON.stringify(lines)); }
+
+  function renderLines(){
+    linesTable.hidden = lines.length === 0;
+    empty.style.display = lines.length ? 'none' : '';
+    linesBody.innerHTML = lines.map(function(l,i){
+      return '<tr><td>' + (i+1) + '</td><td>' + l.product + '</td><td>' + l.spec + '</td>' +
+        '<td>' + l.w + '&Prime; &times; ' + l.h + '&Prime;</td><td>' + l.qty + '</td>' +
+        '<td><button class="del" data-i="' + i + '" title="Remove">&times;</button></td></tr>';
+    }).join('');
+    var units = lines.reduce(function(a,l){ return a + l.qty; }, 0);
+    count.textContent = lines.length ? lines.length + ' lines · ' + units + ' units' : '';
+  }
+
+  linesBody.addEventListener('click', function(e){
+    var b = e.target.closest('.del'); if(!b) return;
+    lines.splice(+b.dataset.i, 1); saveLines(); renderLines();
+  });
+
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('#addbtn')) return;
+    rowerr.classList.remove('on');
+    var p = CFG.products[+document.getElementById('c-product').value];
+    var w = parseFloat(document.getElementById('c-w').value),
+        h = parseFloat(document.getElementById('c-h').value),
+        qty = parseInt(document.getElementById('c-qty').value, 10) || 1;
+    if(isNaN(w) || w < p.width[0] || w > p.width[1] ||
+       isNaN(h) || h < p.height[0] || h > p.height[1]){
+      rowerr.textContent = 'Check the size — width ' + p.width[0] + '–' + p.width[1] +
+        '″, ' + p.hLabel.toLowerCase() + ' ' + p.height[0] + '–' + p.height[1] + '″.';
+      rowerr.classList.add('on');
+      return;
+    }
+    var parts = [];
+    p.steps.forEach(function(st){
+      if(st.key === 'collection'){
+        var colSel = document.getElementById('c-collection');
+        parts.push(st.label + ': ' + colSel.options[colSel.selectedIndex].text +
+          ' ' + document.getElementById('c-colour').value);
+        return;
+      }
+      var cell = cells.querySelector('.cell[data-key="' + st.key + '"]');
+      if(cell && cell.style.display === 'none') return;
+      parts.push(st.label + ': ' + document.getElementById('c-' + st.key).value);
+    });
+    lines.push({ product: p.name, spec: parts.join(' · '), w: w, h: h, qty: qty });
+    saveLines(); renderLines();
+  });
+
+  /* ── actions ── */
+  function orderText(){
+    return 'LUMIA order request\n' + new Date().toISOString().slice(0,10) + '\n\n' +
+      lines.map(function(l,i){
+        return (i+1) + '. ' + l.product + ' — ' + l.spec + ' — ' + l.w + '" x ' + l.h + '" — qty ' + l.qty;
+      }).join('\n') + '\n\nTotal lines: ' + lines.length;
+  }
+  document.getElementById('sendbtn').addEventListener('click', function(){
+    if(!lines.length) return;
+    location.href = 'mailto:hello@lumiashades.com?subject=' +
+      encodeURIComponent('Order request — ' + lines.length + ' lines') +
+      '&body=' + encodeURIComponent(orderText());
+  });
+  document.getElementById('copybtn').addEventListener('click', function(){
+    if(!lines.length) return;
+    var b = this;
+    navigator.clipboard.writeText(orderText()).then(function(){
+      b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy as text'; }, 1400);
+    });
+  });
+  document.getElementById('clearbtn').addEventListener('click', function(){
+    lines = []; saveLines(); renderLines();
+  });
+
+  fetch('assets/order-config.json').then(function(r){ return r.json(); }).then(function(cfg){
+    CFG = cfg; buildRow(); renderLines();
+  });
+})();
+</script>
+
+</body>
+</html>

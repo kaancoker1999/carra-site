@@ -162,7 +162,7 @@ TEMPLATE = r"""<!doctype html>
       <a href="motorization.html">Motorization</a>
       <a href="about.html">About us</a>
       <a href="index.html#contact">Contact</a>
-      <a class="partner" href="index.html#contact">Trade login</a>
+      <a class="partner" href="trade.html">Trade login</a>
     </nav>
   </div>
 </header>
@@ -398,6 +398,7 @@ var CONFIG = @@CONFIG@@;
   update();
 })();
 </script>
+<script src="assets/trade.js" defer></script>
 </body>
 </html>
 """
@@ -483,18 +484,23 @@ PRODUCTS = {
     },
 }
 
-for fname, cfg in PRODUCTS.items():
-    page_cfg = dict(cfg)
-    fab = page_cfg.pop("fabrics", False)
-    if fab == "cell":
-        page_cfg["fabrics"] = FAB_CELL
-    elif fab:
-        page_cfg["fabrics"] = FAB
-    html = (TEMPLATE
-            .replace("@@NAME@@", cfg["name"])
-            .replace("@@CODE@@", cfg["code"])
-            .replace("@@DESC@@", cfg["desc"])
-            .replace("@@IMG@@", cfg["img"])
-            .replace("@@CONFIG@@", json.dumps(page_cfg)))
-    (SITE / fname).write_text(html)
-    print("wrote", fname, len(html), "bytes")
+def generate():
+    for fname, cfg in PRODUCTS.items():
+        page_cfg = dict(cfg)
+        fab = page_cfg.pop("fabrics", False)
+        if fab == "cell":
+            page_cfg["fabrics"] = FAB_CELL
+        elif fab:
+            page_cfg["fabrics"] = FAB
+        html = (TEMPLATE
+                .replace("@@NAME@@", cfg["name"])
+                .replace("@@CODE@@", cfg["code"])
+                .replace("@@DESC@@", cfg["desc"])
+                .replace("@@IMG@@", cfg["img"])
+                .replace("@@CONFIG@@", json.dumps(page_cfg)))
+        (SITE / fname).write_text(html)
+        print("wrote", fname, len(html), "bytes")
+
+
+if __name__ == "__main__":
+    generate()
