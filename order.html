@@ -179,14 +179,15 @@
       if(st.key === 'fabric' || st.key === 'colour'){ row1 += cell; } else { row2 += cell; }
     });
 
-    row2 += '<div class="cell"><label>Width (in) ' + p.width[0] + '&ndash;' + p.width[1] + '</label>' +
+    /* row 3: size, quantity and the add button */
+    var row3 = '<div class="cell"><label>Width (in) ' + p.width[0] + '&ndash;' + p.width[1] + '</label>' +
       '<input id="c-w" type="number" step="0.125" min="' + p.width[0] + '" max="' + p.width[1] + '" placeholder="W"></div>';
-    row2 += '<div class="cell"><label>' + p.hLabel + ' (in) ' + p.height[0] + '&ndash;' + p.height[1] + '</label>' +
+    row3 += '<div class="cell"><label>' + p.hLabel + ' (in) ' + p.height[0] + '&ndash;' + p.height[1] + '</label>' +
       '<input id="c-h" type="number" step="0.125" min="' + p.height[0] + '" max="' + p.height[1] + '" placeholder="H"></div>';
-    row2 += '<div class="cell"><label>Qty</label><input id="c-qty" type="number" min="1" step="1" value="1"></div>';
-    row2 += '<div class="cell"><label>&nbsp;</label><button class="addbtn" id="addbtn" type="button">Add to order &darr;</button></div>';
+    row3 += '<div class="cell"><label>Qty</label><input id="c-qty" type="number" min="1" step="1" value="1"></div>';
+    row3 += '<div class="cell"><label>&nbsp;</label><button class="addbtn" id="addbtn" type="button">Add to order &darr;</button></div>';
 
-    cells.innerHTML = '<div class="cellrow">' + row1 + '</div><div class="cellrow">' + row2 + '</div>';
+    cells.innerHTML = '<div class="cellrow">' + row1 + '</div><div class="cellrow">' + row2 + '</div><div class="cellrow">' + row3 + '</div>';
     fillColours();
     refreshShowIf();
   }

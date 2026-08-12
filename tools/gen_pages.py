@@ -429,6 +429,7 @@ PRODUCTS = {
             {"key": "hub", "label": "Smart home hub", "options": ["No", "Yes"], "showIf": {"key": "drive", "value": "Motorized"}},
             {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]},
             {"key": "liner", "label": "Liner", "options": ["Unlined", "White liner", "Blackout liner"]},
+            {"key": "banding", "label": "Edge banding", "options": ["None", "Yes"]},
         ],
     },
     "cellular.html": {
