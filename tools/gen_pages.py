@@ -158,6 +158,7 @@ TEMPLATE = r"""<!doctype html>
     <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="LUMIA"></a>
     <nav>
       <a href="index.html#products">Products</a>
+      <a href="tdbu.html">TDBU</a>
       <a href="motorization.html">Motorization</a>
       <a href="about.html">About us</a>
       <a href="index.html#contact">Contact</a>
