@@ -286,7 +286,7 @@
     lines = []; saveLines(); renderLines();
   });
 
-  fetch('assets/order-config.json').then(function(r){ return r.json(); }).then(function(cfg){
+  fetch('assets/order-config.json?v=' + Date.now()).then(function(r){ return r.json(); }).then(function(cfg){
     CFG = cfg; buildRow(); renderLines();
   });
 })();

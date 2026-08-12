@@ -42,7 +42,7 @@
 
   /* login: access code -> group key -> price data. Resolves prices or null. */
   function login(code) {
-    return fetch('assets/trade-data.json').then(function (r) { return r.json(); })
+    return fetch('assets/trade-data.json?v=' + Date.now()).then(function (r) { return r.json(); })
       .then(function (data) {
         var it = (data.kdf && data.kdf.iterations) || 150000;
         return firstHit(code.trim(), data.dealers, it).then(function (groupKey) {
