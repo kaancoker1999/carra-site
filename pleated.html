@@ -191,7 +191,7 @@
 </footer>
 
 <script>
-var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-pleated.jpg", "desc": "Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range \u2014 the shallowest option when the reveal is tight.", "hLabel": "Height", "width": [18, 105], "height": [24, 120], "sizeRange": "W 18\" \u2013 105\" \u00b7 H 24\" \u2013 120\"", "groups": [{"key": "fabric", "label": "Fabric", "options": ["Plain", "Crashed"]}, {"key": "opacity", "label": "Opacity", "options": ["Light-filtering"]}, {"key": "colour", "label": "Colour", "options": [{"n": "White", "c": "#FAFAF7"}, {"n": "Pearl", "c": "#F1EDE4"}, {"n": "Linen", "c": "#E6DCC8"}, {"n": "Mist grey", "c": "#C9CBC9"}, {"n": "Graphite", "c": "#5A5E62"}]}, {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]}, {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorized"]}, {"key": "chain", "label": "Chain side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": "Cord loop"}}, {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]}]};
+var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-pleated.jpg", "desc": "Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range \u2014 the shallowest option when the reveal is tight.", "hLabel": "Height", "width": [18, 105], "height": [24, 120], "sizeRange": "W 18\" \u2013 105\" \u00b7 H 24\" \u2013 120\"", "groups": [{"key": "fabric", "label": "Fabric", "options": ["Plain", "Crashed"]}, {"key": "opacity", "label": "Opacity", "options": ["Light-filtering"]}, {"key": "colour", "label": "Colour", "options": [{"n": "White", "c": "#FAFAF7"}, {"n": "Pearl", "c": "#F1EDE4"}, {"n": "Linen", "c": "#E6DCC8"}, {"n": "Mist grey", "c": "#C9CBC9"}, {"n": "Graphite", "c": "#5A5E62"}]}, {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]}, {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorized"]}, {"key": "chain", "label": "Control side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": ["Cord loop", "Motorized"]}}, {"key": "remote", "label": "Remote control", "options": ["No remote", "1-channel remote", "5-channel remote", "15-channel remote"], "showIf": {"key": "drive", "value": "Motorized"}}, {"key": "cable", "label": "USB-C charging cable", "options": ["No", "Yes"], "showIf": {"key": "drive", "value": "Motorized"}}, {"key": "hub", "label": "Smart home hub", "options": ["No", "Yes"], "showIf": {"key": "drive", "value": "Motorized"}}, {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]}]};
 
 (function(){
   var form = document.getElementById('form');
@@ -238,7 +238,7 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
       renderSwatches();
       return;
     }
-    var si = g.showIf ? ' data-si-key="' + g.showIf.key + '" data-si-val="' + g.showIf.value + '"' : '';
+    var si = g.showIf ? ' data-si-key="' + g.showIf.key + '" data-si-val="' + [].concat(g.showIf.value).join('|') + '"' : '';
     var hasImg = g.options.some(function(o){ return typeof o === 'object' && o.img; });
     if(hasImg){
       var isPh = g.options.some(function(o){ return typeof o === 'object' && o.ph; });
@@ -315,7 +315,7 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
         r.push(['Colour', col.code || col.label]);
         return;
       }
-      if(g.showIf && state[g.showIf.key] !== g.showIf.value) return;
+      if(g.showIf && [].concat(g.showIf.value).indexOf(state[g.showIf.key]) === -1) return;
       r.push([g.label, state[g.key]]);
     });
     if(CONFIG.sizeRange) r.push(['Size range', CONFIG.sizeRange]);
@@ -325,7 +325,7 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
 
   function update(){
     document.querySelectorAll('.grp[data-si-key]').forEach(function(grp){
-      grp.hidden = state[grp.dataset.siKey] !== grp.dataset.siVal;
+      grp.hidden = grp.dataset.siVal.split('|').indexOf(state[grp.dataset.siKey]) === -1;
     });
     var n = 1;
     document.querySelectorAll('#form .grp').forEach(function(grp){

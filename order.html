@@ -46,8 +46,9 @@
   section{padding:36px 0 90px}
 
   /* ── the builder row: left-to-right like a spreadsheet row ── */
-  .rowbar{border:1px solid var(--line2);border-radius:14px;background:var(--paper);padding:20px 22px 22px;overflow-x:auto}
-  .cells{display:flex;gap:14px;align-items:flex-end;min-width:max-content}
+  .rowbar{border:1px solid var(--line2);border-radius:14px;background:var(--paper);padding:20px 22px 22px}
+  .cells{display:flex;flex-direction:column;gap:18px}
+  .cellrow{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
   .cell{display:flex;flex-direction:column;gap:7px}
   .cell label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
   .cell select,.cell input{font:inherit;font-size:14.5px;padding:11px 12px;border:1px solid var(--line2);border-radius:9px;background:var(--white);min-width:120px}
@@ -158,31 +159,34 @@
   function buildRow(){
     var pIdx = document.getElementById('c-product') ? +document.getElementById('c-product').value : 0;
     var p = CFG.products[pIdx];
-    var html = '<div class="cell"><label>Product</label><select id="c-product">' +
+    /* row 1: product, fabric/cell choice, colour — row 2: everything else */
+    var row1 = '<div class="cell"><label>Product</label><select id="c-product">' +
       CFG.products.map(function(pr,i){ return '<option value="'+i+'"'+(i===pIdx?' selected':'')+'>'+pr.name+'</option>'; }).join('') +
       '</select></div>';
+    var row2 = '';
 
     p.steps.forEach(function(st){
       if(st.key === 'collection'){
-        html += '<div class="cell"><label>' + st.label + '</label><select id="c-collection" data-step="collection">' +
+        row1 += '<div class="cell"><label>' + st.label + '</label><select id="c-collection" data-step="collection">' +
           st.options.map(function(c){ return opt(c.id, c.label); }).join('') + '</select></div>';
-        html += '<div class="cell"><label>Colour</label><select id="c-colour"></select></div>';
+        row1 += '<div class="cell"><label>Colour</label><select id="c-colour"></select></div>';
         return;
       }
-      html += '<div class="cell" data-key="' + st.key + '"' +
-        (st.showIf ? ' data-si-key="' + st.showIf.key + '" data-si-val="' + st.showIf.value + '"' : '') +
+      var cell = '<div class="cell" data-key="' + st.key + '"' +
+        (st.showIf ? ' data-si-key="' + st.showIf.key + '" data-si-val="' + [].concat(st.showIf.value).join('|') + '"' : '') +
         '><label>' + st.label + '</label><select id="c-' + st.key + '" data-step="' + st.key + '">' +
         st.options.map(function(o){ return opt(o, o); }).join('') + '</select></div>';
+      if(st.key === 'fabric' || st.key === 'colour'){ row1 += cell; } else { row2 += cell; }
     });
 
-    html += '<div class="cell"><label>Width (in) ' + p.width[0] + '&ndash;' + p.width[1] + '</label>' +
+    row2 += '<div class="cell"><label>Width (in) ' + p.width[0] + '&ndash;' + p.width[1] + '</label>' +
       '<input id="c-w" type="number" step="0.125" min="' + p.width[0] + '" max="' + p.width[1] + '" placeholder="W"></div>';
-    html += '<div class="cell"><label>' + p.hLabel + ' (in) ' + p.height[0] + '&ndash;' + p.height[1] + '</label>' +
+    row2 += '<div class="cell"><label>' + p.hLabel + ' (in) ' + p.height[0] + '&ndash;' + p.height[1] + '</label>' +
       '<input id="c-h" type="number" step="0.125" min="' + p.height[0] + '" max="' + p.height[1] + '" placeholder="H"></div>';
-    html += '<div class="cell"><label>Qty</label><input id="c-qty" type="number" min="1" step="1" value="1"></div>';
-    html += '<div class="cell"><label>&nbsp;</label><button class="addbtn" id="addbtn" type="button">Add to order &darr;</button></div>';
+    row2 += '<div class="cell"><label>Qty</label><input id="c-qty" type="number" min="1" step="1" value="1"></div>';
+    row2 += '<div class="cell"><label>&nbsp;</label><button class="addbtn" id="addbtn" type="button">Add to order &darr;</button></div>';
 
-    cells.innerHTML = html;
+    cells.innerHTML = '<div class="cellrow">' + row1 + '</div><div class="cellrow">' + row2 + '</div>';
     fillColours();
     refreshShowIf();
   }
@@ -199,7 +203,7 @@
   function refreshShowIf(){
     cells.querySelectorAll('.cell[data-si-key]').forEach(function(cell){
       var dep = document.getElementById('c-' + cell.dataset.siKey);
-      cell.style.display = (dep && dep.value === cell.dataset.siVal) ? '' : 'none';
+      cell.style.display = (dep && cell.dataset.siVal.split('|').indexOf(dep.value) !== -1) ? '' : 'none';
     });
   }
 

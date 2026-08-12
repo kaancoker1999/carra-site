@@ -265,7 +265,7 @@ var CONFIG = @@CONFIG@@;
       renderSwatches();
       return;
     }
-    var si = g.showIf ? ' data-si-key="' + g.showIf.key + '" data-si-val="' + g.showIf.value + '"' : '';
+    var si = g.showIf ? ' data-si-key="' + g.showIf.key + '" data-si-val="' + [].concat(g.showIf.value).join('|') + '"' : '';
     var hasImg = g.options.some(function(o){ return typeof o === 'object' && o.img; });
     if(hasImg){
       var isPh = g.options.some(function(o){ return typeof o === 'object' && o.ph; });
@@ -342,7 +342,7 @@ var CONFIG = @@CONFIG@@;
         r.push(['Colour', col.code || col.label]);
         return;
       }
-      if(g.showIf && state[g.showIf.key] !== g.showIf.value) return;
+      if(g.showIf && [].concat(g.showIf.value).indexOf(state[g.showIf.key]) === -1) return;
       r.push([g.label, state[g.key]]);
     });
     if(CONFIG.sizeRange) r.push(['Size range', CONFIG.sizeRange]);
@@ -352,7 +352,7 @@ var CONFIG = @@CONFIG@@;
 
   function update(){
     document.querySelectorAll('.grp[data-si-key]').forEach(function(grp){
-      grp.hidden = state[grp.dataset.siKey] !== grp.dataset.siVal;
+      grp.hidden = grp.dataset.siVal.split('|').indexOf(state[grp.dataset.siKey]) === -1;
     });
     var n = 1;
     document.querySelectorAll('#form .grp').forEach(function(grp){
@@ -423,7 +423,10 @@ PRODUCTS = {
                 {"n": "Hobbled", "img": "assets/fold-hobbled.jpg"}]},
             {"type": "fabrics"},
             {"key": "drive", "label": "Mechanism", "options": ["Cordless", "Continuous cord loop", "Motorized"]},
-            {"key": "chain", "label": "Chain side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": "Continuous cord loop"}},
+            {"key": "chain", "label": "Control side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": ["Continuous cord loop", "Motorized"]}},
+            {"key": "remote", "label": "Remote control", "options": ["No remote", "1-channel remote", "5-channel remote", "15-channel remote"], "showIf": {"key": "drive", "value": "Motorized"}},
+            {"key": "cable", "label": "USB-C charging cable", "options": ["No", "Yes"], "showIf": {"key": "drive", "value": "Motorized"}},
+            {"key": "hub", "label": "Smart home hub", "options": ["No", "Yes"], "showIf": {"key": "drive", "value": "Motorized"}},
             {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]},
             {"key": "liner", "label": "Liner", "options": ["Unlined", "White liner", "Blackout liner"]},
         ],
@@ -440,7 +443,10 @@ PRODUCTS = {
             {"type": "fabrics"},
             {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]},
             {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorized"]},
-            {"key": "chain", "label": "Chain side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": "Cord loop"}},
+            {"key": "chain", "label": "Control side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": ["Cord loop", "Motorized"]}},
+            {"key": "remote", "label": "Remote control", "options": ["No remote", "1-channel remote", "5-channel remote", "15-channel remote"], "showIf": {"key": "drive", "value": "Motorized"}},
+            {"key": "cable", "label": "USB-C charging cable", "options": ["No", "Yes"], "showIf": {"key": "drive", "value": "Motorized"}},
+            {"key": "hub", "label": "Smart home hub", "options": ["No", "Yes"], "showIf": {"key": "drive", "value": "Motorized"}},
             {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]},
         ],
     },
@@ -458,7 +464,10 @@ PRODUCTS = {
                 {"n": "Graphite", "c": "#5A5E62"}]},
             {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]},
             {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorized"]},
-            {"key": "chain", "label": "Chain side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": "Cord loop"}},
+            {"key": "chain", "label": "Control side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": ["Cord loop", "Motorized"]}},
+            {"key": "remote", "label": "Remote control", "options": ["No remote", "1-channel remote", "5-channel remote", "15-channel remote"], "showIf": {"key": "drive", "value": "Motorized"}},
+            {"key": "cable", "label": "USB-C charging cable", "options": ["No", "Yes"], "showIf": {"key": "drive", "value": "Motorized"}},
+            {"key": "hub", "label": "Smart home hub", "options": ["No", "Yes"], "showIf": {"key": "drive", "value": "Motorized"}},
             {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]},
         ],
     },
@@ -480,6 +489,10 @@ PRODUCTS = {
             {"type": "fabrics"},
             {"key": "track", "label": "Track mount", "options": ["Wall", "Ceiling"]},
             {"key": "operation", "label": "Operation", "options": ["Hand drawn", "Motorized"]},
+            {"key": "chain", "label": "Control side", "options": ["Left", "Right"], "showIf": {"key": "operation", "value": "Motorized"}},
+            {"key": "remote", "label": "Remote control", "options": ["No remote", "1-channel remote", "5-channel remote", "15-channel remote"], "showIf": {"key": "operation", "value": "Motorized"}},
+            {"key": "cable", "label": "USB-C charging cable", "options": ["No", "Yes"], "showIf": {"key": "operation", "value": "Motorized"}},
+            {"key": "hub", "label": "Smart home hub", "options": ["No", "Yes"], "showIf": {"key": "operation", "value": "Motorized"}},
         ],
     },
 }
