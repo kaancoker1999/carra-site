@@ -385,6 +385,16 @@ var CONFIG = @@CONFIG@@;
     });
   });
 
+  /* preselect via query string, e.g. ?tdbu=1 from the TDBU landing page */
+  var qs = new URLSearchParams(location.search);
+  if(qs.get('tdbu') === '1'){
+    var pre = form.querySelector('.chip[data-g="tdbu"][data-v="Yes"]');
+    if(pre){
+      state.tdbu = 'Yes';
+      document.querySelectorAll('.chip[data-g="tdbu"]').forEach(function(x){ x.classList.toggle('on', x === pre); });
+    }
+  }
+
   update();
 })();
 </script>
