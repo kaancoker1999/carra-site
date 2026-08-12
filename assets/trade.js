@@ -99,6 +99,8 @@
     login: login,
     require: function () {
       var s = getSession();
+      /* re-login daily so price updates reach every dealer within a day */
+      if (s && Date.now() - Date.parse(s.at) > 24 * 3600 * 1000) { clearSession(); s = null; }
       if (!s) location.href = 'trade.html';
       return s;
     }

@@ -111,18 +111,23 @@ def parse_workbook():
         {"label": "Motionblinds WiFi hub", "usd": 160},
     ]
 
-    # ── Roman: one base grid + percentage modifiers + dollar extras ──
+    # ── Roman: base grid expanded into one grid per fabric colour group ──
     rom = sheet_rows(wb["Roman"])
-    rom_grid = dict(read_grid(rom, find_headers(rom)[0], 20), name="Light Filtering · base grid")
+    rom_base = read_grid(rom, find_headers(rom)[0], 20)
+    COLOUR_GROUPS = [("Colour group 1", 1.00), ("Colour group 2", 1.30),
+                     ("Colour group 3", 1.55), ("Colour group 4", 1.80)]
+    rom_grids = []
+    for label, cg in COLOUR_GROUPS:
+        g = json.loads(json.dumps(rom_base))
+        for r in g["rows"]:
+            r["vals"] = [round(v * cg, 2) for v in r["vals"]]
+        g["name"] = label
+        rom_grids.append(g)
     roman_extras = [
         {"label": "Seamless flat fold", "pct": 0},
         {"label": "Classic flat fold", "pct": 10},
         {"label": "Relaxed fold", "pct": 10},
         {"label": "Soft hobbled fold", "pct": 25},
-        {"label": "Colour group 1 fabric", "pct": 0},
-        {"label": "Colour group 2 fabric", "pct": 30},
-        {"label": "Colour group 3 fabric", "pct": 55},
-        {"label": "Colour group 4 fabric", "pct": 80},
         {"label": "White liner", "pct": 10},
         {"label": "Blackout liner", "pct": 20},
         {"label": "Edge banding", "pct": 50},
@@ -138,7 +143,7 @@ def parse_workbook():
         {"label": "Motionblinds WiFi hub", "usd": 145},
     ]
     roman_notes = [
-        "Percentages apply to the base grid price and combine (fold + colour group + liner).",
+        "Pick the grid for the fabric's colour group; fold and liner percentages apply to that grid price and combine.",
         "Secondary (seasonal) fabric available at 50% discount off the original price — the less expensive fabric is discounted.",
     ]
 
@@ -190,7 +195,7 @@ def parse_workbook():
     products = [
         {"id": "cellular", "name": "Cellular Shades", "grids": cel_grids,
          "extras": cellular_extras, "notes": []},
-        {"id": "roman", "name": "Roman Shades", "grids": [rom_grid],
+        {"id": "roman", "name": "Roman Shades", "grids": rom_grids,
          "extras": roman_extras, "notes": roman_notes},
         {"id": "pleated", "name": "Pleated Shades", "grids": ple_grids,
          "extras": pleated_extras, "notes": []},
