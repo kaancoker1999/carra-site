@@ -57,7 +57,8 @@ def build():
                 }
                 steps.append({
                     "key": "collection", "label": "Fabric",
-                    "options": [{"id": c["id"], "label": c["label"]} for c in fabric_data["collections"]],
+                    "options": [{"id": c["id"], "label": c["label"], "group": c.get("group")}
+                                for c in fabric_data["collections"]],
                     "colours": colours,
                 })
                 continue

@@ -96,6 +96,23 @@
   .order .obtn:hover{border-color:var(--ink)}
   .order .obtn.danger{color:#8A2620}
   .noorders{color:var(--muted);font-size:14px}
+  .oghead{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--bronze);margin:26px 0 10px;display:flex;gap:14px;align-items:baseline}
+  .oghead .n{color:var(--muted);letter-spacing:.08em;font-size:10px}
+
+  .custbar{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin:0 0 16px}
+  .custbar .cell{display:flex;flex-direction:column;gap:7px}
+  .custbar input{font:inherit;font-size:15px;min-width:320px;padding:12px 14px;border:1px solid var(--line2);border-radius:9px;background:var(--white)}
+  .custbar input:focus{outline:none;border-color:var(--ink)}
+
+  .editbar{display:none;border:1px solid var(--bronze);background:#FCF9F2;border-radius:10px;
+    padding:12px 16px;margin:0 0 16px;font-size:14px;color:#6B4C15;align-items:center;gap:16px}
+  .editbar.on{display:flex}
+  .editbar .ref{font-family:'IBM Plex Mono',monospace;font-weight:500}
+  .editbar button{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    background:none;border:1px solid var(--bronze);color:var(--bronze);border-radius:7px;padding:6px 12px;cursor:pointer;margin-left:auto}
+
+  td.num{text-align:right;white-space:nowrap}
 
   footer{border-top:1px solid var(--line);background:var(--paper)}
   footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
@@ -134,6 +151,14 @@
 
 <section>
   <div class="wrap">
+    <div class="editbar" id="editbar">Editing order <span class="ref" id="editref"></span> &mdash; Send order will update it.
+      <button type="button" id="editcancel">Cancel edit</button></div>
+
+    <div class="custbar">
+      <div class="cell"><label class="mono" style="font-size:9.5px">Customer / project</label>
+        <input id="customer" type="text" placeholder="e.g. Johnson residence — Houston" autocomplete="off"></div>
+    </div>
+
     <div class="rowbar">
       <div class="cells" id="cells"></div>
       <div class="rowerr" id="rowerr"></div>
@@ -141,7 +166,7 @@
 
     <div class="lineswrap">
       <table id="lines" hidden>
-        <thead><tr><th>#</th><th>Product</th><th>Specification</th><th>W &times; H</th><th>Qty</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>Room / label</th><th>Product</th><th>Specification</th><th>W &times; H</th><th>Qty</th><th>Unit</th><th>Total</th><th></th></tr></thead>
         <tbody id="linesbody"></tbody>
       </table>
       <div class="empty" id="empty">No lines yet &mdash; build the first one above and press Add to order.</div>
@@ -202,8 +227,10 @@
       if(st.key === 'fabric' || st.key === 'colour'){ row1 += cell; } else { row2 += cell; }
     });
 
-    /* row 3: size, quantity and the add button */
-    var row3 = '<div class="cell"><label>Width (in) ' + p.width[0] + '&ndash;' + p.width[1] + '</label>' +
+    /* row 3: room label, size, quantity and the add button */
+    var row3 = '<div class="cell"><label>Room / label (optional)</label>' +
+      '<input id="c-label" type="text" placeholder="e.g. Living room 2" autocomplete="off" style="min-width:190px"></div>';
+    row3 += '<div class="cell"><label>Width (in) ' + p.width[0] + '&ndash;' + p.width[1] + '</label>' +
       '<input id="c-w" type="number" step="0.125" min="' + p.width[0] + '" max="' + p.width[1] + '" placeholder="W"></div>';
     row3 += '<div class="cell"><label>' + p.hLabel + ' (in) ' + p.height[0] + '&ndash;' + p.height[1] + '</label>' +
       '<input id="c-h" type="number" step="0.125" min="' + p.height[0] + '" max="' + p.height[1] + '" placeholder="H"></div>';
@@ -237,22 +264,119 @@
     refreshShowIf();
   });
 
+  /* ── pricing (from this dealer's decrypted price list) ── */
+  var PRICES = (LUMIA_TRADE.getSession() || {}).prices || {};
+  function prodPrices(id){
+    return (PRICES.products || []).filter(function(p){ return p.id === id; })[0] || null;
+  }
+  function gridPrice(g, w, h){
+    var ci = -1, ri = -1, i;
+    for(i = 0; i < g.cols.length; i++){ if(w <= parseFloat(g.cols[i])){ ci = i; break; } }
+    for(i = 0; i < g.rows.length; i++){ if(h <= parseFloat(g.rows[i].label)){ ri = i; break; } }
+    if(ci < 0 || ri < 0) return null;
+    return g.rows[ri].vals[ci];
+  }
+  function xt(pp, label){
+    var e = pp.extras.filter(function(x){ return x.label === label; })[0];
+    return (e && e.usd) || 0;
+  }
+  function motorExtras(pp, sel){
+    var add = 0;
+    var m = (sel.remote || '').match(/^(\d+)-channel/);
+    if(m) add += xt(pp, 'Remote control — ' + m[1] + ' channel');
+    if(sel.cable === 'Yes') add += xt(pp, '10 ft USB cable');
+    if(sel.hub === 'Yes') add += xt(pp, 'Smart home hub') || xt(pp, 'Motionblinds WiFi hub');
+    return add;
+  }
+  function priceLine(pid, sel, w, h){
+    var pp, base, add = 0, pct = 0;
+    if(pid === 'roman'){
+      pp = prodPrices('roman'); if(!pp) return null;
+      var grid = pp.grids[(sel.group || 1) - 1] || pp.grids[0];
+      base = gridPrice(grid, w, h); if(base == null) return null;
+      pct += ({'Back rods':0, 'Front rods':10, 'Relaxed':10, 'Hobbled':25})[sel.fold] || 0;
+      pct += ({'White liner':10, 'Blackout liner':20})[sel.liner] || 0;
+      if(sel.banding === 'Yes') pct += 50;
+      base = base * (1 + pct / 100);
+      if(sel.drive === 'Continuous cord loop'){
+        add += xt(pp, 'Continuous cord loop (CCL)');
+        if(sel.tdbu === 'Yes') add += xt(pp, 'CCL TDBU');
+      } else if(sel.drive === 'Motorized'){
+        add += sel.tdbu === 'Yes' ? xt(pp, 'Motor + TDBU') : xt(pp, 'Motorization');
+        add += motorExtras(pp, sel);
+      } else if(sel.tdbu === 'Yes'){
+        add += xt(pp, 'Cordless TDBU');
+      }
+      return Math.round((base + add) * 100) / 100;
+    }
+    if(pid === 'cellular'){
+      pp = prodPrices('cellular'); if(!pp) return null;
+      var g = pp.grids.filter(function(x){ return x.name === sel.gridName; })[0];
+      if(!g) return null;
+      base = gridPrice(g, w, h); if(base == null) return null;
+      if(sel.drive === 'Cord loop'){
+        add += sel.tdbu === 'Yes' ? xt(pp, 'CCL + TDBU') : xt(pp, 'Continuous cord loop (CCL)');
+      } else if(sel.drive === 'Motorized'){
+        add += sel.tdbu === 'Yes' ? xt(pp, 'Motor + TDBU') : xt(pp, 'Motorization');
+        add += motorExtras(pp, sel);
+      } else if(sel.tdbu === 'Yes'){
+        add += xt(pp, 'Cordless TDBU');
+      }
+      return Math.round((base + add) * 100) / 100;
+    }
+    if(pid === 'pleated'){
+      pp = prodPrices('pleated'); if(!pp) return null;
+      var chart = sel.fabric === 'Crashed' ? 'Chart B · Crushed' : 'Chart A · Smooth';
+      var pg = pp.grids.filter(function(x){ return x.name === chart; })[0];
+      if(!pg) return null;
+      base = gridPrice(pg, w, h); if(base == null) return null;
+      if(sel.drive === 'Cord loop') add += xt(pp, 'Continuous cord loop (CCL)');
+      if(sel.drive === 'Motorized'){
+        add += sel.tdbu === 'Yes' ? xt(pp, 'Motor + TDBU') : xt(pp, 'Motorization');
+        add += motorExtras(pp, sel);
+      } else if(sel.tdbu === 'Yes'){
+        add += xt(pp, 'Cordless TDBU');
+      }
+      return Math.round((base + add) * 100) / 100;
+    }
+    return null; /* drapery etc: price on request */
+  }
+  function fmt$(v){ return v == null ? '&mdash;' : '$' + v.toFixed(2); }
+
   /* ── lines ── */
   var linesTable = document.getElementById('lines'), linesBody = document.getElementById('linesbody'),
       empty = document.getElementById('empty'), count = document.getElementById('count');
 
   function saveLines(){ sessionStorage.setItem('lumia_order', JSON.stringify(lines)); }
 
+  function orderTotals(ls){
+    var units = 0, total = 0, unknown = 0;
+    ls.forEach(function(l){
+      units += l.qty;
+      if(l.price == null){ unknown += 1; } else { total += l.price * l.qty; }
+    });
+    return { units: units, total: Math.round(total * 100) / 100, unknown: unknown };
+  }
+  function totalsText(ls){
+    var t = orderTotals(ls);
+    var s = ls.length + ' lines · ' + t.units + ' units · $' + t.total.toFixed(2);
+    if(t.unknown) s += ' + ' + t.unknown + ' on request';
+    return s;
+  }
+
+  function lineRow(l, i, del){
+    return '<tr><td>' + (i+1) + '</td><td>' + (l.label || '&mdash;') + '</td><td>' + l.product + '</td>' +
+      '<td>' + l.spec + '</td><td>' + l.w + '&Prime; &times; ' + l.h + '&Prime;</td><td>' + l.qty + '</td>' +
+      '<td class="num">' + fmt$(l.price) + '</td>' +
+      '<td class="num">' + (l.price == null ? 'on request' : '$' + (l.price * l.qty).toFixed(2)) + '</td>' +
+      (del ? '<td><button class="del" data-i="' + i + '" title="Remove">&times;</button></td>' : '') + '</tr>';
+  }
+
   function renderLines(){
     linesTable.hidden = lines.length === 0;
     empty.style.display = lines.length ? 'none' : '';
-    linesBody.innerHTML = lines.map(function(l,i){
-      return '<tr><td>' + (i+1) + '</td><td>' + l.product + '</td><td>' + l.spec + '</td>' +
-        '<td>' + l.w + '&Prime; &times; ' + l.h + '&Prime;</td><td>' + l.qty + '</td>' +
-        '<td><button class="del" data-i="' + i + '" title="Remove">&times;</button></td></tr>';
-    }).join('');
-    var units = lines.reduce(function(a,l){ return a + l.qty; }, 0);
-    count.textContent = lines.length ? lines.length + ' lines · ' + units + ' units' : '';
+    linesBody.innerHTML = lines.map(function(l,i){ return lineRow(l, i, true); }).join('');
+    count.textContent = lines.length ? totalsText(lines) : '';
   }
 
   linesBody.addEventListener('click', function(e){
@@ -274,19 +398,25 @@
       rowerr.classList.add('on');
       return;
     }
-    var parts = [];
+    var parts = [], sel = {};
     p.steps.forEach(function(st){
       if(st.key === 'collection'){
         var colSel = document.getElementById('c-collection');
-        parts.push(st.label + ': ' + colSel.options[colSel.selectedIndex].text +
-          ' ' + document.getElementById('c-colour').value);
+        var chosen = st.options[colSel.selectedIndex] || {};
+        sel.gridName = chosen.label;
+        sel.group = chosen.group;
+        parts.push(st.label + ': ' + chosen.label + ' ' + document.getElementById('c-colour').value);
         return;
       }
       var cell = cells.querySelector('.cell[data-key="' + st.key + '"]');
       if(cell && cell.style.display === 'none') return;
-      parts.push(st.label + ': ' + document.getElementById('c-' + st.key).value);
+      sel[st.key] = document.getElementById('c-' + st.key).value;
+      parts.push(st.label + ': ' + sel[st.key]);
     });
-    lines.push({ product: p.name, spec: parts.join(' · '), w: w, h: h, qty: qty });
+    var label = (document.getElementById('c-label').value || '').trim();
+    lines.push({ label: label, product: p.name, spec: parts.join(' · '),
+                 w: w, h: h, qty: qty, price: priceLine(p.id, sel, w, h) });
+    document.getElementById('c-label').value = '';
     saveLines(); renderLines();
   });
 
@@ -297,48 +427,95 @@
 
   function saveOrders(){ localStorage.setItem('lumia_orders', JSON.stringify(orders)); }
 
-  function linesText(ref, at, ls){
-    return 'LUMIA order request ' + ref + '\n' + at.slice(0,10) + '\n\n' +
+  function linesText(ref, at, ls, customer){
+    var t = orderTotals(ls);
+    return 'LUMIA order request ' + ref + '\n' + at.slice(0,10) +
+      (customer ? '\nCustomer: ' + customer : '') + '\n\n' +
       ls.map(function(l,i){
-        return (i+1) + '. ' + l.product + ' — ' + l.spec + ' — ' + l.w + '" x ' + l.h + '" — qty ' + l.qty;
-      }).join('\n') + '\n\nTotal lines: ' + ls.length;
+        return (i+1) + '. ' + (l.label ? '[' + l.label + '] ' : '') + l.product + ' — ' + l.spec +
+          ' — ' + l.w + '" x ' + l.h + '" — qty ' + l.qty +
+          ' — ' + (l.price == null ? 'price on request' : '$' + l.price.toFixed(2) + ' ea = $' + (l.price*l.qty).toFixed(2));
+      }).join('\n') +
+      '\n\nTotal: ' + ls.length + ' lines, ' + t.units + ' units, $' + t.total.toFixed(2) +
+      (t.unknown ? ' plus ' + t.unknown + ' line(s) on request' : '');
   }
 
   function renderOrders(){
     if(!orders.length){ ordersBox.innerHTML = '<p class="noorders">No orders sent yet.</p>'; return; }
-    ordersBox.innerHTML = orders.map(function(o, oi){
-      var units = o.lines.reduce(function(a,l){ return a + l.qty; }, 0);
-      var when = new Date(o.at);
-      var rows = o.lines.map(function(l,i){
-        return '<tr><td>' + (i+1) + '</td><td>' + l.product + '</td><td>' + l.spec + '</td>' +
-          '<td>' + l.w + '&Prime; &times; ' + l.h + '&Prime;</td><td>' + l.qty + '</td></tr>';
+    /* group by customer, groups ordered by their most recent order */
+    var groups = [], byName = {};
+    orders.forEach(function(o, oi){
+      var name = o.customer || 'No customer name';
+      if(!byName[name]){ byName[name] = { name: name, items: [] }; groups.push(byName[name]); }
+      byName[name].items.push({ o: o, oi: oi });
+    });
+    ordersBox.innerHTML = groups.map(function(g){
+      var cards = g.items.map(function(it){
+        var o = it.o, oi = it.oi;
+        var t = orderTotals(o.lines);
+        var when = new Date(o.at);
+        var rows = o.lines.map(function(l,i){ return lineRow(l, i, false); }).join('');
+        return '<details class="order"><summary>' +
+          '<span class="ref">' + o.ref + '</span>' +
+          '<span class="when">' + when.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) +
+          ' ' + when.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}) + '</span>' +
+          '<span class="meta">' + o.lines.length + ' lines · ' + t.units + ' units · $' + t.total.toFixed(2) +
+          (t.unknown ? ' +' + t.unknown + ' TBD' : '') + '</span></summary>' +
+          '<div class="obody"><table><thead><tr><th>#</th><th>Room / label</th><th>Product</th><th>Specification</th><th>W &times; H</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>' +
+          '<tbody>' + rows + '</tbody></table>' +
+          '<div class="oactions">' +
+          '<button class="obtn" data-oedit="' + oi + '" type="button">Edit</button>' +
+          '<button class="obtn" data-ocopy="' + oi + '" type="button">Copy as text</button>' +
+          '<button class="obtn" data-oreorder="' + oi + '" type="button">Reorder</button>' +
+          '<button class="obtn danger" data-odel="' + oi + '" type="button">Remove</button>' +
+          '</div></div></details>';
       }).join('');
-      return '<details class="order"><summary>' +
-        '<span class="ref">' + o.ref + '</span>' +
-        '<span class="when">' + when.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) +
-        ' ' + when.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}) + '</span>' +
-        '<span class="meta">' + o.lines.length + ' lines · ' + units + ' units</span></summary>' +
-        '<div class="obody"><table><thead><tr><th>#</th><th>Product</th><th>Specification</th><th>W &times; H</th><th>Qty</th></tr></thead>' +
-        '<tbody>' + rows + '</tbody></table>' +
-        '<div class="oactions">' +
-        '<button class="obtn" data-ocopy="' + oi + '" type="button">Copy as text</button>' +
-        '<button class="obtn" data-oreorder="' + oi + '" type="button">Load into new order</button>' +
-        '<button class="obtn danger" data-odel="' + oi + '" type="button">Remove</button>' +
-        '</div></div></details>';
+      return '<div class="oghead">' + g.name + ' <span class="n">' + g.items.length +
+        (g.items.length === 1 ? ' order' : ' orders') + '</span></div>' + cards;
     }).join('');
   }
 
+  /* ── editing an existing order ── */
+  var customerInput = document.getElementById('customer'),
+      editbar = document.getElementById('editbar'), editrefEl = document.getElementById('editref');
+  customerInput.value = sessionStorage.getItem('lumia_order_customer') || '';
+  customerInput.addEventListener('input', function(){
+    sessionStorage.setItem('lumia_order_customer', customerInput.value);
+  });
+  function getEditRef(){ return sessionStorage.getItem('lumia_order_edit') || ''; }
+  function setEditRef(r){
+    if(r){ sessionStorage.setItem('lumia_order_edit', r); } else { sessionStorage.removeItem('lumia_order_edit'); }
+    editrefEl.textContent = r;
+    editbar.classList.toggle('on', !!r);
+  }
+  document.getElementById('editcancel').addEventListener('click', function(){
+    setEditRef(''); lines = []; saveLines(); renderLines();
+  });
+
   ordersBox.addEventListener('click', function(e){
     var b = e.target.closest('.obtn'); if(!b) return;
+    var o;
     if(b.dataset.ocopy !== undefined){
-      var o = orders[+b.dataset.ocopy];
-      navigator.clipboard.writeText(linesText(o.ref, o.at, o.lines)).then(function(){
+      o = orders[+b.dataset.ocopy];
+      navigator.clipboard.writeText(linesText(o.ref, o.at, o.lines, o.customer)).then(function(){
         b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy as text'; }, 1400);
       });
+    } else if(b.dataset.oedit !== undefined){
+      o = orders[+b.dataset.oedit];
+      lines = JSON.parse(JSON.stringify(o.lines));
+      customerInput.value = o.customer || '';
+      sessionStorage.setItem('lumia_order_customer', customerInput.value);
+      setEditRef(o.ref);
+      saveLines(); renderLines(); window.scrollTo({top:0, behavior:'smooth'});
     } else if(b.dataset.oreorder !== undefined){
-      lines = JSON.parse(JSON.stringify(orders[+b.dataset.oreorder].lines));
+      o = orders[+b.dataset.oreorder];
+      lines = JSON.parse(JSON.stringify(o.lines));
+      customerInput.value = o.customer || '';
+      sessionStorage.setItem('lumia_order_customer', customerInput.value);
+      setEditRef('');
       saveLines(); renderLines(); window.scrollTo({top:0, behavior:'smooth'});
     } else if(b.dataset.odel !== undefined){
+      if(orders[+b.dataset.odel].ref === getEditRef()) setEditRef('');
       orders.splice(+b.dataset.odel, 1); saveOrders(); renderOrders();
     }
   });
@@ -352,19 +529,33 @@
   }
   document.getElementById('sendbtn').addEventListener('click', function(){
     if(!lines.length) return;
-    var ref = newRef(), at = new Date().toISOString();
-    var body = linesText(ref, at, lines);
-    orders.unshift({ ref: ref, at: at, lines: lines });
+    var customer = customerInput.value.trim();
+    var editRef = getEditRef(), at = new Date().toISOString();
+    var isUpdate = false, ref;
+    if(editRef){
+      var idx = orders.map(function(o){ return o.ref; }).indexOf(editRef);
+      if(idx !== -1){
+        ref = editRef; isUpdate = true;
+        orders.splice(idx, 1);
+      }
+    }
+    if(!ref) ref = newRef();
+    var body = linesText(ref, at, lines, customer);
+    var nLines = lines.length;
+    orders.unshift({ ref: ref, at: at, customer: customer, lines: lines });
     saveOrders();
     lines = []; saveLines(); renderLines(); renderOrders();
+    setEditRef('');
+    customerInput.value = ''; sessionStorage.removeItem('lumia_order_customer');
     location.href = 'mailto:hello@lumiashades.com?subject=' +
-      encodeURIComponent('Order request ' + ref + ' — ' + orders[0].lines.length + ' lines') +
+      encodeURIComponent((isUpdate ? 'Order update ' : 'Order request ') + ref +
+        (customer ? ' — ' + customer : '') + ' — ' + nLines + ' lines') +
       '&body=' + encodeURIComponent(body);
   });
   document.getElementById('copybtn').addEventListener('click', function(){
     if(!lines.length) return;
     var b = this;
-    navigator.clipboard.writeText(linesText('(draft)', new Date().toISOString(), lines)).then(function(){
+    navigator.clipboard.writeText(linesText('(draft)', new Date().toISOString(), lines, customerInput.value.trim())).then(function(){
       b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy as text'; }, 1400);
     });
   });
@@ -373,7 +564,7 @@
   });
 
   fetch('assets/order-config.json?v=' + Date.now()).then(function(r){ return r.json(); }).then(function(cfg){
-    CFG = cfg; buildRow(); renderLines(); renderOrders();
+    CFG = cfg; buildRow(); renderLines(); renderOrders(); setEditRef(getEditRef());
   });
 })();
 </script>
