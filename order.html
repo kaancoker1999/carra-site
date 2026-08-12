@@ -99,6 +99,15 @@
   .oghead{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
     color:var(--bronze);margin:26px 0 10px;display:flex;gap:14px;align-items:baseline}
   .oghead .n{color:var(--muted);letter-spacing:.08em;font-size:10px}
+  .osec{font-family:'Archivo',sans-serif;font-weight:600;font-size:16px;margin:34px 0 2px;
+    padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .osec:first-child{margin-top:10px}
+  .status{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+    border-radius:999px;padding:4px 10px;white-space:nowrap}
+  .status.acc{background:#EFF6EC;border:1px solid #B9D4B0;color:#2F5D25}
+  .status.pend{background:var(--paper);border:1px solid var(--line2);color:var(--muted)}
+  .status.lock::before{content:"🔒 "}
+  .onote{font-size:12.5px;color:#2F5D25;margin:0 0 10px}
 
   .custbar{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin:0 0 16px}
   .custbar .cell{display:flex;flex-direction:column;gap:7px}
@@ -440,39 +449,60 @@
       (t.unknown ? ' plus ' + t.unknown + ' line(s) on request' : '');
   }
 
+  var STATUS = {}; /* ref -> {status, locked, note} — maintained by LUMIA */
+
+  function orderCard(o, oi){
+    var st = STATUS[o.ref];
+    var locked = !!(st && st.locked);
+    var t = orderTotals(o.lines);
+    var when = new Date(o.at);
+    var rows = o.lines.map(function(l,i){ return lineRow(l, i, false); }).join('');
+    var badge = st
+      ? '<span class="status acc' + (locked ? ' lock' : '') + '">' + st.status + '</span>'
+      : '<span class="status pend">Pending review</span>';
+    var actions = '<button class="obtn" data-ocopy="' + oi + '" type="button">Copy as text</button>' +
+      '<button class="obtn" data-oreorder="' + oi + '" type="button">Reorder</button>';
+    if(!locked){
+      actions = '<button class="obtn" data-oedit="' + oi + '" type="button">Edit</button>' + actions +
+        '<button class="obtn danger" data-odel="' + oi + '" type="button">Remove</button>';
+    }
+    return '<details class="order"><summary>' +
+      '<span class="ref">' + o.ref + '</span>' + badge +
+      '<span class="when">' + when.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) +
+      ' ' + when.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}) + '</span>' +
+      '<span class="meta">' + o.lines.length + ' lines · ' + t.units + ' units · $' + t.total.toFixed(2) +
+      (t.unknown ? ' +' + t.unknown + ' TBD' : '') + '</span></summary>' +
+      '<div class="obody">' +
+      (st && st.note ? '<p class="onote">LUMIA: ' + st.note + '</p>' : '') +
+      '<table><thead><tr><th>#</th><th>Room / label</th><th>Product</th><th>Specification</th><th>W &times; H</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table>' +
+      '<div class="oactions">' + actions + '</div></div></details>';
+  }
+
+  function customerGroups(items){
+    var groups = [], byName = {};
+    items.forEach(function(it){
+      var name = it.o.customer || 'No customer name';
+      if(!byName[name]){ byName[name] = { name: name, items: [] }; groups.push(byName[name]); }
+      byName[name].items.push(it);
+    });
+    return groups.map(function(g){
+      return '<div class="oghead">' + g.name + ' <span class="n">' + g.items.length +
+        (g.items.length === 1 ? ' order' : ' orders') + '</span></div>' +
+        g.items.map(function(it){ return orderCard(it.o, it.oi); }).join('');
+    }).join('');
+  }
+
   function renderOrders(){
     if(!orders.length){ ordersBox.innerHTML = '<p class="noorders">No orders sent yet.</p>'; return; }
-    /* group by customer, groups ordered by their most recent order */
-    var groups = [], byName = {};
+    var accepted = [], pending = [];
     orders.forEach(function(o, oi){
-      var name = o.customer || 'No customer name';
-      if(!byName[name]){ byName[name] = { name: name, items: [] }; groups.push(byName[name]); }
-      byName[name].items.push({ o: o, oi: oi });
+      (STATUS[o.ref] ? accepted : pending).push({ o: o, oi: oi });
     });
-    ordersBox.innerHTML = groups.map(function(g){
-      var cards = g.items.map(function(it){
-        var o = it.o, oi = it.oi;
-        var t = orderTotals(o.lines);
-        var when = new Date(o.at);
-        var rows = o.lines.map(function(l,i){ return lineRow(l, i, false); }).join('');
-        return '<details class="order"><summary>' +
-          '<span class="ref">' + o.ref + '</span>' +
-          '<span class="when">' + when.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) +
-          ' ' + when.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}) + '</span>' +
-          '<span class="meta">' + o.lines.length + ' lines · ' + t.units + ' units · $' + t.total.toFixed(2) +
-          (t.unknown ? ' +' + t.unknown + ' TBD' : '') + '</span></summary>' +
-          '<div class="obody"><table><thead><tr><th>#</th><th>Room / label</th><th>Product</th><th>Specification</th><th>W &times; H</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>' +
-          '<tbody>' + rows + '</tbody></table>' +
-          '<div class="oactions">' +
-          '<button class="obtn" data-oedit="' + oi + '" type="button">Edit</button>' +
-          '<button class="obtn" data-ocopy="' + oi + '" type="button">Copy as text</button>' +
-          '<button class="obtn" data-oreorder="' + oi + '" type="button">Reorder</button>' +
-          '<button class="obtn danger" data-odel="' + oi + '" type="button">Remove</button>' +
-          '</div></div></details>';
-      }).join('');
-      return '<div class="oghead">' + g.name + ' <span class="n">' + g.items.length +
-        (g.items.length === 1 ? ' order' : ' orders') + '</span></div>' + cards;
-    }).join('');
+    var html = '';
+    if(accepted.length) html += '<div class="osec">Accepted &amp; in production</div>' + customerGroups(accepted);
+    if(pending.length) html += '<div class="osec">Awaiting confirmation</div>' + customerGroups(pending);
+    ordersBox.innerHTML = html;
   }
 
   /* ── editing an existing order ── */
@@ -502,6 +532,7 @@
       });
     } else if(b.dataset.oedit !== undefined){
       o = orders[+b.dataset.oedit];
+      if(STATUS[o.ref] && STATUS[o.ref].locked) return; /* locked by LUMIA */
       lines = JSON.parse(JSON.stringify(o.lines));
       customerInput.value = o.customer || '';
       sessionStorage.setItem('lumia_order_customer', customerInput.value);
@@ -515,7 +546,9 @@
       setEditRef('');
       saveLines(); renderLines(); window.scrollTo({top:0, behavior:'smooth'});
     } else if(b.dataset.odel !== undefined){
-      if(orders[+b.dataset.odel].ref === getEditRef()) setEditRef('');
+      o = orders[+b.dataset.odel];
+      if(STATUS[o.ref] && STATUS[o.ref].locked) return; /* locked by LUMIA */
+      if(o.ref === getEditRef()) setEditRef('');
       orders.splice(+b.dataset.odel, 1); saveOrders(); renderOrders();
     }
   });
@@ -532,7 +565,7 @@
     var customer = customerInput.value.trim();
     var editRef = getEditRef(), at = new Date().toISOString();
     var isUpdate = false, ref;
-    if(editRef){
+    if(editRef && !(STATUS[editRef] && STATUS[editRef].locked)){
       var idx = orders.map(function(o){ return o.ref; }).indexOf(editRef);
       if(idx !== -1){
         ref = editRef; isUpdate = true;
@@ -563,8 +596,12 @@
     lines = []; saveLines(); renderLines();
   });
 
-  fetch('assets/order-config.json?v=' + Date.now()).then(function(r){ return r.json(); }).then(function(cfg){
-    CFG = cfg; buildRow(); renderLines(); renderOrders(); setEditRef(getEditRef());
+  Promise.all([
+    fetch('assets/order-config.json?v=' + Date.now()).then(function(r){ return r.json(); }),
+    fetch('assets/order-status.json?v=' + Date.now()).then(function(r){ return r.json(); }).catch(function(){ return {}; })
+  ]).then(function(res){
+    CFG = res[0]; STATUS = res[1] || {};
+    buildRow(); renderLines(); renderOrders(); setEditRef(getEditRef());
   });
 })();
 </script>
