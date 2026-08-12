@@ -72,6 +72,14 @@
 
   .legend{margin:14px 0 0;font-size:12.5px;color:var(--muted)}
 
+  .xtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:18px;margin:44px 0 14px}
+  .extras{border:1px solid var(--line2);border-radius:12px;overflow:hidden;max-width:620px}
+  .extras table{min-width:0}
+  .extras td{text-align:left}
+  .extras td:last-child{text-align:right;font-weight:500;white-space:nowrap}
+  .pnotes{margin:18px 0 0;max-width:70ch}
+  .pnotes p{font-size:13px;color:var(--muted);margin:0 0 6px}
+
   footer{border-top:1px solid var(--line);background:var(--paper)}
   footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
 
@@ -113,7 +121,13 @@
     <div class="ptabs" id="ptabs"></div>
     <div class="ttabs" id="ttabs"></div>
     <div class="gridwrap"><table id="grid"></table></div>
-    <p class="legend">Width across, height down, inches. Prices per unit.</p>
+    <p class="legend" id="legend">Width across, height down, inches. Prices per unit.</p>
+
+    <div id="xwrap" hidden>
+      <div class="xtitle">Options &amp; surcharges</div>
+      <div class="extras gridwrap" style="overflow-x:auto"><table id="extras"></table></div>
+    </div>
+    <div class="pnotes" id="pnotes"></div>
   </div>
 </section>
 
@@ -129,30 +143,51 @@
 (function(){
   var s = LUMIA_TRADE.require(); if(!s) return;
   var P = s.prices;
+  if(!P || !P.products || !P.products[0].grids){
+    /* stale session from an older data format — force a fresh login */
+    LUMIA_TRADE.clearSession(); location.href = 'trade.html'; return;
+  }
   if(P.sample) document.getElementById('samplebar').classList.add('on');
 
   var pi = 0, ti = 0;
   var ptabs = document.getElementById('ptabs'), ttabs = document.getElementById('ttabs'),
-      grid = document.getElementById('grid');
+      grid = document.getElementById('grid'), extras = document.getElementById('extras'),
+      xwrap = document.getElementById('xwrap'), pnotes = document.getElementById('pnotes'),
+      legend = document.getElementById('legend');
 
-  function fmt(v){ return '$' + v.toLocaleString('en-US'); }
+  function fmt(v){ return '$' + v.toFixed(2); }
 
   function render(){
     var prod = P.products[pi];
     ptabs.innerHTML = P.products.map(function(p,i){
       return '<button type="button" class="ptab'+(i===pi?' on':'')+'" data-i="'+i+'">'+p.name+'</button>';
     }).join('');
-    ttabs.innerHTML = prod.tiers.map(function(t,i){
-      return '<button type="button" class="ttab'+(i===ti?' on':'')+'" data-i="'+i+'">'+t.name+'</button>';
+    ttabs.innerHTML = prod.grids.map(function(g,i){
+      return '<button type="button" class="ttab'+(i===ti?' on':'')+'" data-i="'+i+'">'+g.name+'</button>';
     }).join('');
-    var tier = prod.tiers[ti];
-    var html = '<thead><tr><th>H &#9660; &nbsp;W &#9654;</th>' +
-      prod.widths.map(function(w){ return '<th>'+w+'&Prime;</th>'; }).join('') + '</tr></thead><tbody>';
-    tier.grid.forEach(function(row, ri){
-      html += '<tr><th>'+prod.heights[ri]+'&Prime;</th>' +
-        row.map(function(v){ return '<td>'+fmt(v)+'</td>'; }).join('') + '</tr>';
+    ttabs.style.display = prod.grids.length > 1 ? '' : 'none';
+
+    var g = prod.grids[ti];
+    var html = '<thead><tr><th>' + (g.corner || '') + '</th>' +
+      g.cols.map(function(c){ return '<th>'+c+'</th>'; }).join('') + '</tr></thead><tbody>';
+    g.rows.forEach(function(r){
+      html += '<tr><th>'+r.label+'</th>' +
+        r.vals.map(function(v){ return '<td>'+fmt(v)+'</td>'; }).join('') + '</tr>';
     });
     grid.innerHTML = html + '</tbody>';
+    legend.textContent = g.name + ' — prices per unit, USD.';
+
+    xwrap.hidden = !(prod.extras && prod.extras.length);
+    if(prod.extras && prod.extras.length){
+      extras.innerHTML = '<tbody>' + prod.extras.map(function(e){
+        var v = ('usd' in e) ? '+' + fmt(e.usd)
+              : ('pct' in e) ? (e.pct ? '+' + e.pct + '%' : 'included')
+              : (e.note || '');
+        return '<tr><td>' + e.label + '</td><td>' + v + '</td></tr>';
+      }).join('') + '</tbody>';
+    }
+    var notes = (prod.notes || []).concat(P.notes || []);
+    pnotes.innerHTML = notes.map(function(n){ return '<p>— ' + n + '</p>'; }).join('');
   }
 
   ptabs.addEventListener('click', function(e){
