@@ -202,7 +202,6 @@
 </footer>
 
 <script src="assets/trade.js"></script>
-<script src="assets/admin.js"></script>
 <script>
 (function(){
   if(!LUMIA_TRADE.require()) return;
@@ -458,10 +457,9 @@
     var t = orderTotals(o.lines);
     var when = new Date(o.at);
     var rows = o.lines.map(function(l,i){ return lineRow(l, i, false); }).join('');
-    var admin = window.LUMIA_ADMIN && LUMIA_ADMIN.hasToken();
     var badge = st
-      ? '<span class="status acc' + (locked ? ' lock' : '') + '"' + (admin ? ' data-badge="' + o.ref + '" style="cursor:pointer" title="Click to change status"' : '') + '>' + st.status + '</span>'
-      : '<span class="status pend"' + (admin ? ' data-badge="' + o.ref + '" style="cursor:pointer" title="Click to set status"' : '') + '>Pending review</span>';
+      ? '<span class="status acc' + (locked ? ' lock' : '') + '">' + st.status + '</span>'
+      : '<span class="status pend">Pending review</span>';
     var actions = '<button class="obtn" data-ocopy="' + oi + '" type="button">Copy as text</button>' +
       '<button class="obtn" data-oreorder="' + oi + '" type="button">Reorder</button>';
     if(!locked){
@@ -525,18 +523,6 @@
   });
 
   ordersBox.addEventListener('click', function(e){
-    /* owner only: click the status badge to change it (needs admin token) */
-    var badge = e.target.closest('[data-badge]');
-    if(badge && window.LUMIA_ADMIN && LUMIA_ADMIN.hasToken()){
-      e.preventDefault();
-      var bref = badge.dataset.badge;
-      LUMIA_ADMIN.editStatus(bref, STATUS[bref]).then(function(res){
-        if(!res) return; /* cancelled */
-        if(res.entry){ STATUS[bref] = res.entry; } else { delete STATUS[bref]; }
-        renderOrders();
-      }).catch(function(err){ alert('Publish failed: ' + err.message); });
-      return;
-    }
     var b = e.target.closest('.obtn'); if(!b) return;
     var o;
     if(b.dataset.ocopy !== undefined){
