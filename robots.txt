@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kaancoker1999.github.io/carra-site/sitemap.xml
