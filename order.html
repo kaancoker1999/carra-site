@@ -109,7 +109,7 @@
   .status.lock::before{content:"🔒 "}
   .onote{font-size:12.5px;color:#2F5D25;margin:0 0 10px}
 
-  .custbar{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin:0 0 16px}
+  .custbar{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin:26px 0 0}
   .custbar .cell{display:flex;flex-direction:column;gap:7px}
   .custbar input{font:inherit;font-size:15px;min-width:320px;padding:12px 14px;border:1px solid var(--line2);border-radius:9px;background:var(--white)}
   .custbar input:focus{outline:none;border-color:var(--ink)}
@@ -163,11 +163,6 @@
     <div class="editbar" id="editbar">Editing order <span class="ref" id="editref"></span> &mdash; Send order will update it.
       <button type="button" id="editcancel">Cancel edit</button></div>
 
-    <div class="custbar">
-      <div class="cell"><label class="mono" style="font-size:9.5px">Customer / project</label>
-        <input id="customer" type="text" placeholder="e.g. Johnson residence — Houston" autocomplete="off"></div>
-    </div>
-
     <div class="rowbar">
       <div class="cells" id="cells"></div>
       <div class="rowerr" id="rowerr"></div>
@@ -179,6 +174,11 @@
         <tbody id="linesbody"></tbody>
       </table>
       <div class="empty" id="empty">No lines yet &mdash; build the first one above and press Add to order.</div>
+    </div>
+
+    <div class="custbar">
+      <div class="cell"><label class="mono" style="font-size:9.5px">Customer / project</label>
+        <input id="customer" type="text" placeholder="e.g. Johnson residence — Houston" autocomplete="off"></div>
     </div>
 
     <div class="actions">
