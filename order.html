@@ -467,12 +467,13 @@
         '<button class="obtn danger" data-odel="' + oi + '" type="button">Remove</button>';
     }
     return '<details class="order"><summary>' +
-      '<span class="ref">' + o.ref + '</span>' + badge +
+      '<span class="ref">' + (o.customer || o.ref) + '</span>' + badge +
       '<span class="when">' + when.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) +
       ' ' + when.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}) + '</span>' +
       '<span class="meta">' + o.lines.length + ' lines · ' + t.units + ' units · $' + t.total.toFixed(2) +
       (t.unknown ? ' +' + t.unknown + ' TBD' : '') + '</span></summary>' +
       '<div class="obody">' +
+      '<p class="mono" style="margin:6px 0 10px;font-size:10px">Ref: ' + o.ref + '</p>' +
       (st && st.note ? '<p class="onote">LUMIA: ' + st.note + '</p>' : '') +
       '<table><thead><tr><th>#</th><th>Room / label</th><th>Product</th><th>Specification</th><th>W &times; H</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table>' +
