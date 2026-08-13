@@ -58,8 +58,47 @@
       });
   }
 
+  /* ── mobile hamburger (all pages load this file) ── */
+  function injectMobileNav() {
+    var header = document.querySelector('header');
+    var nav = header && header.querySelector('nav');
+    if (!nav || document.getElementById('navtoggle')) return;
+    var css = document.createElement('style');
+    css.textContent =
+      '#navtoggle{display:none;font-size:20px;line-height:1;background:none;border:1px solid #D3D2CC;' +
+      'border-radius:8px;padding:7px 12px;cursor:pointer;color:#14171A}' +
+      '@media(max-width:760px){' +
+      '#navtoggle{display:block}' +
+      'header nav{display:none;position:absolute;top:100%;left:0;right:0;background:rgba(255,255,255,.98);' +
+      'backdrop-filter:blur(12px);border-bottom:1px solid #E4E3DE;flex-direction:column;' +
+      'align-items:stretch;gap:0;padding:6px 22px 18px}' +
+      'header nav.open{display:flex}' +
+      'header nav a{display:block!important;padding:13px 0;font-size:13px;border-bottom:1px solid #F1F1EE}' +
+      'header nav a:last-child{border-bottom:0}' +
+      'header nav a.partner{margin-top:10px;text-align:center;border:1px solid #D3D2CC;padding:12px}' +
+      'header{position:sticky}' +
+      '}';
+    document.head.appendChild(css);
+    var btn = document.createElement('button');
+    btn.id = 'navtoggle';
+    btn.setAttribute('aria-label', 'Menu');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.innerHTML = '&#9776;';
+    nav.parentNode.appendChild(btn);
+    if (getComputedStyle(header).position === 'static') header.style.position = 'sticky';
+    btn.addEventListener('click', function () {
+      var open = nav.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.innerHTML = open ? '&times;' : '&#9776;';
+    });
+    nav.addEventListener('click', function (e) {
+      if (e.target.closest('a')) { nav.classList.remove('open'); btn.innerHTML = '&#9776;'; }
+    });
+  }
+
   /* ── nav injection ── */
   function injectNav() {
+    injectMobileNav();
     var nav = document.querySelector('header nav');
     if (!nav) return;
     var partner = nav.querySelector('.partner');

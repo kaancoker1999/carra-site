@@ -31,7 +31,8 @@ TEMPLATE = r"""<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LUMIA — @@NAME@@</title>
-<meta name="description" content="Configure LUMIA @@NAME@@ — options, fabrics and specification. Request a trade quotation.">
+<meta name="description" content="LUMIA @@NAME@@ — @@DESC@@ Configure options and fabrics, request a trade quotation.">
+<link rel="canonical" href="https://kaancoker1999.github.io/carra-site/@@FNAME@@">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
@@ -398,7 +399,7 @@ var CONFIG = @@CONFIG@@;
   update();
 })();
 </script>
-<script src="assets/trade.js" defer></script>
+<script src="assets/trade.js?v=2" defer></script>
 </body>
 </html>
 """
@@ -474,7 +475,7 @@ PRODUCTS = {
     },
     "drapery.html": {
         "code": "04", "name": "Drapery", "img": "assets/product-drapery.jpg",
-        "desc": "Five heading styles on concealed hook gliders, hung on a slim aluminium track with flat end caps. Made to the drop, hemmed and steamed before it is packed, so it hangs straight out of the box.",
+        "desc": "Five heading styles on concealed hook gliders, hung on a slim aluminum track with flat end caps. Made to the drop, hemmed and steamed before it is packed, so it hangs straight out of the box.",
         "hLabel": "Drop", "width": [18, 192], "height": [24, 120],
         "sizeRange": 'W 18" – 192" · Drop 24" – 120"',
         "note": "Concealed hook gliders, 1.5 kg per carrier",
@@ -509,6 +510,7 @@ def generate():
         html = (TEMPLATE
                 .replace("@@NAME@@", cfg["name"])
                 .replace("@@CODE@@", cfg["code"])
+                .replace("@@FNAME@@", fname)
                 .replace("@@DESC@@", cfg["desc"])
                 .replace("@@IMG@@", cfg["img"])
                 .replace("@@CONFIG@@", json.dumps(page_cfg)))

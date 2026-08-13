@@ -40,6 +40,38 @@ def fabric_first(steps):
     return front + rest
 
 
+# Order size limits follow the PRICE GRIDS (the workbook), not the marketing
+# ranges on the configurator pages — a dealer can order anything that has a
+# price. Update these if the workbook grids grow.
+GRID_LIMITS = {
+    "roman": {"width": [18, 98], "height": [24, 106]},
+    "cellular": {"width": [18, 120], "height": [24, 137]},
+    "pleated": {"width": [18, 120], "height": [24, 137]},
+}
+
+ARCH_STYLES = [
+    ("Light Filtering · Single Cell", "Light Filtering", "Single Cell"),
+    ("Light Filtering · Double Cell", "Light Filtering", "Double Cell"),
+    ("Light Filtering · Triple Cell", "Light Filtering", "Triple Cell"),
+    ("Blackout · Single Cell", "Blackout", "Single Cell"),
+    ("Blackout · Double Cell", "Blackout", "Double Cell"),
+]
+
+
+def arches_product():
+    classic = [col.get("code") or col["label"] for col in gp.FAB_CELL["colors"]["cellular-classic"]]
+    return {
+        "id": "arches", "name": "Cellular Arches",
+        "width": [19, 84], "height": [10, 50], "hLabel": "Height",
+        "steps": [{
+            "key": "collection", "label": "Style",
+            "options": [{"id": f"arch|{grid}|{row}", "label": label}
+                        for label, grid, row in ARCH_STYLES],
+            "colours": {f"arch|{grid}|{row}": classic for label, grid, row in ARCH_STYLES},
+        }],
+    }
+
+
 def build():
     products = []
     for fname, cfg in gp.PRODUCTS.items():
@@ -83,15 +115,18 @@ def build():
 
         steps = fabric_first(steps)
 
+        pid = fname.replace(".html", "")
+        lim = GRID_LIMITS.get(pid, {})
         products.append({
-            "id": fname.replace(".html", ""),
+            "id": pid,
             "name": cfg["name"],
-            "width": cfg["width"],
-            "height": cfg["height"],
+            "width": lim.get("width", cfg["width"]),
+            "height": lim.get("height", cfg["height"]),
             "hLabel": cfg.get("hLabel", "Height"),
             "steps": steps,
         })
 
+    products.append(arches_product())
     OUT.write_text(json.dumps({"products": products}, separators=(",", ":")))
     print(f"wrote {OUT} ({OUT.stat().st_size // 1024} KB)")
 

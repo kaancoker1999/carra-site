@@ -201,7 +201,7 @@
   </div>
 </footer>
 
-<script src="assets/trade.js"></script>
+<script src="assets/trade.js?v=2"></script>
 <script>
 (function(){
   if(!LUMIA_TRADE.require()) return;
@@ -348,6 +348,21 @@
       }
       return Math.round((base + add) * 100) / 100;
     }
+    if(pid === 'arches'){
+      pp = prodPrices('arches'); if(!pp) return null;
+      /* sel.gridName carries "arch|<grid>|<cell row>" via the option id */
+      var parts = (sel.archKey || '').split('|');
+      var ag = pp.grids.filter(function(x){ return x.name === parts[1]; })[0];
+      if(!ag) return null;
+      var row = ag.rows.filter(function(r){ return r.label === parts[2]; })[0];
+      if(!row) return null;
+      var ci = -1;
+      for(var i = 0; i < ag.cols.length; i++){ if(w <= parseFloat(ag.cols[i])){ ci = i; break; } }
+      if(ci < 0) return null;
+      base = row.vals[ci];
+      if(w > 42) base += xt(pp, 'Oversize shipping (width over 42″)');
+      return Math.round(base * 100) / 100;
+    }
     return null; /* drapery etc: price on request */
   }
   function fmt$(v){ return v == null ? '&mdash;' : '$' + v.toFixed(2); }
@@ -414,6 +429,7 @@
         var chosen = st.options[colSel.selectedIndex] || {};
         sel.gridName = chosen.label;
         sel.group = chosen.group;
+        sel.archKey = chosen.id;
         parts.push(st.label + ': ' + chosen.label + ' ' + document.getElementById('c-colour').value);
         return;
       }

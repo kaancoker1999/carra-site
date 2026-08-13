@@ -12,6 +12,7 @@
 <meta property="og:description" content="Made-to-measure Roman, cellular and pleated shades and drapery, motorized with Motionblinds.">
 <meta property="og:image" content="https://kaancoker1999.github.io/carra-site/assets/product-roman.jpg">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://kaancoker1999.github.io/carra-site/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
@@ -288,7 +289,6 @@
     .room{padding:0 4vw}
   }
   @media(max-width:620px){
-    nav .lnk{display:none}
     .prods,.three,.mrow,.mspecs,.form,.remotes{grid-template-columns:1fr}
     .kv .compact{white-space:normal}
     .figs{grid-template-columns:1fr}
@@ -458,23 +458,23 @@
         </div>
       </div>
       <div class="form" id="form">
-        <div><label>Name</label><input type="text" placeholder="Full name"></div>
-        <div><label>Company</label><input type="text" placeholder="Company name"></div>
-        <div><label>Email</label><input type="email" placeholder="you@company.com"></div>
-        <div><label>Country</label><input type="text" placeholder="Country"></div>
+        <div><label>Name</label><input type="text" name="name" placeholder="Full name" required></div>
+        <div><label>Company</label><input type="text" name="company" placeholder="Company name"></div>
+        <div><label>Email</label><input type="email" name="email" placeholder="you@company.com" required></div>
+        <div><label>Country</label><input type="text" name="country" placeholder="Country"></div>
         <div class="full"><label>I am a</label>
-          <select>
+          <select name="role">
             <option>Retailer</option><option>Independent dealer</option>
             <option>Distributor</option><option>Home automation integrator</option>
             <option>Architect or specifier</option><option>Other</option>
           </select>
         </div>
-        <div class="full"><label>What do you need</label><textarea placeholder="Product, volumes, market, timing"></textarea></div>
+        <div class="full"><label>What do you need</label><textarea name="message" placeholder="Product, volumes, market, timing"></textarea></div>
         <div class="sub">
           <button class="btn solid" id="send" type="button">Send message</button>
           <span class="fine">We reply within one working day.</span>
         </div>
-        <div class="sent" id="sent">Thanks — your message is with the team. Demo form: not connected to a mailbox yet.</div>
+        <div class="sent" id="sent">Thanks — your message is with the team. We reply within one working day.</div>
       </div>
     </div>
   </div>
@@ -502,21 +502,21 @@
         <a href="motorization.html">Rechargeable drives</a>
         <a href="motorization.html">Hardwired systems</a>
         <a href="motorization.html">App &amp; hub control</a>
-        <a href="#contact">Integrator programme</a>
+        <a href="#contact">Integrator program</a>
       </div>
       <div class="fcol">
         <h5>Trade</h5>
         <a href="#contact">Become a dealer</a>
         <a href="#contact">Private label</a>
         <a href="motorization.html">Technical resources</a>
-        <a href="#contact">Trade login</a>
+        <a href="trade.html">Trade login</a>
       </div>
       <div class="fcol">
         <h5>Company</h5>
         <a href="about.html">About LUMIA</a>
         <a href="about.html">Quality &amp; testing</a>
-        <a href="#contact">Child safety</a>
-        <a href="#contact">Careers</a>
+        <a href="about.html#safety">Child safety</a>
+        <a href="mailto:hello@lumiashades.com?subject=Careers">Careers</a>
       </div>
     </div>
 
@@ -526,7 +526,7 @@
 
     <div class="fbot">
       <div>© 2026 LUMIA · All rights reserved</div>
-      <div><a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Cookies</a> · EN</div>
+      <div><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="privacy.html#cookies">Cookies</a> · EN</div>
     </div>
   </div>
 </footer>
@@ -639,11 +639,41 @@
     draw(TOP0,BOT0);requestAnimationFrame(frame);
   })();
 
-  /* ── form ── */
+  /* ── form: posts to hello@lumiashades.com via FormSubmit ── */
   var send=document.getElementById('send');
-  if(send)send.addEventListener('click',function(){document.getElementById('sent').classList.add('on');});
+  if(send)send.addEventListener('click',function(){
+    var box=document.getElementById('form');
+    var fields={};
+    box.querySelectorAll('input,select,textarea').forEach(function(el){
+      if(el.name)fields[el.name]=el.value;
+    });
+    if(!fields.name||!fields.email){
+      box.querySelectorAll('input[required]').forEach(function(el){
+        el.style.borderColor=el.value?'':'#8A6220';
+      });
+      return;
+    }
+    fields._subject='Website enquiry — '+(fields.company||fields.name);
+    fields._template='table';
+    send.disabled=true;send.textContent='Sending…';
+    fetch('https://formsubmit.co/ajax/hello@lumiashades.com',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify(fields)
+    }).then(function(r){return r.json();}).then(function(j){
+      if(String(j.success)!=='true') throw new Error('not delivered');
+      document.getElementById('sent').classList.add('on');
+      send.textContent='Sent';
+    }).catch(function(){
+      /* network fallback: open the mail client instead */
+      location.href='mailto:hello@lumiashades.com?subject='+encodeURIComponent(fields._subject)+
+        '&body='+encodeURIComponent(Object.keys(fields).filter(function(k){return k[0]!=='_';})
+        .map(function(k){return k+': '+fields[k];}).join('\n'));
+      send.disabled=false;send.textContent='Send message';
+    });
+  });
 })();
 </script>
-<script src="assets/trade.js" defer></script>
+<script src="assets/trade.js?v=2" defer></script>
 </body>
 </html>
