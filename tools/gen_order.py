@@ -19,18 +19,41 @@ def option_names(options):
 
 # Cellular order rows pick one combined "cell & opacity" option matching the
 # price-list grids, instead of separate cell / opacity / fabric steps.
-# Each option maps to the fabric collection whose colours apply.
+# Colour availability differs per cell type — lists below follow the
+# "LUMIA Cellular Shades Catalogue 2025" colour-range pages (series codes).
+SERIES_COLOURS = {
+    "BH":   ["001", "002", "004", "005", "007", "009", "010", "015", "011", "019",
+             "012", "021", "023", "024", "025", "030", "027", "040", "101"],
+    "XH":   ["001", "002", "004", "005", "007", "009", "010", "015", "011", "019",
+             "012", "021", "101"],
+    "DH":   ["200", "400", "500", "5247", "5249"],
+    "SH":   ["100", "900", "300", "600"],
+    "CH":   ["001", "002", "004", "005", "007", "009", "010", "015", "011", "019",
+             "012", "021", "023", "024", "025", "030", "027", "040", "101"],
+    "TH":   ["001", "002", "004", "005", "007", "009", "010", "015", "011", "019",
+             "012", "021", "023", "025", "101"],
+    "BHBO": ["001", "002", "004", "005", "007", "009", "012", "023", "015", "030",
+             "021", "040", "101"],
+    "XHBO": ["001", "002", "004", "005", "007", "009", "015", "030", "021", "023"],
+    "CHBO": ["001", "002", "004", "005", "007", "009", "012", "023", "015", "030",
+             "021", "040", "101"],
+}
+
 CELL_CHOICES = [
-    ("Light Filtering · Single Cell", "cellular-classic"),
-    ("Light Filtering · Double Cell", "cellular-classic"),
-    ("Light Filtering · Single Cell 3/4″", "cellular-classic"),
-    ("Light Filtering · Triple Cell 3/8″", "cellular-classic"),
-    ("Designer Prints · Single Cell 3/4″", "cellular-designer"),
-    ("Sheer Woven · Single Cell 3/4″", "cellular-sheer"),
-    ("Blackout · Single Cell", "cellular-classic"),
-    ("Blackout · Double Cell", "cellular-classic"),
-    ("Blackout · Single Cell 3/4″", "cellular-classic"),
+    ("Light Filtering · Single Cell", "BH"),
+    ("Light Filtering · Double Cell", "CH"),
+    ("Light Filtering · Single Cell 3/4″", "XH"),
+    ("Light Filtering · Triple Cell 3/8″", "TH"),
+    ("Designer Prints · Single Cell 3/4″", "DH"),
+    ("Sheer Woven · Single Cell 3/4″", "SH"),
+    ("Blackout · Single Cell", "BHBO"),
+    ("Blackout · Double Cell", "CHBO"),
+    ("Blackout · Single Cell 3/4″", "XHBO"),
 ]
+
+
+def series_colours(series):
+    return [f"{series} {c}" for c in SERIES_COLOURS[series]]
 
 
 def fabric_first(steps):
@@ -58,8 +81,16 @@ ARCH_STYLES = [
 ]
 
 
+ARCH_SERIES = {
+    ("Light Filtering", "Single Cell"): "BH",
+    ("Light Filtering", "Double Cell"): "CH",
+    ("Light Filtering", "Triple Cell"): "TH",
+    ("Blackout", "Single Cell"): "BHBO",
+    ("Blackout", "Double Cell"): "CHBO",
+}
+
+
 def arches_product():
-    classic = [col.get("code") or col["label"] for col in gp.FAB_CELL["colors"]["cellular-classic"]]
     return {
         "id": "arches", "name": "Cellular Arches",
         "width": [19, 84], "height": [10, 50], "hLabel": "Height",
@@ -67,7 +98,8 @@ def arches_product():
             "key": "collection", "label": "Style",
             "options": [{"id": f"arch|{grid}|{row}", "label": label}
                         for label, grid, row in ARCH_STYLES],
-            "colours": {f"arch|{grid}|{row}": classic for label, grid, row in ARCH_STYLES},
+            "colours": {f"arch|{grid}|{row}": series_colours(ARCH_SERIES[(grid, row)])
+                        for label, grid, row in ARCH_STYLES},
         }],
     }
 
@@ -102,15 +134,10 @@ def build():
             steps.append(step)
 
         if fab == "cell":
-            colours = {
-                c["id"]: [col.get("code") or col["label"] for col in fabric_data["colors"][c["id"]]]
-                for c in fabric_data["collections"]
-            }
-            used = {cid for _, cid in CELL_CHOICES}
             steps.insert(0, {
                 "key": "collection", "label": "Cell & opacity",
-                "options": [{"id": cid, "label": name} for name, cid in CELL_CHOICES],
-                "colours": {cid: cols for cid, cols in colours.items() if cid in used},
+                "options": [{"id": series, "label": name} for name, series in CELL_CHOICES],
+                "colours": {series: series_colours(series) for _, series in CELL_CHOICES},
             })
 
         steps = fabric_first(steps)
