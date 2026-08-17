@@ -3,6 +3,9 @@
 [build]
   publish = "."
 
+[functions]
+  node_bundler = "esbuild"
+
 # Long cache for fingerprint-stable assets; HTML always revalidates.
 [[headers]]
   for = "/assets/*"

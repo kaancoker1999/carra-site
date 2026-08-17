@@ -1,4 +1,4 @@
-/* LUMIA trade area — shared session, crypto and nav injection. */
+/* LUMIA trade area — session, server login and nav injection. */
 (function () {
   var KEY = 'lumia_trade';
 
@@ -8,54 +8,21 @@
   function setSession(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
   function clearSession() { localStorage.removeItem(KEY); }
 
-  /* ── crypto ── */
-  function b64d(s) {
-    var bin = atob(s), a = new Uint8Array(bin.length);
-    for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
-    return a;
-  }
-  function deriveKey(secret, salt, iterations) {
-    var enc = new TextEncoder();
-    return crypto.subtle.importKey('raw', enc.encode(secret), 'PBKDF2', false, ['deriveKey'])
-      .then(function (base) {
-        return crypto.subtle.deriveKey(
-          { name: 'PBKDF2', salt: salt, iterations: iterations, hash: 'SHA-256' },
-          base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
-      });
-  }
-  function tryDecrypt(secret, rec, iterations) {
-    return deriveKey(secret, b64d(rec.s), iterations).then(function (key) {
-      return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(rec.i) }, key, b64d(rec.c));
-    }).then(function (buf) {
-      return new TextDecoder().decode(buf);
-    }).catch(function () { return null; });
-  }
-  function firstHit(secret, records, iterations) {
-    var p = Promise.resolve(null);
-    records.forEach(function (rec) {
-      p = p.then(function (found) {
-        return found !== null ? found : tryDecrypt(secret, rec, iterations);
-      });
-    });
-    return p;
-  }
-
-  /* login: access code -> group key -> price data. Resolves prices or null. */
+  /* login: the access code is checked server-side and the dealer's own
+     price list comes back — nothing price-related ships with the site */
   function login(code) {
-    return fetch('assets/trade-data.json?v=' + Date.now()).then(function (r) { return r.json(); })
-      .then(function (data) {
-        var it = (data.kdf && data.kdf.iterations) || 150000;
-        return firstHit(code.trim(), data.dealers, it).then(function (groupKey) {
-          if (!groupKey) return null;
-          return firstHit(groupKey, data.groups, it);
-        });
-      })
-      .then(function (pricesJson) {
-        if (!pricesJson) return null;
-        var prices = JSON.parse(pricesJson);
-        setSession({ at: new Date().toISOString(), prices: prices });
-        return prices;
-      });
+    return fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: String(code || '').trim() })
+    }).then(function (r) {
+      if (!r.ok) return null;
+      return r.json();
+    }).then(function (d) {
+      if (!d || !d.prices) return null;
+      setSession({ at: new Date().toISOString(), code: String(code).trim(), name: d.name, prices: d.prices });
+      return d.prices;
+    });
   }
 
   /* ── mobile hamburger (all pages load this file) ── */

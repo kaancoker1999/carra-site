@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUMIA — Admin</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --white:#FFFFFF; --paper:#FAF5EA; --ink:#14171A; --muted:#767A7E;
+    --line:#E4E3DE; --line2:#D3D2CC; --bronze:#8A6220;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.02em;margin:0}
+  .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .wrap{max-width:1100px;margin:0 auto;padding:36px 22px 100px}
+  .card{background:var(--white);border:1px solid var(--line2);border-radius:14px;padding:24px 26px;margin:0 0 18px}
+  label{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+  input,select,textarea{font:inherit;font-size:14.5px;padding:10px 12px;border:1px solid var(--line2);border-radius:9px;background:var(--white)}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ink)}
+  .btn{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+    background:var(--ink);color:#fff;border:0;border-radius:9px;padding:11px 18px;cursor:pointer}
+  .btn:hover{background:var(--bronze)}
+  .btn.ghost{background:var(--white);border:1px solid var(--line2);color:var(--ink)}
+  .btn[disabled]{opacity:.5;cursor:wait}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+  .msg{font-size:13.5px;margin-top:10px}
+  .msg.err{color:#8A2620}.msg.ok{color:#2F5D25}
+  .tabs{display:flex;gap:10px;margin:22px 0 16px}
+  .tab{font:inherit;font-size:14px;border:1px solid var(--line2);background:var(--white);border-radius:9px;padding:9px 18px;cursor:pointer}
+  .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px}
+  th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  code{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--bronze)}
+  details{margin:2px 0}
+  summary{cursor:pointer}
+  .status{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;border-radius:999px;padding:3px 9px;white-space:nowrap}
+  .st-pend{background:var(--paper);border:1px solid var(--line2);color:var(--muted)}
+  .st-acc{background:#EFF6EC;border:1px solid #B9D4B0;color:#2F5D25}
+  .inactive{opacity:.5}
+  .ordwrap{overflow-x:auto}
+  .newcode{background:#FCF9F2;border:1px solid var(--bronze);border-radius:10px;padding:14px 16px;margin-top:14px;display:none}
+  .newcode.on{display:block}
+  .newcode code{font-size:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mono">&mdash; LUMIA internal</div>
+  <h1 style="font-size:28px;margin:8px 0 22px">Trade admin</h1>
+
+  <div class="card" id="keycard">
+    <label for="key">Admin key</label>
+    <div class="row">
+      <input id="key" type="password" style="min-width:320px" placeholder="LMA-ADMIN-…" autocomplete="off">
+      <button class="btn" id="keybtn" type="button">Log in</button>
+      <button class="btn ghost" id="keyforget" type="button">Forget key</button>
+    </div>
+    <div class="msg" id="keymsg"></div>
+  </div>
+
+  <div id="panel" hidden>
+    <div class="tabs">
+      <button class="tab on" data-tab="orders" type="button">Orders</button>
+      <button class="tab" data-tab="dealers" type="button">Customers</button>
+    </div>
+
+    <!-- ── orders ── -->
+    <div id="tab-orders">
+      <div class="card ordwrap">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h2 style="font-size:18px">All orders</h2>
+          <button class="btn ghost" id="refreshorders" type="button">Refresh</button>
+        </div>
+        <table>
+          <thead><tr><th>Date</th><th>Customer acct</th><th>End customer</th><th>Ref</th><th>Total</th><th>Lines</th><th>Status</th><th style="min-width:290px">Set status</th></tr></thead>
+          <tbody id="orderrows"><tr><td colspan="8">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── dealers ── -->
+    <div id="tab-dealers" hidden>
+      <div class="card">
+        <h2 style="font-size:18px;margin-bottom:14px">New customer account</h2>
+        <div class="row">
+          <div><label>Company / name</label><input id="d-name" type="text" style="min-width:260px" placeholder="Brooklyn Shades and Blind"></div>
+          <div><label>Price level (× base list)</label>
+            <select id="d-mult">
+              <option value="1">Base price (×1.00)</option>
+              <option value="1.15">+15% (×1.15)</option>
+              <option value="1.3">+30% (×1.30)</option>
+              <option value="1.5">+50% (×1.50)</option>
+              <option value="custom">Custom…</option>
+            </select></div>
+          <div id="d-custwrap" hidden><label>Custom multiplier</label><input id="d-custom" type="number" step="0.01" min="0.1" style="width:110px" placeholder="1.22"></div>
+          <button class="btn" id="d-create" type="button">Create account</button>
+        </div>
+        <div class="newcode" id="newcode"></div>
+        <div class="msg" id="dmsg"></div>
+      </div>
+      <div class="card ordwrap">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h2 style="font-size:18px">Customer accounts</h2>
+          <button class="btn ghost" id="refreshdealers" type="button">Refresh</button>
+        </div>
+        <table>
+          <thead><tr><th>Name</th><th>Access code</th><th>Price level</th><th>Orders</th><th>Created</th><th>Status</th><th></th></tr></thead>
+          <tbody id="dealerrows"><tr><td colspan="7">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var KEY = 'lumia_admin_key';
+  function key(){ return localStorage.getItem(KEY) || ''; }
+
+  function api(path, method, body){
+    return fetch(path, {
+      method: method || 'GET',
+      headers: { 'Authorization': 'Bearer ' + key(), 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function(r){
+      if(r.status === 401) throw new Error('unauthorized');
+      return r.json();
+    });
+  }
+
+  function esc(t){ return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function fmtIn(v){
+    var FR = {0:'0/8',1:'1/8',2:'1/4',3:'3/8',4:'1/2',5:'5/8',6:'3/4',7:'7/8'};
+    var n = Math.floor(v), f = Math.round((v - n) * 8);
+    if(f === 8){ n += 1; f = 0; }
+    return n + ' ' + FR[f];
+  }
+
+  /* ── login ── */
+  function unlock(){
+    api('/api/admin/dealers').then(function(){
+      $('panel').hidden = false;
+      $('keymsg').className = 'msg ok'; $('keymsg').textContent = 'Logged in.';
+      loadOrders(); loadDealers();
+    }).catch(function(){
+      localStorage.removeItem(KEY);
+      $('panel').hidden = true;
+      $('keymsg').className = 'msg err'; $('keymsg').textContent = 'Key rejected.';
+    });
+  }
+  $('keybtn').addEventListener('click', function(){
+    var v = $('key').value.trim();
+    if(!v) return;
+    localStorage.setItem(KEY, v); $('key').value = '';
+    unlock();
+  });
+  $('keyforget').addEventListener('click', function(){
+    localStorage.removeItem(KEY); $('panel').hidden = true;
+    $('keymsg').className = 'msg'; $('keymsg').textContent = 'Key removed from this browser.';
+  });
+  if(key()) unlock();
+
+  /* ── tabs ── */
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('on', x === t); });
+      $('tab-orders').hidden = t.dataset.tab !== 'orders';
+      $('tab-dealers').hidden = t.dataset.tab !== 'dealers';
+    });
+  });
+
+  /* ── orders ── */
+  var STATUSES = ['Pending review', 'Confirmed', 'In production', 'Shipped', 'On hold', 'Cancelled'];
+  function loadOrders(){
+    api('/api/admin/orders').then(function(d){
+      var rows = (d.orders || []).map(function(o, i){
+        var st = o.status || { status: 'Pending review' };
+        var when = new Date(o.at);
+        var lines = (o.lines || []).map(function(l, li){
+          return (li+1) + '. ' + (l.label ? '[' + esc(l.label) + '] ' : '') + esc(l.product) + ' — ' + esc(l.spec) +
+            ' — ' + fmtIn(l.w) + '″ × ' + fmtIn(l.h) + '″ — qty ' + l.qty +
+            (l.price != null ? ' — $' + (l.price * l.qty).toFixed(2) : ' — TBD');
+        }).join('<br>');
+        var sel = '<select data-ref="' + esc(o.ref) + '" class="st-sel">' + STATUSES.map(function(x){
+          return '<option' + (x === st.status ? ' selected' : '') + '>' + x + '</option>';
+        }).join('') + '</select>';
+        return '<tr>' +
+          '<td>' + when.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '<br><span class="mono" style="font-size:9px">' + when.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) + '</span></td>' +
+          '<td>' + esc(o.dealer) + '</td>' +
+          '<td>' + esc(o.customer || '—') + (o.notes ? '<br><span style="color:var(--muted);font-size:12px">' + esc(o.notes) + '</span>' : '') + '</td>' +
+          '<td><code>' + esc(o.ref) + '</code>' + (o.kind === 'update' ? '<br><span class="mono" style="font-size:8.5px">updated</span>' : '') + '</td>' +
+          '<td>' + esc(o.total || '') + '</td>' +
+          '<td><details><summary>' + (o.lines || []).length + ' lines</summary><div style="font-size:12.5px;padding:6px 0">' + lines + '</div></details></td>' +
+          '<td><span class="status ' + (st.status === 'Pending review' ? 'st-pend' : 'st-acc') + '">' + (st.locked ? '🔒 ' : '') + esc(st.status) + '</span>' +
+            (st.note ? '<br><span style="font-size:11.5px;color:#2F5D25">' + esc(st.note) + '</span>' : '') + '</td>' +
+          '<td><div class="row" style="gap:6px">' + sel +
+            '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:10px"><input type="checkbox" class="st-lock" data-ref="' + esc(o.ref) + '"' + (st.locked ? ' checked' : '') + '>lock</label></div>' +
+            '<input type="text" class="st-note" data-ref="' + esc(o.ref) + '" placeholder="note to customer" value="' + esc(st.note || '') + '" style="width:100%;margin-top:6px;font-size:12.5px">' +
+            '<button class="btn st-save" data-ref="' + esc(o.ref) + '" type="button" style="margin-top:6px;padding:7px 14px">Save</button></td>' +
+          '</tr>';
+      }).join('');
+      $('orderrows').innerHTML = rows || '<tr><td colspan="8">No orders yet.</td></tr>';
+    }).catch(function(e){ $('orderrows').innerHTML = '<tr><td colspan="8">' + esc(e.message) + '</td></tr>'; });
+  }
+  $('refreshorders').addEventListener('click', loadOrders);
+  $('orderrows').addEventListener('click', function(e){
+    var b = e.target.closest('.st-save'); if(!b) return;
+    var ref = b.dataset.ref;
+    var sel = document.querySelector('.st-sel[data-ref="' + ref + '"]') || document.querySelector('.st-sel');
+    var find = function(cls){ return [].slice.call(document.querySelectorAll(cls)).filter(function(x){ return x.dataset.ref === ref; })[0]; };
+    b.disabled = true;
+    api('/api/admin/status', 'POST', {
+      ref: ref,
+      status: find('.st-sel') ? find('.st-sel').value : 'Pending review',
+      locked: find('.st-lock') ? find('.st-lock').checked : false,
+      note: find('.st-note') ? find('.st-note').value : ''
+    }).then(function(){ loadOrders(); }).catch(function(){ b.disabled = false; alert('Save failed'); });
+  });
+
+  /* ── dealers ── */
+  $('d-mult').addEventListener('change', function(){
+    $('d-custwrap').hidden = this.value !== 'custom';
+  });
+  $('d-create').addEventListener('click', function(){
+    var name = $('d-name').value.trim();
+    var mult = $('d-mult').value === 'custom' ? parseFloat($('d-custom').value) : parseFloat($('d-mult').value);
+    if(!name){ $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Name required.'; return; }
+    if(!isFinite(mult) || mult <= 0){ $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Multiplier required.'; return; }
+    var b = this; b.disabled = true;
+    api('/api/admin/dealers', 'POST', { name: name, mult: mult }).then(function(d){
+      b.disabled = false; $('d-name').value = '';
+      $('dmsg').className = 'msg';
+      $('newcode').className = 'newcode on';
+      $('newcode').innerHTML = '<b>' + esc(d.name) + '</b> created — access code: <code>' + esc(d.code) + '</code><br>' +
+        '<span style="font-size:12.5px;color:var(--muted)">Send this code to the customer — it is their login. Price level ×' + d.mult + '.</span>';
+      loadDealers();
+    }).catch(function(){ b.disabled = false; $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Create failed.'; });
+  });
+  function loadDealers(){
+    api('/api/admin/dealers').then(function(d){
+      var rows = (d.dealers || []).map(function(x){
+        return '<tr class="' + (x.active === false ? 'inactive' : '') + '">' +
+          '<td>' + esc(x.name) + '</td>' +
+          '<td><code>' + esc(x.code) + '</code></td>' +
+          '<td>×' + x.mult + '</td>' +
+          '<td>' + x.orders + '</td>' +
+          '<td>' + (x.created ? new Date(x.created).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : '—') + '</td>' +
+          '<td>' + (x.active === false ? 'Suspended' : 'Active') + '</td>' +
+          '<td><button class="btn ghost d-toggle" data-code="' + esc(x.code) + '" data-active="' + (x.active === false ? 'true' : 'false') + '" type="button" style="padding:6px 12px">' +
+            (x.active === false ? 'Reactivate' : 'Suspend') + '</button></td></tr>';
+      }).join('');
+      $('dealerrows').innerHTML = rows || '<tr><td colspan="7">No customer accounts yet.</td></tr>';
+    }).catch(function(e){ $('dealerrows').innerHTML = '<tr><td colspan="7">' + esc(e.message) + '</td></tr>'; });
+  }
+  $('refreshdealers').addEventListener('click', loadDealers);
+  $('dealerrows').addEventListener('click', function(e){
+    var b = e.target.closest('.d-toggle'); if(!b) return;
+    b.disabled = true;
+    api('/api/admin/dealer-active', 'POST', { code: b.dataset.code, active: b.dataset.active === 'true' })
+      .then(loadDealers).catch(function(){ b.disabled = false; alert('Failed'); });
+  });
+})();
+</script>
+</body>
+</html>

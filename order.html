@@ -209,10 +209,14 @@
   <input type="text" name="total"><textarea name="notes"></textarea><textarea name="order"></textarea>
 </form>
 
-<script src="assets/trade.js?v=2"></script>
+<script src="assets/trade.js?v=3"></script>
 <script>
 (function(){
-  if(!LUMIA_TRADE.require()) return;
+  var SESSION = LUMIA_TRADE.require();
+  if(!SESSION) return;
+  function apiHeaders(extra){
+    return Object.assign({ 'x-dealer-code': SESSION.code || '' }, extra || {});
+  }
 
   var CFG = null, lines = [];
   try{ lines = JSON.parse(sessionStorage.getItem('lumia_order') || '[]'); }catch(e){}
@@ -527,12 +531,19 @@
     saveLines(); renderLines();
   });
 
-  /* ── past orders (kept in this browser) ── */
+  /* ── past orders (stored centrally — visible from any device) ── */
   var orders = [];
-  try{ orders = JSON.parse(localStorage.getItem('lumia_orders') || '[]'); }catch(e){}
   var ordersBox = document.getElementById('orders');
 
-  function saveOrders(){ localStorage.setItem('lumia_orders', JSON.stringify(orders)); }
+  function loadOrders(){
+    return fetch('/api/orders', { headers: apiHeaders() })
+      .then(function(r){
+        if(r.status === 401){ LUMIA_TRADE.clearSession(); location.href = 'trade.html'; throw new Error('logged out'); }
+        return r.json();
+      })
+      .then(function(d){ orders = d.orders || []; })
+      .catch(function(){ /* offline: keep whatever we had */ });
+  }
 
   function linesText(ref, at, ls, customer, notes){
     var t = orderTotals(ls);
@@ -548,11 +559,9 @@
       (t.unknown ? ' plus ' + t.unknown + ' line(s) on request' : '');
   }
 
-  var STATUS = {}; /* ref -> {status, locked, note} — maintained by LUMIA */
-
   function orderCard(o, oi){
-    var st = STATUS[o.ref];
-    var locked = !!(st && st.locked);
+    var st = o.status && o.status.status !== 'Pending review' ? o.status : null;
+    var locked = !!(o.status && o.status.locked);
     var t = orderTotals(o.lines);
     var when = new Date(o.at);
     var rows = o.lines.map(function(l,i){ return lineRow(l, i, false); }).join('');
@@ -563,8 +572,7 @@
       '<button class="obtn" data-ocopy="' + oi + '" type="button">Copy as text</button>' +
       '<button class="obtn" data-oreorder="' + oi + '" type="button">Reorder</button>';
     if(!locked){
-      actions = '<button class="obtn" data-oedit="' + oi + '" type="button">Edit</button>' + actions +
-        '<button class="obtn danger" data-odel="' + oi + '" type="button">Remove</button>';
+      actions = '<button class="obtn" data-oedit="' + oi + '" type="button">Edit</button>' + actions;
     }
     return '<details class="order"><summary>' +
       '<span class="ref">' + (o.customer || o.ref) + '</span>' + badge +
@@ -575,7 +583,7 @@
       '<div class="obody">' +
       '<p class="mono" style="margin:6px 0 10px;font-size:10px">Ref: ' + o.ref + '</p>' +
       (o.notes ? '<p class="onote" style="color:#4A4E52">Note: ' + o.notes + '</p>' : '') +
-      (st && st.note ? '<p class="onote">LUMIA: ' + st.note + '</p>' : '') +
+      (o.status && o.status.note ? '<p class="onote">LUMIA: ' + o.status.note + '</p>' : '') +
       '<table><thead><tr><th>#</th><th>Room / label</th><th>Product</th><th>Specification</th><th>W &times; H</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table>' +
       '<div class="oactions">' + actions + '</div></div></details>';
@@ -599,7 +607,8 @@
     if(!orders.length){ ordersBox.innerHTML = '<p class="noorders">No orders sent yet.</p>'; return; }
     var accepted = [], pending = [];
     orders.forEach(function(o, oi){
-      (STATUS[o.ref] ? accepted : pending).push({ o: o, oi: oi });
+      var isPending = !o.status || o.status.status === 'Pending review';
+      (isPending ? pending : accepted).push({ o: o, oi: oi });
     });
     var html = '';
     if(accepted.length) html += '<div class="osec">Accepted &amp; in production</div>' + customerGroups(accepted);
@@ -704,7 +713,7 @@
       });
     } else if(b.dataset.oedit !== undefined){
       o = orders[+b.dataset.oedit];
-      if(STATUS[o.ref] && STATUS[o.ref].locked) return; /* locked by LUMIA */
+      if(o.status && o.status.locked) return; /* locked by LUMIA */
       lines = JSON.parse(JSON.stringify(o.lines));
       customerInput.value = o.customer || '';
       sessionStorage.setItem('lumia_order_customer', customerInput.value);
@@ -721,11 +730,6 @@
       sessionStorage.setItem('lumia_order_notes', notesInput.value);
       setEditRef('');
       saveLines(); renderLines(); window.scrollTo({top:0, behavior:'smooth'});
-    } else if(b.dataset.odel !== undefined){
-      o = orders[+b.dataset.odel];
-      if(STATUS[o.ref] && STATUS[o.ref].locked) return; /* locked by LUMIA */
-      if(o.ref === getEditRef()) setEditRef('');
-      orders.splice(+b.dataset.odel, 1); saveOrders(); renderOrders();
     }
   });
 
@@ -742,50 +746,55 @@
     var notes = notesInput.value.trim();
     var editRef = getEditRef(), at = new Date().toISOString();
     var isUpdate = false, ref;
-    if(editRef && !(STATUS[editRef] && STATUS[editRef].locked)){
-      var idx = orders.map(function(o){ return o.ref; }).indexOf(editRef);
-      if(idx !== -1){
-        ref = editRef; isUpdate = true;
-        orders.splice(idx, 1);
-      }
+    var existing = editRef ? orders.filter(function(o){ return o.ref === editRef; })[0] : null;
+    if(existing && !(existing.status && existing.status.locked)){
+      ref = editRef; isUpdate = true;
     }
     if(!ref) ref = newRef();
     var body = linesText(ref, at, lines, customer, notes);
     var nLines = lines.length;
     var t = orderTotals(lines);
-    orders.unshift({ ref: ref, at: at, customer: customer, notes: notes, lines: lines });
-    saveOrders();
-    lines = []; saveLines(); renderLines(); renderOrders();
-    setEditRef('');
-    customerInput.value = ''; sessionStorage.removeItem('lumia_order_customer');
-    notesInput.value = ''; sessionStorage.removeItem('lumia_order_notes');
+    var sentLines = lines;
+    var totalText = '$' + t.total.toFixed(2) + (t.unknown ? ' +' + t.unknown + ' TBD' : '');
     var sendbtn = document.getElementById('sendbtn');
     sendbtn.disabled = true; sendbtn.textContent = 'Sending…';
+    var finishOk = function(){
+      lines = []; saveLines(); renderLines();
+      setEditRef('');
+      customerInput.value = ''; sessionStorage.removeItem('lumia_order_customer');
+      notesInput.value = ''; sessionStorage.removeItem('lumia_order_notes');
+      loadOrders().then(renderOrders);
+      sendbtn.textContent = 'Order sent ✓';
+      setTimeout(function(){ sendbtn.textContent = 'Send order'; sendbtn.disabled = false; }, 3000);
+    };
     var mailtoFallback = function(){
+      sendbtn.textContent = 'Send order'; sendbtn.disabled = false;
       location.href = 'mailto:hello@lumiashades.com?subject=' +
         encodeURIComponent((isUpdate ? 'Order update ' : 'Order request ') + ref +
           (customer ? ' — ' + customer : '') + ' — ' + nLines + ' lines') +
         '&body=' + encodeURIComponent(body);
     };
-    /* orders go straight to LUMIA via Netlify Forms; the mail window is only a fallback */
-    fetch('/', {
+    /* 1: the order itself goes to the LUMIA backend */
+    fetch('/api/order', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        'form-name': 'order',
-        ref: ref,
-        kind: isUpdate ? 'update' : 'new',
-        customer: customer,
-        notes: notes,
-        total: '$' + t.total.toFixed(2) + (t.unknown ? ' +' + t.unknown + ' TBD' : ''),
-        order: body
-      }).toString()
+      headers: apiHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ ref: ref, kind: isUpdate ? 'update' : 'new',
+        customer: customer, notes: notes, total: totalText, lines: sentLines })
     }).then(function(r){
-      if(!r.ok) throw new Error('form endpoint unavailable');
-      sendbtn.textContent = 'Order sent ✓';
-      setTimeout(function(){ sendbtn.textContent = 'Send order'; sendbtn.disabled = false; }, 3000);
-    }).catch(function(){
-      sendbtn.textContent = 'Send order'; sendbtn.disabled = false;
+      if(r.status === 423){ alert('This order was locked by LUMIA and can no longer be changed.'); throw new Error('locked'); }
+      if(!r.ok) throw new Error('api unavailable');
+      /* 2: e-mail copy via Netlify Forms (best effort) */
+      fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          'form-name': 'order', ref: ref, kind: isUpdate ? 'update' : 'new',
+          customer: customer, notes: notes, total: totalText, order: body
+        }).toString()
+      }).catch(function(){});
+      finishOk();
+    }).catch(function(err){
+      if(String(err.message) === 'locked'){ sendbtn.textContent = 'Send order'; sendbtn.disabled = false; return; }
       mailtoFallback();
     });
   });
@@ -802,9 +811,9 @@
 
   Promise.all([
     fetch('assets/order-config.json?v=' + Date.now()).then(function(r){ return r.json(); }),
-    fetch('assets/order-status.json?v=' + Date.now()).then(function(r){ return r.json(); }).catch(function(){ return {}; })
+    loadOrders()
   ]).then(function(res){
-    CFG = res[0]; STATUS = res[1] || {};
+    CFG = res[0];
     buildRow(); renderLines(); renderOrders(); setEditRef(getEditRef());
   });
 })();
