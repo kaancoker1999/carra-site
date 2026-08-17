@@ -65,7 +65,7 @@
     <div class="msg" id="keymsg"></div>
   </div>
 
-  <div id="logoutbar" hidden style="display:flex;justify-content:flex-end;margin:0 0 14px">
+  <div id="logoutbar" style="display:none;justify-content:flex-end;margin:0 0 14px">
     <button class="btn ghost" id="logoutbtn" type="button">Log out</button>
   </div>
 
@@ -154,7 +154,7 @@
     api('/api/admin/dealers').then(function(){
       $('panel').hidden = false;
       $('keycard').hidden = true;
-      $('logoutbar').hidden = false;
+      $('logoutbar').style.display = 'flex';
       loadOrders(); loadDealers();
     }).catch(function(){
       sessionStorage.removeItem(KEY);
@@ -166,7 +166,7 @@
     sessionStorage.removeItem(KEY);
     $('panel').hidden = true;
     $('keycard').hidden = false;
-    $('logoutbar').hidden = true;
+    $('logoutbar').style.display = 'none';
     $('orderrows').innerHTML = '';
     $('dealerrows').innerHTML = '';
     $('weektabs').innerHTML = '';
