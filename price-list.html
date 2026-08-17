@@ -63,6 +63,10 @@
   .ttab.on{border-color:var(--bronze);background:#FCF9F2;color:var(--bronze)}
 
   .gridwrap{overflow-x:auto;border:1px solid var(--line2);border-radius:12px}
+  #gridbox{overflow:auto;max-height:72vh}
+  #grid thead th{position:sticky;top:0;z-index:3;background:var(--paper);box-shadow:0 1px 0 var(--line2)}
+  #grid tbody th{position:sticky;left:0;z-index:2;background:var(--paper);box-shadow:1px 0 0 var(--line2)}
+  #grid thead th:first-child{left:0;z-index:4;box-shadow:1px 1px 0 var(--line2)}
   table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
   th,td{padding:11px 14px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
   th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:500;background:var(--paper)}
@@ -121,7 +125,7 @@
     <div class="ptabs" id="ptabs"></div>
     <div class="ttabs" id="gtabs"></div>
     <div class="ttabs" id="ttabs"></div>
-    <div class="gridwrap"><table id="grid"></table></div>
+    <div class="gridwrap" id="gridbox"><table id="grid"></table></div>
     <p class="legend" id="legend">Width across, height down, inches. Prices per unit.</p>
 
     <div id="xwrap" hidden>
