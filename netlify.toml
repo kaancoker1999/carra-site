@@ -1,0 +1,34 @@
+# Netlify configuration for the LUMIA site — plain static hosting, no build step.
+
+[build]
+  publish = "."
+
+# Long cache for fingerprint-stable assets; HTML always revalidates.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Data files the trade area fetches — always fresh.
+[[headers]]
+  for = "/assets/trade-data.json"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/assets/order-status.json"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/assets/order-config.json"
+  [headers.values]
+    Cache-Control = "no-cache"
