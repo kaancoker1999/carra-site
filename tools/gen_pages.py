@@ -415,6 +415,7 @@ var CONFIG = @@CONFIG@@;
 PRODUCTS = {
     "roman.html": {
         "code": "01", "name": "Roman Shades", "img": "assets/product-roman.jpg",
+        "pdf": "assets/pdf/lumia-roman-shades-catalogue.pdf", "pdfsize": "8.3 MB",
         "desc": "Four fold styles across every fabric group — back rods, front rods, relaxed and hobbled — with square hems and a consistent stack at any width. Lining and blackout backing are made in house.",
         "hLabel": "Height", "width": [18, 96], "height": [24, 96],
         "fabrics": True,
