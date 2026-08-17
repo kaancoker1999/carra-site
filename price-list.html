@@ -120,6 +120,7 @@
   <button id="xlsbtn" type="button" style="margin-top:18px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;background:var(--ink);color:#fff;border:0;border-radius:9px;padding:13px 24px;cursor:pointer">Download as Excel</button>
   <span id="xlsmsg" class="mono" style="margin-left:12px"></span>
   <div class="samplebar" id="samplebar">Sample data &mdash; the real price grids will replace these figures.</div>
+  <div class="samplebar" id="promobar" style="border-color:#B9D4B0;background:#EFF6EC;color:#2F5D25"></div>
 </div>
 
 <section>
@@ -145,7 +146,7 @@
   </div>
 </footer>
 
-<script src="assets/trade.js?v=3"></script>
+<script src="assets/trade.js?v=4"></script>
 <script>
 (function(){
   var s = LUMIA_TRADE.require(); if(!s) return;
@@ -155,6 +156,12 @@
     LUMIA_TRADE.clearSession(); location.href = 'trade.html'; return;
   }
   if(P.sample) document.getElementById('samplebar').classList.add('on');
+  if(s.promo && s.promo.until && new Date(s.promo.until) > new Date()){
+    var pb = document.getElementById('promobar');
+    pb.textContent = 'These prices include your ' + s.promo.pct + '% discount — valid until ' +
+      new Date(s.promo.until).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'}) + '.';
+    pb.classList.add('on');
+  }
 
   var pi = 0, ti = 0, gi = 0;
   var ptabs = document.getElementById('ptabs'), ttabs = document.getElementById('ttabs'),

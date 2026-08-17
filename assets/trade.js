@@ -20,7 +20,7 @@
       return r.json();
     }).then(function (d) {
       if (!d || !d.prices) return null;
-      setSession({ at: new Date().toISOString(), code: String(code).trim(), name: d.name, prices: d.prices });
+      setSession({ at: new Date().toISOString(), code: String(code).trim(), name: d.name, prices: d.prices, promo: d.promo || null });
       return d.prices;
     });
   }

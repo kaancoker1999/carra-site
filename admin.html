@@ -79,6 +79,7 @@
           <h2 style="font-size:18px">All orders</h2>
           <button class="btn ghost" id="refreshorders" type="button">Refresh</button>
         </div>
+        <div class="tabs" id="weektabs" style="margin:0 0 14px;flex-wrap:wrap"></div>
         <table>
           <thead><tr><th>Date</th><th>Customer acct</th><th>End customer</th><th>Ref</th><th>Total</th><th>Lines</th><th>Status</th><th style="min-width:290px">Set status</th></tr></thead>
           <tbody id="orderrows"><tr><td colspan="8">Loading…</td></tr></tbody>
@@ -98,9 +99,7 @@
               <option value="1.15">+15% (×1.15)</option>
               <option value="1.3">+30% (×1.30)</option>
               <option value="1.5">+50% (×1.50)</option>
-              <option value="custom">Custom…</option>
             </select></div>
-          <div id="d-custwrap" hidden><label>Custom multiplier</label><input id="d-custom" type="number" step="0.01" min="0.1" style="width:110px" placeholder="1.22"></div>
           <button class="btn" id="d-create" type="button">Create account</button>
         </div>
         <div class="newcode" id="newcode"></div>
@@ -180,9 +179,47 @@
 
   /* ── orders ── */
   var STATUSES = ['Pending review', 'Confirmed', 'In production', 'Shipped', 'On hold', 'Cancelled'];
+  var allOrders = [], weekSel = 0;
+  function weekStart(dt){
+    var d = new Date(dt); d.setHours(0,0,0,0);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); /* back to Monday */
+    return d;
+  }
+  function weekLabel(mondayIso){
+    var a = new Date(mondayIso), b = new Date(a); b.setDate(b.getDate() + 6);
+    var now = weekStart(new Date()).toISOString().slice(0,10);
+    if(mondayIso === now) return 'This week';
+    var f = function(x){ return x.toLocaleDateString('en-US', {month:'short', day:'numeric'}); };
+    return f(a) + ' – ' + f(b);
+  }
   function loadOrders(){
     api('/api/admin/orders').then(function(d){
-      var rows = (d.orders || []).map(function(o, i){
+      allOrders = d.orders || [];
+      renderWeeks();
+    }).catch(function(e){ $('orderrows').innerHTML = '<tr><td colspan="8">' + esc(e.message) + '</td></tr>'; });
+  }
+  function renderWeeks(){
+    var byWeek = {}, keys = [];
+    allOrders.forEach(function(o){
+      var k = weekStart(o.at).toISOString().slice(0,10);
+      if(!byWeek[k]){ byWeek[k] = []; keys.push(k); }
+      byWeek[k].push(o);
+    });
+    keys.sort().reverse();
+    if(weekSel >= keys.length) weekSel = 0;
+    $('weektabs').innerHTML = keys.map(function(k, i){
+      return '<button class="tab' + (i === weekSel ? ' on' : '') + '" data-w="' + i + '" type="button" style="padding:7px 14px;font-size:13px">' +
+        weekLabel(k) + ' <span class="mono" style="font-size:9px">' + byWeek[k].length + '</span></button>';
+    }).join('') || '<span class="mono">No orders yet.</span>';
+    renderOrderRows(keys.length ? byWeek[keys[weekSel]] : []);
+  }
+  $('weektabs') && document.getElementById('weektabs').addEventListener('click', function(e){
+    var b = e.target.closest('.tab'); if(!b) return;
+    weekSel = +b.dataset.w; renderWeeks();
+  });
+  function renderOrderRows(list){
+    {
+      var rows = (list || []).map(function(o, i){
         var st = o.status || { status: 'Pending review' };
         var when = new Date(o.at);
         var lines = (o.lines || []).map(function(l, li){
@@ -208,8 +245,8 @@
             '<button class="btn st-save" data-ref="' + esc(o.ref) + '" type="button" style="margin-top:6px;padding:7px 14px">Save</button></td>' +
           '</tr>';
       }).join('');
-      $('orderrows').innerHTML = rows || '<tr><td colspan="8">No orders yet.</td></tr>';
-    }).catch(function(e){ $('orderrows').innerHTML = '<tr><td colspan="8">' + esc(e.message) + '</td></tr>'; });
+      $('orderrows').innerHTML = rows || '<tr><td colspan="8">No orders this week.</td></tr>';
+    }
   }
   $('refreshorders').addEventListener('click', loadOrders);
   $('orderrows').addEventListener('click', function(e){
@@ -227,12 +264,9 @@
   });
 
   /* ── dealers ── */
-  $('d-mult').addEventListener('change', function(){
-    $('d-custwrap').hidden = this.value !== 'custom';
-  });
   $('d-create').addEventListener('click', function(){
     var name = $('d-name').value.trim();
-    var mult = $('d-mult').value === 'custom' ? parseFloat($('d-custom').value) : parseFloat($('d-mult').value);
+    var mult = parseFloat($('d-mult').value);
     if(!name){ $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Name required.'; return; }
     if(!isFinite(mult) || mult <= 0){ $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Multiplier required.'; return; }
     var b = this; b.disabled = true;
@@ -245,28 +279,106 @@
       loadDealers();
     }).catch(function(){ b.disabled = false; $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Create failed.'; });
   });
+  var LEVELS = [['1','Base price (×1.00)'],['1.15','+15% (×1.15)'],['1.3','+30% (×1.30)'],['1.5','+50% (×1.50)']];
+  var dealersCache = [];
+  function promoActive(x){
+    return x.promo && x.promo.until && new Date(x.promo.until) > new Date() ? x.promo : null;
+  }
   function loadDealers(){
     api('/api/admin/dealers').then(function(d){
-      var rows = (d.dealers || []).map(function(x){
-        return '<tr class="' + (x.active === false ? 'inactive' : '') + '">' +
+      dealersCache = d.dealers || [];
+      var rows = dealersCache.map(function(x, xi){
+        var pr = promoActive(x);
+        var priceCell = '×' + x.mult +
+          (pr ? '<br><span style="color:#2F5D25;font-size:11.5px">−' + pr.pct + '% until ' +
+            new Date(pr.until).toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '</span>' : '');
+        var main = '<tr class="' + (x.active === false ? 'inactive' : '') + '">' +
           '<td>' + esc(x.name) + '</td>' +
           '<td><code>' + esc(x.code) + '</code></td>' +
-          '<td>×' + x.mult + '</td>' +
+          '<td>' + priceCell + '</td>' +
           '<td>' + x.orders + '</td>' +
           '<td>' + (x.created ? new Date(x.created).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : '—') + '</td>' +
           '<td>' + (x.active === false ? 'Suspended' : 'Active') + '</td>' +
-          '<td><button class="btn ghost d-toggle" data-code="' + esc(x.code) + '" data-active="' + (x.active === false ? 'true' : 'false') + '" type="button" style="padding:6px 12px">' +
-            (x.active === false ? 'Reactivate' : 'Suspend') + '</button></td></tr>';
+          '<td><div class="row" style="gap:6px">' +
+            '<button class="btn ghost d-edit" data-i="' + xi + '" type="button" style="padding:6px 12px">Manage</button>' +
+            '<button class="btn ghost d-toggle" data-code="' + esc(x.code) + '" data-active="' + (x.active === false ? 'true' : 'false') + '" type="button" style="padding:6px 12px">' +
+            (x.active === false ? 'Reactivate' : 'Suspend') + '</button></div></td></tr>';
+        var editor = '<tr class="editrow" data-for="' + xi + '" hidden><td colspan="7" style="background:var(--paper)">' +
+          '<div class="row" style="gap:22px;align-items:flex-end;padding:6px 0">' +
+          '<div><label>Price level</label><select class="e-mult" data-code="' + esc(x.code) + '">' +
+            LEVELS.map(function(l){ return '<option value="' + l[0] + '"' + (String(x.mult) === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') +
+          '</select> <button class="btn e-mult-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Change price</button></div>' +
+          '<div><label>Timed discount</label>' +
+            '<input class="e-pct" data-code="' + esc(x.code) + '" type="number" min="1" max="90" step="0.5" placeholder="%" style="width:76px" value="' + (pr ? pr.pct : '') + '"> ' +
+            '<input class="e-days" data-code="' + esc(x.code) + '" type="number" min="1" max="365" step="1" placeholder="days" style="width:86px"> ' +
+            '<button class="btn e-promo-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Apply discount</button>' +
+            (pr ? ' <button class="btn ghost e-promo-clear" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Remove discount</button>' : '') +
+          '</div>' +
+          '<div style="margin-left:auto"><button class="btn e-delete" data-code="' + esc(x.code) + '" type="button" style="background:#8A2620;padding:8px 14px">Delete account</button></div>' +
+          '</div></td></tr>';
+        return main + editor;
       }).join('');
       $('dealerrows').innerHTML = rows || '<tr><td colspan="7">No customer accounts yet.</td></tr>';
     }).catch(function(e){ $('dealerrows').innerHTML = '<tr><td colspan="7">' + esc(e.message) + '</td></tr>'; });
   }
   $('refreshdealers').addEventListener('click', loadDealers);
+
+  function dealerName(code){
+    var d = dealersCache.filter(function(x){ return x.code === code; })[0];
+    return d ? d.name : code;
+  }
   $('dealerrows').addEventListener('click', function(e){
-    var b = e.target.closest('.d-toggle'); if(!b) return;
-    b.disabled = true;
-    api('/api/admin/dealer-active', 'POST', { code: b.dataset.code, active: b.dataset.active === 'true' })
-      .then(loadDealers).catch(function(){ b.disabled = false; alert('Failed'); });
+    var b;
+    if((b = e.target.closest('.d-edit'))){
+      var row = document.querySelector('.editrow[data-for="' + b.dataset.i + '"]');
+      if(row) row.hidden = !row.hidden;
+      return;
+    }
+    if((b = e.target.closest('.d-toggle'))){
+      var verb = b.dataset.active === 'true' ? 'Reactivate' : 'Suspend';
+      if(!confirm(verb + ' ' + dealerName(b.dataset.code) + '? Their login will ' +
+        (verb === 'Suspend' ? 'stop working immediately.' : 'start working again.'))) return;
+      b.disabled = true;
+      api('/api/admin/dealer-active', 'POST', { code: b.dataset.code, active: b.dataset.active === 'true' })
+        .then(loadDealers).catch(function(){ b.disabled = false; alert('Failed'); });
+      return;
+    }
+    if((b = e.target.closest('.e-mult-save'))){
+      var sel = document.querySelector('.e-mult[data-code="' + b.dataset.code + '"]');
+      var label = sel.options[sel.selectedIndex].text;
+      if(!confirm('Change ' + dealerName(b.dataset.code) + "'s price level to " + label +
+        '?\nThey will see the new prices on their next login. Are you sure?')) return;
+      b.disabled = true;
+      api('/api/admin/dealer-mult', 'POST', { code: b.dataset.code, mult: parseFloat(sel.value) })
+        .then(loadDealers).catch(function(){ b.disabled = false; alert('Failed'); });
+      return;
+    }
+    if((b = e.target.closest('.e-promo-save'))){
+      var pct = parseFloat(document.querySelector('.e-pct[data-code="' + b.dataset.code + '"]').value);
+      var days = parseInt(document.querySelector('.e-days[data-code="' + b.dataset.code + '"]').value, 10);
+      if(!isFinite(pct) || pct <= 0 || !isFinite(days) || days < 1){ alert('Enter a percent and a number of days.'); return; }
+      var until = new Date(Date.now() + days * 86400000).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+      if(!confirm('Give ' + dealerName(b.dataset.code) + ' a ' + pct + '% discount for ' + days +
+        ' days (until ' + until + ')?\nIt applies on their next login and ends automatically. Are you sure?')) return;
+      b.disabled = true;
+      api('/api/admin/dealer-promo', 'POST', { code: b.dataset.code, pct: pct, days: days })
+        .then(loadDealers).catch(function(){ b.disabled = false; alert('Failed'); });
+      return;
+    }
+    if((b = e.target.closest('.e-promo-clear'))){
+      if(!confirm('Remove the discount from ' + dealerName(b.dataset.code) + '? Are you sure?')) return;
+      b.disabled = true;
+      api('/api/admin/dealer-promo', 'POST', { code: b.dataset.code, pct: 0 })
+        .then(loadDealers).catch(function(){ b.disabled = false; alert('Failed'); });
+      return;
+    }
+    if((b = e.target.closest('.e-delete'))){
+      if(!confirm('DELETE the account "' + dealerName(b.dataset.code) + '"?\nTheir access code stops working immediately. Past orders are kept in the order list.\nAre you sure?')) return;
+      b.disabled = true;
+      api('/api/admin/dealer-delete', 'POST', { code: b.dataset.code })
+        .then(loadDealers).catch(function(){ b.disabled = false; alert('Failed'); });
+      return;
+    }
   });
 })();
 </script>

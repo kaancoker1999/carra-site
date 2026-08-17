@@ -94,7 +94,9 @@ export default async (req) => {
     if (!d || d.active === false) return bad("invalid code", 401);
     const base = await store().get("prices", { type: "json" });
     if (!base) return bad("prices not loaded yet", 503);
-    return json({ name: d.name, prices: scaled(base, d.mult || 1) });
+    const promo = d.promo && d.promo.until && new Date(d.promo.until) > new Date() ? d.promo : null;
+    const eff = (d.mult || 1) * (promo ? 1 - promo.pct / 100 : 1);
+    return json({ name: d.name, prices: scaled(base, eff), promo });
   }
 
   // ── dealer: own orders ────────────────────────────────────────
@@ -159,6 +161,42 @@ export default async (req) => {
       dealers[code] = { name, mult, active: true, created: new Date().toISOString() };
       await s.setJSON("dealers", dealers);
       return json({ ok: true, code, name, mult });
+    }
+
+    if (path === "/api/admin/dealer-mult" && req.method === "POST") {
+      const dealers = await getDealers();
+      const d = dealers[String(body.code || "")];
+      if (!d) return bad("no such dealer", 404);
+      const mult = Number(body.mult);
+      if (!isFinite(mult) || mult <= 0 || mult > 10) return bad("bad multiplier");
+      d.mult = mult;
+      await s.setJSON("dealers", dealers);
+      return json({ ok: true, mult });
+    }
+
+    if (path === "/api/admin/dealer-promo" && req.method === "POST") {
+      const dealers = await getDealers();
+      const d = dealers[String(body.code || "")];
+      if (!d) return bad("no such dealer", 404);
+      const pct = Number(body.pct), days = Number(body.days);
+      if (!isFinite(pct) || pct <= 0) {
+        delete d.promo;
+      } else {
+        if (pct > 90 || !isFinite(days) || days < 1 || days > 365) return bad("pct 1-90 and days 1-365 required");
+        const until = new Date(Date.now() + days * 86400000);
+        d.promo = { pct: Math.round(pct * 100) / 100, until: until.toISOString(), set: new Date().toISOString() };
+      }
+      await s.setJSON("dealers", dealers);
+      return json({ ok: true, promo: d.promo || null });
+    }
+
+    if (path === "/api/admin/dealer-delete" && req.method === "POST") {
+      const dealers = await getDealers();
+      const code = String(body.code || "");
+      if (!dealers[code]) return bad("no such dealer", 404);
+      delete dealers[code];
+      await s.setJSON("dealers", dealers);
+      return json({ ok: true });
     }
 
     if (path === "/api/admin/dealer-active" && req.method === "POST") {
