@@ -524,7 +524,7 @@ def generate():
                 .replace("@@FNAME@@", fname)
                 .replace("@@PDFBTN@@",
                          ('  <p><a class="pdfbtn" href="' + cfg["pdf"] + '" target="_blank" rel="noopener">'
-                          '&#128462; Product catalogue (PDF) <span class="sz">' + cfg.get("pdfsize", "") + '</span></a></p>')
+                          '&#8595; Product catalogue (PDF) <span class="sz">' + cfg.get("pdfsize", "") + '</span></a></p>')
                          if cfg.get("pdf") else "")
                 .replace("@@DESC@@", cfg["desc"])
                 .replace("@@IMG@@", cfg["img"])
