@@ -17,7 +17,8 @@ import { getStore } from "@netlify/blobs";
 
 export const config = { path: "/api/*" };
 
-const store = () => getStore("trade");
+// strong consistency: dealer/order updates must be readable immediately
+const store = () => getStore({ name: "trade", consistency: "strong" });
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
