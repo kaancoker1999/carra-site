@@ -143,7 +143,7 @@ def build():
         steps = fabric_first(steps)
 
         pid = fname.replace(".html", "")
-        if pid == "drapery":
+        if pid in ("drapery", "roman"):
             # colour group first; everything else appears once it is chosen,
             # and the fabric list narrows to that group's collections
             gate = {"key": "cgroup", "value": ["Group 1", "Group 2", "Group 3", "Group 4"]}
