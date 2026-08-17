@@ -80,6 +80,12 @@ TEMPLATE = r"""<!doctype html>
   .ptit .mono{color:var(--bronze-lt)}
   .ptit h1{font-size:clamp(34px,5vw,60px);color:#fff;margin-top:10px}
   .pdesc{max-width:62ch;color:#3D4246;font-size:17px;margin:0;padding:44px 0 10px}
+  .pdfbtn{display:inline-flex;align-items:center;gap:10px;margin:6px 0 8px;padding:13px 22px;
+    border:1px solid var(--line2);border-radius:10px;text-decoration:none;background:var(--white);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--bronze);transition:border-color .2s}
+  .pdfbtn:hover{border-color:var(--bronze)}
+  .pdfbtn .sz{color:var(--muted);letter-spacing:.06em;font-size:10px;text-transform:none}
 
   .cfg{padding-bottom:20px}
   .grp{padding:26px 0 30px;border-top:1px solid var(--line)}
@@ -187,6 +193,7 @@ TEMPLATE = r"""<!doctype html>
 
 <div class="wrap">
   <p class="pdesc">@@DESC@@</p>
+@@PDFBTN@@
 
   <div class="cfg">
     <form id="form" onsubmit="return false"></form>
@@ -436,6 +443,7 @@ PRODUCTS = {
     },
     "cellular.html": {
         "code": "02", "name": "Cellular Shades", "img": "assets/product-cellular.jpg",
+        "pdf": "assets/pdf/lumia-cellular-shades-catalogue-2025.pdf", "pdfsize": "3.9 MB",
         "desc": "Single, double and triple cell honeycomb in sheer, light-filtering and blackout, bonded so the cell holds its shape for the life of the shade. The most energy-efficient range we build.",
         "hLabel": "Height", "width": [18, 105], "height": [24, 120],
         "sizeRange": 'W 18" – 105" · H 24" – 120"',
@@ -514,6 +522,10 @@ def generate():
                 .replace("@@NAME@@", cfg["name"])
                 .replace("@@CODE@@", cfg["code"])
                 .replace("@@FNAME@@", fname)
+                .replace("@@PDFBTN@@",
+                         ('  <p><a class="pdfbtn" href="' + cfg["pdf"] + '" target="_blank" rel="noopener">'
+                          '&#128462; Product catalogue (PDF) <span class="sz">' + cfg.get("pdfsize", "") + '</span></a></p>')
+                         if cfg.get("pdf") else "")
                 .replace("@@DESC@@", cfg["desc"])
                 .replace("@@IMG@@", cfg["img"])
                 .replace("@@CONFIG@@", json.dumps(page_cfg)))

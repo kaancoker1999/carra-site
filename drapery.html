@@ -52,6 +52,12 @@
   .ptit .mono{color:var(--bronze-lt)}
   .ptit h1{font-size:clamp(34px,5vw,60px);color:#fff;margin-top:10px}
   .pdesc{max-width:62ch;color:#3D4246;font-size:17px;margin:0;padding:44px 0 10px}
+  .pdfbtn{display:inline-flex;align-items:center;gap:10px;margin:6px 0 8px;padding:13px 22px;
+    border:1px solid var(--line2);border-radius:10px;text-decoration:none;background:var(--white);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--bronze);transition:border-color .2s}
+  .pdfbtn:hover{border-color:var(--bronze)}
+  .pdfbtn .sz{color:var(--muted);letter-spacing:.06em;font-size:10px;text-transform:none}
 
   .cfg{padding-bottom:20px}
   .grp{padding:26px 0 30px;border-top:1px solid var(--line)}
@@ -159,6 +165,7 @@
 
 <div class="wrap">
   <p class="pdesc">Five heading styles on concealed hook gliders, hung on a slim aluminum track with flat end caps. Made to the drop, hemmed and steamed before it is packed, so it hangs straight out of the box.</p>
+
 
   <div class="cfg">
     <form id="form" onsubmit="return false"></form>
