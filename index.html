@@ -53,7 +53,7 @@
   .partner:hover{border-color:var(--bronze)}
 
   /* 2 ── hero: photographs cross-faded by cursor ──────── */
-  .hero{position:relative;height:88vh;min-height:540px;overflow:hidden;cursor:crosshair;
+  .hero{position:relative;height:88vh;min-height:540px;overflow:hidden;
     background:linear-gradient(150deg,#E8DCCB,#CFB69A 55%,#A98C6B)}
   .plates{position:absolute;inset:0}
   .plate{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:64% 48%;
@@ -69,11 +69,15 @@
   .veil2{position:absolute;inset:0;pointer-events:none;
     background:linear-gradient(180deg,rgba(252,251,247,.28) 0%,transparent 16%,transparent 76%,rgba(60,50,36,.26) 100%)}
   .hero .wrap{position:relative;z-index:6;height:100%;display:flex;flex-direction:column;justify-content:center;pointer-events:none}
-  .hero h1{font-size:clamp(38px,5.6vw,80px);max-width:13ch;font-weight:600;
+  .hero .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--bronze);margin:0 0 18px;
+    text-shadow:0 1px 14px rgba(250,248,243,.95)}
+  .hero h1{font-size:clamp(36px,5vw,68px);max-width:15ch;font-weight:600;
     text-shadow:0 1px 22px rgba(250,248,243,.95),0 1px 3px rgba(250,248,243,.9)}
-  .hero h1 em{font-style:normal;color:var(--bronze)}
-  .hero .sub{margin:24px 0 0;font-size:18px;color:#33383C;max-width:38ch;
+  .hero .sub{margin:22px 0 0;font-size:17px;color:#33383C;max-width:44ch;
     text-shadow:0 1px 16px rgba(250,248,243,.95)}
+  .hero .ctas{display:flex;gap:12px;margin:32px 0 0;flex-wrap:wrap;pointer-events:auto}
+  .hero .ctas .ghost{background:rgba(255,255,255,.72)}
 
   .warnbox{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;display:none;
     max-width:520px;background:rgba(255,255,255,.96);border:1px solid var(--line2);padding:24px 26px;
@@ -320,8 +324,13 @@
   <div class="veil"></div>
   <div class="veil2"></div>
   <div class="wrap">
-    <h1>Sunrise, <em>on your schedule.</em></h1>
-    <p class="sub">Made-to-measure shades and drapery &mdash; motorized or manual &mdash; engineered and built under one roof.</p>
+    <div class="eyebrow">Made-to-measure &middot; Since 1999</div>
+    <h1>Custom shades and drapery, straight from the factory.</h1>
+    <p class="sub">Roman, cellular and pleated shades and drapery. Cordless or motorized. Cut, sewn and tested in our own plant, shipped ready to hang.</p>
+    <div class="ctas">
+      <a class="btn solid" href="#products">See the products</a>
+      <a class="btn ghost" href="trade.html">Trade login</a>
+    </div>
   </div>
   <div class="ladder" id="ladder"></div>
   <div class="track" id="track">Honeycomb TDBU &mdash; <b>move your cursor to move the sun</b></div>
