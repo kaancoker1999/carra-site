@@ -119,6 +119,7 @@
 <section>
   <div class="wrap">
     <div class="ptabs" id="ptabs"></div>
+    <div class="ttabs" id="gtabs"></div>
     <div class="ttabs" id="ttabs"></div>
     <div class="gridwrap"><table id="grid"></table></div>
     <p class="legend" id="legend">Width across, height down, inches. Prices per unit.</p>
@@ -149,25 +150,64 @@
   }
   if(P.sample) document.getElementById('samplebar').classList.add('on');
 
-  var pi = 0, ti = 0;
+  var pi = 0, ti = 0, gi = 0;
   var ptabs = document.getElementById('ptabs'), ttabs = document.getElementById('ttabs'),
+      gtabs = document.getElementById('gtabs'),
       grid = document.getElementById('grid'), extras = document.getElementById('extras'),
       xwrap = document.getElementById('xwrap'), pnotes = document.getElementById('pnotes'),
       legend = document.getElementById('legend');
 
   function fmt(v){ return '$' + v.toFixed(2); }
 
+  var GROUP_RE = / · Group ([A-D])$/;
+
+  /* products whose grids repeat per fabric group (drapery) pick the colour
+     group first; only then the style tabs for that group appear */
+  function groupLevels(prod){
+    var byLetter = {}, other = [];
+    prod.grids.forEach(function(g, i){
+      var m = g.name.match(GROUP_RE);
+      if(m){ (byLetter[m[1]] = byLetter[m[1]] || []).push({ i: i, label: g.name.replace(GROUP_RE, '') }); }
+      else { other.push({ i: i, label: g.name }); }
+    });
+    var letters = Object.keys(byLetter).sort();
+    if(letters.length < 2) return null;
+    var lv1 = letters.map(function(L){
+      return { label: 'Colour group ' + (L.charCodeAt(0) - 64) + ' (' + L + ')', subs: byLetter[L] };
+    });
+    if(other.length) lv1.push({ label: 'Liners & hardware', subs: other });
+    return lv1;
+  }
+
   function render(){
     var prod = P.products[pi];
     ptabs.innerHTML = P.products.map(function(p,i){
       return '<button type="button" class="ptab'+(i===pi?' on':'')+'" data-i="'+i+'">'+p.name+'</button>';
     }).join('');
-    ttabs.innerHTML = prod.grids.map(function(g,i){
-      return '<button type="button" class="ttab'+(i===ti?' on':'')+'" data-i="'+i+'">'+g.name+'</button>';
-    }).join('');
-    ttabs.style.display = prod.grids.length > 1 ? '' : 'none';
 
-    var g = prod.grids[ti];
+    var lv1 = groupLevels(prod), subs;
+    if(lv1){
+      if(gi >= lv1.length) gi = 0;
+      gtabs.innerHTML = lv1.map(function(o,i){
+        return '<button type="button" class="ptab'+(i===gi?' on':'')+'" data-i="'+i+'" style="font-size:13px;padding:8px 14px">'+o.label+'</button>';
+      }).join('');
+      gtabs.style.display = '';
+      subs = lv1[gi].subs;
+      if(ti >= subs.length) ti = 0;
+      ttabs.innerHTML = subs.map(function(o,i){
+        return '<button type="button" class="ttab'+(i===ti?' on':'')+'" data-i="'+i+'">'+o.label+'</button>';
+      }).join('');
+      ttabs.style.display = '';
+    } else {
+      gtabs.style.display = 'none';
+      if(ti >= prod.grids.length) ti = 0;
+      ttabs.innerHTML = prod.grids.map(function(g,i){
+        return '<button type="button" class="ttab'+(i===ti?' on':'')+'" data-i="'+i+'">'+g.name+'</button>';
+      }).join('');
+      ttabs.style.display = prod.grids.length > 1 ? '' : 'none';
+    }
+
+    var g = prod.grids[lv1 ? subs[ti].i : ti];
     var html = '<thead><tr><th>' + (g.corner || '') + '</th>' +
       g.cols.map(function(c){ return '<th>'+c+'</th>'; }).join('') + '</tr></thead><tbody>';
     g.rows.forEach(function(r){
@@ -192,7 +232,11 @@
 
   ptabs.addEventListener('click', function(e){
     var b = e.target.closest('.ptab'); if(!b) return;
-    pi = +b.dataset.i; ti = 0; render();
+    pi = +b.dataset.i; gi = 0; ti = 0; render();
+  });
+  gtabs.addEventListener('click', function(e){
+    var b = e.target.closest('.ptab'); if(!b) return;
+    gi = +b.dataset.i; ti = 0; render();
   });
   ttabs.addEventListener('click', function(e){
     var b = e.target.closest('.ttab'); if(!b) return;
