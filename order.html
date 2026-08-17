@@ -179,6 +179,8 @@
     <div class="custbar">
       <div class="cell"><label class="mono" style="font-size:9.5px">Customer / project</label>
         <input id="customer" type="text" placeholder="e.g. Johnson residence — Houston" autocomplete="off"></div>
+      <div class="cell" style="flex:1;min-width:280px"><label class="mono" style="font-size:9.5px">Order notes (optional)</label>
+        <textarea id="ordernotes" rows="2" placeholder="Anything we should know — delivery, deadlines, special requests" style="font:inherit;font-size:15px;width:100%;padding:12px 14px;border:1px solid var(--line2);border-radius:9px;background:var(--white);resize:vertical"></textarea></div>
     </div>
 
     <div class="actions">
@@ -513,10 +515,11 @@
 
   function saveOrders(){ localStorage.setItem('lumia_orders', JSON.stringify(orders)); }
 
-  function linesText(ref, at, ls, customer){
+  function linesText(ref, at, ls, customer, notes){
     var t = orderTotals(ls);
     return 'LUMIA order request ' + ref + '\n' + at.slice(0,10) +
-      (customer ? '\nCustomer: ' + customer : '') + '\n\n' +
+      (customer ? '\nCustomer: ' + customer : '') +
+      (notes ? '\nNotes: ' + notes : '') + '\n\n' +
       ls.map(function(l,i){
         return (i+1) + '. ' + (l.label ? '[' + l.label + '] ' : '') + l.product + ' — ' + l.spec +
           ' — ' + l.w + '" x ' + l.h + '" — qty ' + l.qty +
@@ -551,6 +554,7 @@
       (t.unknown ? ' +' + t.unknown + ' TBD' : '') + '</span></summary>' +
       '<div class="obody">' +
       '<p class="mono" style="margin:6px 0 10px;font-size:10px">Ref: ' + o.ref + '</p>' +
+      (o.notes ? '<p class="onote" style="color:#4A4E52">Note: ' + o.notes + '</p>' : '') +
       (st && st.note ? '<p class="onote">LUMIA: ' + st.note + '</p>' : '') +
       '<table><thead><tr><th>#</th><th>Room / label</th><th>Product</th><th>Specification</th><th>W &times; H</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table>' +
@@ -585,10 +589,15 @@
 
   /* ── editing an existing order ── */
   var customerInput = document.getElementById('customer'),
+      notesInput = document.getElementById('ordernotes'),
       editbar = document.getElementById('editbar'), editrefEl = document.getElementById('editref');
   customerInput.value = sessionStorage.getItem('lumia_order_customer') || '';
   customerInput.addEventListener('input', function(){
     sessionStorage.setItem('lumia_order_customer', customerInput.value);
+  });
+  notesInput.value = sessionStorage.getItem('lumia_order_notes') || '';
+  notesInput.addEventListener('input', function(){
+    sessionStorage.setItem('lumia_order_notes', notesInput.value);
   });
   function getEditRef(){ return sessionStorage.getItem('lumia_order_edit') || ''; }
   function setEditRef(r){
@@ -605,7 +614,7 @@
     var o;
     if(b.dataset.ocopy !== undefined){
       o = orders[+b.dataset.ocopy];
-      navigator.clipboard.writeText(linesText(o.ref, o.at, o.lines, o.customer)).then(function(){
+      navigator.clipboard.writeText(linesText(o.ref, o.at, o.lines, o.customer, o.notes)).then(function(){
         b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy as text'; }, 1400);
       });
     } else if(b.dataset.oedit !== undefined){
@@ -614,6 +623,8 @@
       lines = JSON.parse(JSON.stringify(o.lines));
       customerInput.value = o.customer || '';
       sessionStorage.setItem('lumia_order_customer', customerInput.value);
+      notesInput.value = o.notes || '';
+      sessionStorage.setItem('lumia_order_notes', notesInput.value);
       setEditRef(o.ref);
       saveLines(); renderLines(); window.scrollTo({top:0, behavior:'smooth'});
     } else if(b.dataset.oreorder !== undefined){
@@ -621,6 +632,8 @@
       lines = JSON.parse(JSON.stringify(o.lines));
       customerInput.value = o.customer || '';
       sessionStorage.setItem('lumia_order_customer', customerInput.value);
+      notesInput.value = o.notes || '';
+      sessionStorage.setItem('lumia_order_notes', notesInput.value);
       setEditRef('');
       saveLines(); renderLines(); window.scrollTo({top:0, behavior:'smooth'});
     } else if(b.dataset.odel !== undefined){
@@ -641,6 +654,7 @@
   document.getElementById('sendbtn').addEventListener('click', function(){
     if(!lines.length) return;
     var customer = customerInput.value.trim();
+    var notes = notesInput.value.trim();
     var editRef = getEditRef(), at = new Date().toISOString();
     var isUpdate = false, ref;
     if(editRef && !(STATUS[editRef] && STATUS[editRef].locked)){
@@ -651,13 +665,14 @@
       }
     }
     if(!ref) ref = newRef();
-    var body = linesText(ref, at, lines, customer);
+    var body = linesText(ref, at, lines, customer, notes);
     var nLines = lines.length;
-    orders.unshift({ ref: ref, at: at, customer: customer, lines: lines });
+    orders.unshift({ ref: ref, at: at, customer: customer, notes: notes, lines: lines });
     saveOrders();
     lines = []; saveLines(); renderLines(); renderOrders();
     setEditRef('');
     customerInput.value = ''; sessionStorage.removeItem('lumia_order_customer');
+    notesInput.value = ''; sessionStorage.removeItem('lumia_order_notes');
     location.href = 'mailto:hello@lumiashades.com?subject=' +
       encodeURIComponent((isUpdate ? 'Order update ' : 'Order request ') + ref +
         (customer ? ' — ' + customer : '') + ' — ' + nLines + ' lines') +
@@ -666,7 +681,7 @@
   document.getElementById('copybtn').addEventListener('click', function(){
     if(!lines.length) return;
     var b = this;
-    navigator.clipboard.writeText(linesText('(draft)', new Date().toISOString(), lines, customerInput.value.trim())).then(function(){
+    navigator.clipboard.writeText(linesText('(draft)', new Date().toISOString(), lines, customerInput.value.trim(), notesInput.value.trim())).then(function(){
       b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy as text'; }, 1400);
     });
   });

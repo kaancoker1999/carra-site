@@ -117,6 +117,8 @@
   <div class="mono">&mdash; Trade partners</div>
   <h1>Your price list</h1>
   <p class="note">List prices in USD per unit, by fabric group and finished size. Read your price at the crossing of width and height &mdash; sizes between grid steps take the next size up. Volume pricing available &mdash; <a href="index.html#contact">contact us</a>.</p>
+  <button id="xlsbtn" type="button" style="margin-top:18px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;background:var(--ink);color:#fff;border:0;border-radius:9px;padding:13px 24px;cursor:pointer">Download as Excel</button>
+  <span id="xlsmsg" class="mono" style="margin-left:12px"></span>
   <div class="samplebar" id="samplebar">Sample data &mdash; the real price grids will replace these figures.</div>
 </div>
 
@@ -248,6 +250,61 @@
   });
 
   render();
+
+  /* ── Excel export: this dealer's full price list, one sheet per product ── */
+  var xlsbtn = document.getElementById('xlsbtn'), xlsmsg = document.getElementById('xlsmsg');
+  function loadSheetJS(){
+    return new Promise(function(res, rej){
+      if(window.XLSX) return res();
+      var sc = document.createElement('script');
+      sc.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+      sc.onload = res; sc.onerror = function(){ rej(new Error('download library failed to load')); };
+      document.head.appendChild(sc);
+    });
+  }
+  function buildWorkbook(){
+    var wb = XLSX.utils.book_new();
+    var today = new Date().toISOString().slice(0,10);
+    P.products.forEach(function(prod){
+      var rows = [];
+      rows.push(['LUMIA — ' + prod.name]);
+      rows.push(['Prices as of ' + today + ' — the trade area always has current pricing.']);
+      rows.push([]);
+      prod.grids.forEach(function(g){
+        rows.push([g.name]);
+        rows.push([g.corner || ''].concat(g.cols));
+        g.rows.forEach(function(r){
+          rows.push([r.label].concat(r.vals));
+        });
+        rows.push([]);
+      });
+      if(prod.extras && prod.extras.length){
+        rows.push(['Options & surcharges']);
+        prod.extras.forEach(function(e){
+          rows.push([e.label, ('usd' in e) ? e.usd : ('pct' in e) ? (e.pct ? '+' + e.pct + '%' : 'included') : (e.note || '')]);
+        });
+        rows.push([]);
+      }
+      ((prod.notes || []).concat(P.notes || [])).forEach(function(n){ rows.push(['Note: ' + n]); });
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{wch:26}].concat((prod.grids[0] ? prod.grids[0].cols : []).map(function(){ return {wch:9}; }));
+      XLSX.utils.book_append_sheet(wb, ws, prod.name.slice(0,31));
+    });
+    return wb;
+  }
+  xlsbtn.addEventListener('click', function(){
+    xlsbtn.disabled = true; xlsmsg.textContent = 'Preparing…';
+    loadSheetJS().then(function(){
+      var wb = buildWorkbook();
+      XLSX.writeFile(wb, 'LUMIA-price-list-' + new Date().toISOString().slice(0,10) + '.xlsx');
+      xlsmsg.textContent = 'Saved.';
+      setTimeout(function(){ xlsmsg.textContent = ''; }, 3000);
+      xlsbtn.disabled = false;
+    }).catch(function(e){
+      xlsmsg.textContent = 'Could not prepare the file — check your connection and retry.';
+      xlsbtn.disabled = false;
+    });
+  });
 })();
 </script>
 
