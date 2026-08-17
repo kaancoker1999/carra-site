@@ -27,6 +27,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 HERE = pathlib.Path(__file__).parent
 OUT = HERE.parent / "assets" / "trade-data.json"
 PRICING_XLSX = HERE / "pricing.local.xlsx"  # gitignored — base (group 1) prices
+DRAPERY_XLSX = HERE / "drapery-pricing.local.xlsx"  # gitignored — drapery grids
 ITER = 150_000
 
 GROUP_MULT = [1.00, 1.15, 1.30, 1.50]  # group 1 = workbook prices
@@ -202,8 +203,70 @@ def parse_workbook():
         {"id": "arches", "name": "Cellular Arches", "grids": arch_grids,
          "extras": [{"label": "Oversize shipping (width over 42″)", "usd": 16.35}],
          "notes": ["Arch heights up to 50″."]},
+        parse_drapery(),
     ]
     return products
+
+
+
+# ── Drapery: 5 heading sheets x fabric groups A-D + liners + hardware ──────
+DRAPERY_HEADINGS = {
+    "WAVE FOLD": "Wave fold",
+    "SINGLE PINCH PLEAT": "Single pinch pleat",
+    "DOUBLE PINCH PLEAT": "Double pinch pleat",
+    "TRIPLE PINCH PLEAT": "Triple pinch pleat",
+    "EURO PLEAT": "Euro pleat",
+}
+
+
+def read_wgrid(rows, header_row):
+    """Width-header grid where the header row carries quoted inch labels."""
+    header = rows[header_row - 1]
+    widths = [str(v).strip() for v in header[1:] if v is not None]
+    body = []
+    for r in rows[header_row:]:
+        if not r or r[0] is None or not str(r[0]).strip().rstrip('"').isdigit():
+            break
+        body.append({"label": str(r[0]).strip().replace('"', "″"),
+                     "vals": [round(float(v), 2) for v in r[1:1 + len(widths)]]})
+    return {"cols": [w.replace('"', "″") for w in widths], "corner": "H ▾ / W ▸", "rows": body}
+
+
+def parse_drapery():
+    wb = openpyxl.load_workbook(DRAPERY_XLSX, data_only=True)
+    grids = []
+    for sheet, heading in DRAPERY_HEADINGS.items():
+        rows = sheet_rows(wb[sheet])
+        for i, r in enumerate(rows, 1):
+            if r and isinstance(r[0], str) and r[0].strip().startswith("Group"):
+                letter = r[0].strip().split()[1]
+                grids.append(dict(read_wgrid(rows, i + 1), name=f"{heading} · Group {letter}"))
+    # liners + hardware are identical on every sheet — take the first
+    rows = sheet_rows(wb["WAVE FOLD"])
+    for i, r in enumerate(rows, 1):
+        if r and isinstance(r[0], str):
+            t = r[0].strip()
+            if t == "WHITE LINER":
+                grids.append(dict(read_wgrid(rows, i + 1), name="Liner · White"))
+            elif t == "BLACKOUT LINER":
+                grids.append(dict(read_wgrid(rows, i + 1), name="Liner · Blackout"))
+            elif t.startswith("ROD & TRACK"):
+                header = rows[i]
+                widths = [str(v).strip().replace('"', "″") for v in header[1:] if v is not None]
+                body = []
+                for hw in rows[i + 1:i + 3]:
+                    body.append({"label": str(hw[0]).strip().title(),
+                                 "vals": [round(float(v), 2) for v in hw[1:1 + len(widths)]]})
+                grids.append({"name": "Hardware · Rod & Track", "cols": widths,
+                              "corner": "/ W ▸", "rows": body})
+    return {
+        "id": "drapery", "name": "Drapery", "grids": grids, "extras": [],
+        "notes": [
+            "Prices per panel. Pair (centre split): each panel is half the entered width — the order form prices it as 2 × the half-width panel.",
+            "Liner grids are added on top of the panel price at the same size.",
+            "Track / rod priced by full width from the hardware table.",
+        ],
+    }
 
 
 def scaled(products, mult):

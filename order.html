@@ -348,6 +348,38 @@
       }
       return Math.round((base + add) * 100) / 100;
     }
+    if(pid === 'drapery'){
+      pp = prodPrices('drapery'); if(!pp) return null;
+      /* motorized drapery is priced on request — no motor data in the grids */
+      if(sel.operation === 'Motorized') return null;
+      var dg = pp.grids.filter(function(x){
+        return x.name === sel.heading + ' · Group ' + 'ABCD'[(sel.group || 1) - 1];
+      })[0];
+      if(!dg) return null;
+      /* pair (centre split): two panels, each half the entered width */
+      var panels = sel.panel === 'Pair, centre split' ? 2 : 1;
+      var pw = w / panels;
+      base = gridPrice(dg, pw, h); if(base == null) return null;
+      base *= panels;
+      var lname = sel.liner === 'White liner' ? 'Liner · White'
+                : sel.liner === 'Blackout liner' ? 'Liner · Blackout' : null;
+      if(lname){
+        var lg = pp.grids.filter(function(x){ return x.name === lname; })[0];
+        var lp = lg ? gridPrice(lg, pw, h) : null;
+        if(lp == null) return null;
+        base += lp * panels;
+      }
+      if(sel.trackopt === 'Yes'){
+        var hg = pp.grids.filter(function(x){ return x.name === 'Hardware · Rod & Track'; })[0];
+        var tr = hg ? hg.rows.filter(function(r){ return r.label === 'Track'; })[0] : null;
+        if(tr){
+          var ti = -1;
+          for(var k = 0; k < hg.cols.length; k++){ if(w <= parseFloat(hg.cols[k])){ ti = k; break; } }
+          if(ti >= 0) base += tr.vals[ti];
+        }
+      }
+      return Math.round(base * 100) / 100;
+    }
     if(pid === 'arches'){
       pp = prodPrices('arches'); if(!pp) return null;
       /* sel.gridName carries "arch|<grid>|<cell row>" via the option id */
