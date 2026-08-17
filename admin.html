@@ -102,7 +102,9 @@
         <h2 style="font-size:18px;margin-bottom:14px">New customer account</h2>
         <div class="row">
           <div><label>Company / name</label><input id="d-name" type="text" style="min-width:260px" placeholder="Brooklyn Shades and Blind"></div>
-          <div><label>E-mail (optional)</label><input id="d-email" type="email" style="min-width:220px" placeholder="orders@dealer.com"></div>
+          <div><label>E-mail (optional)</label><input id="d-email" type="email" style="min-width:200px" placeholder="orders@dealer.com"></div>
+          <div><label>Phone (optional)</label><input id="d-phone" type="tel" style="min-width:150px" placeholder="718-276-0301"></div>
+          <div><label>Address (optional)</label><input id="d-address" type="text" style="min-width:260px" placeholder="1554 61st Street, Brooklyn NY 11219"></div>
           <div><label>Price level (× base list)</label>
             <select id="d-mult">
               <option value="1">Base price (×1.00)</option>
@@ -292,8 +294,9 @@
     if(!name){ $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Name required.'; return; }
     if(!isFinite(mult) || mult <= 0){ $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Multiplier required.'; return; }
     var b = this; b.disabled = true;
-    api('/api/admin/dealers', 'POST', { name: name, mult: mult, email: $('d-email').value.trim() }).then(function(d){
-      b.disabled = false; $('d-name').value = ''; $('d-email').value = '';
+    api('/api/admin/dealers', 'POST', { name: name, mult: mult, email: $('d-email').value.trim(),
+      phone: $('d-phone').value.trim(), address: $('d-address').value.trim() }).then(function(d){
+      b.disabled = false; $('d-name').value = ''; $('d-email').value = ''; $('d-phone').value = ''; $('d-address').value = '';
       $('dmsg').className = 'msg';
       $('newcode').className = 'newcode on';
       $('newcode').innerHTML = '<b>' + esc(d.name) + '</b> created — access code: <code>' + esc(d.code) + '</code><br>' +
@@ -315,7 +318,8 @@
           (pr ? '<br><span style="color:#2F5D25;font-size:11.5px">−' + pr.pct + '% until ' +
             new Date(pr.until).toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '</span>' : '');
         var main = '<tr class="' + (x.active === false ? 'inactive' : '') + '">' +
-          '<td>' + esc(x.name) + (x.email ? '<br><span style="color:var(--muted);font-size:12px">' + esc(x.email) + '</span>' : '') + '</td>' +
+          '<td>' + esc(x.name) + ((x.email || x.phone) ? '<br><span style="color:var(--muted);font-size:12px">' +
+            esc([x.email, x.phone].filter(Boolean).join(' · ')) + '</span>' : '') + '</td>' +
           '<td><code>' + esc(x.code) + '</code></td>' +
           '<td>' + priceCell + '</td>' +
           '<td>' + x.orders + '</td>' +
@@ -336,8 +340,11 @@
             '<button class="btn e-promo-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Apply discount</button>' +
             (pr ? ' <button class="btn ghost e-promo-clear" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Remove discount</button>' : '') +
           '</div>' +
-          '<div><label>E-mail</label><input class="e-email" data-code="' + esc(x.code) + '" type="email" placeholder="orders@dealer.com" value="' + esc(x.email || '') + '" style="width:200px"> ' +
-            '<button class="btn ghost e-email-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Save e-mail</button></div>' +
+          '<div><label>Contact</label>' +
+            '<input class="e-email" data-code="' + esc(x.code) + '" type="email" placeholder="e-mail" value="' + esc(x.email || '') + '" style="width:180px"> ' +
+            '<input class="e-phone" data-code="' + esc(x.code) + '" type="tel" placeholder="phone" value="' + esc(x.phone || '') + '" style="width:130px"> ' +
+            '<input class="e-address" data-code="' + esc(x.code) + '" type="text" placeholder="address" value="' + esc(x.address || '') + '" style="width:240px"> ' +
+            '<button class="btn ghost e-contact-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Save contact</button></div>' +
           '<div style="margin-left:auto"><button class="btn e-delete" data-code="' + esc(x.code) + '" type="button" style="background:#8A2620;padding:8px 14px">Delete account</button></div>' +
           '</div></td></tr>';
         return main + editor;
@@ -389,6 +396,7 @@
     return { units: units, total: Math.round(total * 100) / 100, unknown: unknown };
   }
   function openInvoice(o){
+    var dl = dealersCache.filter(function(x){ return x.code === o.code; })[0] || {};
     var t = orderTotals(o.lines);
     var d = new Date(o.at);
     var dts = (d.getMonth()+1) + '.' + d.getDate() + '.' + d.getFullYear();
@@ -427,8 +435,8 @@
       '<p style="margin:2px 0">Date: ' + dts + '</p></div></div>' +
       '<div class="blocks"><div><h2>BILLED TO:</h2>' +
       '<p><span contenteditable>' + esc(o.dealer || 'Customer') + '</span></p>' +
-      '<p><span contenteditable>Street address</span></p>' +
-      '<p><span contenteditable>City, State ZIP</span></p></div>' +
+      '<p><span contenteditable>' + esc(dl.address || 'Street address, City, State ZIP') + '</span></p>' +
+      '<p><span contenteditable>' + esc(dl.phone ? 'Phone: ' + dl.phone : '&nbsp;') + '</span></p></div>' +
       '<div><h2>PO DETAILS:</h2>' +
       '<p>PO # ' + esc(o.ref) + '</p>' +
       '<p>PO Date ' + dts + '</p>' +
@@ -540,13 +548,14 @@
       });
       return;
     }
-    if((b = e.target.closest('.e-email-save'))){
+    if((b = e.target.closest('.e-contact-save'))){
       var eb = b;
-      var em = document.querySelector('.e-email[data-code="' + eb.dataset.code + '"]').value.trim();
+      var pick = function(cls){ return document.querySelector(cls + '[data-code="' + eb.dataset.code + '"]').value.trim(); };
       eb.disabled = true;
-      api('/api/admin/dealer-email', 'POST', { code: eb.dataset.code, email: em })
+      api('/api/admin/dealer-contact', 'POST', { code: eb.dataset.code,
+        email: pick('.e-email'), phone: pick('.e-phone'), address: pick('.e-address') })
         .then(function(){ eb.disabled = false; note(eb, ''); eb.textContent = 'Saved ✓';
-          setTimeout(function(){ eb.textContent = 'Save e-mail'; loadDealers(); }, 1200); })
+          setTimeout(function(){ eb.textContent = 'Save contact'; loadDealers(); }, 1200); })
         .catch(function(){ eb.disabled = false; note(eb, 'Failed — try again.'); });
       return;
     }

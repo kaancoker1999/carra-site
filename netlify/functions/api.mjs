@@ -159,18 +159,22 @@ export default async (req) => {
       let code = String(body.code || "").trim() || newCode();
       while (dealers[code]) code = newCode();
       dealers[code] = { name, mult, active: true, created: new Date().toISOString(),
-                        email: String(body.email || "").trim().slice(0, 200) };
+                        email: String(body.email || "").trim().slice(0, 200),
+                        phone: String(body.phone || "").trim().slice(0, 60),
+                        address: String(body.address || "").trim().slice(0, 300) };
       await s.setJSON("dealers", dealers);
       return json({ ok: true, code, name, mult });
     }
 
-    if (path === "/api/admin/dealer-email" && req.method === "POST") {
+    if (path === "/api/admin/dealer-contact" && req.method === "POST") {
       const dealers = await getDealers();
       const d = dealers[String(body.code || "")];
       if (!d) return bad("no such dealer", 404);
       d.email = String(body.email || "").trim().slice(0, 200);
+      d.phone = String(body.phone || "").trim().slice(0, 60);
+      d.address = String(body.address || "").trim().slice(0, 300);
       await s.setJSON("dealers", dealers);
-      return json({ ok: true, email: d.email });
+      return json({ ok: true });
     }
 
     if (path === "/api/admin/backup" && req.method === "GET") {
