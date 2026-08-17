@@ -61,9 +61,12 @@
     <div class="row">
       <input id="key" type="password" style="min-width:320px" placeholder="LMA-ADMIN-…" autocomplete="off">
       <button class="btn" id="keybtn" type="button">Log in</button>
-      <button class="btn ghost" id="keyforget" type="button">Forget key</button>
     </div>
     <div class="msg" id="keymsg"></div>
+  </div>
+
+  <div id="logoutbar" hidden style="display:flex;justify-content:flex-end;margin:0 0 14px">
+    <button class="btn ghost" id="logoutbtn" type="button">Log out</button>
   </div>
 
   <div id="panel" hidden>
@@ -123,7 +126,9 @@
 (function(){
   var $ = function(id){ return document.getElementById(id); };
   var KEY = 'lumia_admin_key';
-  function key(){ return localStorage.getItem(KEY) || ''; }
+  /* session-only: closing the tab forgets the key — the panel never
+     shows anything without a fresh login */
+  function key(){ return sessionStorage.getItem(KEY) || ''; }
 
   function api(path, method, body){
     return fetch(path, {
@@ -148,24 +153,33 @@
   function unlock(){
     api('/api/admin/dealers').then(function(){
       $('panel').hidden = false;
-      $('keymsg').className = 'msg ok'; $('keymsg').textContent = 'Logged in.';
+      $('keycard').hidden = true;
+      $('logoutbar').hidden = false;
       loadOrders(); loadDealers();
     }).catch(function(){
-      localStorage.removeItem(KEY);
+      sessionStorage.removeItem(KEY);
       $('panel').hidden = true;
       $('keymsg').className = 'msg err'; $('keymsg').textContent = 'Key rejected.';
     });
   }
+  function logout(){
+    sessionStorage.removeItem(KEY);
+    $('panel').hidden = true;
+    $('keycard').hidden = false;
+    $('logoutbar').hidden = true;
+    $('orderrows').innerHTML = '';
+    $('dealerrows').innerHTML = '';
+    $('weektabs').innerHTML = '';
+    $('keymsg').className = 'msg'; $('keymsg').textContent = '';
+  }
   $('keybtn').addEventListener('click', function(){
     var v = $('key').value.trim();
     if(!v) return;
-    localStorage.setItem(KEY, v); $('key').value = '';
+    sessionStorage.setItem(KEY, v); $('key').value = '';
     unlock();
   });
-  $('keyforget').addEventListener('click', function(){
-    localStorage.removeItem(KEY); $('panel').hidden = true;
-    $('keymsg').className = 'msg'; $('keymsg').textContent = 'Key removed from this browser.';
-  });
+  $('key').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('keybtn').click(); });
+  $('logoutbtn').addEventListener('click', logout);
   if(key()) unlock();
 
   /* ── tabs ── */
