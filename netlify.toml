@@ -20,6 +20,13 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
+# Catalogue PDFs open in the browser instead of downloading.
+[[headers]]
+  for = "/assets/pdf/*"
+  [headers.values]
+    Content-Disposition = "inline"
+    Cache-Control = "public, max-age=86400"
+
 # Data files the trade area fetches — always fresh.
 [[headers]]
   for = "/assets/trade-data.json"
