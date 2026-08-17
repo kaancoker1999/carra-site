@@ -67,7 +67,8 @@
     <div class="msg" id="keymsg"></div>
   </div>
 
-  <div id="logoutbar" style="display:none;justify-content:flex-end;margin:0 0 14px">
+  <div id="logoutbar" style="display:none;justify-content:flex-end;gap:10px;margin:0 0 14px">
+    <button class="btn ghost" id="backupbtn" type="button">Download backup</button>
     <button class="btn ghost" id="logoutbtn" type="button">Log out</button>
   </div>
 
@@ -82,7 +83,10 @@
       <div class="card ordwrap">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
           <h2 style="font-size:18px">All orders</h2>
-          <button class="btn ghost" id="refreshorders" type="button">Refresh</button>
+          <div class="row" style="gap:8px">
+            <button class="btn ghost" id="csvbtn" type="button">Export CSV</button>
+            <button class="btn ghost" id="refreshorders" type="button">Refresh</button>
+          </div>
         </div>
         <div class="tabs" id="weektabs" style="margin:0 0 14px;flex-wrap:wrap"></div>
         <table>
@@ -98,6 +102,7 @@
         <h2 style="font-size:18px;margin-bottom:14px">New customer account</h2>
         <div class="row">
           <div><label>Company / name</label><input id="d-name" type="text" style="min-width:260px" placeholder="Brooklyn Shades and Blind"></div>
+          <div><label>E-mail (optional)</label><input id="d-email" type="email" style="min-width:220px" placeholder="orders@dealer.com"></div>
           <div><label>Price level (× base list)</label>
             <select id="d-mult">
               <option value="1">Base price (×1.00)</option>
@@ -258,7 +263,8 @@
           '<td><div class="row" style="gap:6px">' + sel +
             '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:10px"><input type="checkbox" class="st-lock" data-ref="' + esc(o.ref) + '"' + (st.locked ? ' checked' : '') + '>lock</label></div>' +
             '<input type="text" class="st-note" data-ref="' + esc(o.ref) + '" placeholder="note to customer" value="' + esc(st.note || '') + '" style="width:100%;margin-top:6px;font-size:12.5px">' +
-            '<button class="btn st-save" data-ref="' + esc(o.ref) + '" type="button" style="margin-top:6px;padding:7px 14px">Save</button></td>' +
+            '<div class="row" style="gap:6px;margin-top:6px"><button class="btn st-save" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px">Save</button>' +
+            '<button class="btn ghost o-inv" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px">Invoice</button></div></td>' +
           '</tr>';
       }).join('');
       $('orderrows').innerHTML = rows || '<tr><td colspan="8">No orders this week.</td></tr>';
@@ -286,8 +292,8 @@
     if(!name){ $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Name required.'; return; }
     if(!isFinite(mult) || mult <= 0){ $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Multiplier required.'; return; }
     var b = this; b.disabled = true;
-    api('/api/admin/dealers', 'POST', { name: name, mult: mult }).then(function(d){
-      b.disabled = false; $('d-name').value = '';
+    api('/api/admin/dealers', 'POST', { name: name, mult: mult, email: $('d-email').value.trim() }).then(function(d){
+      b.disabled = false; $('d-name').value = ''; $('d-email').value = '';
       $('dmsg').className = 'msg';
       $('newcode').className = 'newcode on';
       $('newcode').innerHTML = '<b>' + esc(d.name) + '</b> created — access code: <code>' + esc(d.code) + '</code><br>' +
@@ -309,7 +315,7 @@
           (pr ? '<br><span style="color:#2F5D25;font-size:11.5px">−' + pr.pct + '% until ' +
             new Date(pr.until).toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '</span>' : '');
         var main = '<tr class="' + (x.active === false ? 'inactive' : '') + '">' +
-          '<td>' + esc(x.name) + '</td>' +
+          '<td>' + esc(x.name) + (x.email ? '<br><span style="color:var(--muted);font-size:12px">' + esc(x.email) + '</span>' : '') + '</td>' +
           '<td><code>' + esc(x.code) + '</code></td>' +
           '<td>' + priceCell + '</td>' +
           '<td>' + x.orders + '</td>' +
@@ -330,6 +336,8 @@
             '<button class="btn e-promo-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Apply discount</button>' +
             (pr ? ' <button class="btn ghost e-promo-clear" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Remove discount</button>' : '') +
           '</div>' +
+          '<div><label>E-mail</label><input class="e-email" data-code="' + esc(x.code) + '" type="email" placeholder="orders@dealer.com" value="' + esc(x.email || '') + '" style="width:200px"> ' +
+            '<button class="btn ghost e-email-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Save e-mail</button></div>' +
           '<div style="margin-left:auto"><button class="btn e-delete" data-code="' + esc(x.code) + '" type="button" style="background:#8A2620;padding:8px 14px">Delete account</button></div>' +
           '</div></td></tr>';
         return main + editor;
@@ -338,6 +346,111 @@
     }).catch(function(e){ $('dealerrows').innerHTML = '<tr><td colspan="7">' + esc(e.message) + '</td></tr>'; });
   }
   $('refreshdealers').addEventListener('click', loadDealers);
+
+  /* ── backup: everything as one JSON file ── */
+  function download(filename, text, type){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: type || 'application/json' }));
+    a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  $('backupbtn').addEventListener('click', function(){
+    var b = this; b.disabled = true; b.textContent = 'Preparing…';
+    api('/api/admin/backup').then(function(d){
+      download('lumia-backup-' + new Date().toISOString().slice(0,10) + '.json', JSON.stringify(d, null, 1));
+      b.disabled = false; b.textContent = 'Download backup';
+    }).catch(function(){ b.disabled = false; b.textContent = 'Download backup'; alert('Backup failed'); });
+  });
+
+  /* ── orders CSV for accounting ── */
+  function csvCell(v){
+    v = String(v == null ? '' : v);
+    return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+  $('csvbtn').addEventListener('click', function(){
+    var rows = [['Date','Ref','Customer account','End customer','Lines','Units','Total','Status','Locked','Note','Order notes']];
+    allOrders.forEach(function(o){
+      var units = (o.lines || []).reduce(function(a,l){ return a + (l.qty || 0); }, 0);
+      var st = o.status || {};
+      rows.push([o.at.slice(0,10), o.ref, o.dealer, o.customer || '', (o.lines || []).length, units,
+        o.total || '', st.status || '', st.locked ? 'yes' : '', st.note || '', o.notes || '']);
+    });
+    var csv = rows.map(function(r){ return r.map(csvCell).join(','); }).join('\n');
+    download('lumia-orders-' + new Date().toISOString().slice(0,10) + '.csv', csv, 'text/csv');
+  });
+
+  /* ── invoice from the admin side (same layout as the dealer one) ── */
+  function orderTotals(ls){
+    var units = 0, total = 0, unknown = 0;
+    (ls || []).forEach(function(l){
+      units += l.qty || 0;
+      if(l.price == null){ unknown += 1; } else { total += l.price * l.qty; }
+    });
+    return { units: units, total: Math.round(total * 100) / 100, unknown: unknown };
+  }
+  function openInvoice(o){
+    var t = orderTotals(o.lines);
+    var d = new Date(o.at);
+    var dts = (d.getMonth()+1) + '.' + d.getDate() + '.' + d.getFullYear();
+    var rows = (o.lines || []).map(function(l, i){
+      var m = (l.spec || '').match(/(?:Fabric|Cell & opacity|Style): ([^·]+)/) ||
+              (l.spec || '').match(/^[^:]+: ([^·]+)/);
+      var desc = esc(l.product) + ' — ' + esc(m ? m[1].trim() : '');
+      return '<tr><td>' + (i+1) + '</td><td class="l">' + desc + '</td>' +
+        '<td>' + fmtIn(l.w) + '</td><td>' + fmtIn(l.h) + '</td><td>' + esc(l.label || '') + '</td>' +
+        '<td>' + l.qty + '</td><td class="r">' + (l.price == null ? 'TBD' : '$' + l.price.toFixed(2)) + '</td>' +
+        '<td class="r">' + (l.price == null ? 'TBD' : '$' + (l.price * l.qty).toFixed(2)) + '</td></tr>';
+    }).join('');
+    var html = '<!doctype html><html><head><meta charset="utf-8"><title>Invoice ' + esc(o.ref) + '</title><style>' +
+      'body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#111;margin:40px auto;max-width:760px;padding:0 20px}' +
+      'h1{font-size:15px;margin:0}.right{text-align:right}' +
+      '.top{display:flex;justify-content:space-between;margin-bottom:26px}' +
+      '.inv{font-size:15px;font-weight:bold}' +
+      '.blocks{display:flex;gap:60px;margin-bottom:26px}' +
+      '.blocks h2{font-size:12px;margin:0 0 6px}' +
+      '.blocks div p{margin:2px 0}' +
+      '[contenteditable]{outline:1px dashed #bbb;min-width:120px;padding:1px 3px}' +
+      'table{border-collapse:collapse;width:100%;font-size:11.5px}' +
+      'th,td{border:1px solid #333;padding:6px 8px;text-align:center}' +
+      'th{background:#d9d9d9}td.l{text-align:left}td.r{text-align:right}' +
+      '.total{text-align:right;font-size:13px;font-weight:bold;margin:18px 0 30px}' +
+      '.foot{text-align:center;font-size:11px;margin-top:34px}' +
+      '.printbtn{position:fixed;top:14px;right:14px;padding:10px 18px;font-size:12px;cursor:pointer}' +
+      '@media print{.printbtn{display:none}[contenteditable]{outline:none}}' +
+      '</style></head><body>' +
+      '<button class="printbtn" onclick="print()">Print / save PDF</button>' +
+      '<div class="top"><div><h1>TDC PRODUCTS LLC</h1>' +
+      '<p style="margin:2px 0"><b>7907 Candle Lane, Houston, TX 77071 U.S.A.</b></p>' +
+      '<p style="margin:2px 0"><b>hello@lumiashades.com</b></p></div>' +
+      '<div class="right"><div class="inv">INVOICE</div>' +
+      '<p style="margin:2px 0">No.: <span contenteditable>' + esc(o.ref.replace(/\D/g,'').slice(-6)) + '</span></p>' +
+      '<p style="margin:2px 0">Date: ' + dts + '</p></div></div>' +
+      '<div class="blocks"><div><h2>BILLED TO:</h2>' +
+      '<p><span contenteditable>' + esc(o.dealer || 'Customer') + '</span></p>' +
+      '<p><span contenteditable>Street address</span></p>' +
+      '<p><span contenteditable>City, State ZIP</span></p></div>' +
+      '<div><h2>PO DETAILS:</h2>' +
+      '<p>PO # ' + esc(o.ref) + '</p>' +
+      '<p>PO Date ' + dts + '</p>' +
+      '<p>Sidemark <span contenteditable>' + esc(o.customer || '') + '</span></p>' +
+      '<p>Ship Ref. <span contenteditable>&nbsp;</span></p>' +
+      '<p>Ship Date <span contenteditable>&nbsp;</span></p></div></div>' +
+      '<table><thead><tr><th>#</th><th>Description</th><th>Width</th><th>Height</th><th>Room</th><th>Qty</th><th>Price</th><th>Amount</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table>' +
+      '<p class="total">TOTAL&nbsp;&nbsp;$ ' + t.total.toFixed(2) + (t.unknown ? ' + ' + t.unknown + ' line(s) TBD' : '') + '</p>' +
+      (o.notes ? '<p style="font-size:11px"><b>Notes:</b> ' + esc(o.notes) + '</p>' : '') +
+      '<div class="foot">DIRECT ALL INQUIRIES TO hello@lumiashades.com<br><b>THANK YOU FOR YOUR COOPERATION</b></div>' +
+      '</body></html>';
+    var win = window.open('', '_blank');
+    if(!win){ alert('Allow pop-ups for this site to open the invoice.'); return; }
+    win.document.write(html);
+    win.document.close();
+  }
+  $('orderrows').addEventListener('click', function(e){
+    var b = e.target.closest('.o-inv'); if(!b) return;
+    var o = allOrders.filter(function(x){ return x.ref === b.dataset.ref; })[0];
+    if(o) openInvoice(o);
+  });
 
   /* two-step inline confirm — browser dialog blockers can't touch it */
   function note(b, text){
@@ -425,6 +538,16 @@
         api('/api/admin/dealer-promo', 'POST', { code: cb.dataset.code, pct: 0 })
           .then(loadDealers).catch(function(){ cb.disabled = false; note(cb, 'Failed — try again.'); });
       });
+      return;
+    }
+    if((b = e.target.closest('.e-email-save'))){
+      var eb = b;
+      var em = document.querySelector('.e-email[data-code="' + eb.dataset.code + '"]').value.trim();
+      eb.disabled = true;
+      api('/api/admin/dealer-email', 'POST', { code: eb.dataset.code, email: em })
+        .then(function(){ eb.disabled = false; note(eb, ''); eb.textContent = 'Saved ✓';
+          setTimeout(function(){ eb.textContent = 'Save e-mail'; loadDealers(); }, 1200); })
+        .catch(function(){ eb.disabled = false; note(eb, 'Failed — try again.'); });
       return;
     }
     if((b = e.target.closest('.e-delete'))){
