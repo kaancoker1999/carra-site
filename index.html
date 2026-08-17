@@ -451,6 +451,11 @@
   </div>
 </section>
 
+<form name="contact" data-netlify="true" netlify-honeypot="bot-field" hidden>
+  <input type="text" name="name"><input type="text" name="company"><input type="email" name="email">
+  <input type="text" name="country"><input type="text" name="role"><textarea name="message"></textarea>
+</form>
+
 <!-- 9 ── CONTACT ───────────────────────────────────────────────────── -->
 <section id="contact" class="alt">
   <div class="wrap">
@@ -662,20 +667,18 @@
       });
       return;
     }
-    fields._subject='Website enquiry — '+(fields.company||fields.name);
-    fields._template='table';
     send.disabled=true;send.textContent='Sending…';
-    fetch('https://formsubmit.co/ajax/hello@lumiashades.com',{
+    fetch('/',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body:JSON.stringify(fields)
-    }).then(function(r){return r.json();}).then(function(j){
-      if(String(j.success)!=='true') throw new Error('not delivered');
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams(Object.assign({'form-name':'contact'},fields)).toString()
+    }).then(function(r){
+      if(!r.ok) throw new Error('not delivered');
       document.getElementById('sent').classList.add('on');
       send.textContent='Sent';
     }).catch(function(){
       /* network fallback: open the mail client instead */
-      location.href='mailto:hello@lumiashades.com?subject='+encodeURIComponent(fields._subject)+
+      location.href='mailto:hello@lumiashades.com?subject='+encodeURIComponent('Website enquiry — '+(fields.company||fields.name))+
         '&body='+encodeURIComponent(Object.keys(fields).filter(function(k){return k[0]!=='_';})
         .map(function(k){return k+': '+fields[k];}).join('\n'));
       send.disabled=false;send.textContent='Send message';

@@ -204,6 +204,11 @@
   </div>
 </footer>
 
+<form name="order" data-netlify="true" netlify-honeypot="bot-field" hidden>
+  <input type="text" name="ref"><input type="text" name="kind"><input type="text" name="customer">
+  <input type="text" name="total"><textarea name="notes"></textarea><textarea name="order"></textarea>
+</form>
+
 <script src="assets/trade.js?v=2"></script>
 <script>
 (function(){
@@ -747,16 +752,42 @@
     if(!ref) ref = newRef();
     var body = linesText(ref, at, lines, customer, notes);
     var nLines = lines.length;
+    var t = orderTotals(lines);
     orders.unshift({ ref: ref, at: at, customer: customer, notes: notes, lines: lines });
     saveOrders();
     lines = []; saveLines(); renderLines(); renderOrders();
     setEditRef('');
     customerInput.value = ''; sessionStorage.removeItem('lumia_order_customer');
     notesInput.value = ''; sessionStorage.removeItem('lumia_order_notes');
-    location.href = 'mailto:hello@lumiashades.com?subject=' +
-      encodeURIComponent((isUpdate ? 'Order update ' : 'Order request ') + ref +
-        (customer ? ' — ' + customer : '') + ' — ' + nLines + ' lines') +
-      '&body=' + encodeURIComponent(body);
+    var sendbtn = document.getElementById('sendbtn');
+    sendbtn.disabled = true; sendbtn.textContent = 'Sending…';
+    var mailtoFallback = function(){
+      location.href = 'mailto:hello@lumiashades.com?subject=' +
+        encodeURIComponent((isUpdate ? 'Order update ' : 'Order request ') + ref +
+          (customer ? ' — ' + customer : '') + ' — ' + nLines + ' lines') +
+        '&body=' + encodeURIComponent(body);
+    };
+    /* orders go straight to LUMIA via Netlify Forms; the mail window is only a fallback */
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        'form-name': 'order',
+        ref: ref,
+        kind: isUpdate ? 'update' : 'new',
+        customer: customer,
+        notes: notes,
+        total: '$' + t.total.toFixed(2) + (t.unknown ? ' +' + t.unknown + ' TBD' : ''),
+        order: body
+      }).toString()
+    }).then(function(r){
+      if(!r.ok) throw new Error('form endpoint unavailable');
+      sendbtn.textContent = 'Order sent ✓';
+      setTimeout(function(){ sendbtn.textContent = 'Send order'; sendbtn.disabled = false; }, 3000);
+    }).catch(function(){
+      sendbtn.textContent = 'Send order'; sendbtn.disabled = false;
+      mailtoFallback();
+    });
   });
   document.getElementById('copybtn').addEventListener('click', function(){
     if(!lines.length) return;
