@@ -540,7 +540,8 @@
     var badge = st
       ? '<span class="status acc' + (locked ? ' lock' : '') + '">' + st.status + '</span>'
       : '<span class="status pend">Pending review</span>';
-    var actions = '<button class="obtn" data-ocopy="' + oi + '" type="button">Copy as text</button>' +
+    var actions = '<button class="obtn" data-oinv="' + oi + '" type="button">Invoice</button>' +
+      '<button class="obtn" data-ocopy="' + oi + '" type="button">Copy as text</button>' +
       '<button class="obtn" data-oreorder="' + oi + '" type="button">Reorder</button>';
     if(!locked){
       actions = '<button class="obtn" data-oedit="' + oi + '" type="button">Edit</button>' + actions +
@@ -609,10 +610,75 @@
     setEditRef(''); lines = []; saveLines(); renderLines();
   });
 
+  /* ── printable invoice, modelled on the TDC invoice layout ── */
+  function esc(t){ return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function openInvoice(o){
+    var t = orderTotals(o.lines);
+    var d = new Date(o.at);
+    var dts = (d.getMonth()+1) + '.' + d.getDate() + '.' + d.getFullYear();
+    var rows = o.lines.map(function(l, i){
+      var m = (l.spec || '').match(/(?:Fabric|Cell & opacity|Style): ([^·]+)/) ||
+              (l.spec || '').match(/^[^:]+: ([^·]+)/);
+      var desc = esc(l.product) + ' — ' + esc(m ? m[1].trim() : '');
+      return '<tr><td>' + (i+1) + '</td><td class="l">' + desc + '</td>' +
+        '<td>' + l.w + '</td><td>' + l.h + '</td><td>' + esc(l.label || '') + '</td>' +
+        '<td>' + l.qty + '</td><td class="r">' + (l.price == null ? 'TBD' : '$' + l.price.toFixed(2)) + '</td>' +
+        '<td class="r">' + (l.price == null ? 'TBD' : '$' + (l.price * l.qty).toFixed(2)) + '</td></tr>';
+    }).join('');
+    var html = '<!doctype html><html><head><meta charset="utf-8"><title>Invoice ' + esc(o.ref) + '</title><style>' +
+      'body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#111;margin:40px auto;max-width:760px;padding:0 20px}' +
+      'h1{font-size:15px;margin:0}.right{text-align:right}' +
+      '.top{display:flex;justify-content:space-between;margin-bottom:26px}' +
+      '.inv{font-size:15px;font-weight:bold}' +
+      '.blocks{display:flex;gap:60px;margin-bottom:26px}' +
+      '.blocks h2{font-size:12px;margin:0 0 6px}' +
+      '.blocks div p{margin:2px 0}' +
+      '[contenteditable]{outline:1px dashed #bbb;min-width:120px;padding:1px 3px}' +
+      'table{border-collapse:collapse;width:100%;font-size:11.5px}' +
+      'th,td{border:1px solid #333;padding:6px 8px;text-align:center}' +
+      'th{background:#d9d9d9}td.l{text-align:left}td.r{text-align:right}' +
+      '.total{text-align:right;font-size:13px;font-weight:bold;margin:18px 0 30px}' +
+      '.foot{text-align:center;font-size:11px;margin-top:34px}' +
+      '.printbtn{position:fixed;top:14px;right:14px;padding:10px 18px;font-size:12px;cursor:pointer}' +
+      '.hint{position:fixed;top:52px;right:14px;font-size:10px;color:#888;max-width:160px;text-align:right}' +
+      '@media print{.printbtn,.hint{display:none}[contenteditable]{outline:none}}' +
+      '</style></head><body>' +
+      '<button class="printbtn" onclick="print()">Print / save PDF</button>' +
+      '<div class="hint">Dashed fields are editable — click and type before printing.</div>' +
+      '<div class="top"><div><h1>TDC PRODUCTS LLC</h1>' +
+      '<p style="margin:2px 0"><b>7907 Candle Lane, Houston, TX 77071 U.S.A.</b></p>' +
+      '<p style="margin:2px 0"><b>hello@lumiashades.com</b></p></div>' +
+      '<div class="right"><div class="inv">INVOICE</div>' +
+      '<p style="margin:2px 0">No.: <span contenteditable>' + esc(o.ref.replace(/\D/g,'').slice(-6)) + '</span></p>' +
+      '<p style="margin:2px 0">Date: ' + dts + '</p></div></div>' +
+      '<div class="blocks"><div><h2>BILLED TO:</h2>' +
+      '<p><span contenteditable>' + esc(o.customer || 'Customer name') + '</span></p>' +
+      '<p><span contenteditable>Street address</span></p>' +
+      '<p><span contenteditable>City, State ZIP</span></p></div>' +
+      '<div><h2>PO DETAILS:</h2>' +
+      '<p>PO # ' + esc(o.ref) + '</p>' +
+      '<p>PO Date ' + dts + '</p>' +
+      '<p>Sidemark <span contenteditable>' + esc(o.customer || '') + '</span></p>' +
+      '<p>Ship Ref. <span contenteditable>&nbsp;</span></p>' +
+      '<p>Ship Date <span contenteditable>&nbsp;</span></p></div></div>' +
+      '<table><thead><tr><th>#</th><th>Description</th><th>Width</th><th>Height</th><th>Room</th><th>Qty</th><th>Price</th><th>Amount</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table>' +
+      '<p class="total">TOTAL&nbsp;&nbsp;$ ' + t.total.toFixed(2) + (t.unknown ? ' + ' + t.unknown + ' line(s) TBD' : '') + '</p>' +
+      (o.notes ? '<p style="font-size:11px"><b>Notes:</b> ' + esc(o.notes) + '</p>' : '') +
+      '<div class="foot">DIRECT ALL INQUIRIES TO hello@lumiashades.com<br><b>THANK YOU FOR YOUR COOPERATION</b></div>' +
+      '</body></html>';
+    var win = window.open('', '_blank');
+    if(!win){ alert('Allow pop-ups for this site to open the invoice.'); return; }
+    win.document.write(html);
+    win.document.close();
+  }
+
   ordersBox.addEventListener('click', function(e){
     var b = e.target.closest('.obtn'); if(!b) return;
     var o;
-    if(b.dataset.ocopy !== undefined){
+    if(b.dataset.oinv !== undefined){
+      openInvoice(orders[+b.dataset.oinv]);
+    } else if(b.dataset.ocopy !== undefined){
       o = orders[+b.dataset.ocopy];
       navigator.clipboard.writeText(linesText(o.ref, o.at, o.lines, o.customer, o.notes)).then(function(){
         b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy as text'; }, 1400);
