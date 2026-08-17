@@ -33,13 +33,13 @@ TEMPLATE = r"""<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LUMIA — @@NAME@@</title>
 <meta name="description" content="LUMIA @@NAME@@ — @@DESC@@ Configure options and fabrics, request a trade quotation.">
-<link rel="canonical" href="https://kaancoker1999.github.io/carra-site/@@FNAME@@">
+<link rel="canonical" href="https://lumiashades.com/@@FNAME@@">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="LUMIA — @@NAME@@">
 <meta property="og:description" content="Configure @@NAME@@ — options, fabrics and specification.">
-<meta property="og:image" content="https://kaancoker1999.github.io/carra-site/@@IMG@@">
+<meta property="og:image" content="https://lumiashades.com/@@IMG@@">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
