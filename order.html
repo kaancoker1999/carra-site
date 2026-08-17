@@ -223,17 +223,17 @@
     var row2 = '';
 
     p.steps.forEach(function(st){
+      var si = st.showIf ? ' data-si-key="' + st.showIf.key + '" data-si-val="' + [].concat(st.showIf.value).join('|') + '"' : '';
       if(st.key === 'collection'){
-        row1 += '<div class="cell"><label>' + st.label + '</label><select id="c-collection" data-step="collection">' +
+        row1 += '<div class="cell" data-key="collection"' + si + '><label>' + st.label + '</label><select id="c-collection" data-step="collection">' +
           st.options.map(function(c){ return opt(c.id, c.label); }).join('') + '</select></div>';
-        row1 += '<div class="cell"><label>Colour</label><select id="c-colour"></select></div>';
+        row1 += '<div class="cell" data-key="colour"' + si + '><label>Colour</label><select id="c-colour"></select></div>';
         return;
       }
-      var cell = '<div class="cell" data-key="' + st.key + '"' +
-        (st.showIf ? ' data-si-key="' + st.showIf.key + '" data-si-val="' + [].concat(st.showIf.value).join('|') + '"' : '') +
+      var cell = '<div class="cell" data-key="' + st.key + '"' + si +
         '><label>' + st.label + '</label><select id="c-' + st.key + '" data-step="' + st.key + '">' +
         st.options.map(function(o){ return opt(o, o); }).join('') + '</select></div>';
-      if(st.key === 'fabric' || st.key === 'colour'){ row1 += cell; } else { row2 += cell; }
+      if(st.key === 'fabric' || st.key === 'colour' || st.key === 'cgroup'){ row1 += cell; } else { row2 += cell; }
     });
 
     /* row 3: room label, size, quantity and the add button */
@@ -247,28 +247,50 @@
     row3 += '<div class="cell"><label>&nbsp;</label><button class="addbtn" id="addbtn" type="button">Add to order &darr;</button></div>';
 
     cells.innerHTML = '<div class="cellrow">' + row1 + '</div><div class="cellrow">' + row2 + '</div><div class="cellrow">' + row3 + '</div>';
+    refillCollections();
     fillColours();
     refreshShowIf();
   }
 
+  function collectionStep(){
+    var p = CFG.products[+document.getElementById('c-product').value];
+    return p.steps.filter(function(s){ return s.key === 'collection'; })[0];
+  }
+
   function fillColours(){
     var colSel = document.getElementById('c-collection');
-    if(!colSel) return;
-    var p = CFG.products[+document.getElementById('c-product').value];
-    var st = p.steps.filter(function(s){ return s.key === 'collection'; })[0];
+    if(!colSel || !colSel.value) return;
     document.getElementById('c-colour').innerHTML =
-      st.colours[colSel.value].map(function(c){ return opt(c, c); }).join('');
+      collectionStep().colours[colSel.value].map(function(c){ return opt(c, c); }).join('');
+  }
+
+  /* drapery: the fabric list narrows to the chosen colour group */
+  function refillCollections(){
+    var cg = document.getElementById('c-cgroup'), colSel = document.getElementById('c-collection');
+    if(!cg || !colSel) return;
+    var m = cg.value.match(/(\d)/), g = m ? +m[1] : null;
+    var opts = collectionStep().options.filter(function(o){ return !g || o.group === g; });
+    colSel.innerHTML = opts.map(function(c){ return opt(c.id, c.label); }).join('');
+    fillColours();
   }
 
   function refreshShowIf(){
-    cells.querySelectorAll('.cell[data-si-key]').forEach(function(cell){
-      var dep = document.getElementById('c-' + cell.dataset.siKey);
-      cell.style.display = (dep && cell.dataset.siVal.split('|').indexOf(dep.value) !== -1) ? '' : 'none';
-    });
+    /* a cell is visible only if its condition holds AND the cell it depends on
+       is itself visible (cgroup -> trackopt -> track chains) */
+    for(var pass = 0; pass < 3; pass++){
+      cells.querySelectorAll('.cell[data-si-key]').forEach(function(cell){
+        var dep = document.getElementById('c-' + cell.dataset.siKey);
+        var depCell = cells.querySelector('.cell[data-key="' + cell.dataset.siKey + '"]');
+        var ok = dep && cell.dataset.siVal.split('|').indexOf(dep.value) !== -1;
+        if(ok && depCell && depCell.style.display === 'none') ok = false;
+        cell.style.display = ok ? '' : 'none';
+      });
+    }
   }
 
   cells.addEventListener('change', function(e){
     if(e.target.id === 'c-product'){ buildRow(); return; }
+    if(e.target.id === 'c-cgroup') refillCollections();
     if(e.target.id === 'c-collection') fillColours();
     refreshShowIf();
   });
@@ -454,19 +476,26 @@
       rowerr.classList.add('on');
       return;
     }
+    var cg = document.getElementById('c-cgroup');
+    if(cg && !/\d/.test(cg.value)){
+      rowerr.textContent = 'Choose a colour group first.';
+      rowerr.classList.add('on');
+      return;
+    }
     var parts = [], sel = {};
     p.steps.forEach(function(st){
+      var cell = cells.querySelector('.cell[data-key="' + (st.key === 'collection' ? 'collection' : st.key) + '"]');
+      if(cell && cell.style.display === 'none') return;
       if(st.key === 'collection'){
         var colSel = document.getElementById('c-collection');
-        var chosen = st.options[colSel.selectedIndex] || {};
+        /* look up by id — the list may be filtered, so indexes can shift */
+        var chosen = st.options.filter(function(o){ return String(o.id) === colSel.value; })[0] || {};
         sel.gridName = chosen.label;
         sel.group = chosen.group;
         sel.archKey = chosen.id;
         parts.push(st.label + ': ' + chosen.label + ' ' + document.getElementById('c-colour').value);
         return;
       }
-      var cell = cells.querySelector('.cell[data-key="' + st.key + '"]');
-      if(cell && cell.style.display === 'none') return;
       sel[st.key] = document.getElementById('c-' + st.key).value;
       parts.push(st.label + ': ' + sel[st.key]);
     });

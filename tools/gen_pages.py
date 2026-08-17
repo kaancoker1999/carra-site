@@ -10,7 +10,8 @@ FAB_CELL = json.loads((HERE / "cellular-fabrics.json").read_text())
 # rewrite image paths for the static site and keep only what the page needs
 FAB = {
     "collections": [
-        {"id": c["id"], "label": c["label"], "transparency": c["transparency"], "material": c["material"]}
+        {"id": c["id"], "label": c["label"], "group": c.get("group"),
+         "transparency": c["transparency"], "material": c["material"]}
         for c in FABRICS["collections"]
     ],
     "colors": {

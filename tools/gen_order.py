@@ -143,6 +143,15 @@ def build():
         steps = fabric_first(steps)
 
         pid = fname.replace(".html", "")
+        if pid == "drapery":
+            # colour group first; everything else appears once it is chosen,
+            # and the fabric list narrows to that group's collections
+            gate = {"key": "cgroup", "value": ["Group 1", "Group 2", "Group 3", "Group 4"]}
+            for st in steps:
+                if "showIf" not in st:
+                    st["showIf"] = gate
+            steps.insert(0, {"key": "cgroup", "label": "Colour group",
+                             "options": ["— Select —", "Group 1", "Group 2", "Group 3", "Group 4"]})
         lim = GRID_LIMITS.get(pid, {})
         products.append({
             "id": pid,
