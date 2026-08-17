@@ -49,6 +49,8 @@
   .newcode{background:#FCF9F2;border:1px solid var(--bronze);border-radius:10px;padding:14px 16px;margin-top:14px;display:none}
   .newcode.on{display:block}
   .newcode code{font-size:16px}
+  .confnote{font-size:12px;color:#8A2620;margin-top:6px;max-width:340px;line-height:1.45}
+  .btn.armed{background:#8A2620!important;color:#fff!important;border-color:#8A2620!important}
 </style>
 </head>
 <body>
@@ -337,6 +339,37 @@
   }
   $('refreshdealers').addEventListener('click', loadDealers);
 
+  /* two-step inline confirm — browser dialog blockers can't touch it */
+  function note(b, text){
+    var n = b.parentNode.querySelector('.confnote');
+    if(!text){ if(n) n.remove(); return; }
+    if(!n){ n = document.createElement('div'); n.className = 'confnote'; b.parentNode.appendChild(n); }
+    n.textContent = text;
+  }
+  function armConfirm(b, message, fn){
+    if(b.dataset.armed === '1'){
+      b.dataset.armed = '';
+      b.classList.remove('armed');
+      b.textContent = b.dataset.orig;
+      note(b, '');
+      fn();
+      return;
+    }
+    b.dataset.orig = b.textContent;
+    b.dataset.armed = '1';
+    b.classList.add('armed');
+    b.textContent = 'Click again to confirm';
+    note(b, message);
+    setTimeout(function(){
+      if(b.dataset.armed === '1'){
+        b.dataset.armed = '';
+        b.classList.remove('armed');
+        b.textContent = b.dataset.orig;
+        note(b, '');
+      }
+    }, 8000);
+  }
+
   function dealerName(code){
     var d = dealersCache.filter(function(x){ return x.code === code; })[0];
     return d ? d.name : code;
@@ -349,48 +382,59 @@
       return;
     }
     if((b = e.target.closest('.d-toggle'))){
-      var verb = b.dataset.active === 'true' ? 'Reactivate' : 'Suspend';
-      if(!confirm(verb + ' ' + dealerName(b.dataset.code) + '? Their login will ' +
-        (verb === 'Suspend' ? 'stop working immediately.' : 'start working again.'))) return;
-      b.disabled = true;
-      api('/api/admin/dealer-active', 'POST', { code: b.dataset.code, active: b.dataset.active === 'true' })
-        .then(loadDealers).catch(function(){ b.disabled = false; alert('Failed'); });
+      var verb = b.dataset.active === 'true' ? 'reactivate' : 'suspend';
+      var tb = b;
+      armConfirm(tb, 'This will ' + verb + ' ' + dealerName(tb.dataset.code) +
+        (verb === 'suspend' ? ' — their login stops working immediately.' : ' — their login starts working again.'), function(){
+        tb.disabled = true;
+        api('/api/admin/dealer-active', 'POST', { code: tb.dataset.code, active: tb.dataset.active === 'true' })
+          .then(loadDealers).catch(function(){ tb.disabled = false; note(tb, 'Failed — try again.'); });
+      });
       return;
     }
     if((b = e.target.closest('.e-mult-save'))){
-      var sel = document.querySelector('.e-mult[data-code="' + b.dataset.code + '"]');
+      var mb = b;
+      var sel = document.querySelector('.e-mult[data-code="' + mb.dataset.code + '"]');
       var label = sel.options[sel.selectedIndex].text;
-      if(!confirm('Change ' + dealerName(b.dataset.code) + "'s price level to " + label +
-        '?\nThey will see the new prices on their next login. Are you sure?')) return;
-      b.disabled = true;
-      api('/api/admin/dealer-mult', 'POST', { code: b.dataset.code, mult: parseFloat(sel.value) })
-        .then(loadDealers).catch(function(){ b.disabled = false; alert('Failed'); });
+      armConfirm(mb, 'Change ' + dealerName(mb.dataset.code) + "'s price level to " + label +
+        '. They will see the new prices on their next login.', function(){
+        mb.disabled = true;
+        api('/api/admin/dealer-mult', 'POST', { code: mb.dataset.code, mult: parseFloat(sel.value) })
+          .then(loadDealers).catch(function(){ mb.disabled = false; note(mb, 'Failed — try again.'); });
+      });
       return;
     }
     if((b = e.target.closest('.e-promo-save'))){
-      var pct = parseFloat(document.querySelector('.e-pct[data-code="' + b.dataset.code + '"]').value);
-      var days = parseInt(document.querySelector('.e-days[data-code="' + b.dataset.code + '"]').value, 10);
-      if(!isFinite(pct) || pct <= 0 || !isFinite(days) || days < 1){ alert('Enter a percent and a number of days.'); return; }
+      var pb = b;
+      var pct = parseFloat(document.querySelector('.e-pct[data-code="' + pb.dataset.code + '"]').value);
+      var days = parseInt(document.querySelector('.e-days[data-code="' + pb.dataset.code + '"]').value, 10);
+      if(!isFinite(pct) || pct <= 0 || !isFinite(days) || days < 1){ note(pb, 'Enter a percent and a number of days first.'); return; }
       var until = new Date(Date.now() + days * 86400000).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
-      if(!confirm('Give ' + dealerName(b.dataset.code) + ' a ' + pct + '% discount for ' + days +
-        ' days (until ' + until + ')?\nIt applies on their next login and ends automatically. Are you sure?')) return;
-      b.disabled = true;
-      api('/api/admin/dealer-promo', 'POST', { code: b.dataset.code, pct: pct, days: days })
-        .then(loadDealers).catch(function(){ b.disabled = false; alert('Failed'); });
+      armConfirm(pb, 'Give ' + dealerName(pb.dataset.code) + ' a ' + pct + '% discount for ' + days +
+        ' days (until ' + until + '). It ends automatically.', function(){
+        pb.disabled = true;
+        api('/api/admin/dealer-promo', 'POST', { code: pb.dataset.code, pct: pct, days: days })
+          .then(loadDealers).catch(function(){ pb.disabled = false; note(pb, 'Failed — try again.'); });
+      });
       return;
     }
     if((b = e.target.closest('.e-promo-clear'))){
-      if(!confirm('Remove the discount from ' + dealerName(b.dataset.code) + '? Are you sure?')) return;
-      b.disabled = true;
-      api('/api/admin/dealer-promo', 'POST', { code: b.dataset.code, pct: 0 })
-        .then(loadDealers).catch(function(){ b.disabled = false; alert('Failed'); });
+      var cb = b;
+      armConfirm(cb, 'Remove the discount from ' + dealerName(cb.dataset.code) + '.', function(){
+        cb.disabled = true;
+        api('/api/admin/dealer-promo', 'POST', { code: cb.dataset.code, pct: 0 })
+          .then(loadDealers).catch(function(){ cb.disabled = false; note(cb, 'Failed — try again.'); });
+      });
       return;
     }
     if((b = e.target.closest('.e-delete'))){
-      if(!confirm('DELETE the account "' + dealerName(b.dataset.code) + '"?\nTheir access code stops working immediately. Past orders are kept in the order list.\nAre you sure?')) return;
-      b.disabled = true;
-      api('/api/admin/dealer-delete', 'POST', { code: b.dataset.code })
-        .then(loadDealers).catch(function(){ b.disabled = false; alert('Failed'); });
+      var db = b;
+      armConfirm(db, 'This DELETES "' + dealerName(db.dataset.code) +
+        '" — their access code stops working immediately. Past orders are kept.', function(){
+        db.disabled = true;
+        api('/api/admin/dealer-delete', 'POST', { code: db.dataset.code })
+          .then(loadDealers).catch(function(){ db.disabled = false; note(db, 'Failed — try again.'); });
+      });
       return;
     }
   });
