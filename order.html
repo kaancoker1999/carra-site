@@ -240,9 +240,9 @@
     });
 
     /* row 3: room label, size, quantity and the add button */
-    var FRACS = '<option value="0">0/8</option><option value="0.125">1/8</option><option value="0.25">2/8</option>' +
-      '<option value="0.375">3/8</option><option value="0.5">4/8</option><option value="0.625">5/8</option>' +
-      '<option value="0.75">6/8</option><option value="0.875">7/8</option>';
+    var FRACS = '<option value="0">0/8</option><option value="0.125">1/8</option><option value="0.25">1/4</option>' +
+      '<option value="0.375">3/8</option><option value="0.5">1/2</option><option value="0.625">5/8</option>' +
+      '<option value="0.75">3/4</option><option value="0.875">7/8</option>';
     var row3 = '<div class="cell"><label>Room / label (optional)</label>' +
       '<input id="c-label" type="text" placeholder="e.g. Living room 2" autocomplete="off" style="min-width:190px"></div>';
     row3 += '<div class="cell"><label>Width (in) ' + p.width[0] + '&ndash;' + p.width[1] + '</label>' +
@@ -435,11 +435,12 @@
 
   function saveLines(){ sessionStorage.setItem('lumia_order', JSON.stringify(lines)); }
 
-  /* 22.75 -> "22 6/8" — sizes read the way the factory writes them */
+  /* 22.75 -> "22 3/4" — sizes read the way the factory writes them */
+  var FRAC_NAMES = {0:'0/8',1:'1/8',2:'1/4',3:'3/8',4:'1/2',5:'5/8',6:'3/4',7:'7/8'};
   function fmtIn(v){
     var n = Math.floor(v), f = Math.round((v - n) * 8);
     if(f === 8){ n += 1; f = 0; }
-    return n + ' ' + f + '/8';
+    return n + ' ' + FRAC_NAMES[f];
   }
 
   function orderTotals(ls){
