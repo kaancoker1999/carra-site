@@ -210,7 +210,7 @@ def parse_workbook():
 
 
 # ── Fabric only: per-yard prices by fabric colour group ─────────────────────
-FABRIC_YARD = {1: 25, 2: 30, 3: 40, 4: 50}
+FABRIC_YARD = {1: 25, 2: 30, 3: 35, 4: 50}
 
 
 def fabric_only():
