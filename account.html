@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUMIA — My account</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --white:#FFFFFF; --paper:#FAF5EA; --paper2:#F3ECDD; --ink:#14171A; --muted:#767A7E;
+    --line:#E4E3DE; --line2:#D3D2CC; --bronze:#8A6220; --bronze-lt:#C79A45;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--white);color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.62;
+    -webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.025em;margin:0;line-height:1.05}
+  a{color:inherit}
+  .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .wrap{max-width:1180px;padding:0 44px;margin:0 auto}
+
+  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;gap:24px}
+  .logo{font-family:'Archivo',sans-serif;font-weight:700;font-size:20px;letter-spacing:.28em;text-decoration:none}
+  .logo img{height:26px;width:auto;display:block;mix-blend-mode:multiply}
+  nav{display:flex;gap:34px;align-items:center}
+  nav a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s}
+  nav a:hover{color:var(--ink)}
+  .partner{border:1px solid var(--line2);padding:8px 15px;color:var(--bronze)!important}
+  .partner:hover{border-color:var(--bronze)}
+
+  .crumbs{border-bottom:1px solid var(--line);background:var(--paper)}
+  .crumbs .wrap{display:flex;align-items:center;gap:16px;height:52px}
+  .crumbs a{text-decoration:none}
+  .crumbs a:hover{color:var(--ink)}
+
+  .pagehead{padding:56px 0 8px}
+  .pagehead h1{font-size:clamp(30px,4vw,48px);margin:12px 0 0}
+  .pagehead .note{margin:16px 0 0;font-size:14px;color:var(--muted);max-width:74ch}
+
+  section{padding:36px 0 90px}
+
+  /* ── summary tiles ── */
+  .sumgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:0 0 34px}
+  .sum{border:1px solid var(--line2);border-radius:14px;background:var(--paper);padding:18px 20px}
+  .sum .v{font-family:'Archivo',sans-serif;font-weight:600;font-size:26px;line-height:1.1}
+  .sum .k{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+  .sum.due .v{color:#8A2620}
+
+  .actions{display:flex;gap:12px;margin:0 0 34px;flex-wrap:wrap}
+  .btn{display:inline-block;padding:15px 30px;border:0;cursor:pointer;text-decoration:none;border-radius:10px;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;transition:.25s}
+  .btn.solid{background:var(--ink);color:#fff}
+  .btn.solid:hover{background:var(--bronze)}
+  .btn.ghost{background:var(--white);border:1px solid var(--line2);color:var(--ink)}
+  .btn.ghost:hover{border-color:var(--ink)}
+
+  /* ── orders table ── */
+  .xtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:20px;margin:0 0 6px}
+  .xsub{font-size:13.5px;color:var(--muted);margin:0 0 18px}
+  .tablewrap{border:1px solid var(--line2);border-radius:12px;overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+  th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:500;background:var(--paper);text-transform:uppercase}
+  tr:last-child td{border-bottom:0}
+  td .ref{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.06em;color:var(--bronze)}
+  td.num{text-align:right}
+  .noorders{color:var(--muted);font-size:14px;padding:24px 18px}
+
+  .status{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+    border-radius:999px;padding:4px 10px;white-space:nowrap}
+  .status.acc{background:#EFF6EC;border:1px solid #B9D4B0;color:#2F5D25}
+  .status.pend{background:var(--paper);border:1px solid var(--line2);color:var(--muted)}
+  .status.paid{background:#EFF6EC;border:1px solid #B9D4B0;color:#2F5D25}
+  .status.unpaid{background:#FBF3E4;border:1px solid #E3C990;color:#8A6220}
+  .status.lock::before{content:"🔒 "}
+  .lnote{font-size:12px;color:#2F5D25;white-space:normal;max-width:260px}
+
+  footer{border-top:1px solid var(--line);background:var(--paper)}
+  footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
+
+  @media(max-width:980px){ .wrap{padding:0 22px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="LUMIA"></a>
+    <nav>
+      <a href="index.html#products">Products</a>
+      <a href="tdbu.html">TDBU</a>
+      <a href="motorization.html">Motorization</a>
+      <a href="about.html">About us</a>
+      <a href="index.html#contact">Contact</a>
+      <a class="partner" href="trade.html">Trade login</a>
+    </nav>
+  </div>
+</header>
+
+<div class="crumbs">
+  <div class="wrap">
+    <a class="mono" href="index.html">&larr; Home</a>
+    <span class="mono" style="color:var(--ink)">My account</span>
+  </div>
+</div>
+
+<div class="wrap pagehead">
+  <div class="mono">&mdash; Trade partners</div>
+  <h1>Account overview</h1>
+  <p class="note" id="hello">Your orders at a glance &mdash; totals, balance and where every order stands.</p>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="sumgrid" id="summary"></div>
+
+    <div class="actions">
+      <a class="btn solid" href="order.html">Place an order</a>
+      <a class="btn ghost" href="price-list.html">Price list</a>
+    </div>
+
+    <div class="xtitle">Your orders</div>
+    <p class="xsub">Newest first. Open any order on the <a href="order.html">Place order</a> page to edit, reorder or print an invoice.</p>
+    <div class="tablewrap">
+      <table id="otable" hidden>
+        <thead><tr><th>Date</th><th>Customer / project</th><th>Ref</th><th>Lines</th><th>Total</th><th>Status</th><th>Payment</th></tr></thead>
+        <tbody id="orows"></tbody>
+      </table>
+      <div class="noorders" id="noorders" hidden>No orders sent yet &mdash; <a href="order.html">place your first order</a>.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="mono">&copy; 2026 LUMIA &middot; All rights reserved</span>
+    <span class="mono">hello@lumiashades.com</span>
+  </div>
+</footer>
+
+<script src="assets/trade.js?v=5"></script>
+<script>
+(function(){
+  var SESSION = LUMIA_TRADE.require();
+  if(!SESSION) return;
+  document.getElementById('hello').textContent =
+    'Signed in as ' + (SESSION.name || 'trade partner') + ' — totals, balance and where every order stands.';
+
+  function esc(t){ return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function isPaid(o){ return !!(o.payment && o.payment.paid); }
+  function orderTotals(ls){
+    var total = 0, unknown = 0;
+    (ls || []).forEach(function(l){
+      if(l.price == null){ unknown += 1; } else { total += l.price * l.qty; }
+    });
+    return { total: Math.round(total * 100) / 100, unknown: unknown };
+  }
+
+  function tile(v, k, cls){
+    return '<div class="sum' + (cls ? ' ' + cls : '') + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
+  }
+
+  function render(orders){
+    var purch = 0, due = 0, shipped = 0, prod = 0, pend = 0;
+    orders.forEach(function(o){
+      var st = (o.status && o.status.status) || 'Pending review';
+      if(st === 'Shipped') shipped++;
+      if(st === 'In production') prod++;
+      if(st === 'Pending review') pend++;
+      if(st !== 'Cancelled'){
+        var t = orderTotals(o.lines).total;
+        purch += t;
+        if(!isPaid(o)) due += t;
+      }
+    });
+    document.getElementById('summary').innerHTML =
+      tile(orders.length, 'Orders placed') +
+      tile('$' + purch.toFixed(2), 'Total purchased') +
+      tile('$' + due.toFixed(2), 'Balance due', due > 0 ? 'due' : '') +
+      tile(shipped, 'In transit') +
+      tile(prod, 'In production') +
+      tile(pend, 'Awaiting review');
+
+    var table = document.getElementById('otable'), body = document.getElementById('orows');
+    if(!orders.length){ document.getElementById('noorders').hidden = false; return; }
+    table.hidden = false;
+    body.innerHTML = orders.map(function(o){
+      var st = o.status || { status: 'Pending review' };
+      var pendSt = st.status === 'Pending review';
+      var t = orderTotals(o.lines);
+      var when = new Date(o.at);
+      var payBadge = isPaid(o)
+        ? '<span class="status paid">Paid</span>'
+        : (!pendSt && st.status !== 'Cancelled' ? '<span class="status unpaid">Unpaid</span>' : '&mdash;');
+      return '<tr>' +
+        '<td>' + when.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) + '</td>' +
+        '<td>' + esc(o.customer || '—') + '</td>' +
+        '<td><span class="ref">' + esc(o.ref) + '</span></td>' +
+        '<td>' + (o.lines || []).length + '</td>' +
+        '<td class="num">$' + t.total.toFixed(2) + (t.unknown ? ' <span class="mono" style="font-size:9px">+' + t.unknown + ' TBD</span>' : '') + '</td>' +
+        '<td><span class="status ' + (pendSt ? 'pend' : 'acc') + (st.locked ? ' lock' : '') + '">' + esc(st.status) + '</span>' +
+          (st.note ? '<div class="lnote">LUMIA: ' + esc(st.note) + '</div>' : '') + '</td>' +
+        '<td>' + payBadge + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  fetch('/api/orders', { headers: { 'x-dealer-code': SESSION.code || '' } })
+    .then(function(r){
+      if(r.status === 401){ LUMIA_TRADE.clearSession(); location.href = 'trade.html'; throw new Error('logged out'); }
+      return r.json();
+    })
+    .then(function(d){ render(d.orders || []); })
+    .catch(function(){ render([]); });
+})();
+</script>
+
+</body>
+</html>

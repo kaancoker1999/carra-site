@@ -407,7 +407,7 @@ var CONFIG = @@CONFIG@@;
   update();
 })();
 </script>
-<script src="assets/trade.js?v=4" defer></script>
+<script src="assets/trade.js?v=5" defer></script>
 </body>
 </html>
 """

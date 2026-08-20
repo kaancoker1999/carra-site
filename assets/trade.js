@@ -76,6 +76,7 @@
         var mark = function (href) { return href === here ? ' style="color:var(--ink)"' : ''; };
         var frag = document.createElement('span');
         frag.innerHTML =
+          '<a href="account.html"' + cls + mark('account.html') + '>My account</a> ' +
           '<a href="price-list.html"' + cls + mark('price-list.html') + '>Price list</a> ' +
           '<a href="order.html"' + cls + mark('order.html') + '>Place order</a>';
         var anchor = partner || null;
