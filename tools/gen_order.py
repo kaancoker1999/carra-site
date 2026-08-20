@@ -104,6 +104,28 @@ def arches_product():
     }
 
 
+def fabric_product():
+    """Fabric by the yard — same collections/colours as Roman, no dimensions."""
+    gate = {"key": "cgroup", "value": ["Group 1", "Group 2", "Group 3", "Group 4"]}
+    colours = {
+        c["id"]: [col.get("code") or col["label"] for col in gp.FAB["colors"][c["id"]]]
+        for c in gp.FAB["collections"]
+    }
+    return {
+        "id": "fabric", "name": "Fabric Only",
+        "noSize": True, "qtyLabel": "Yards",
+        "width": [0, 0], "height": [0, 0], "hLabel": "Height",
+        "steps": [
+            {"key": "cgroup", "label": "Colour group",
+             "options": ["— Select —", "Group 1", "Group 2", "Group 3", "Group 4"]},
+            {"key": "collection", "label": "Fabric", "showIf": gate,
+             "options": [{"id": c["id"], "label": c["label"], "group": c.get("group")}
+                         for c in gp.FAB["collections"]],
+             "colours": colours},
+        ],
+    }
+
+
 def build():
     products = []
     for fname, cfg in gp.PRODUCTS.items():
@@ -163,6 +185,7 @@ def build():
         })
 
     products.append(arches_product())
+    products.append(fabric_product())
     OUT.write_text(json.dumps({"products": products}, separators=(",", ":")))
     print(f"wrote {OUT} ({OUT.stat().st_size // 1024} KB)")
 

@@ -254,13 +254,15 @@
       '<option value="0.75">3/4</option><option value="0.875">7/8</option>';
     var row3 = '<div class="cell"><label>Room / label (optional)</label>' +
       '<input id="c-label" type="text" placeholder="e.g. Living room 2" autocomplete="off" style="min-width:190px"></div>';
-    row3 += '<div class="cell"><label>Width (in) ' + p.width[0] + '&ndash;' + p.width[1] + '</label>' +
-      '<div style="display:flex;gap:6px"><input id="c-w" type="number" step="1" min="' + Math.floor(p.width[0]) + '" max="' + p.width[1] + '" placeholder="W">' +
-      '<select id="c-wf" style="min-width:74px" title="Eighths">' + FRACS + '</select></div></div>';
-    row3 += '<div class="cell"><label>' + p.hLabel + ' (in) ' + p.height[0] + '&ndash;' + p.height[1] + '</label>' +
-      '<div style="display:flex;gap:6px"><input id="c-h" type="number" step="1" min="' + Math.floor(p.height[0]) + '" max="' + p.height[1] + '" placeholder="H">' +
-      '<select id="c-hf" style="min-width:74px" title="Eighths">' + FRACS + '</select></div></div>';
-    row3 += '<div class="cell"><label>Qty</label><input id="c-qty" type="number" min="1" step="1" value="1"></div>';
+    if(!p.noSize){
+      row3 += '<div class="cell"><label>Width (in) ' + p.width[0] + '&ndash;' + p.width[1] + '</label>' +
+        '<div style="display:flex;gap:6px"><input id="c-w" type="number" step="1" min="' + Math.floor(p.width[0]) + '" max="' + p.width[1] + '" placeholder="W">' +
+        '<select id="c-wf" style="min-width:74px" title="Eighths">' + FRACS + '</select></div></div>';
+      row3 += '<div class="cell"><label>' + p.hLabel + ' (in) ' + p.height[0] + '&ndash;' + p.height[1] + '</label>' +
+        '<div style="display:flex;gap:6px"><input id="c-h" type="number" step="1" min="' + Math.floor(p.height[0]) + '" max="' + p.height[1] + '" placeholder="H">' +
+        '<select id="c-hf" style="min-width:74px" title="Eighths">' + FRACS + '</select></div></div>';
+    }
+    row3 += '<div class="cell"><label>' + (p.qtyLabel || 'Qty') + '</label><input id="c-qty" type="number" min="1" step="1" value="1"></div>';
     row3 += '<div class="cell"><label>&nbsp;</label><button class="addbtn" id="addbtn" type="button">Add to order &darr;</button></div>';
 
     cells.innerHTML = '<div class="cellrow">' + row1 + '</div><div class="cellrow">' + row2 + '</div><div class="cellrow">' + row3 + '</div>';
@@ -434,6 +436,12 @@
       if(w > 42) base += xt(pp, 'Oversize shipping (width over 42″)');
       return Math.round(base * 100) / 100;
     }
+    if(pid === 'fabric'){
+      pp = prodPrices('fabric'); if(!pp) return null;
+      var fg = pp.grids[0];
+      var frow = fg && fg.rows[(sel.group || 1) - 1];
+      return frow ? frow.vals[0] : null; /* per yard; qty = yards */
+    }
     return null; /* drapery etc: price on request */
   }
   function fmt$(v){ return v == null ? '&mdash;' : '$' + v.toFixed(2); }
@@ -469,7 +477,7 @@
 
   function lineRow(l, i, del){
     return '<tr><td>' + (i+1) + '</td><td>' + (l.label || '&mdash;') + '</td><td>' + l.product + '</td>' +
-      '<td>' + l.spec + '</td><td>' + fmtIn(l.w) + '&Prime; &times; ' + fmtIn(l.h) + '&Prime;</td><td>' + l.qty + '</td>' +
+      '<td>' + l.spec + '</td><td>' + (l.w == null ? '&mdash;' : fmtIn(l.w) + '&Prime; &times; ' + fmtIn(l.h) + '&Prime;') + '</td><td>' + l.qty + '</td>' +
       '<td class="num">' + fmt$(l.price) + '</td>' +
       '<td class="num">' + (l.price == null ? 'on request' : '$' + (l.price * l.qty).toFixed(2)) + '</td>' +
       (del ? '<td><button class="del" data-i="' + i + '" title="Remove">&times;</button></td>' : '') + '</tr>';
@@ -491,11 +499,14 @@
     if(!e.target.closest('#addbtn')) return;
     rowerr.classList.remove('on');
     var p = CFG.products[+document.getElementById('c-product').value];
-    var w = parseFloat(document.getElementById('c-w').value) + parseFloat(document.getElementById('c-wf').value || 0),
-        h = parseFloat(document.getElementById('c-h').value) + parseFloat(document.getElementById('c-hf').value || 0),
-        qty = parseInt(document.getElementById('c-qty').value, 10) || 1;
-    if(isNaN(w) || w < p.width[0] || w > p.width[1] ||
-       isNaN(h) || h < p.height[0] || h > p.height[1]){
+    var w = null, h = null;
+    if(!p.noSize){
+      w = parseFloat(document.getElementById('c-w').value) + parseFloat(document.getElementById('c-wf').value || 0);
+      h = parseFloat(document.getElementById('c-h').value) + parseFloat(document.getElementById('c-hf').value || 0);
+    }
+    var qty = parseInt(document.getElementById('c-qty').value, 10) || 1;
+    if(!p.noSize && (isNaN(w) || w < p.width[0] || w > p.width[1] ||
+       isNaN(h) || h < p.height[0] || h > p.height[1])){
       rowerr.textContent = 'Check the size — width ' + p.width[0] + '–' + p.width[1] +
         '″, ' + p.hLabel.toLowerCase() + ' ' + p.height[0] + '–' + p.height[1] + '″.';
       rowerr.classList.add('on');
@@ -552,7 +563,7 @@
       (notes ? '\nNotes: ' + notes : '') + '\n\n' +
       ls.map(function(l,i){
         return (i+1) + '. ' + (l.label ? '[' + l.label + '] ' : '') + l.product + ' — ' + l.spec +
-          ' — ' + fmtIn(l.w) + '" x ' + fmtIn(l.h) + '" — qty ' + l.qty +
+          ' — ' + (l.w == null ? 'by the yard' : fmtIn(l.w) + '" x ' + fmtIn(l.h) + '"') + ' — qty ' + l.qty +
           ' — ' + (l.price == null ? 'price on request' : '$' + l.price.toFixed(2) + ' ea = $' + (l.price*l.qty).toFixed(2));
       }).join('\n') +
       '\n\nTotal: ' + ls.length + ' lines, ' + t.units + ' units, $' + t.total.toFixed(2) +
@@ -649,7 +660,7 @@
               (l.spec || '').match(/^[^:]+: ([^·]+)/);
       var desc = esc(l.product) + ' — ' + esc(m ? m[1].trim() : '');
       return '<tr><td>' + (i+1) + '</td><td class="l">' + desc + '</td>' +
-        '<td>' + fmtIn(l.w) + '</td><td>' + fmtIn(l.h) + '</td><td>' + esc(l.label || '') + '</td>' +
+        '<td>' + (l.w == null ? '&mdash;' : fmtIn(l.w)) + '</td><td>' + (l.h == null ? '&mdash;' : fmtIn(l.h)) + '</td><td>' + esc(l.label || '') + '</td>' +
         '<td>' + l.qty + '</td><td class="r">' + (l.price == null ? 'TBD' : '$' + l.price.toFixed(2)) + '</td>' +
         '<td class="r">' + (l.price == null ? 'TBD' : '$' + (l.price * l.qty).toFixed(2)) + '</td></tr>';
     }).join('');

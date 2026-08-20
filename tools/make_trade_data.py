@@ -204,8 +204,28 @@ def parse_workbook():
          "extras": [{"label": "Oversize shipping (width over 42″)", "usd": 16.35}],
          "notes": ["Arch heights up to 50″."]},
         parse_drapery(),
+        fabric_only(),
     ]
     return products
+
+
+# ── Fabric only: per-yard prices by fabric colour group ─────────────────────
+FABRIC_YARD = {1: 25, 2: 30, 3: 40, 4: 50}
+
+
+def fabric_only():
+    return {
+        "id": "fabric", "name": "Fabric Only",
+        "grids": [{
+            "name": "Per yard",
+            "corner": "Colour group",
+            "cols": ["Per yard"],
+            "rows": [{"label": f"Colour group {g} ({'ABCD'[g-1]})", "vals": [float(p)]}
+                     for g, p in FABRIC_YARD.items()],
+        }],
+        "extras": [],
+        "notes": ["Fabric sold by the yard, uncut roll goods. Same collections and colour groups as Roman shades and drapery."],
+    }
 
 
 

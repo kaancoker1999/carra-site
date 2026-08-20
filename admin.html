@@ -247,7 +247,7 @@
         var when = new Date(o.at);
         var lines = (o.lines || []).map(function(l, li){
           return (li+1) + '. ' + (l.label ? '[' + esc(l.label) + '] ' : '') + esc(l.product) + ' — ' + esc(l.spec) +
-            ' — ' + fmtIn(l.w) + '″ × ' + fmtIn(l.h) + '″ — qty ' + l.qty +
+            ' — ' + (l.w == null ? 'by the yard' : fmtIn(l.w) + '″ × ' + fmtIn(l.h) + '″') + ' — qty ' + l.qty +
             (l.price != null ? ' — $' + (l.price * l.qty).toFixed(2) : ' — TBD');
         }).join('<br>');
         var sel = '<select data-ref="' + esc(o.ref) + '" class="st-sel">' + STATUSES.map(function(x){
@@ -405,7 +405,7 @@
               (l.spec || '').match(/^[^:]+: ([^·]+)/);
       var desc = esc(l.product) + ' — ' + esc(m ? m[1].trim() : '');
       return '<tr><td>' + (i+1) + '</td><td class="l">' + desc + '</td>' +
-        '<td>' + fmtIn(l.w) + '</td><td>' + fmtIn(l.h) + '</td><td>' + esc(l.label || '') + '</td>' +
+        '<td>' + (l.w == null ? '—' : fmtIn(l.w)) + '</td><td>' + (l.h == null ? '—' : fmtIn(l.h)) + '</td><td>' + esc(l.label || '') + '</td>' +
         '<td>' + l.qty + '</td><td class="r">' + (l.price == null ? 'TBD' : '$' + l.price.toFixed(2)) + '</td>' +
         '<td class="r">' + (l.price == null ? 'TBD' : '$' + (l.price * l.qty).toFixed(2)) + '</td></tr>';
     }).join('');
