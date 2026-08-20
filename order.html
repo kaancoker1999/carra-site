@@ -262,7 +262,10 @@
         '<div style="display:flex;gap:6px"><input id="c-h" type="number" step="1" min="' + Math.floor(p.height[0]) + '" max="' + p.height[1] + '" placeholder="H">' +
         '<select id="c-hf" style="min-width:74px" title="Eighths">' + FRACS + '</select></div></div>';
     }
-    row3 += '<div class="cell"><label>' + (p.qtyLabel || 'Qty') + '</label><input id="c-qty" type="number" min="1" step="1" value="1"></div>';
+    row3 += '<div class="cell"><label>' + (p.qtyLabel || 'Qty') + '</label>' +
+      (p.noSize
+        ? '<input id="c-qty" type="number" min="0.1" step="0.1" value="1">'
+        : '<input id="c-qty" type="number" min="1" step="1" value="1">') + '</div>';
     row3 += '<div class="cell"><label>&nbsp;</label><button class="addbtn" id="addbtn" type="button">Add to order &darr;</button></div>';
 
     cells.innerHTML = '<div class="cellrow">' + row1 + '</div><div class="cellrow">' + row2 + '</div><div class="cellrow">' + row3 + '</div>';
@@ -504,7 +507,10 @@
       w = parseFloat(document.getElementById('c-w').value) + parseFloat(document.getElementById('c-wf').value || 0);
       h = parseFloat(document.getElementById('c-h').value) + parseFloat(document.getElementById('c-hf').value || 0);
     }
-    var qty = parseInt(document.getElementById('c-qty').value, 10) || 1;
+    var qty = p.noSize
+      ? Math.round((parseFloat(document.getElementById('c-qty').value) || 1) * 100) / 100
+      : (parseInt(document.getElementById('c-qty').value, 10) || 1);
+    if(qty <= 0) qty = 1;
     if(!p.noSize && (isNaN(w) || w < p.width[0] || w > p.width[1] ||
        isNaN(h) || h < p.height[0] || h > p.height[1])){
       rowerr.textContent = 'Check the size — width ' + p.width[0] + '–' + p.width[1] +
