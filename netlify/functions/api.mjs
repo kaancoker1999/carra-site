@@ -11,6 +11,7 @@
 //   POST /api/admin/dealer-active {code, active}
 //   GET  /api/admin/orders                            -> all orders
 //   POST /api/admin/status     {ref, status, locked, note}
+//   POST /api/admin/paid       {ref, paid}            (mark order paid / unpaid)
 //   POST /api/admin/prices     {currency, products, notes}   (seed/update base prices)
 
 import { getStore } from "@netlify/blobs";
@@ -131,6 +132,7 @@ export default async (req) => {
       total: String(body.total || "").slice(0, 60),
       lines: body.lines.slice(0, 200),
       status: existing ? existing.status : { status: "Pending review", locked: false, note: "" },
+      payment: existing ? existing.payment || null : null,
     };
     await s.setJSON(key, order);
     return json({ ok: true, ref, kind: order.kind });
@@ -245,6 +247,15 @@ export default async (req) => {
       };
       await s.setJSON(key, o);
       return json({ ok: true, status: o.status });
+    }
+
+    if (path === "/api/admin/paid" && req.method === "POST") {
+      const key = `order:${String(body.ref || "")}`;
+      const o = await s.get(key, { type: "json" });
+      if (!o) return bad("no such order", 404);
+      o.payment = { paid: !!body.paid, updatedAt: new Date().toISOString() };
+      await s.setJSON(key, o);
+      return json({ ok: true, payment: o.payment });
     }
 
     if (path === "/api/admin/prices" && req.method === "POST") {

@@ -106,7 +106,16 @@
     border-radius:999px;padding:4px 10px;white-space:nowrap}
   .status.acc{background:#EFF6EC;border:1px solid #B9D4B0;color:#2F5D25}
   .status.pend{background:var(--paper);border:1px solid var(--line2);color:var(--muted)}
+  .status.paid{background:#EFF6EC;border:1px solid #B9D4B0;color:#2F5D25}
+  .status.unpaid{background:#FBF3E4;border:1px solid #E3C990;color:#8A6220}
   .status.lock::before{content:"🔒 "}
+
+  /* ── account summary tiles ── */
+  .sumgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 20px}
+  .sum{border:1px solid var(--line2);border-radius:12px;background:var(--paper);padding:14px 16px}
+  .sum .v{font-family:'Archivo',sans-serif;font-weight:600;font-size:22px;line-height:1.1}
+  .sum .k{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:5px}
+  .sum.due .v{color:#8A2620}
   .onote{font-size:12.5px;color:#2F5D25;margin:0 0 10px}
 
   .custbar{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin:26px 0 0}
@@ -193,6 +202,7 @@
 
     <div class="xtitle">Orders</div>
     <p class="xsub">Every order sent from this browser, newest first. Keep the reference &mdash; it is in the e-mail subject too.</p>
+    <div class="sumgrid" id="summary" hidden></div>
     <div id="orders"></div>
   </div>
 </section>
@@ -252,14 +262,20 @@
     var FRACS = '<option value="0">0/8</option><option value="0.125">1/8</option><option value="0.25">1/4</option>' +
       '<option value="0.375">3/8</option><option value="0.5">1/2</option><option value="0.625">5/8</option>' +
       '<option value="0.75">3/4</option><option value="0.875">7/8</option>';
+    /* whole inches are picked from a list (no typing) — eighths next to it */
+    function sizeOpts(range, ph){
+      var out = '<option value="">' + ph + '</option>';
+      for(var v = Math.ceil(range[0]); v <= Math.floor(range[1]); v++){ out += '<option value="' + v + '">' + v + '&Prime;</option>'; }
+      return out;
+    }
     var row3 = '<div class="cell"><label>Room / label (optional)</label>' +
       '<input id="c-label" type="text" placeholder="e.g. Living room 2" autocomplete="off" style="min-width:190px"></div>';
     if(!p.noSize){
       row3 += '<div class="cell"><label>Width (in) ' + p.width[0] + '&ndash;' + p.width[1] + '</label>' +
-        '<div style="display:flex;gap:6px"><input id="c-w" type="number" step="1" min="' + Math.floor(p.width[0]) + '" max="' + p.width[1] + '" placeholder="W">' +
+        '<div style="display:flex;gap:6px"><select id="c-w" style="min-width:86px">' + sizeOpts(p.width, 'W') + '</select>' +
         '<select id="c-wf" style="min-width:74px" title="Eighths">' + FRACS + '</select></div></div>';
       row3 += '<div class="cell"><label>' + p.hLabel + ' (in) ' + p.height[0] + '&ndash;' + p.height[1] + '</label>' +
-        '<div style="display:flex;gap:6px"><input id="c-h" type="number" step="1" min="' + Math.floor(p.height[0]) + '" max="' + p.height[1] + '" placeholder="H">' +
+        '<div style="display:flex;gap:6px"><select id="c-h" style="min-width:86px">' + sizeOpts(p.height, 'H') + '</select>' +
         '<select id="c-hf" style="min-width:74px" title="Eighths">' + FRACS + '</select></div></div>';
     }
     row3 += '<div class="cell"><label>' + (p.qtyLabel || 'Qty') + '</label>' +
@@ -576,6 +592,8 @@
       (t.unknown ? ' plus ' + t.unknown + ' line(s) on request' : '');
   }
 
+  function isPaid(o){ return !!(o.payment && o.payment.paid); }
+
   function orderCard(o, oi){
     var st = o.status && o.status.status !== 'Pending review' ? o.status : null;
     var locked = !!(o.status && o.status.locked);
@@ -585,6 +603,8 @@
     var badge = st
       ? '<span class="status acc' + (locked ? ' lock' : '') + '">' + st.status + '</span>'
       : '<span class="status pend">Pending review</span>';
+    if(isPaid(o)){ badge += ' <span class="status paid">Paid</span>'; }
+    else if(st && st.status !== 'Cancelled'){ badge += ' <span class="status unpaid">Unpaid</span>'; }
     var actions = '<button class="obtn" data-oinv="' + oi + '" type="button">Invoice</button>' +
       '<button class="obtn" data-ocopy="' + oi + '" type="button">Copy as text</button>' +
       '<button class="obtn" data-oreorder="' + oi + '" type="button">Reorder</button>';
@@ -620,7 +640,37 @@
     }).join('');
   }
 
+  /* ── account summary: totals + pipeline counts, from this dealer's own orders ── */
+  function renderSummary(){
+    var box = document.getElementById('summary');
+    if(!orders.length){ box.hidden = true; return; }
+    var purch = 0, due = 0, shipped = 0, prod = 0, pend = 0;
+    orders.forEach(function(o){
+      var st = (o.status && o.status.status) || 'Pending review';
+      if(st === 'Shipped') shipped++;
+      if(st === 'In production') prod++;
+      if(st === 'Pending review') pend++;
+      if(st !== 'Cancelled'){
+        var t = orderTotals(o.lines).total;
+        purch += t;
+        if(!isPaid(o)) due += t;
+      }
+    });
+    var tile = function(v, k, cls){
+      return '<div class="sum' + (cls ? ' ' + cls : '') + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
+    };
+    box.hidden = false;
+    box.innerHTML =
+      tile(orders.length, 'Orders placed') +
+      tile('$' + purch.toFixed(2), 'Total purchased') +
+      tile('$' + due.toFixed(2), 'Balance due', due > 0 ? 'due' : '') +
+      tile(shipped, 'In transit') +
+      tile(prod, 'In production') +
+      tile(pend, 'Awaiting review');
+  }
+
   function renderOrders(){
+    renderSummary();
     if(!orders.length){ ordersBox.innerHTML = '<p class="noorders">No orders sent yet.</p>'; return; }
     var accepted = [], pending = [];
     orders.forEach(function(o, oi){

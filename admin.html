@@ -44,6 +44,11 @@
   .status{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;border-radius:999px;padding:3px 9px;white-space:nowrap}
   .st-pend{background:var(--paper);border:1px solid var(--line2);color:var(--muted)}
   .st-acc{background:#EFF6EC;border:1px solid #B9D4B0;color:#2F5D25}
+  .pay-paid{background:#EFF6EC;border:1px solid #B9D4B0;color:#2F5D25}
+  .pay-un{background:#FBF3E4;border:1px solid #E3C990;color:#8A6220}
+  .dsum{display:flex;gap:22px;flex-wrap:wrap;padding:8px 2px 12px;border-bottom:1px solid var(--line);margin:0 0 10px}
+  .dsum b{font-family:'Archivo',sans-serif;font-weight:600;font-size:16px}
+  .dsum .k{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:block}
   .inactive{opacity:.5}
   .ordwrap{overflow-x:auto}
   .newcode{background:#FCF9F2;border:1px solid var(--bronze);border-radius:10px;padding:14px 16px;margin-top:14px;display:none}
@@ -164,7 +169,8 @@
       $('panel').hidden = false;
       $('keycard').hidden = true;
       $('logoutbar').style.display = 'flex';
-      loadOrders(); loadDealers();
+      /* dealers render per-account summaries from the order list — load orders first */
+      loadOrders().then(loadDealers);
     }).catch(function(){
       sessionStorage.removeItem(KEY);
       $('panel').hidden = true;
@@ -216,7 +222,7 @@
     return f(a) + ' – ' + f(b);
   }
   function loadOrders(){
-    api('/api/admin/orders').then(function(d){
+    return api('/api/admin/orders').then(function(d){
       allOrders = d.orders || [];
       renderWeeks();
     }).catch(function(e){ $('orderrows').innerHTML = '<tr><td colspan="8">' + esc(e.message) + '</td></tr>'; });
@@ -244,6 +250,7 @@
     {
       var rows = (list || []).map(function(o, i){
         var st = o.status || { status: 'Pending review' };
+        var paid = !!(o.payment && o.payment.paid);
         var when = new Date(o.at);
         var lines = (o.lines || []).map(function(l, li){
           return (li+1) + '. ' + (l.label ? '[' + esc(l.label) + '] ' : '') + esc(l.product) + ' — ' + esc(l.spec) +
@@ -261,9 +268,11 @@
           '<td>' + esc(o.total || '') + '</td>' +
           '<td><details><summary>' + (o.lines || []).length + ' lines</summary><div style="font-size:12.5px;padding:6px 0">' + lines + '</div></details></td>' +
           '<td><span class="status ' + (st.status === 'Pending review' ? 'st-pend' : 'st-acc') + '">' + (st.locked ? '🔒 ' : '') + esc(st.status) + '</span>' +
+            '<br><span class="status ' + (paid ? 'pay-paid' : 'pay-un') + '" style="margin-top:4px;display:inline-block">' + (paid ? 'Paid' : 'Unpaid') + '</span>' +
             (st.note ? '<br><span style="font-size:11.5px;color:#2F5D25">' + esc(st.note) + '</span>' : '') + '</td>' +
           '<td><div class="row" style="gap:6px">' + sel +
-            '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:10px"><input type="checkbox" class="st-lock" data-ref="' + esc(o.ref) + '"' + (st.locked ? ' checked' : '') + '>lock</label></div>' +
+            '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:10px"><input type="checkbox" class="st-lock" data-ref="' + esc(o.ref) + '"' + (st.locked ? ' checked' : '') + '>lock</label>' +
+            '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:10px"><input type="checkbox" class="st-paid" data-ref="' + esc(o.ref) + '"' + (paid ? ' checked' : '') + '>paid</label></div>' +
             '<input type="text" class="st-note" data-ref="' + esc(o.ref) + '" placeholder="note to customer" value="' + esc(st.note || '') + '" style="width:100%;margin-top:6px;font-size:12.5px">' +
             '<div class="row" style="gap:6px;margin-top:6px"><button class="btn st-save" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px">Save</button>' +
             '<button class="btn ghost o-inv" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px">Invoice</button></div></td>' +
@@ -279,12 +288,18 @@
     var sel = document.querySelector('.st-sel[data-ref="' + ref + '"]') || document.querySelector('.st-sel');
     var find = function(cls){ return [].slice.call(document.querySelectorAll(cls)).filter(function(x){ return x.dataset.ref === ref; })[0]; };
     b.disabled = true;
-    api('/api/admin/status', 'POST', {
-      ref: ref,
-      status: find('.st-sel') ? find('.st-sel').value : 'Pending review',
-      locked: find('.st-lock') ? find('.st-lock').checked : false,
-      note: find('.st-note') ? find('.st-note').value : ''
-    }).then(function(){ loadOrders(); }).catch(function(){ b.disabled = false; alert('Save failed'); });
+    Promise.all([
+      api('/api/admin/status', 'POST', {
+        ref: ref,
+        status: find('.st-sel') ? find('.st-sel').value : 'Pending review',
+        locked: find('.st-lock') ? find('.st-lock').checked : false,
+        note: find('.st-note') ? find('.st-note').value : ''
+      }),
+      api('/api/admin/paid', 'POST', {
+        ref: ref,
+        paid: find('.st-paid') ? find('.st-paid').checked : false
+      })
+    ]).then(function(){ loadOrders().then(loadDealers); }).catch(function(){ b.disabled = false; alert('Save failed'); });
   });
 
   /* ── dealers ── */
@@ -309,11 +324,30 @@
   function promoActive(x){
     return x.promo && x.promo.until && new Date(x.promo.until) > new Date() ? x.promo : null;
   }
+  /* per-account summary, computed from the full order list */
+  function dealerStats(code){
+    var s = { n: 0, purch: 0, due: 0, shipped: 0, prod: 0, pend: 0 };
+    allOrders.forEach(function(o){
+      if(o.code !== code) return;
+      s.n++;
+      var st = (o.status && o.status.status) || 'Pending review';
+      if(st === 'Shipped') s.shipped++;
+      if(st === 'In production') s.prod++;
+      if(st === 'Pending review') s.pend++;
+      if(st !== 'Cancelled'){
+        var t = orderTotals(o.lines).total;
+        s.purch += t;
+        if(!(o.payment && o.payment.paid)) s.due += t;
+      }
+    });
+    return s;
+  }
   function loadDealers(){
     api('/api/admin/dealers').then(function(d){
       dealersCache = d.dealers || [];
       var rows = dealersCache.map(function(x, xi){
         var pr = promoActive(x);
+        var st = dealerStats(x.code);
         var priceCell = '×' + x.mult +
           (pr ? '<br><span style="color:#2F5D25;font-size:11.5px">−' + pr.pct + '% until ' +
             new Date(pr.until).toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '</span>' : '');
@@ -322,14 +356,25 @@
             esc([x.email, x.phone].filter(Boolean).join(' · ')) + '</span>' : '') + '</td>' +
           '<td><code>' + esc(x.code) + '</code></td>' +
           '<td>' + priceCell + '</td>' +
-          '<td>' + x.orders + '</td>' +
+          '<td>' + x.orders + (st.due > 0 ? '<br><span style="color:#8A2620;font-size:11.5px">$' + st.due.toFixed(2) + ' due</span>' : '') + '</td>' +
           '<td>' + (x.created ? new Date(x.created).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : '—') + '</td>' +
           '<td>' + (x.active === false ? 'Suspended' : 'Active') + '</td>' +
           '<td><div class="row" style="gap:6px">' +
             '<button class="btn ghost d-edit" data-i="' + xi + '" type="button" style="padding:6px 12px">Manage</button>' +
             '<button class="btn ghost d-toggle" data-code="' + esc(x.code) + '" data-active="' + (x.active === false ? 'true' : 'false') + '" type="button" style="padding:6px 12px">' +
             (x.active === false ? 'Reactivate' : 'Suspend') + '</button></div></td></tr>';
+        var sumChip = function(v, k, red){
+          return '<span><b' + (red ? ' style="color:#8A2620"' : '') + '>' + v + '</b><span class="k">' + k + '</span></span>';
+        };
         var editor = '<tr class="editrow" data-for="' + xi + '" hidden><td colspan="7" style="background:var(--paper)">' +
+          '<div class="dsum">' +
+            sumChip(st.n, 'orders placed') +
+            sumChip('$' + st.purch.toFixed(2), 'total purchased') +
+            sumChip('$' + st.due.toFixed(2), 'balance due', st.due > 0) +
+            sumChip(st.shipped, 'in transit') +
+            sumChip(st.prod, 'in production') +
+            sumChip(st.pend, 'awaiting review') +
+          '</div>' +
           '<div class="row" style="gap:22px;align-items:flex-end;padding:6px 0">' +
           '<div><label>Price level</label><select class="e-mult" data-code="' + esc(x.code) + '">' +
             LEVELS.map(function(l){ return '<option value="' + l[0] + '"' + (String(x.mult) === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') +
@@ -352,7 +397,7 @@
       $('dealerrows').innerHTML = rows || '<tr><td colspan="7">No customer accounts yet.</td></tr>';
     }).catch(function(e){ $('dealerrows').innerHTML = '<tr><td colspan="7">' + esc(e.message) + '</td></tr>'; });
   }
-  $('refreshdealers').addEventListener('click', loadDealers);
+  $('refreshdealers').addEventListener('click', function(){ loadOrders().then(loadDealers); });
 
   /* ── backup: everything as one JSON file ── */
   function download(filename, text, type){
@@ -375,12 +420,12 @@
     return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
   }
   $('csvbtn').addEventListener('click', function(){
-    var rows = [['Date','Ref','Customer account','End customer','Lines','Units','Total','Status','Locked','Note','Order notes']];
+    var rows = [['Date','Ref','Customer account','End customer','Lines','Units','Total','Status','Paid','Locked','Note','Order notes']];
     allOrders.forEach(function(o){
       var units = (o.lines || []).reduce(function(a,l){ return a + (l.qty || 0); }, 0);
       var st = o.status || {};
       rows.push([o.at.slice(0,10), o.ref, o.dealer, o.customer || '', (o.lines || []).length, units,
-        o.total || '', st.status || '', st.locked ? 'yes' : '', st.note || '', o.notes || '']);
+        o.total || '', st.status || '', (o.payment && o.payment.paid) ? 'yes' : '', st.locked ? 'yes' : '', st.note || '', o.notes || '']);
     });
     var csv = rows.map(function(r){ return r.map(csvCell).join(','); }).join('\n');
     download('lumia-orders-' + new Date().toISOString().slice(0,10) + '.csv', csv, 'text/csv');
