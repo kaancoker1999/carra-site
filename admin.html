@@ -44,6 +44,7 @@
   .status{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;border-radius:999px;padding:3px 9px;white-space:nowrap}
   .st-pend{background:var(--paper);border:1px solid var(--line2);color:var(--muted)}
   .st-acc{background:#EFF6EC;border:1px solid #B9D4B0;color:#2F5D25}
+  .st-canc{background:#FBEDEC;border:1px solid #E0B7B3;color:#8A2620}
   .pay-paid{background:#EFF6EC;border:1px solid #B9D4B0;color:#2F5D25}
   .pay-un{background:#FBF3E4;border:1px solid #E3C990;color:#8A6220}
   .dsum{display:flex;gap:22px;flex-wrap:wrap;padding:8px 2px 12px;border-bottom:1px solid var(--line);margin:0 0 10px}
@@ -267,7 +268,8 @@
           '<td><code>' + esc(o.ref) + '</code>' + (o.kind === 'update' ? '<br><span class="mono" style="font-size:8.5px">updated</span>' : '') + '</td>' +
           '<td>' + esc(o.total || '') + '</td>' +
           '<td><details><summary>' + (o.lines || []).length + ' lines</summary><div style="font-size:12.5px;padding:6px 0">' + lines + '</div></details></td>' +
-          '<td><span class="status ' + (st.status === 'Pending review' ? 'st-pend' : 'st-acc') + '">' + (st.locked ? '🔒 ' : '') + esc(st.status) + '</span>' +
+          '<td><span class="status ' + (st.status === 'Pending review' ? 'st-pend' : (st.status === 'Cancelled' ? 'st-canc' : 'st-acc')) + '">' + (st.locked ? '🔒 ' : '') + esc(st.status) + '</span>' +
+            (st.by === 'dealer' ? '<br><span class="mono" style="font-size:8.5px">withdrawn by the customer</span>' : '') +
             '<br><span class="status ' + (paid ? 'pay-paid' : 'pay-un') + '" style="margin-top:4px;display:inline-block">' + (paid ? 'Paid' : 'Unpaid') + '</span>' +
             (st.note ? '<br><span style="font-size:11.5px;color:#2F5D25">' + esc(st.note) + '</span>' : '') + '</td>' +
           '<td><div class="row" style="gap:6px">' + sel +

@@ -90,11 +90,14 @@
   .order[open] summary{border-bottom:1px solid var(--line)}
   .order .obody{padding:4px 18px 16px;overflow-x:auto}
   .order table{min-width:640px}
-  .order .oactions{display:flex;gap:10px;margin-top:12px}
+  .order .oactions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;align-items:flex-start}
   .order .obtn{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;
     background:var(--white);border:1px solid var(--line2);border-radius:8px;padding:8px 14px;cursor:pointer;color:var(--ink)}
   .order .obtn:hover{border-color:var(--ink)}
   .order .obtn.danger{color:#8A2620}
+  .order .obtn.danger:hover{border-color:#8A2620}
+  .order .obtn.armed{background:#8A2620;color:#fff;border-color:#8A2620}
+  .order .cnote{flex:0 0 100%;font-size:12px;color:#8A2620;line-height:1.45;margin-top:2px}
   .noorders{color:var(--muted);font-size:14px}
   .oghead{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
     color:var(--bronze);margin:26px 0 10px;display:flex;gap:14px;align-items:baseline}
@@ -109,6 +112,7 @@
   .status.paid{background:#EFF6EC;border:1px solid #B9D4B0;color:#2F5D25}
   .status.unpaid{background:#FBF3E4;border:1px solid #E3C990;color:#8A6220}
   .status.lock::before{content:"🔒 "}
+  .status.canc{background:#FBEDEC;border:1px solid #E0B7B3;color:#8A2620}
 
   /* ── account summary tiles ── */
   .sumgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 20px}
@@ -601,7 +605,8 @@
     var when = new Date(o.at);
     var rows = o.lines.map(function(l,i){ return lineRow(l, i, false); }).join('');
     var badge = st
-      ? '<span class="status acc' + (locked ? ' lock' : '') + '">' + st.status + '</span>'
+      ? '<span class="status ' + (st.status === 'Cancelled' ? 'canc' : 'acc') +
+        (locked ? ' lock' : '') + '">' + st.status + '</span>'
       : '<span class="status pend">Pending review</span>';
     if(isPaid(o)){ badge += ' <span class="status paid">Paid</span>'; }
     else if(st && st.status !== 'Cancelled'){ badge += ' <span class="status unpaid">Unpaid</span>'; }
@@ -610,6 +615,10 @@
       '<button class="obtn" data-oreorder="' + oi + '" type="button">Reorder</button>';
     if(!locked){
       actions = '<button class="obtn" data-oedit="' + oi + '" type="button">Edit</button>' + actions;
+    }
+    /* still awaiting review — the customer can withdraw it themselves */
+    if(!st){
+      actions += '<button class="obtn danger" data-ocancel="' + oi + '" type="button">Cancel order</button>';
     }
     return '<details class="order"><summary>' +
       '<span class="ref">' + (o.customer || o.ref) + '</span>' + badge +
@@ -672,14 +681,16 @@
   function renderOrders(){
     renderSummary();
     if(!orders.length){ ordersBox.innerHTML = '<p class="noorders">No orders sent yet.</p>'; return; }
-    var accepted = [], pending = [];
+    var accepted = [], pending = [], cancelled = [];
     orders.forEach(function(o, oi){
-      var isPending = !o.status || o.status.status === 'Pending review';
-      (isPending ? pending : accepted).push({ o: o, oi: oi });
+      var st = (o.status && o.status.status) || 'Pending review';
+      var bucket = st === 'Pending review' ? pending : (st === 'Cancelled' ? cancelled : accepted);
+      bucket.push({ o: o, oi: oi });
     });
     var html = '';
     if(accepted.length) html += '<div class="osec">Accepted &amp; in production</div>' + customerGroups(accepted);
     if(pending.length) html += '<div class="osec">Awaiting confirmation</div>' + customerGroups(pending);
+    if(cancelled.length) html += '<div class="osec">Cancelled</div>' + customerGroups(cancelled);
     ordersBox.innerHTML = html;
   }
 
@@ -768,6 +779,40 @@
     win.document.close();
   }
 
+  /* cancelling: only offered while an order is still awaiting review.
+     Two-step inline confirmation — this site never uses confirm()/alert(). */
+  function cnote(b, text){
+    var n = b.parentNode.querySelector('.cnote');
+    if(!text){ if(n) n.remove(); return; }
+    if(!n){ n = document.createElement('div'); n.className = 'cnote'; b.parentNode.appendChild(n); }
+    n.textContent = text;
+  }
+  function cancelOrder(b, o){
+    if(b.dataset.armed !== '1'){
+      b.dataset.armed = '1'; b.classList.add('armed'); b.textContent = 'Click again to confirm';
+      cnote(b, 'This withdraws order ' + o.ref + ' — it cannot be undone. You can always reorder it afterwards.');
+      setTimeout(function(){
+        if(b.dataset.armed === '1'){
+          b.dataset.armed = ''; b.classList.remove('armed'); b.textContent = 'Cancel order'; cnote(b, '');
+        }
+      }, 8000);
+      return;
+    }
+    b.dataset.armed = ''; b.classList.remove('armed');
+    b.disabled = true; b.textContent = 'Cancelling…'; cnote(b, '');
+    fetch('/api/order/cancel', {
+      method: 'POST',
+      headers: apiHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ ref: o.ref })
+    }).then(function(r){
+      if(!r.ok) throw new Error('failed');
+      return loadOrders().then(renderOrders);
+    }).catch(function(){
+      b.disabled = false; b.textContent = 'Cancel order';
+      cnote(b, 'Could not cancel — LUMIA may have accepted it already. Reload the page, or e-mail hello@lumiashades.com.');
+    });
+  }
+
   ordersBox.addEventListener('click', function(e){
     var b = e.target.closest('.obtn'); if(!b) return;
     var o;
@@ -788,6 +833,8 @@
       sessionStorage.setItem('lumia_order_notes', notesInput.value);
       setEditRef(o.ref);
       saveLines(); renderLines(); window.scrollTo({top:0, behavior:'smooth'});
+    } else if(b.dataset.ocancel !== undefined){
+      cancelOrder(b, orders[+b.dataset.ocancel]);
     } else if(b.dataset.oreorder !== undefined){
       o = orders[+b.dataset.oreorder];
       lines = JSON.parse(JSON.stringify(o.lines));

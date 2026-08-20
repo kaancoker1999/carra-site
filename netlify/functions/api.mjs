@@ -4,6 +4,7 @@
 //   POST /api/login            {code}                 -> {name, prices}
 //   GET  /api/orders                                  -> dealer's own orders
 //   POST /api/order            {ref,kind,customer,notes,lines,total}
+//   POST /api/order/cancel     {ref}                  (only while "Pending review")
 //
 // Admin endpoints (header authorization: Bearer <ADMIN_KEY>):
 //   GET  /api/admin/dealers                           -> list with order counts
@@ -136,6 +137,29 @@ export default async (req) => {
     };
     await s.setJSON(key, order);
     return json({ ok: true, ref, kind: order.kind });
+  }
+
+  // ── dealer: cancel an order still awaiting review ─────────────
+  if (path === "/api/order/cancel" && req.method === "POST") {
+    const d = await dealerFromReq(req);
+    if (!d) return bad("unauthorized", 401);
+    const s = store();
+    const key = `order:${String(body.ref || "").slice(0, 40)}`;
+    const o = await s.get(key, { type: "json" });
+    if (!o || o.code !== d.code) return bad("no such order", 404);
+    const st = o.status || {};
+    if ((st.status || "Pending review") !== "Pending review")
+      return bad("already accepted — contact us to cancel", 409);
+    o.status = {
+      status: "Cancelled",
+      locked: true,
+      note: st.note || "",
+      by: "dealer",
+      updatedAt: new Date().toISOString(),
+    };
+    o.updatedAt = new Date().toISOString();
+    await s.setJSON(key, o);
+    return json({ ok: true, status: o.status });
   }
 
   // ── admin ──────────────────────────────────────────────────────

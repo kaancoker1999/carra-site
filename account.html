@@ -79,7 +79,15 @@
   .status.paid{background:#EFF6EC;border:1px solid #B9D4B0;color:#2F5D25}
   .status.unpaid{background:#FBF3E4;border:1px solid #E3C990;color:#8A6220}
   .status.lock::before{content:"🔒 "}
+  .status.canc{background:#FBEDEC;border:1px solid #E0B7B3;color:#8A2620}
   .lnote{font-size:12px;color:#2F5D25;white-space:normal;max-width:260px}
+
+  .rbtn{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.13em;text-transform:uppercase;
+    background:var(--white);border:1px solid var(--line2);border-radius:8px;padding:7px 12px;cursor:pointer;color:#8A2620}
+  .rbtn:hover{border-color:#8A2620}
+  .rbtn.armed{background:#8A2620;color:#fff;border-color:#8A2620}
+  .rbtn[disabled]{opacity:.5;cursor:default}
+  .confnote{font-size:11.5px;color:#8A2620;margin-top:6px;max-width:230px;white-space:normal;line-height:1.45}
 
   footer{border-top:1px solid var(--line);background:var(--paper)}
   footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
@@ -129,7 +137,7 @@
     <p class="xsub">Newest first. Open any order on the <a href="order.html">Place order</a> page to edit, reorder or print an invoice.</p>
     <div class="tablewrap">
       <table id="otable" hidden>
-        <thead><tr><th>Date</th><th>Customer / project</th><th>Ref</th><th>Lines</th><th>Total</th><th>Status</th><th>Payment</th></tr></thead>
+        <thead><tr><th>Date</th><th>Customer / project</th><th>Ref</th><th>Lines</th><th>Total</th><th>Status</th><th>Payment</th><th></th></tr></thead>
         <tbody id="orows"></tbody>
       </table>
       <div class="noorders" id="noorders" hidden>No orders sent yet &mdash; <a href="order.html">place your first order</a>.</div>
@@ -193,6 +201,8 @@
     body.innerHTML = orders.map(function(o){
       var st = o.status || { status: 'Pending review' };
       var pendSt = st.status === 'Pending review';
+      var cancelled = st.status === 'Cancelled';
+      var stCls = pendSt ? 'pend' : (cancelled ? 'canc' : 'acc');
       var t = orderTotals(o.lines);
       var when = new Date(o.at);
       var payBadge = isPaid(o)
@@ -204,20 +214,59 @@
         '<td><span class="ref">' + esc(o.ref) + '</span></td>' +
         '<td>' + (o.lines || []).length + '</td>' +
         '<td class="num">$' + t.total.toFixed(2) + (t.unknown ? ' <span class="mono" style="font-size:9px">+' + t.unknown + ' TBD</span>' : '') + '</td>' +
-        '<td><span class="status ' + (pendSt ? 'pend' : 'acc') + (st.locked ? ' lock' : '') + '">' + esc(st.status) + '</span>' +
+        '<td><span class="status ' + stCls + (st.locked ? ' lock' : '') + '">' + esc(st.status) + '</span>' +
           (st.note ? '<div class="lnote">LUMIA: ' + esc(st.note) + '</div>' : '') + '</td>' +
         '<td>' + payBadge + '</td>' +
+        '<td>' + (pendSt
+          ? '<button class="rbtn" type="button" data-cancel="' + esc(o.ref) + '">Cancel order</button>'
+          : '') + '</td>' +
         '</tr>';
     }).join('');
   }
 
-  fetch('/api/orders', { headers: { 'x-dealer-code': SESSION.code || '' } })
+  /* cancelling is only offered while an order is still awaiting review;
+     two-step inline confirmation — the site never uses confirm()/alert() */
+  function note(b, text){
+    var n = b.parentNode.querySelector('.confnote');
+    if(!text){ if(n) n.remove(); return; }
+    if(!n){ n = document.createElement('div'); n.className = 'confnote'; b.parentNode.appendChild(n); }
+    n.textContent = text;
+  }
+  function disarm(b){
+    b.dataset.armed = ''; b.classList.remove('armed'); b.textContent = 'Cancel order'; note(b, '');
+  }
+  document.getElementById('orows').addEventListener('click', function(e){
+    var b = e.target.closest('.rbtn'); if(!b) return;
+    if(b.dataset.armed !== '1'){
+      b.dataset.armed = '1'; b.classList.add('armed'); b.textContent = 'Click again to confirm';
+      note(b, 'This withdraws the order — it cannot be undone. Reorder from the Place order page if you change your mind.');
+      setTimeout(function(){ if(b.dataset.armed === '1') disarm(b); }, 8000);
+      return;
+    }
+    disarm(b); b.disabled = true; b.textContent = 'Cancelling…';
+    fetch('/api/order/cancel', {
+      method: 'POST',
+      headers: { 'x-dealer-code': SESSION.code || '', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: b.dataset.cancel })
+    }).then(function(r){
+      if(!r.ok) throw new Error('failed');
+      return load();
+    }).catch(function(){
+      b.disabled = false; b.textContent = 'Cancel order';
+      note(b, 'Could not cancel — it may already be in production. Try again or e-mail hello@lumiashades.com.');
+    });
+  });
+
+  function load(){
+  return fetch('/api/orders', { headers: { 'x-dealer-code': SESSION.code || '' } })
     .then(function(r){
       if(r.status === 401){ LUMIA_TRADE.clearSession(); location.href = 'trade.html'; throw new Error('logged out'); }
       return r.json();
     })
     .then(function(d){ render(d.orders || []); })
     .catch(function(){ render([]); });
+  }
+  load();
 })();
 </script>
 
