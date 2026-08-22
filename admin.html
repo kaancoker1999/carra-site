@@ -28,6 +28,37 @@
     background:var(--ink);color:#fff;border:0;border-radius:9px;padding:11px 18px;cursor:pointer}
   .btn:hover{background:var(--bronze)}
   .btn.ghost{background:var(--white);border:1px solid var(--line2);color:var(--ink)}
+
+  /* ── orders calendar: pick a day, or a whole week from the left column ── */
+  .cal{border:1px solid var(--line2);border-radius:12px;padding:14px;margin:0 0 12px}
+  .calhead{display:flex;align-items:center;gap:10px;margin:0 0 10px;flex-wrap:wrap}
+  .calmonth{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;min-width:150px;text-align:center}
+  .calgrid{display:grid;grid-template-columns:54px repeat(7,1fr);gap:4px}
+  .dow{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);text-align:center;padding:4px 0}
+  .cald,.calwk{font:inherit;border:1px solid var(--line);border-radius:8px;background:var(--white);cursor:pointer;
+    padding:6px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12.5px}
+  .cald:hover,.calwk:hover{border-color:var(--ink)}
+  .cald.out{color:var(--line2);background:#FCFBF8}
+  .cald.today{border-color:var(--bronze)}
+  .cald.on,.calwk.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .cald .c{font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--paper);border-radius:999px;
+    padding:0 6px;color:var(--ink)}
+  .cald.on .c{background:rgba(255,255,255,.24);color:#fff}
+  .calwk{background:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.06em;color:var(--muted)}
+  .calnote{font-size:11px}
+
+  /* ── customer preview ── */
+  .pvhead{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin:0 0 16px}
+  .pvname{font-family:'Archivo',sans-serif;font-weight:600;font-size:22px;letter-spacing:-.02em}
+  .pvmeta{color:var(--muted);font-size:13px;margin-top:6px}
+  .pvtiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:0 0 20px}
+  .pvtile{border:1px solid var(--line2);border-radius:12px;background:var(--paper);padding:14px 16px}
+  .pvtile .v{font-family:'Archivo',sans-serif;font-weight:600;font-size:21px;line-height:1.1}
+  .pvtile .k{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);margin-top:5px}
+  .pvtile.due .v{color:#8A2620}
+  .pvsub{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;margin:0 0 10px}
   .btn[disabled]{opacity:.5;cursor:wait}
   .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
   .msg{font-size:13.5px;margin-top:10px}
@@ -94,7 +125,8 @@
             <button class="btn ghost" id="refreshorders" type="button">Refresh</button>
           </div>
         </div>
-        <div class="tabs" id="weektabs" style="margin:0 0 14px;flex-wrap:wrap"></div>
+        <div class="cal" id="cal"></div>
+        <div class="calnote mono" id="calnote" style="margin:0 0 12px"></div>
         <table>
           <thead><tr><th>Date</th><th>Customer acct</th><th>End customer</th><th>Ref</th><th>Total</th><th>Lines</th><th>Status</th><th style="min-width:290px">Set status</th></tr></thead>
           <tbody id="orderrows"><tr><td colspan="8">Loading…</td></tr></tbody>
@@ -104,7 +136,9 @@
 
     <!-- ── dealers ── -->
     <div id="tab-dealers" hidden>
-      <div class="card">
+      <!-- one customer, seen the way they see themselves -->
+      <div class="card" id="dpreview" hidden></div>
+      <div class="card" id="dcreate">
         <h2 style="font-size:18px;margin-bottom:14px">New customer account</h2>
         <div class="row">
           <div><label>Company / name</label><input id="d-name" type="text" style="min-width:260px" placeholder="Brooklyn Shades and Blind"></div>
@@ -123,7 +157,7 @@
         <div class="newcode" id="newcode"></div>
         <div class="msg" id="dmsg"></div>
       </div>
-      <div class="card ordwrap">
+      <div class="card ordwrap" id="dlist">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
           <h2 style="font-size:18px">Customer accounts</h2>
           <button class="btn ghost" id="refreshdealers" type="button">Refresh</button>
@@ -185,8 +219,7 @@
     $('logoutbar').style.display = 'none';
     $('orderrows').innerHTML = '';
     $('dealerrows').innerHTML = '';
-    $('weektabs').innerHTML = '';
-    $('keymsg').className = 'msg'; $('keymsg').textContent = '';
+      $('keymsg').className = 'msg'; $('keymsg').textContent = '';
   }
   $('keybtn').addEventListener('click', function(){
     var v = $('key').value.trim();
@@ -209,43 +242,117 @@
 
   /* ── orders ── */
   var STATUSES = ['Pending review', 'Confirmed', 'In production', 'Shipped', 'On hold', 'Cancelled'];
-  var allOrders = [], weekSel = 0;
+  var allOrders = [];
+  var calMonth = null;                          /* first of the month on screen */
+  var calSel = { mode: 'all', key: '' };        /* all | day | week */
   function weekStart(dt){
     var d = new Date(dt); d.setHours(0,0,0,0);
     d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); /* back to Monday */
     return d;
   }
-  function weekLabel(mondayIso){
-    var a = new Date(mondayIso), b = new Date(a); b.setDate(b.getDate() + 6);
-    var now = weekStart(new Date()).toISOString().slice(0,10);
-    if(mondayIso === now) return 'This week';
-    var f = function(x){ return x.toLocaleDateString('en-US', {month:'short', day:'numeric'}); };
-    return f(a) + ' – ' + f(b);
+  /* local calendar date, not the UTC slice — an evening order must not jump a day */
+  function ymd(dt){
+    var d = new Date(dt);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+           String(d.getDate()).padStart(2, '0');
   }
+  function monthOf(dt){ var d = new Date(dt); return new Date(d.getFullYear(), d.getMonth(), 1); }
   function loadOrders(){
     return api('/api/admin/orders').then(function(d){
       allOrders = d.orders || [];
-      renderWeeks();
+      if(!calMonth){
+        /* open on the month of the newest order, so today's work is on screen */
+        calMonth = monthOf(allOrders.length ? allOrders[0].at : new Date());
+      }
+      renderCalendar();
     }).catch(function(e){ $('orderrows').innerHTML = '<tr><td colspan="8">' + esc(e.message) + '</td></tr>'; });
   }
-  function renderWeeks(){
-    var byWeek = {}, keys = [];
-    allOrders.forEach(function(o){
-      var k = weekStart(o.at).toISOString().slice(0,10);
-      if(!byWeek[k]){ byWeek[k] = []; keys.push(k); }
-      byWeek[k].push(o);
-    });
-    keys.sort().reverse();
-    if(weekSel >= keys.length) weekSel = 0;
-    $('weektabs').innerHTML = keys.map(function(k, i){
-      return '<button class="tab' + (i === weekSel ? ' on' : '') + '" data-w="' + i + '" type="button" style="padding:7px 14px;font-size:13px">' +
-        weekLabel(k) + ' <span class="mono" style="font-size:9px">' + byWeek[k].length + '</span></button>';
-    }).join('') || '<span class="mono">No orders yet.</span>';
-    renderOrderRows(keys.length ? byWeek[keys[weekSel]] : []);
+
+  function ordersOn(dayKey){
+    return allOrders.filter(function(o){ return ymd(o.at) === dayKey; });
   }
-  $('weektabs') && document.getElementById('weektabs').addEventListener('click', function(e){
-    var b = e.target.closest('.tab'); if(!b) return;
-    weekSel = +b.dataset.w; renderWeeks();
+  function ordersInWeek(mondayKey){
+    return allOrders.filter(function(o){ return ymd(weekStart(o.at)) === mondayKey; });
+  }
+  function selectedOrders(){
+    if(calSel.mode === 'day') return ordersOn(calSel.key);
+    if(calSel.mode === 'week') return ordersInWeek(calSel.key);
+    return allOrders;
+  }
+
+  function renderCalendar(){
+    var counts = {};
+    allOrders.forEach(function(o){ var k = ymd(o.at); counts[k] = (counts[k] || 0) + 1; });
+
+    var first = calMonth, todayKey = ymd(new Date());
+    var head = '<div class="calhead">' +
+      '<button class="btn ghost calnav" data-step="-1" type="button" style="padding:7px 12px">&lsaquo;</button>' +
+      '<span class="calmonth">' + first.toLocaleDateString('en-US', {month:'long', year:'numeric'}) + '</span>' +
+      '<button class="btn ghost calnav" data-step="1" type="button" style="padding:7px 12px">&rsaquo;</button>' +
+      '<button class="btn ghost calnav" data-step="0" type="button" style="padding:7px 12px">This month</button>' +
+      '<button class="btn' + (calSel.mode === 'all' ? '' : ' ghost') + ' calall" type="button" style="padding:7px 12px">All orders</button>' +
+      '</div>';
+
+    var grid = '<div class="calgrid"><div class="dow"></div>' +
+      ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(function(d){ return '<div class="dow">' + d + '</div>'; }).join('');
+
+    var cur = weekStart(first);                       /* Monday on or before the 1st */
+    var last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+    while(cur <= last){
+      var mondayKey = ymd(cur);
+      var wkN = ordersInWeek(mondayKey).length;
+      grid += '<button class="calwk' + (calSel.mode === 'week' && calSel.key === mondayKey ? ' on' : '') +
+        '" data-week="' + mondayKey + '" type="button" title="Whole week">' +
+        cur.toLocaleDateString('en-US', {month:'short', day:'numeric'}) +
+        (wkN ? '<span class="c">' + wkN + '</span>' : '') + '</button>';
+      for(var i = 0; i < 7; i++){
+        var day = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate() + i);
+        var key = ymd(day), n = counts[key] || 0;
+        grid += '<button class="cald' +
+          (day.getMonth() === first.getMonth() ? '' : ' out') +
+          (key === todayKey ? ' today' : '') +
+          (calSel.mode === 'day' && calSel.key === key ? ' on' : '') +
+          '" data-day="' + key + '" type="button">' +
+          '<span class="n">' + day.getDate() + '</span>' +
+          (n ? '<span class="c">' + n + '</span>' : '') + '</button>';
+      }
+      cur = new Date(cur.getFullYear(), cur.getMonth(), cur.getDate() + 7);
+    }
+    $('cal').innerHTML = head + grid + '</div>';
+
+    var list = selectedOrders();
+    var when = calSel.mode === 'day'
+      ? new Date(calSel.key + 'T12:00:00').toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'})
+      : calSel.mode === 'week'
+        ? 'week of ' + new Date(calSel.key + 'T12:00:00').toLocaleDateString('en-US', {month:'long', day:'numeric'})
+        : 'all time';
+    $('calnote').textContent = list.length + (list.length === 1 ? ' order · ' : ' orders · ') + when;
+    renderOrderRows(list);
+  }
+
+  $('cal').addEventListener('click', function(e){
+    var nav = e.target.closest('.calnav');
+    if(nav){
+      var step = +nav.dataset.step;
+      calMonth = step === 0 ? monthOf(new Date())
+        : new Date(calMonth.getFullYear(), calMonth.getMonth() + step, 1);
+      renderCalendar();
+      return;
+    }
+    if(e.target.closest('.calall')){ calSel = { mode: 'all', key: '' }; renderCalendar(); return; }
+    var wk = e.target.closest('.calwk');
+    if(wk){
+      calSel = (calSel.mode === 'week' && calSel.key === wk.dataset.week)
+        ? { mode: 'all', key: '' } : { mode: 'week', key: wk.dataset.week };
+      renderCalendar();
+      return;
+    }
+    var day = e.target.closest('.cald');
+    if(day){
+      calSel = (calSel.mode === 'day' && calSel.key === day.dataset.day)
+        ? { mode: 'all', key: '' } : { mode: 'day', key: day.dataset.day };
+      renderCalendar();
+    }
   });
   function renderOrderRows(list){
     {
@@ -371,6 +478,7 @@
           '<td>' + (x.created ? new Date(x.created).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : '—') + '</td>' +
           '<td>' + (x.active === false ? 'Suspended' : 'Active') + '</td>' +
           '<td><div class="row" style="gap:6px">' +
+            '<button class="btn ghost d-preview" data-code="' + esc(x.code) + '" type="button" style="padding:6px 12px">Preview</button>' +
             '<button class="btn ghost d-edit" data-i="' + xi + '" type="button" style="padding:6px 12px">Manage</button>' +
             '<button class="btn ghost d-toggle" data-code="' + esc(x.code) + '" data-active="' + (x.active === false ? 'true' : 'false') + '" type="button" style="padding:6px 12px">' +
             (x.active === false ? 'Reactivate' : 'Suspend') + '</button></div></td></tr>';
@@ -551,8 +659,76 @@
     var d = dealersCache.filter(function(x){ return x.code === code; })[0];
     return d ? d.name : code;
   }
+  /* Preview: the account as that customer sees it — their standing, their money,
+     their orders — without leaving the admin panel or logging in as them. */
+  function closePreview(){
+    $('dpreview').hidden = true;
+    $('dcreate').hidden = false;
+    $('dlist').hidden = false;
+  }
+  function openPreview(code){
+    var d = dealersCache.filter(function(x){ return x.code === code; })[0];
+    if(!d) return;
+    var st = dealerStats(code);
+    var pr = promoActive(d);
+    var mine = allOrders.filter(function(o){ return o.code === code; });
+
+    var tile = function(v, k, cls){
+      return '<div class="pvtile' + (cls ? ' ' + cls : '') + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
+    };
+    var contact = [d.email, d.phone, d.address].filter(Boolean).map(esc).join(' · ');
+    var rows = mine.map(function(o){
+      var ost = o.status || { status: 'Pending review' };
+      var rc = o.receipt || {};
+      var paid = !!(o.payment && o.payment.paid);
+      var t = orderTotals(o.lines);
+      return '<tr>' +
+        '<td>' + new Date(o.at).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'}) + '</td>' +
+        '<td>' + esc(o.customer || '—') + '</td>' +
+        '<td><code>' + esc(o.ref) + '</code></td>' +
+        '<td>' + (o.lines || []).length + '</td>' +
+        '<td>$' + t.total.toFixed(2) + '</td>' +
+        '<td><span class="status ' + (ost.status === 'Pending review' ? 'st-pend'
+          : (ost.status === 'Cancelled' ? 'st-canc' : 'st-acc')) + '">' + esc(ost.status) + '</span>' +
+          (rc.dealerAt && rc.adminAt ? ' <span class="status st-acc">Completed</span>' : '') + '</td>' +
+        '<td><span class="status ' + (paid ? 'pay-paid' : 'pay-un') + '">' + (paid ? 'Paid' : 'Unpaid') + '</span></td>' +
+        '</tr>';
+    }).join('');
+
+    $('dpreview').innerHTML =
+      '<div class="pvhead"><div>' +
+        '<div class="pvname">' + esc(d.name) + '</div>' +
+        '<div class="pvmeta"><code>' + esc(d.code) + '</code> · price level ×' + d.mult +
+          (pr ? ' · −' + pr.pct + '% until ' + new Date(pr.until).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '') +
+          ' · ' + (d.active === false ? 'suspended' : 'active') +
+          (contact ? '<br>' + contact : '') + '</div>' +
+      '</div><button class="btn ghost" id="pvback" type="button">&larr; All customers</button></div>' +
+      '<div class="pvtiles">' +
+        tile(st.n, 'Orders placed') +
+        tile('$' + st.purch.toFixed(2), 'Total purchased') +
+        tile('$' + st.due.toFixed(2), 'Balance due', st.due > 0 ? 'due' : '') +
+        tile(st.shipped, 'In transit') +
+        tile(st.prod, 'In production') +
+        tile(st.pend, 'Awaiting review') +
+      '</div>' +
+      '<div class="pvsub">Their orders</div>' +
+      (mine.length
+        ? '<div class="ordwrap"><table><thead><tr><th>Date</th><th>End customer</th><th>Ref</th><th>Lines</th>' +
+          '<th>Total</th><th>Status</th><th>Payment</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+        : '<p class="mono">No orders from this account yet.</p>');
+
+    $('dpreview').hidden = false;
+    $('dcreate').hidden = true;
+    $('dlist').hidden = true;
+    $('dpreview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('dpreview').addEventListener('click', function(e){
+    if(e.target.closest('#pvback')) closePreview();
+  });
+
   $('dealerrows').addEventListener('click', function(e){
     var b;
+    if((b = e.target.closest('.d-preview'))){ openPreview(b.dataset.code); return; }
     if((b = e.target.closest('.d-edit'))){
       var row = document.querySelector('.editrow[data-for="' + b.dataset.i + '"]');
       if(row) row.hidden = !row.hidden;
