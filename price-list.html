@@ -68,13 +68,15 @@
 
   .gridwrap{overflow-x:auto;border:1px solid var(--line2);border-radius:12px}
   #gridbox{overflow:auto;max-height:72vh}
-  #grid thead th{position:sticky;top:0;z-index:3;background:var(--paper);box-shadow:0 1px 0 var(--line2)}
-  #grid tbody th{position:sticky;left:0;z-index:2;background:var(--paper);box-shadow:1px 0 0 var(--line2)}
+  #grid thead th{position:sticky;top:0;z-index:3;background:var(--accent-tint,var(--paper));
+    color:var(--accent,var(--muted));box-shadow:0 1px 0 var(--line2)}
+  #grid tbody th{position:sticky;left:0;z-index:2;background:var(--accent-tint,var(--paper));
+    color:var(--accent,var(--muted));box-shadow:1px 0 0 var(--line2)}
   #grid thead th:first-child{left:0;z-index:4;box-shadow:1px 1px 0 var(--line2)}
   table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
   th,td{padding:11px 14px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
   th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:500;background:var(--paper)}
-  tbody th{text-align:right;background:var(--paper)}
+  tbody th{text-align:right;background:var(--accent-tint,var(--paper))}
   tr:last-child td{border-bottom:0}
   td:hover{background:var(--accent-tint,#FCF9F2);color:var(--accent,var(--bronze));font-weight:500}
 
@@ -121,7 +123,7 @@
   <div class="mono">&mdash; Trade partners</div>
   <h1>Your price list</h1>
   <p class="note">List prices in USD per unit, by fabric group and finished size. Read your price at the crossing of width and height &mdash; sizes between grid steps take the next size up. Volume pricing available &mdash; <a href="index.html#contact">contact us</a>.</p>
-  <button id="xlsbtn" type="button" style="margin-top:18px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;background:var(--ink);color:#fff;border:0;border-radius:9px;padding:13px 24px;cursor:pointer">Download as Excel</button>
+  <button id="xlsbtn" type="button" style="margin-top:18px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;background:var(--accent,var(--ink));color:#fff;border:0;border-radius:9px;padding:13px 24px;cursor:pointer">Download as Excel</button>
   <span id="xlsmsg" class="mono" style="margin-left:12px"></span>
   <div class="samplebar" id="samplebar">Sample data &mdash; the real price grids will replace these figures.</div>
   <div class="samplebar" id="promobar" style="border-color:#B9D4B0;background:#EFF6EC;color:#2F5D25"></div>
