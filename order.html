@@ -138,9 +138,15 @@
   .oghead{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
     color:var(--bronze);margin:26px 0 10px;display:flex;gap:14px;align-items:baseline}
   .oghead .n{color:var(--muted);letter-spacing:.08em;font-size:10px}
-  .osec{font-family:'Archivo',sans-serif;font-weight:600;font-size:16px;margin:34px 0 2px;
-    padding-bottom:8px;border-bottom:1px solid var(--line)}
-  .osec:first-child{margin-top:10px}
+  .otabs{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 24px}
+  .otab{font:inherit;font-size:14px;border:1px solid var(--line2);background:var(--white);color:var(--ink);
+    padding:9px 16px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:9px;transition:.15s}
+  .otab:hover{border-color:var(--ink)}
+  .otab.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .otab .n{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);
+    border:1px solid var(--line2);border-radius:999px;padding:1px 8px}
+  .otab.on .n{color:#fff;border-color:rgba(255,255,255,.45)}
+  .otab.empty{color:var(--muted)}
   .status{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;
     border-radius:999px;padding:4px 10px;white-space:nowrap}
   .status.acc{background:#EFF6EC;border:1px solid #B9D4B0;color:#2F5D25}
@@ -876,24 +882,46 @@
       tile(pend, 'Awaiting review');
   }
 
-  function renderOrders(){
-    renderSummary();
-    if(!orders.length){ ordersBox.innerHTML = '<p class="noorders">No orders sent yet.</p>'; return; }
-    var awaiting = [], production = [], shipped = [], past = [];
+  /* the four stages, chosen from a row of tabs rather than stacked down the page */
+  var SECTIONS = [
+    { key: 'awaiting',   label: 'Awaiting orders', empty: 'Nothing waiting for review right now.' },
+    { key: 'production', label: 'Production',      empty: 'Nothing in production right now.' },
+    { key: 'shipped',    label: 'Shipped',         empty: 'Nothing on its way right now.' },
+    { key: 'past',       label: 'Past orders',     empty: 'No finished orders yet.' },
+  ];
+  var section = 'awaiting';
+
+  function bucketed(){
+    var b = { awaiting: [], production: [], shipped: [], past: [] };
     orders.forEach(function(o, oi){
       var st = (o.status && o.status.status) || 'Pending review';
       var item = { o: o, oi: oi };
-      if(st === 'Cancelled' || completed(o)) past.push(item);          /* closed either way */
-      else if(st === 'Pending review') awaiting.push(item);
-      else if(st === 'Shipped') shipped.push(item);
-      else production.push(item);                                       /* confirmed, in production, on hold */
+      if(st === 'Cancelled' || completed(o)) b.past.push(item);        /* closed either way */
+      else if(st === 'Pending review') b.awaiting.push(item);
+      else if(st === 'Shipped') b.shipped.push(item);
+      else b.production.push(item);                                     /* confirmed, in production, on hold */
     });
-    var html = '';
-    if(awaiting.length) html += '<div class="osec">Awaiting orders</div>' + customerGroups(awaiting);
-    if(production.length) html += '<div class="osec">Production</div>' + customerGroups(production);
-    if(shipped.length) html += '<div class="osec">Shipped</div>' + customerGroups(shipped);
-    if(past.length) html += '<div class="osec">Past orders</div>' + customerGroups(past);
-    ordersBox.innerHTML = html;
+    return b;
+  }
+
+  function renderOrders(){
+    renderSummary();
+    if(!orders.length){ ordersBox.innerHTML = '<p class="noorders">No orders sent yet.</p>'; return; }
+    var b = bucketed();
+    /* land on a stage that has something rather than an empty one */
+    if(!b[section].length){
+      var first = SECTIONS.filter(function(s){ return b[s.key].length; })[0];
+      if(first) section = first.key;
+    }
+    var tabs = '<div class="otabs">' + SECTIONS.map(function(s){
+      return '<button type="button" class="otab' + (s.key === section ? ' on' : '') +
+        (b[s.key].length ? '' : ' empty') + '" data-sec="' + s.key + '">' + s.label +
+        '<span class="n">' + b[s.key].length + '</span></button>';
+    }).join('') + '</div>';
+    var here = SECTIONS.filter(function(s){ return s.key === section; })[0];
+    ordersBox.innerHTML = tabs + (b[section].length
+      ? customerGroups(b[section])
+      : '<p class="noorders">' + here.empty + '</p>');
   }
 
   /* ── editing an existing order ── */
@@ -1042,6 +1070,8 @@
   }
 
   ordersBox.addEventListener('click', function(e){
+    var tab = e.target.closest('.otab');
+    if(tab){ section = tab.dataset.sec; renderOrders(); return; }
     var b = e.target.closest('.obtn'); if(!b) return;
     var o;
     if(b.dataset.oinv !== undefined){
