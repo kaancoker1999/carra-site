@@ -888,15 +888,17 @@
     { key: 'production', label: 'Production',      empty: 'Nothing in production right now.' },
     { key: 'shipped',    label: 'Shipped',         empty: 'Nothing on its way right now.' },
     { key: 'past',       label: 'Past orders',     empty: 'No finished orders yet.' },
+    { key: 'cancelled',  label: 'Cancelled',       empty: 'No cancelled orders.' },
   ];
   var section = 'awaiting';
 
   function bucketed(){
-    var b = { awaiting: [], production: [], shipped: [], past: [] };
+    var b = { awaiting: [], production: [], shipped: [], past: [], cancelled: [] };
     orders.forEach(function(o, oi){
       var st = (o.status && o.status.status) || 'Pending review';
       var item = { o: o, oi: oi };
-      if(st === 'Cancelled' || completed(o)) b.past.push(item);        /* closed either way */
+      if(st === 'Cancelled') b.cancelled.push(item);
+      else if(completed(o)) b.past.push(item);       /* both sides confirmed the delivery */
       else if(st === 'Pending review') b.awaiting.push(item);
       else if(st === 'Shipped') b.shipped.push(item);
       else b.production.push(item);                                     /* confirmed, in production, on hold */
