@@ -450,7 +450,7 @@
     var rows = (o.lines || []).map(function(l, i){
       var m = (l.spec || '').match(/(?:Fabric|Cell & opacity|Style): ([^·]+)/) ||
               (l.spec || '').match(/^[^:]+: ([^·]+)/);
-      var desc = esc(l.product) + ' — ' + esc(m ? m[1].trim() : '');
+      var desc = esc(l.product) + ' — ' + esc(l.desc || (m ? m[1].trim() : ''));
       return '<tr><td>' + (i+1) + '</td><td class="l">' + desc + '</td>' +
         '<td>' + (l.w == null ? '—' : fmtIn(l.w)) + '</td><td>' + (l.h == null ? '—' : fmtIn(l.h)) + '</td><td>' + esc(l.label || '') + '</td>' +
         '<td>' + l.qty + '</td><td class="r">' + (l.price == null ? 'TBD' : '$' + l.price.toFixed(2)) + '</td>' +

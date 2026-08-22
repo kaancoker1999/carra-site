@@ -76,7 +76,24 @@
   .btn.solid:hover{background:var(--bronze)}
   .btn.ghost{background:var(--white);border:1px solid var(--line2);color:var(--ink)}
   .btn.ghost:hover{border-color:var(--ink)}
-  .count{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--muted)}
+  .lgroup{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--bronze);padding:14px 14px 0}
+  .lgroup:first-child{padding-top:12px}
+  .ltable{width:100%;min-width:0}
+  .ltable th{font-size:9px;letter-spacing:.1em;padding:9px 12px}
+  .ltable td{font-size:13px;padding:9px 12px}
+  .ltable .sp{color:var(--muted)}
+  .ltable th,.ltable td{border-right:1px solid var(--line)}
+  .ltable th:last-child,.ltable td:last-child{border-right:0}
+  .ltwrap{overflow-x:auto}
+  .order .ltable{min-width:0}
+
+  .count{display:inline-flex;align-items:baseline;gap:10px;margin-left:auto}
+  .count .n,.order summary .meta .n{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--muted)}
+  .count .amt,.order summary .meta .amt{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;
+    letter-spacing:-.015em;color:var(--ink)}
+  .count .tbd,.order summary .meta .tbd{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--bronze);border:1px solid var(--line2);border-radius:999px;padding:2px 8px}
 
   /* ── past orders ── */
   .xtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:20px;margin:56px 0 6px}
@@ -86,7 +103,7 @@
   .order summary::-webkit-details-marker{display:none}
   .order summary .ref{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.08em;color:var(--bronze);font-weight:500}
   .order summary .when{font-size:13.5px;color:var(--ink)}
-  .order summary .meta{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:var(--muted);margin-left:auto}
+  .order summary .meta{display:flex;align-items:baseline;gap:10px;margin-left:auto}
   .order[open] summary{border-bottom:1px solid var(--line)}
   .order .obody{padding:4px 18px 16px;overflow-x:auto}
   .order table{min-width:640px}
@@ -183,10 +200,7 @@
     </div>
 
     <div class="lineswrap">
-      <table id="lines" hidden>
-        <thead><tr><th>#</th><th>Room / label</th><th>Product</th><th>Specification</th><th>W &times; H</th><th>Qty</th><th>Unit</th><th>Total</th><th></th></tr></thead>
-        <tbody id="linesbody"></tbody>
-      </table>
+      <div id="lines" hidden></div>
       <div class="empty" id="empty">No lines yet &mdash; build the first one above and press Add to order.</div>
     </div>
 
@@ -470,7 +484,7 @@
   function fmt$(v){ return v == null ? '&mdash;' : '$' + v.toFixed(2); }
 
   /* ── lines ── */
-  var linesTable = document.getElementById('lines'), linesBody = document.getElementById('linesbody'),
+  var linesBox = document.getElementById('lines'),
       empty = document.getElementById('empty'), count = document.getElementById('count');
 
   function saveLines(){ sessionStorage.setItem('lumia_order', JSON.stringify(lines)); }
@@ -491,29 +505,75 @@
     });
     return { units: units, total: Math.round(total * 100) / 100, unknown: unknown };
   }
+  function plural(n, word){ return n + ' ' + word + (n === 1 ? '' : 's'); }
   function totalsText(ls){
     var t = orderTotals(ls);
-    var s = ls.length + ' lines · ' + t.units + ' units · $' + t.total.toFixed(2);
+    var s = plural(ls.length, 'line') + ' · ' + plural(t.units, 'unit') + ' · $' + t.total.toFixed(2);
     if(t.unknown) s += ' + ' + t.unknown + ' on request';
     return s;
   }
-
-  function lineRow(l, i, del){
-    return '<tr><td>' + (i+1) + '</td><td>' + (l.label || '&mdash;') + '</td><td>' + l.product + '</td>' +
-      '<td>' + l.spec + '</td><td>' + (l.w == null ? '&mdash;' : fmtIn(l.w) + '&Prime; &times; ' + fmtIn(l.h) + '&Prime;') + '</td><td>' + l.qty + '</td>' +
-      '<td class="num">' + fmt$(l.price) + '</td>' +
-      '<td class="num">' + (l.price == null ? 'on request' : '$' + (l.price * l.qty).toFixed(2)) + '</td>' +
-      (del ? '<td><button class="del" data-i="' + i + '" title="Remove">&times;</button></td>' : '') + '</tr>';
+  /* same figures, laid out so the amount carries the line */
+  function totalsHTML(ls, tbdLabel){
+    var t = orderTotals(ls);
+    return '<span class="n">' + plural(ls.length, 'line') + ' &middot; ' + plural(t.units, 'unit') + '</span>' +
+      '<span class="amt">$' + t.total.toFixed(2) + '</span>' +
+      (t.unknown ? '<span class="tbd">+' + t.unknown + ' ' + (tbdLabel || 'on request') + '</span>' : '');
   }
+
+  /* Specification reads as a small header row: the step name sits above its
+     answer, so short answers ("Yes", "Left") still say what they refer to. */
+  function specPairs(l){
+    if(Array.isArray(l.specs) && l.specs.length) return l.specs;
+    /* orders placed before this change only stored the "Label: value · …" string */
+    return String(l.spec || '').split(' · ').map(function(part){
+      var i = part.indexOf(': ');
+      return i < 0 ? { k: '', v: part.trim() } : { k: part.slice(0, i).trim(), v: part.slice(i + 2).trim() };
+    }).filter(function(p){ return p.v; });
+  }
+  function specMap(l){
+    var m = {};
+    specPairs(l).forEach(function(p){ if(p.k) m[p.k] = p.v; });
+    return m;
+  }
+  /* One table per product, so the column headers are that product's own steps —
+     "Colour group", "Mechanism", "Edge banding" — with the answer underneath. */
+  function lineTables(items, del){
+    var groups = [], byProduct = {};
+    items.forEach(function(it){
+      var name = it.l.product || '—';
+      if(!byProduct[name]){ byProduct[name] = { name: name, items: [], keys: [] }; groups.push(byProduct[name]); }
+      var g = byProduct[name];
+      g.items.push(it);
+      specPairs(it.l).forEach(function(p){ if(p.k && g.keys.indexOf(p.k) < 0) g.keys.push(p.k); });
+    });
+    return groups.map(function(g){
+      var head = '<tr><th>#</th><th>Room / label</th>' +
+        g.keys.map(function(k){ return '<th>' + k + '</th>'; }).join('') +
+        '<th>W &times; H</th><th>Qty</th><th>Unit</th><th>Total</th>' + (del ? '<th></th>' : '') + '</tr>';
+      var body = g.items.map(function(it, n){
+        var l = it.l, m = specMap(l);
+        return '<tr><td>' + (n + 1) + '</td><td>' + (l.label || '&mdash;') + '</td>' +
+          g.keys.map(function(k){ return '<td>' + (m[k] || '<span class="sp">&mdash;</span>') + '</td>'; }).join('') +
+          '<td>' + (l.w == null ? '&mdash;' : fmtIn(l.w) + '&Prime; &times; ' + fmtIn(l.h) + '&Prime;') + '</td>' +
+          '<td>' + l.qty + '</td>' +
+          '<td class="num">' + fmt$(l.price) + '</td>' +
+          '<td class="num">' + (l.price == null ? 'on request' : '$' + (l.price * l.qty).toFixed(2)) + '</td>' +
+          (del ? '<td><button class="del" data-i="' + it.i + '" title="Remove">&times;</button></td>' : '') + '</tr>';
+      }).join('');
+      return '<div class="lgroup">' + g.name + '</div>' +
+        '<div class="ltwrap"><table class="ltable"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
+    }).join('');
+  }
+  function indexed(ls){ return (ls || []).map(function(l, i){ return { l: l, i: i }; }); }
 
   function renderLines(){
-    linesTable.hidden = lines.length === 0;
+    linesBox.hidden = lines.length === 0;
     empty.style.display = lines.length ? 'none' : '';
-    linesBody.innerHTML = lines.map(function(l,i){ return lineRow(l, i, true); }).join('');
-    count.textContent = lines.length ? totalsText(lines) : '';
+    linesBox.innerHTML = lineTables(indexed(lines), true);
+    count.innerHTML = lines.length ? totalsHTML(lines) : '';
   }
 
-  linesBody.addEventListener('click', function(e){
+  linesBox.addEventListener('click', function(e){
     var b = e.target.closest('.del'); if(!b) return;
     lines.splice(+b.dataset.i, 1); saveLines(); renderLines();
   });
@@ -544,7 +604,7 @@
       rowerr.classList.add('on');
       return;
     }
-    var parts = [], sel = {};
+    var parts = [], pairs = [], sel = {}, main = '';
     p.steps.forEach(function(st){
       var cell = cells.querySelector('.cell[data-key="' + (st.key === 'collection' ? 'collection' : st.key) + '"]');
       if(cell && cell.style.display === 'none') return;
@@ -555,14 +615,20 @@
         sel.gridName = chosen.label;
         sel.group = chosen.group;
         sel.archKey = chosen.id;
-        parts.push(st.label + ': ' + chosen.label + ' ' + document.getElementById('c-colour').value);
+        var picked = chosen.label + ' ' + document.getElementById('c-colour').value;
+        if(!main) main = picked;
+        parts.push(st.label + ': ' + picked);
+        pairs.push({ k: st.label, v: picked });
         return;
       }
       sel[st.key] = document.getElementById('c-' + st.key).value;
+      if(!main && /fabric|cell|style/i.test(st.label)) main = sel[st.key];
       parts.push(st.label + ': ' + sel[st.key]);
+      pairs.push({ k: st.label, v: sel[st.key] });
     });
     var label = (document.getElementById('c-label').value || '').trim();
-    lines.push({ label: label, product: p.name, spec: parts.join(' · '),
+    lines.push({ label: label, product: p.name, spec: parts.join(' · '), specs: pairs,
+                 desc: (main || '').trim(),
                  w: w, h: h, qty: qty, price: priceLine(p.id, sel, w, h) });
     document.getElementById('c-label').value = '';
     saveLines(); renderLines();
@@ -603,7 +669,6 @@
     var locked = !!(o.status && o.status.locked);
     var t = orderTotals(o.lines);
     var when = new Date(o.at);
-    var rows = o.lines.map(function(l,i){ return lineRow(l, i, false); }).join('');
     var badge = st
       ? '<span class="status ' + (st.status === 'Cancelled' ? 'canc' : 'acc') +
         (locked ? ' lock' : '') + '">' + st.status + '</span>'
@@ -624,14 +689,12 @@
       '<span class="ref">' + (o.customer || o.ref) + '</span>' + badge +
       '<span class="when">' + when.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) +
       ' ' + when.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}) + '</span>' +
-      '<span class="meta">' + o.lines.length + ' lines · ' + t.units + ' units · $' + t.total.toFixed(2) +
-      (t.unknown ? ' +' + t.unknown + ' TBD' : '') + '</span></summary>' +
+      '<span class="meta">' + totalsHTML(o.lines, 'TBD') + '</span></summary>' +
       '<div class="obody">' +
       '<p class="mono" style="margin:6px 0 10px;font-size:10px">Ref: ' + o.ref + '</p>' +
       (o.notes ? '<p class="onote" style="color:#4A4E52">Note: ' + o.notes + '</p>' : '') +
       (o.status && o.status.note ? '<p class="onote">LUMIA: ' + o.status.note + '</p>' : '') +
-      '<table><thead><tr><th>#</th><th>Room / label</th><th>Product</th><th>Specification</th><th>W &times; H</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>' +
-      '<tbody>' + rows + '</tbody></table>' +
+      lineTables(indexed(o.lines), false) +
       '<div class="oactions">' + actions + '</div></div></details>';
   }
 
@@ -725,7 +788,7 @@
     var rows = o.lines.map(function(l, i){
       var m = (l.spec || '').match(/(?:Fabric|Cell & opacity|Style): ([^·]+)/) ||
               (l.spec || '').match(/^[^:]+: ([^·]+)/);
-      var desc = esc(l.product) + ' — ' + esc(m ? m[1].trim() : '');
+      var desc = esc(l.product) + ' — ' + esc(l.desc || (m ? m[1].trim() : ''));
       return '<tr><td>' + (i+1) + '</td><td class="l">' + desc + '</td>' +
         '<td>' + (l.w == null ? '&mdash;' : fmtIn(l.w)) + '</td><td>' + (l.h == null ? '&mdash;' : fmtIn(l.h)) + '</td><td>' + esc(l.label || '') + '</td>' +
         '<td>' + l.qty + '</td><td class="r">' + (l.price == null ? 'TBD' : '$' + l.price.toFixed(2)) + '</td>' +
