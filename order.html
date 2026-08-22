@@ -69,6 +69,11 @@
   th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:500;background:var(--paper);text-transform:uppercase}
   tr:last-child td{border-bottom:0}
   .del{border:0;background:none;color:#8A2620;cursor:pointer;font-size:15px;padding:2px 6px}
+  .acts{display:flex;gap:6px;align-items:center}
+  .ed{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+    background:var(--white);border:1px solid var(--line2);border-radius:7px;padding:5px 10px;cursor:pointer;color:var(--ink)}
+  .ed:hover{border-color:var(--ink)}
+  .ltable tr.editing td{background:var(--paper2)}
   .empty{padding:26px 20px;color:var(--muted);font-size:14.5px}
 
   .actions{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap;align-items:center}
@@ -255,7 +260,7 @@
     return Object.assign({ 'x-dealer-code': SESSION.code || '' }, extra || {});
   }
 
-  var CFG = null, lines = [];
+  var CFG = null, lines = [], editIdx = null;
   try{ lines = JSON.parse(sessionStorage.getItem('lumia_order') || '[]'); }catch(e){}
 
   var cells = document.getElementById('cells'), rowerr = document.getElementById('rowerr'),
@@ -326,6 +331,7 @@
     row3 += '<div class="cell"><label>&nbsp;</label><button class="addbtn" id="addbtn" type="button">Add to order &darr;</button></div>';
 
     cells.innerHTML = '<div class="cellrow">' + row1 + '</div><div class="cellrow">' + row2 + '</div><div class="cellrow">' + row3 + '</div>';
+    syncAddBtn();
     refillCollections();
     fillColours();
     refreshShowIf();
@@ -584,13 +590,14 @@
         '<th>W &times; H</th><th>Qty</th><th>Unit</th><th>Total</th>' + (del ? '<th></th>' : '') + '</tr>';
       var body = g.items.map(function(it, n){
         var l = it.l, m = specMap(l);
-        return '<tr><td>' + (n + 1) + '</td><td>' + (l.label || '&mdash;') + '</td>' +
+        return '<tr' + (del && it.i === editIdx ? ' class="editing"' : '') + '><td>' + (n + 1) + '</td><td>' + (l.label || '&mdash;') + '</td>' +
           g.keys.map(function(k){ return '<td>' + (m[k] || '<span class="sp">&mdash;</span>') + '</td>'; }).join('') +
           '<td>' + (l.w == null ? '&mdash;' : fmtIn(l.w) + '&Prime; &times; ' + fmtIn(l.h) + '&Prime;') + '</td>' +
           '<td>' + l.qty + '</td>' +
           '<td class="num">' + fmt$(l.price) + '</td>' +
           '<td class="num">' + (l.price == null ? 'on request' : '$' + (l.price * l.qty).toFixed(2)) + '</td>' +
-          (del ? '<td><button class="del" data-i="' + it.i + '" title="Remove">&times;</button></td>' : '') + '</tr>';
+          (del ? '<td class="acts"><button class="ed" data-i="' + it.i + '" type="button">Edit</button>' +
+                 '<button class="del" data-i="' + it.i + '" title="Remove">&times;</button></td>' : '') + '</tr>';
       }).join('');
       return '<div class="lgroup">' + g.name + '</div>' +
         '<div class="ltwrap"><table class="ltable"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
@@ -607,8 +614,16 @@
   }
 
   linesBox.addEventListener('click', function(e){
+    var ed = e.target.closest('.ed');
+    if(ed){ editLine(+ed.dataset.i); return; }
     var b = e.target.closest('.del'); if(!b) return;
-    lines.splice(+b.dataset.i, 1); saveLines(); renderLines();
+    var i = +b.dataset.i;
+    lines.splice(i, 1);
+    if(editIdx != null){
+      if(i === editIdx){ editIdx = null; syncAddBtn(); }
+      else if(i < editIdx){ editIdx -= 1; }
+    }
+    saveLines(); renderLines();
   });
 
   document.addEventListener('click', function(e){
@@ -671,12 +686,71 @@
       pairs.push({ k: st.label, v: sel[st.key] });
     });
     var label = (document.getElementById('c-label').value || '').trim();
-    lines.push({ label: label, product: p.name, spec: parts.join(' · '), specs: pairs,
-                 desc: (main || '').trim(),
-                 w: w, h: h, qty: qty, price: priceLine(p.id, sel, w, h) });
+    var pick = { product: document.getElementById('c-product').value };
+    p.steps.forEach(function(st){
+      var el = document.getElementById('c-' + st.key);
+      if(el) pick[st.key] = el.value;
+    });
+    var colourEl = document.getElementById('c-colour');
+    if(colourEl) pick.colour = colourEl.value;
+    var line = { label: label, product: p.name, spec: parts.join(' · '), specs: pairs,
+                 desc: (main || '').trim(), pick: pick,
+                 w: w, h: h, qty: qty, price: priceLine(p.id, sel, w, h) };
+    if(editIdx == null){
+      lines.push(line);
+    } else {
+      lines[editIdx] = line;   /* an edited line keeps its place in the list */
+      editIdx = null;
+      syncAddBtn();
+    }
     document.getElementById('c-label').value = '';
     saveLines(); renderLines();
   });
+
+  /* ── editing a line already in the order ── */
+  function syncAddBtn(){
+    var b = document.getElementById('addbtn');
+    if(b) b.innerHTML = editIdx == null ? 'Add to order &darr;' : 'Update line &darr;';
+  }
+  function setSize(base, v){
+    var whole = Math.floor(v), frac = Math.round((v - whole) * 8) / 8;
+    if(frac === 1){ whole += 1; frac = 0; }
+    var w1 = document.getElementById('c-' + base), w2 = document.getElementById('c-' + base + 'f');
+    if(w1) w1.value = String(whole);
+    if(w2) w2.value = String(frac);
+  }
+  function editLine(i){
+    var l = lines[i];
+    if(!l) return;
+    var pk = l.pick || {};
+    var prodSel = document.getElementById('c-product');
+    var pi = CFG.products.map(function(x){ return x.name; }).indexOf(l.product);
+    prodSel.value = pk.product != null ? pk.product : String(pi < 0 ? 0 : pi);
+    buildRow();
+    /* colour group first — it refills the fabric list — then the rest */
+    ['cgroup', 'collection', 'colour'].forEach(function(k){
+      var el = document.getElementById('c-' + k);
+      if(!el || pk[k] == null) return;
+      el.value = pk[k];
+      if(k === 'cgroup') refillCollections();
+      if(k === 'collection') fillColours();
+    });
+    Object.keys(pk).forEach(function(k){
+      if(k === 'product' || k === 'cgroup' || k === 'collection' || k === 'colour') return;
+      var el = document.getElementById('c-' + k);
+      if(el) el.value = pk[k];
+    });
+    refreshShowIf();
+    if(l.w != null) setSize('w', l.w);
+    if(l.h != null) setSize('h', l.h);
+    document.getElementById('c-qty').value = l.qty;
+    document.getElementById('c-label').value = l.label || '';
+    editIdx = i;
+    syncAddBtn();
+    renderLines();
+    clearFail();
+    document.querySelector('.rowbar').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 
   /* ── past orders (stored centrally — visible from any device) ── */
   var orders = [];
