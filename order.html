@@ -101,12 +101,18 @@
 
   /* what the order comes to, read before the customer details are filled in */
   .totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:22px}
-  .tot{border:1px solid var(--line2);border-radius:14px;background:var(--paper);padding:16px 20px}
+  .tot{border:1px solid var(--line2);border-radius:14px;background:var(--white);padding:16px 20px}
   .tot .v{font-family:'Archivo',sans-serif;font-weight:600;font-size:24px;line-height:1.1;letter-spacing:-.02em}
   .tot .k{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;
     color:var(--muted);margin-top:6px}
-  .tot.main{border-color:var(--ink)}
+  /* each tile reads differently: counts stay quiet, the money carries the weight */
+  .tot.count2{background:var(--paper2);border-color:#D8D0BE}
+  .tot.main{background:var(--ink);border-color:var(--ink)}
+  .tot.main .v{color:#fff}
+  .tot.main .k{color:var(--bronze-lt)}
+  .tot.tbd{background:#FBF3E4;border-color:#E3C990}
   .tot.tbd .v{color:var(--bronze)}
+  .tot.tbd .k{color:var(--bronze)}
 
   /* ── past orders ── */
   .xtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:20px;margin:56px 0 6px}
@@ -546,7 +552,7 @@
       return '<div class="tot' + (cls ? ' ' + cls : '') + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
     };
     return tile(ls.length, ls.length === 1 ? 'Line' : 'Lines') +
-      tile(t.units, t.units === 1 ? 'Unit' : 'Units') +
+      tile(t.units, t.units === 1 ? 'Unit' : 'Units', 'count2') +
       tile('$' + t.total.toFixed(2), 'Order total', 'main') +
       (t.unknown ? tile(t.unknown, t.unknown === 1 ? 'Line on request' : 'Lines on request', 'tbd') : '');
   }
