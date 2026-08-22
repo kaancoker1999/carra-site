@@ -435,8 +435,6 @@
     }
     if(pid === 'drapery'){
       pp = prodPrices('drapery'); if(!pp) return null;
-      /* motorized drapery is priced on request — no motor data in the grids */
-      if(sel.operation === 'Motorized') return null;
       var dg = pp.grids.filter(function(x){
         return x.name === sel.heading + ' · Group ' + 'ABCD'[(sel.group || 1) - 1];
       })[0];

@@ -502,11 +502,8 @@ PRODUCTS = {
             {"key": "liner", "label": "Liner", "options": ["Unlined", "White liner", "Blackout liner"]},
             {"key": "trackopt", "label": "Add track", "options": ["Yes", "No"]},
             {"key": "track", "label": "Track mount", "options": ["Wall", "Ceiling"], "showIf": {"key": "trackopt", "value": "Yes"}},
-            {"key": "operation", "label": "Operation", "options": ["Hand drawn", "Motorized"]},
-            {"key": "chain", "label": "Control side", "options": ["Left", "Right"], "showIf": {"key": "operation", "value": "Motorized"}},
-            {"key": "remote", "label": "Remote control", "options": ["No remote", "1-channel remote", "5-channel remote", "15-channel remote"], "showIf": {"key": "operation", "value": "Motorized"}},
-            {"key": "cable", "label": "USB-C charging cable", "options": ["No", "Yes"], "showIf": {"key": "operation", "value": "Motorized"}},
-            {"key": "hub", "label": "Smart home hub", "options": ["No", "Yes"], "showIf": {"key": "operation", "value": "Motorized"}},
+            # drapery is hand drawn only — there is no motor pricing yet, so the
+            # motorized operation and the steps hanging off it stay out
         ],
     },
 }
