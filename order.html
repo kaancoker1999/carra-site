@@ -237,6 +237,7 @@
       <button class="btn ghost" id="copybtn" type="button">Copy as text</button>
       <button class="btn ghost" id="clearbtn" type="button">Clear all</button>
     </div>
+    <div class="rowerr" id="senderr" style="margin-top:14px"></div>
 
     <div class="xtitle">Orders</div>
     <p class="xsub">Every order sent from this browser, newest first. Keep the reference &mdash; it is in the e-mail subject too.</p>
@@ -961,7 +962,7 @@
       '<div class="foot">DIRECT ALL INQUIRIES TO hello@lumiashades.com<br><b>THANK YOU FOR YOUR COOPERATION</b></div>' +
       '</body></html>';
     var win = window.open('', '_blank');
-    if(!win){ alert('Allow pop-ups for this site to open the invoice.'); return; }
+    if(!win){ sendMsg('Allow pop-ups for this site to open the invoice.'); return; }
     win.document.write(html);
     win.document.close();
   }
@@ -1041,8 +1042,16 @@
       String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') +
       '-' + String(Math.floor(Math.random()*900)+100);
   }
+  /* the browser's own dialogs are suppressed for some dealers — say it on the page */
+  function sendMsg(text){
+    var el = document.getElementById('senderr');
+    el.textContent = text || '';
+    el.classList.toggle('on', !!text);
+  }
+
   document.getElementById('sendbtn').addEventListener('click', function(){
-    if(!lines.length) return;
+    if(!lines.length){ sendMsg('Add at least one line before sending.'); return; }
+    sendMsg('');
     var customer = customerInput.value.trim();
     var notes = notesInput.value.trim();
     var editRef = getEditRef(), at = new Date().toISOString();
@@ -1070,6 +1079,8 @@
     };
     var mailtoFallback = function(){
       sendbtn.textContent = 'Send order'; sendbtn.disabled = false;
+      sendMsg('We could not reach LUMIA just now, so your e-mail app is opening with the order in it. ' +
+              'Send that e-mail, or try again in a moment.');
       location.href = 'mailto:hello@lumiashades.com?subject=' +
         encodeURIComponent((isUpdate ? 'Order update ' : 'Order request ') + ref +
           (customer ? ' — ' + customer : '') + ' — ' + nLines + ' lines') +
@@ -1082,7 +1093,10 @@
       body: JSON.stringify({ ref: ref, kind: isUpdate ? 'update' : 'new',
         customer: customer, notes: notes, total: totalText, lines: sentLines })
     }).then(function(r){
-      if(r.status === 423){ alert('This order was locked by LUMIA and can no longer be changed.'); throw new Error('locked'); }
+      if(r.status === 423){
+        sendMsg('LUMIA has locked this order, so it can no longer be changed — write to hello@lumiashades.com and we will update it for you.');
+        throw new Error('locked');
+      }
       if(!r.ok) throw new Error('api unavailable');
       /* 2: e-mail copy via Netlify Forms (best effort) */
       fetch('/', {
