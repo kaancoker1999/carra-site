@@ -77,23 +77,29 @@
   .btn.ghost{background:var(--white);border:1px solid var(--line2);color:var(--ink)}
   .btn.ghost:hover{border-color:var(--ink)}
   .lgroup{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
-    color:var(--bronze);padding:14px 14px 0}
+    color:var(--bronze);padding:14px 14px 0;position:sticky;left:0;width:max-content}
   .lgroup:first-child{padding-top:12px}
-  .ltable{width:100%;min-width:0}
+  .ltable{width:max-content;min-width:100%}
   .ltable th{font-size:9px;letter-spacing:.1em;padding:9px 12px}
   .ltable td{font-size:13px;padding:9px 12px}
   .ltable .sp{color:var(--muted)}
   .ltable th,.ltable td{border-right:1px solid var(--line)}
   .ltable th:last-child,.ltable td:last-child{border-right:0}
-  .ltwrap{overflow-x:auto}
-  .order .ltable{min-width:0}
 
-  .count{display:inline-flex;align-items:baseline;gap:10px;margin-left:auto}
-  .count .n,.order summary .meta .n{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--muted)}
-  .count .amt,.order summary .meta .amt{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;
+  .order summary .meta .n{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--muted)}
+  .order summary .meta .amt{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;
     letter-spacing:-.015em;color:var(--ink)}
-  .count .tbd,.order summary .meta .tbd{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;
+  .order summary .meta .tbd{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;
     text-transform:uppercase;color:var(--bronze);border:1px solid var(--line2);border-radius:999px;padding:2px 8px}
+
+  /* what the order comes to, read before the customer details are filled in */
+  .totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:22px}
+  .tot{border:1px solid var(--line2);border-radius:14px;background:var(--paper);padding:16px 20px}
+  .tot .v{font-family:'Archivo',sans-serif;font-weight:600;font-size:24px;line-height:1.1;letter-spacing:-.02em}
+  .tot .k{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);margin-top:6px}
+  .tot.main{border-color:var(--ink)}
+  .tot.tbd .v{color:var(--bronze)}
 
   /* ── past orders ── */
   .xtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:20px;margin:56px 0 6px}
@@ -204,6 +210,8 @@
       <div class="empty" id="empty">No lines yet &mdash; build the first one above and press Add to order.</div>
     </div>
 
+    <div class="totals" id="count" hidden></div>
+
     <div class="custbar">
       <div class="cell"><label class="mono" style="font-size:9.5px">Customer / project</label>
         <input id="customer" type="text" placeholder="e.g. Johnson residence — Houston" autocomplete="off"></div>
@@ -215,7 +223,6 @@
       <button class="btn solid" id="sendbtn" type="button">Send order</button>
       <button class="btn ghost" id="copybtn" type="button">Copy as text</button>
       <button class="btn ghost" id="clearbtn" type="button">Clear all</button>
-      <span class="count" id="count"></span>
     </div>
 
     <div class="xtitle">Orders</div>
@@ -512,6 +519,16 @@
     if(t.unknown) s += ' + ' + t.unknown + ' on request';
     return s;
   }
+  function totalsTiles(ls){
+    var t = orderTotals(ls);
+    var tile = function(v, k, cls){
+      return '<div class="tot' + (cls ? ' ' + cls : '') + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
+    };
+    return tile(ls.length, ls.length === 1 ? 'Line' : 'Lines') +
+      tile(t.units, t.units === 1 ? 'Unit' : 'Units') +
+      tile('$' + t.total.toFixed(2), 'Order total', 'main') +
+      (t.unknown ? tile(t.unknown, t.unknown === 1 ? 'Line on request' : 'Lines on request', 'tbd') : '');
+  }
   /* same figures, laid out so the amount carries the line */
   function totalsHTML(ls, tbdLabel){
     var t = orderTotals(ls);
@@ -570,7 +587,8 @@
     linesBox.hidden = lines.length === 0;
     empty.style.display = lines.length ? 'none' : '';
     linesBox.innerHTML = lineTables(indexed(lines), true);
-    count.innerHTML = lines.length ? totalsHTML(lines) : '';
+    count.hidden = lines.length === 0;
+    count.innerHTML = lines.length ? totalsTiles(lines) : '';
   }
 
   linesBox.addEventListener('click', function(e){
