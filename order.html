@@ -59,6 +59,8 @@
   .addbtn:hover{background:var(--bronze)}
   .rowerr{display:none;margin:12px 0 0;font-size:13.5px;color:#8A2620}
   .rowerr.on{display:block}
+  .rowbar.bad{background:#FBEDEC;border-color:#E0B7B3}
+  .cell select.bad{border-color:#8A2620;background:#FFF6F5}
 
   /* ── order lines ── */
   .lineswrap{margin-top:36px;border:1px solid var(--line2);border-radius:12px;overflow-x:auto}
@@ -256,7 +258,21 @@
   var CFG = null, lines = [];
   try{ lines = JSON.parse(sessionStorage.getItem('lumia_order') || '[]'); }catch(e){}
 
-  var cells = document.getElementById('cells'), rowerr = document.getElementById('rowerr');
+  var cells = document.getElementById('cells'), rowerr = document.getElementById('rowerr'),
+      rowbar = document.querySelector('.rowbar');
+
+  /* a line that cannot be added leaves the builder red until it is fixed */
+  function clearFail(){
+    rowbar.classList.remove('bad');
+    rowerr.classList.remove('on');
+    cells.querySelectorAll('select.bad').forEach(function(el){ el.classList.remove('bad'); });
+  }
+  function fail(message, offenders){
+    rowerr.textContent = message;
+    rowerr.classList.add('on');
+    rowbar.classList.add('bad');
+    (offenders || []).forEach(function(el){ el.classList.add('bad'); });
+  }
 
   function opt(v, t){ return '<option value="' + v + '">' + t + '</option>'; }
 
@@ -352,6 +368,7 @@
   }
 
   cells.addEventListener('change', function(e){
+    clearFail();
     if(e.target.id === 'c-product'){ buildRow(); return; }
     if(e.target.id === 'c-cgroup') refillCollections();
     if(e.target.id === 'c-collection') fillColours();
@@ -596,7 +613,7 @@
 
   document.addEventListener('click', function(e){
     if(!e.target.closest('#addbtn')) return;
-    rowerr.classList.remove('on');
+    clearFail();
     var p = CFG.products[+document.getElementById('c-product').value];
     var w = null, h = null;
     if(!p.noSize){
@@ -609,15 +626,26 @@
     if(qty <= 0) qty = 1;
     if(!p.noSize && (isNaN(w) || w < p.width[0] || w > p.width[1] ||
        isNaN(h) || h < p.height[0] || h > p.height[1])){
-      rowerr.textContent = 'Check the size — width ' + p.width[0] + '–' + p.width[1] +
-        '″, ' + p.hLabel.toLowerCase() + ' ' + p.height[0] + '–' + p.height[1] + '″.';
-      rowerr.classList.add('on');
+      fail('Check the size — width ' + p.width[0] + '–' + p.width[1] +
+        '″, ' + p.hLabel.toLowerCase() + ' ' + p.height[0] + '–' + p.height[1] + '″.',
+        [document.getElementById('c-w'), document.getElementById('c-h')]);
       return;
     }
-    var cg = document.getElementById('c-cgroup');
-    if(cg && !/\d/.test(cg.value)){
-      rowerr.textContent = 'Choose a colour group first.';
-      rowerr.classList.add('on');
+    /* nothing unanswered goes into an order: every step on screen needs a pick */
+    var missing = [];
+    cells.querySelectorAll('.cell[data-key]').forEach(function(cell){
+      if(cell.style.display === 'none') return;
+      var sel = cell.querySelector('select');
+      if(sel && sel.value.indexOf('— Select —') === 0){
+        missing.push({ sel: sel, label: (cell.querySelector('label').textContent || '').trim() });
+      }
+    });
+    if(missing.length){
+      var names = missing.map(function(m){ return m.label.toLowerCase(); });
+      fail('Choose ' + (names.length === 1 ? names[0]
+            : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1]) +
+           ' before adding this line.',
+           missing.map(function(m){ return m.sel; }));
       return;
     }
     var parts = [], pairs = [], sel = {}, main = '';

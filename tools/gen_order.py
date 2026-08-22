@@ -10,6 +10,9 @@ import pathlib
 
 import gen_pages as gp
 
+# the empty first option: a step showing this has not been answered yet
+SELECT = "— Select —"
+
 OUT = pathlib.Path(gp.SITE) / "assets" / "order-config.json"
 
 
@@ -117,7 +120,7 @@ def fabric_product():
         "width": [0, 0], "height": [0, 0], "hLabel": "Height",
         "steps": [
             {"key": "cgroup", "label": "Colour group",
-             "options": ["— Select —", "Group 1", "Group 2", "Group 3", "Group 4"]},
+             "options": [SELECT, "Group 1", "Group 2", "Group 3", "Group 4"]},
             {"key": "collection", "label": "Fabric", "showIf": gate,
              "options": [{"id": c["id"], "label": c["label"], "group": c.get("group")}
                          for c in gp.FAB["collections"]],
@@ -151,6 +154,9 @@ def build():
             if fab == "cell" and g["key"] in ("cell", "opacity"):
                 continue  # replaced by the combined cell choice
             step = {"key": g["key"], "label": g["label"], "options": option_names(g["options"])}
+            if g.get("choose"):
+                # no silent default — the order form makes the dealer pick one
+                step["options"] = [SELECT] + step["options"]
             if "showIf" in g:
                 step["showIf"] = g["showIf"]
             steps.append(step)
@@ -173,7 +179,7 @@ def build():
                 if "showIf" not in st:
                     st["showIf"] = gate
             steps.insert(0, {"key": "cgroup", "label": "Colour group",
-                             "options": ["— Select —", "Group 1", "Group 2", "Group 3", "Group 4"]})
+                             "options": [SELECT, "Group 1", "Group 2", "Group 3", "Group 4"]})
         lim = GRID_LIMITS.get(pid, {})
         products.append({
             "id": pid,

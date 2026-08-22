@@ -501,7 +501,8 @@ PRODUCTS = {
             {"type": "fabrics"},
             {"key": "liner", "label": "Liner", "options": ["Unlined", "White liner", "Blackout liner"]},
             {"key": "trackopt", "label": "Add track", "options": ["Yes", "No"]},
-            {"key": "track", "label": "Track mount", "options": ["Wall", "Ceiling"], "showIf": {"key": "trackopt", "value": "Yes"}},
+            {"key": "track", "label": "Track mount", "options": ["Wall", "Ceiling"], "choose": True,
+             "showIf": {"key": "trackopt", "value": "Yes"}},
             # drapery is hand drawn only — there is no motor pricing yet, so the
             # motorized operation and the steps hanging off it stay out
         ],
