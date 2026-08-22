@@ -285,7 +285,21 @@
   function selectedOrders(){
     if(calSel.mode === 'day') return ordersOn(calSel.key);
     if(calSel.mode === 'week') return ordersInWeek(calSel.key);
+    if(calSel.mode === 'range'){
+      return allOrders.filter(function(o){
+        var k = ymd(o.at);
+        return k >= calSel.from && k <= calSel.to;      /* ISO dates compare as text */
+      });
+    }
     return allOrders;
+  }
+  function inSelection(key){
+    if(calSel.mode === 'day') return key === calSel.key;
+    if(calSel.mode === 'range') return key >= calSel.from && key <= calSel.to;
+    return false;
+  }
+  function prettyDay(key, opts){
+    return new Date(key + 'T12:00:00').toLocaleDateString('en-US', opts);
   }
 
   function renderCalendar(){
@@ -297,7 +311,7 @@
       '<button class="btn ghost calnav" data-step="-1" type="button" style="padding:7px 12px">&lsaquo;</button>' +
       '<span class="calmonth">' + first.toLocaleDateString('en-US', {month:'long', year:'numeric'}) + '</span>' +
       '<button class="btn ghost calnav" data-step="1" type="button" style="padding:7px 12px">&rsaquo;</button>' +
-      '<button class="btn ghost calnav" data-step="0" type="button" style="padding:7px 12px">This month</button>' +
+      '<button class="btn ghost calweek" type="button" style="padding:7px 12px">This week</button>' +
       '<button class="btn' + (calSel.mode === 'all' ? '' : ' ghost') + ' calall" type="button" style="padding:7px 12px">All orders</button>' +
       '</div>';
 
@@ -319,7 +333,7 @@
         grid += '<button class="cald' +
           (day.getMonth() === first.getMonth() ? '' : ' out') +
           (key === todayKey ? ' today' : '') +
-          (calSel.mode === 'day' && calSel.key === key ? ' on' : '') +
+          (inSelection(key) ? ' on' : '') +
           '" data-day="' + key + '" type="button">' +
           '<span class="n">' + day.getDate() + '</span>' +
           (n ? '<span class="c">' + n + '</span>' : '') + '</button>';
@@ -330,11 +344,15 @@
 
     var list = selectedOrders();
     var when = calSel.mode === 'day'
-      ? new Date(calSel.key + 'T12:00:00').toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'})
-      : calSel.mode === 'week'
-        ? 'week of ' + new Date(calSel.key + 'T12:00:00').toLocaleDateString('en-US', {month:'long', day:'numeric'})
-        : 'all time';
-    $('calnote').textContent = list.length + (list.length === 1 ? ' order · ' : ' orders · ') + when;
+      ? prettyDay(calSel.key, {weekday:'long', month:'long', day:'numeric', year:'numeric'})
+      : calSel.mode === 'range'
+        ? prettyDay(calSel.from, {month:'short', day:'numeric'}) + ' – ' +
+          prettyDay(calSel.to, {month:'short', day:'numeric', year:'numeric'})
+        : calSel.mode === 'week'
+          ? 'week of ' + prettyDay(calSel.key, {month:'long', day:'numeric'})
+          : 'all time';
+    $('calnote').textContent = list.length + (list.length === 1 ? ' order · ' : ' orders · ') + when +
+      (calSel.mode === 'day' ? ' · pick a second date for a range' : '');
     renderOrderRows(list);
   }
 
@@ -344,6 +362,13 @@
       var step = +nav.dataset.step;
       calMonth = step === 0 ? monthOf(new Date())
         : new Date(calMonth.getFullYear(), calMonth.getMonth() + step, 1);
+      renderCalendar();
+      return;
+    }
+    if(e.target.closest('.calweek')){
+      var mon = ymd(weekStart(new Date()));
+      calMonth = monthOf(new Date());
+      calSel = { mode: 'week', key: mon };
       renderCalendar();
       return;
     }
@@ -357,8 +382,15 @@
     }
     var day = e.target.closest('.cald');
     if(day){
-      calSel = (calSel.mode === 'day' && calSel.key === day.dataset.day)
-        ? { mode: 'all', key: '' } : { mode: 'day', key: day.dataset.day };
+      var k = day.dataset.day;
+      if(calSel.mode === 'day' && calSel.key === k){
+        calSel = { mode: 'all', key: '' };                  /* same date again clears it */
+      } else if(calSel.mode === 'day'){
+        /* a second date closes a range around the two */
+        calSel = { mode: 'range', from: k < calSel.key ? k : calSel.key, to: k < calSel.key ? calSel.key : k };
+      } else {
+        calSel = { mode: 'day', key: k };                   /* start over from one date */
+      }
       renderCalendar();
     }
   });
