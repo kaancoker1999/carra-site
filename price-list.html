@@ -50,17 +50,21 @@
   .samplebar.on{display:block}
 
   .ptabs{display:flex;flex-wrap:wrap;gap:10px;margin:32px 0 8px}
-  .ptab{font:inherit;font-size:14.5px;border:1px solid var(--line2);background:var(--white);color:var(--ink);
-    padding:10px 17px;border-radius:10px;cursor:pointer;transition:.15s}
-  .ptab:hover{border-color:var(--ink)}
-  .ptab.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .ptab{font:inherit;font-size:14.5px;border:1px solid var(--line2);background:var(--white);
+    color:var(--tab,var(--ink));padding:10px 17px;border-radius:10px;cursor:pointer;transition:.15s}
+  .ptab:hover{border-color:var(--tab,var(--ink))}
+  .ptab.on{background:var(--tab,var(--ink));border-color:var(--tab,var(--ink));color:#fff}
+  /* second-level tabs follow whichever product is open */
+  #gtabs .ptab{color:var(--accent,var(--ink))}
+  #gtabs .ptab:hover{border-color:var(--accent,var(--ink))}
+  #gtabs .ptab.on{background:var(--accent,var(--ink));border-color:var(--accent,var(--ink));color:#fff}
 
   .ttabs{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 22px}
   .ttab{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;
     border:1px solid var(--line2);background:var(--white);color:var(--muted);border-radius:999px;
     padding:7px 14px;cursor:pointer;transition:.15s}
   .ttab:hover{border-color:var(--ink);color:var(--ink)}
-  .ttab.on{border-color:var(--bronze);background:#FCF9F2;color:var(--bronze)}
+  .ttab.on{border-color:var(--accent,var(--bronze));background:var(--accent-tint,#FCF9F2);color:var(--accent,var(--bronze))}
 
   .gridwrap{overflow-x:auto;border:1px solid var(--line2);border-radius:12px}
   #gridbox{overflow:auto;max-height:72vh}
@@ -72,7 +76,7 @@
   th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:500;background:var(--paper)}
   tbody th{text-align:right;background:var(--paper)}
   tr:last-child td{border-bottom:0}
-  td:hover{background:#FCF9F2;color:var(--bronze);font-weight:500}
+  td:hover{background:var(--accent-tint,#FCF9F2);color:var(--accent,var(--bronze));font-weight:500}
 
   .legend{margin:14px 0 0;font-size:12.5px;color:var(--muted)}
 
@@ -192,11 +196,29 @@
     return lv1;
   }
 
+  /* one accent per product — muted tones that sit on the cream ground */
+  var ACCENT = {
+    cellular: ['#2F5D25', '#EFF6EC'],
+    roman:    ['#8A2620', '#FBEDEC'],
+    pleated:  ['#8A6220', '#FBF3E4'],
+    arches:   ['#2A5766', '#EAF1F4'],
+    drapery:  ['#4B3A6B', '#F1EEF6'],
+    fabric:   ['#5F5A2A', '#F4F2E4'],
+  };
+  function accentOf(id){ return ACCENT[id] || ['#14171A', '#FCF9F2']; }
+
   function render(){
     var prod = P.products[pi];
     ptabs.innerHTML = P.products.map(function(p,i){
-      return '<button type="button" class="ptab'+(i===pi?' on':'')+'" data-i="'+i+'">'+p.name+'</button>';
+      var a = accentOf(p.id);
+      return '<button type="button" class="ptab'+(i===pi?' on':'')+'" data-i="'+i+'"' +
+        ' style="--tab:'+a[0]+'">'+p.name+'</button>';
     }).join('');
+
+    /* the chosen product tints the sub-tabs, the legend and the cell hover */
+    var acc = accentOf(prod.id);
+    document.documentElement.style.setProperty('--accent', acc[0]);
+    document.documentElement.style.setProperty('--accent-tint', acc[1]);
 
     var lv1 = groupLevels(prod), subs;
     if(lv1){
