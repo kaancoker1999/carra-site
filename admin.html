@@ -59,6 +59,14 @@
     color:var(--muted);margin-top:5px}
   .pvtile.due .v{color:#8A2620}
   .pvsub{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;margin:0 0 10px}
+  .pvtabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+  .pvtab{font:inherit;font-size:13.5px;border:1px solid var(--line2);background:var(--white);color:var(--ink);
+    padding:8px 14px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+  .pvtab:hover{border-color:var(--ink)}
+  .pvtab.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .pvtab .n{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);
+    border:1px solid var(--line2);border-radius:999px;padding:1px 7px}
+  .pvtab.on .n{color:#fff;border-color:rgba(255,255,255,.45)}
   .btn[disabled]{opacity:.5;cursor:wait}
   .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
   .msg{font-size:13.5px;margin-top:10px}
@@ -666,12 +674,44 @@
     $('dcreate').hidden = false;
     $('dlist').hidden = false;
   }
-  function openPreview(code){
+  /* the same stages the customer sees on their own order page */
+  var PV_STAGES = [
+    { key: 'awaiting',   label: 'Awaiting',      empty: 'Nothing waiting for review.' },
+    { key: 'production', label: 'In production', empty: 'Nothing in production.' },
+    { key: 'shipped',    label: 'Shipped',       empty: 'Nothing on its way.' },
+    { key: 'past',       label: 'Past orders',   empty: 'No completed orders yet.' },
+    { key: 'cancelled',  label: 'Cancelled',     empty: 'No cancelled orders.' },
+  ];
+  var pvCode = '', pvStage = 'awaiting';
+
+  function pvBuckets(code){
+    var b = { awaiting: [], production: [], shipped: [], past: [], cancelled: [] };
+    allOrders.forEach(function(o){
+      if(o.code !== code) return;
+      var st = (o.status && o.status.status) || 'Pending review';
+      var rc = o.receipt || {};
+      if(st === 'Cancelled') b.cancelled.push(o);
+      else if(rc.dealerAt && rc.adminAt) b.past.push(o);      /* both sides confirmed delivery */
+      else if(st === 'Pending review') b.awaiting.push(o);
+      else if(st === 'Shipped') b.shipped.push(o);
+      else b.production.push(o);
+    });
+    return b;
+  }
+
+  function openPreview(code, keepScroll){
     var d = dealersCache.filter(function(x){ return x.code === code; })[0];
     if(!d) return;
+    if(pvCode !== code){ pvCode = code; pvStage = 'awaiting'; }
     var st = dealerStats(code);
     var pr = promoActive(d);
-    var mine = allOrders.filter(function(o){ return o.code === code; });
+    var buckets = pvBuckets(code);
+    if(!buckets[pvStage].length){
+      var firstFull = PV_STAGES.filter(function(x){ return buckets[x.key].length; })[0];
+      if(firstFull) pvStage = firstFull.key;
+    }
+    var mine = buckets[pvStage];
+    var stage = PV_STAGES.filter(function(x){ return x.key === pvStage; })[0];
 
     var tile = function(v, k, cls){
       return '<div class="pvtile' + (cls ? ' ' + cls : '') + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
@@ -712,18 +752,24 @@
         tile(st.pend, 'Awaiting review') +
       '</div>' +
       '<div class="pvsub">Their orders</div>' +
+      '<div class="pvtabs">' + PV_STAGES.map(function(x){
+        return '<button type="button" class="pvtab' + (x.key === pvStage ? ' on' : '') + '" data-stage="' + x.key + '">' +
+          x.label + '<span class="n">' + buckets[x.key].length + '</span></button>';
+      }).join('') + '</div>' +
       (mine.length
         ? '<div class="ordwrap"><table><thead><tr><th>Date</th><th>End customer</th><th>Ref</th><th>Lines</th>' +
           '<th>Total</th><th>Status</th><th>Payment</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
-        : '<p class="mono">No orders from this account yet.</p>');
+        : '<p class="mono">' + stage.empty + '</p>');
 
     $('dpreview').hidden = false;
     $('dcreate').hidden = true;
     $('dlist').hidden = true;
-    $('dpreview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if(!keepScroll) $('dpreview').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   $('dpreview').addEventListener('click', function(e){
-    if(e.target.closest('#pvback')) closePreview();
+    if(e.target.closest('#pvback')){ closePreview(); return; }
+    var t = e.target.closest('.pvtab');
+    if(t){ pvStage = t.dataset.stage; openPreview(pvCode, true); }
   });
 
   $('dealerrows').addEventListener('click', function(e){
