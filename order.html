@@ -788,6 +788,10 @@
   }
 
   function isPaid(o){ return !!(o.payment && o.payment.paid); }
+  /* an order is finished only when both sides say so: the dealer confirms the
+     goods arrived and LUMIA confirms the delivery */
+  function receipt(o){ return o.receipt || {}; }
+  function completed(o){ var r = receipt(o); return !!(r.dealerAt && r.adminAt); }
 
   function orderCard(o, oi){
     var st = o.status && o.status.status !== 'Pending review' ? o.status : null;
@@ -798,6 +802,8 @@
       ? '<span class="status ' + (st.status === 'Cancelled' ? 'canc' : 'acc') +
         (locked ? ' lock' : '') + '">' + st.status + '</span>'
       : '<span class="status pend">Pending review</span>';
+    if(completed(o)){ badge += ' <span class="status acc">Completed</span>'; }
+    else if(receipt(o).dealerAt){ badge += ' <span class="status pend">Receipt sent to LUMIA</span>'; }
     if(isPaid(o)){ badge += ' <span class="status paid">Paid</span>'; }
     else if(st && st.status !== 'Cancelled'){ badge += ' <span class="status unpaid">Unpaid</span>'; }
     var actions = '<button class="obtn" data-oinv="' + oi + '" type="button">Invoice</button>' +
@@ -809,6 +815,10 @@
     /* still awaiting review — the customer can withdraw it themselves */
     if(!st){
       actions += '<button class="obtn danger" data-ocancel="' + oi + '" type="button">Cancel order</button>';
+    }
+    /* shipped and not yet acknowledged — the customer confirms it arrived */
+    if(st && st.status === 'Shipped' && !receipt(o).dealerAt){
+      actions += '<button class="obtn" data-oreceived="' + oi + '" type="button">Mark as received</button>';
     }
     return '<details class="order"><summary>' +
       '<span class="ref">' + (o.customer || o.ref) + '</span>' + badge +
@@ -869,16 +879,20 @@
   function renderOrders(){
     renderSummary();
     if(!orders.length){ ordersBox.innerHTML = '<p class="noorders">No orders sent yet.</p>'; return; }
-    var accepted = [], pending = [], cancelled = [];
+    var awaiting = [], production = [], shipped = [], past = [];
     orders.forEach(function(o, oi){
       var st = (o.status && o.status.status) || 'Pending review';
-      var bucket = st === 'Pending review' ? pending : (st === 'Cancelled' ? cancelled : accepted);
-      bucket.push({ o: o, oi: oi });
+      var item = { o: o, oi: oi };
+      if(st === 'Cancelled' || completed(o)) past.push(item);          /* closed either way */
+      else if(st === 'Pending review') awaiting.push(item);
+      else if(st === 'Shipped') shipped.push(item);
+      else production.push(item);                                       /* confirmed, in production, on hold */
     });
     var html = '';
-    if(accepted.length) html += '<div class="osec">Accepted &amp; in production</div>' + customerGroups(accepted);
-    if(pending.length) html += '<div class="osec">Awaiting confirmation</div>' + customerGroups(pending);
-    if(cancelled.length) html += '<div class="osec">Cancelled</div>' + customerGroups(cancelled);
+    if(awaiting.length) html += '<div class="osec">Awaiting orders</div>' + customerGroups(awaiting);
+    if(production.length) html += '<div class="osec">Production</div>' + customerGroups(production);
+    if(shipped.length) html += '<div class="osec">Shipped</div>' + customerGroups(shipped);
+    if(past.length) html += '<div class="osec">Past orders</div>' + customerGroups(past);
     ordersBox.innerHTML = html;
   }
 
@@ -1001,6 +1015,32 @@
     });
   }
 
+  function confirmReceived(b, o){
+    if(b.dataset.armed !== '1'){
+      b.dataset.armed = '1'; b.classList.add('armed'); b.textContent = 'Click again to confirm';
+      cnote(b, 'This tells LUMIA that order ' + o.ref + ' arrived. Once LUMIA confirms it too, the order moves to Past orders.');
+      setTimeout(function(){
+        if(b.dataset.armed === '1'){
+          b.dataset.armed = ''; b.classList.remove('armed'); b.textContent = 'Mark as received'; cnote(b, '');
+        }
+      }, 8000);
+      return;
+    }
+    b.dataset.armed = ''; b.classList.remove('armed');
+    b.disabled = true; b.textContent = 'Sending…'; cnote(b, '');
+    fetch('/api/order/received', {
+      method: 'POST',
+      headers: apiHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ ref: o.ref })
+    }).then(function(r){
+      if(!r.ok) throw new Error('failed');
+      return loadOrders().then(renderOrders);
+    }).catch(function(){
+      b.disabled = false; b.textContent = 'Mark as received';
+      cnote(b, 'Could not send the confirmation — try again, or e-mail hello@lumiashades.com.');
+    });
+  }
+
   ordersBox.addEventListener('click', function(e){
     var b = e.target.closest('.obtn'); if(!b) return;
     var o;
@@ -1023,6 +1063,8 @@
       saveLines(); renderLines(); window.scrollTo({top:0, behavior:'smooth'});
     } else if(b.dataset.ocancel !== undefined){
       cancelOrder(b, orders[+b.dataset.ocancel]);
+    } else if(b.dataset.oreceived !== undefined){
+      confirmReceived(b, orders[+b.dataset.oreceived]);
     } else if(b.dataset.oreorder !== undefined){
       o = orders[+b.dataset.oreorder];
       lines = JSON.parse(JSON.stringify(o.lines));

@@ -5,6 +5,7 @@
 //   GET  /api/orders                                  -> dealer's own orders
 //   POST /api/order            {ref,kind,customer,notes,lines,total}
 //   POST /api/order/cancel     {ref}                  (only while "Pending review")
+//   POST /api/order/received   {ref}                  (dealer confirms the goods arrived)
 //
 // Admin endpoints (header authorization: Bearer <ADMIN_KEY>):
 //   GET  /api/admin/dealers                           -> list with order counts
@@ -13,6 +14,9 @@
 //   GET  /api/admin/orders                            -> all orders
 //   POST /api/admin/status     {ref, status, locked, note}
 //   POST /api/admin/paid       {ref, paid}            (mark order paid / unpaid)
+//   POST /api/admin/received   {ref, received}        (LUMIA confirms delivery; together with
+//                                                      the dealer's own confirmation this
+//                                                      closes the order — both sides agree)
 //   POST /api/admin/prices     {currency, products, notes}   (seed/update base prices)
 
 import { getStore } from "@netlify/blobs";
@@ -162,6 +166,21 @@ export default async (req) => {
     return json({ ok: true, status: o.status });
   }
 
+  // ── dealer: confirm the goods arrived ─────────────────────────
+  if (path === "/api/order/received" && req.method === "POST") {
+    const d = await dealerFromReq(req);
+    if (!d) return bad("unauthorized", 401);
+    const s = store();
+    const key = `order:${String(body.ref || "").slice(0, 40)}`;
+    const o = await s.get(key, { type: "json" });
+    if (!o || o.code !== d.code) return bad("no such order", 404);
+    if (((o.status && o.status.status) || "Pending review") !== "Shipped")
+      return bad("only a shipped order can be confirmed as received", 409);
+    o.receipt = { ...(o.receipt || {}), dealerAt: new Date().toISOString() };
+    await s.setJSON(key, o);
+    return json({ ok: true, receipt: o.receipt });
+  }
+
   // ── admin ──────────────────────────────────────────────────────
   if (path.startsWith("/api/admin/")) {
     if (!isAdmin(req)) return bad("unauthorized", 401);
@@ -280,6 +299,15 @@ export default async (req) => {
       o.payment = { paid: !!body.paid, updatedAt: new Date().toISOString() };
       await s.setJSON(key, o);
       return json({ ok: true, payment: o.payment });
+    }
+
+    if (path === "/api/admin/received" && req.method === "POST") {
+      const key = `order:${String(body.ref || "")}`;
+      const o = await s.get(key, { type: "json" });
+      if (!o) return bad("no such order", 404);
+      o.receipt = { ...(o.receipt || {}), adminAt: body.received ? new Date().toISOString() : null };
+      await s.setJSON(key, o);
+      return json({ ok: true, receipt: o.receipt });
     }
 
     if (path === "/api/admin/prices" && req.method === "POST") {

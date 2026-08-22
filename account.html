@@ -202,6 +202,8 @@
       var st = o.status || { status: 'Pending review' };
       var pendSt = st.status === 'Pending review';
       var cancelled = st.status === 'Cancelled';
+      var rc = o.receipt || {};
+      var done = !!(rc.dealerAt && rc.adminAt);   /* both sides confirmed delivery */
       var stCls = pendSt ? 'pend' : (cancelled ? 'canc' : 'acc');
       var t = orderTotals(o.lines);
       var when = new Date(o.at);
@@ -215,6 +217,7 @@
         '<td>' + (o.lines || []).length + '</td>' +
         '<td class="num">$' + t.total.toFixed(2) + (t.unknown ? ' <span class="mono" style="font-size:9px">+' + t.unknown + ' TBD</span>' : '') + '</td>' +
         '<td><span class="status ' + stCls + (st.locked ? ' lock' : '') + '">' + esc(st.status) + '</span>' +
+          (done ? ' <span class="status acc">Completed</span>' : '') +
           (st.note ? '<div class="lnote">LUMIA: ' + esc(st.note) + '</div>' : '') + '</td>' +
         '<td>' + payBadge + '</td>' +
         '<td>' + (pendSt

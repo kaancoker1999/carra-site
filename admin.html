@@ -252,6 +252,8 @@
       var rows = (list || []).map(function(o, i){
         var st = o.status || { status: 'Pending review' };
         var paid = !!(o.payment && o.payment.paid);
+        var rc = o.receipt || {};
+        var done = !!(rc.dealerAt && rc.adminAt);   /* both sides agreed it arrived */
         var when = new Date(o.at);
         var lines = (o.lines || []).map(function(l, li){
           return (li+1) + '. ' + (l.label ? '[' + esc(l.label) + '] ' : '') + esc(l.product) + ' — ' + esc(l.spec) +
@@ -270,11 +272,14 @@
           '<td><details><summary>' + (o.lines || []).length + ' lines</summary><div style="font-size:12.5px;padding:6px 0">' + lines + '</div></details></td>' +
           '<td><span class="status ' + (st.status === 'Pending review' ? 'st-pend' : (st.status === 'Cancelled' ? 'st-canc' : 'st-acc')) + '">' + (st.locked ? '🔒 ' : '') + esc(st.status) + '</span>' +
             (st.by === 'dealer' ? '<br><span class="mono" style="font-size:8.5px">withdrawn by the customer</span>' : '') +
+            (rc.dealerAt ? '<br><span class="mono" style="font-size:8.5px;color:#2F5D25">customer confirmed receipt</span>' : '') +
+            (done ? '<br><span class="status st-acc" style="margin-top:4px;display:inline-block">Completed</span>' : '') +
             '<br><span class="status ' + (paid ? 'pay-paid' : 'pay-un') + '" style="margin-top:4px;display:inline-block">' + (paid ? 'Paid' : 'Unpaid') + '</span>' +
             (st.note ? '<br><span style="font-size:11.5px;color:#2F5D25">' + esc(st.note) + '</span>' : '') + '</td>' +
           '<td><div class="row" style="gap:6px">' + sel +
             '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:10px"><input type="checkbox" class="st-lock" data-ref="' + esc(o.ref) + '"' + (st.locked ? ' checked' : '') + '>lock</label>' +
-            '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:10px"><input type="checkbox" class="st-paid" data-ref="' + esc(o.ref) + '"' + (paid ? ' checked' : '') + '>paid</label></div>' +
+            '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:10px"><input type="checkbox" class="st-paid" data-ref="' + esc(o.ref) + '"' + (paid ? ' checked' : '') + '>paid</label>' +
+            '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:10px" title="LUMIA confirms the delivery — with the customer\'s own confirmation this closes the order"><input type="checkbox" class="st-recv" data-ref="' + esc(o.ref) + '"' + (rc.adminAt ? ' checked' : '') + '>delivered</label></div>' +
             '<input type="text" class="st-note" data-ref="' + esc(o.ref) + '" placeholder="note to customer" value="' + esc(st.note || '') + '" style="width:100%;margin-top:6px;font-size:12.5px">' +
             '<div class="row" style="gap:6px;margin-top:6px"><button class="btn st-save" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px">Save</button>' +
             '<button class="btn ghost o-inv" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px">Invoice</button></div></td>' +
@@ -300,6 +305,10 @@
       api('/api/admin/paid', 'POST', {
         ref: ref,
         paid: find('.st-paid') ? find('.st-paid').checked : false
+      }),
+      api('/api/admin/received', 'POST', {
+        ref: ref,
+        received: find('.st-recv') ? find('.st-recv').checked : false
       })
     ]).then(function(){ loadOrders().then(loadDealers); }).catch(function(){ b.disabled = false; alert('Save failed'); });
   });
