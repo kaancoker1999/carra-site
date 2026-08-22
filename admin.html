@@ -135,6 +135,7 @@
         </div>
         <div class="cal" id="cal"></div>
         <div class="calnote mono" id="calnote" style="margin:0 0 12px"></div>
+        <div class="pvtabs" id="stagetabs"></div>
         <table>
           <thead><tr><th>Date</th><th>Customer acct</th><th>End customer</th><th>Ref</th><th>Total</th><th>Lines</th><th>Status</th><th style="min-width:290px">Set status</th></tr></thead>
           <tbody id="orderrows"><tr><td colspan="8">Loading…</td></tr></tbody>
@@ -252,10 +253,12 @@
   var STATUSES = ['Pending review', 'Confirmed', 'In production', 'Shipped', 'On hold', 'Cancelled'];
   var allOrders = [];
   var calMonth = null;                          /* first of the month on screen */
+  var stageSel = 'all';                         /* all | awaiting | production | shipped | past | cancelled */
   var calSel = { mode: 'all', key: '' };        /* all | day | week */
+  /* LUMIA's week runs Saturday to Friday */
   function weekStart(dt){
     var d = new Date(dt); d.setHours(0,0,0,0);
-    d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); /* back to Monday */
+    d.setDate(d.getDate() - ((d.getDay() + 1) % 7)); /* back to Saturday */
     return d;
   }
   /* local calendar date, not the UTC slice — an evening order must not jump a day */
@@ -316,9 +319,9 @@
       '</div>';
 
     var grid = '<div class="calgrid"><div class="dow"></div>' +
-      ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(function(d){ return '<div class="dow">' + d + '</div>'; }).join('');
+      ['Sat','Sun','Mon','Tue','Wed','Thu','Fri'].map(function(d){ return '<div class="dow">' + d + '</div>'; }).join('');
 
-    var cur = weekStart(first);                       /* Monday on or before the 1st */
+    var cur = weekStart(first);                       /* Saturday on or before the 1st */
     var last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
     while(cur <= last){
       var mondayKey = ymd(cur);
@@ -343,6 +346,17 @@
     $('cal').innerHTML = head + grid + '</div>';
 
     var list = selectedOrders();
+    var byStage = { awaiting: [], production: [], shipped: [], past: [], cancelled: [] };
+    list.forEach(function(o){ byStage[stageOf(o)].push(o); });
+    if(stageSel !== 'all' && !byStage[stageSel].length) stageSel = 'all';
+    $('stagetabs').innerHTML =
+      '<button type="button" class="pvtab' + (stageSel === 'all' ? ' on' : '') + '" data-stage="all">All' +
+        '<span class="n">' + list.length + '</span></button>' +
+      PV_STAGES.map(function(x){
+        return '<button type="button" class="pvtab' + (x.key === stageSel ? ' on' : '') + '" data-stage="' + x.key + '">' +
+          x.label + '<span class="n">' + byStage[x.key].length + '</span></button>';
+      }).join('');
+    if(stageSel !== 'all') list = byStage[stageSel];
     var when = calSel.mode === 'day'
       ? prettyDay(calSel.key, {weekday:'long', month:'long', day:'numeric', year:'numeric'})
       : calSel.mode === 'range'
@@ -351,10 +365,17 @@
         : calSel.mode === 'week'
           ? 'week of ' + prettyDay(calSel.key, {month:'long', day:'numeric'})
           : 'all time';
-    $('calnote').textContent = list.length + (list.length === 1 ? ' order · ' : ' orders · ') + when +
+    $('calnote').textContent = selectedOrders().length +
+      (selectedOrders().length === 1 ? ' order · ' : ' orders · ') + when +
       (calSel.mode === 'day' ? ' · pick a second date for a range' : '');
     renderOrderRows(list);
   }
+
+  $('stagetabs').addEventListener('click', function(e){
+    var t = e.target.closest('.pvtab'); if(!t) return;
+    stageSel = t.dataset.stage;
+    renderCalendar();
+  });
 
   $('cal').addEventListener('click', function(e){
     var nav = e.target.closest('.calnav');
@@ -706,6 +727,17 @@
     $('dcreate').hidden = false;
     $('dlist').hidden = false;
   }
+  /* which stage an order sits in — the same reading the customer gets */
+  function stageOf(o){
+    var st = (o.status && o.status.status) || 'Pending review';
+    var rc = o.receipt || {};
+    if(st === 'Cancelled') return 'cancelled';
+    if(rc.dealerAt && rc.adminAt) return 'past';     /* both sides confirmed delivery */
+    if(st === 'Pending review') return 'awaiting';
+    if(st === 'Shipped') return 'shipped';
+    return 'production';
+  }
+
   /* the same stages the customer sees on their own order page */
   var PV_STAGES = [
     { key: 'awaiting',   label: 'Awaiting',      empty: 'Nothing waiting for review.' },
@@ -718,16 +750,7 @@
 
   function pvBuckets(code){
     var b = { awaiting: [], production: [], shipped: [], past: [], cancelled: [] };
-    allOrders.forEach(function(o){
-      if(o.code !== code) return;
-      var st = (o.status && o.status.status) || 'Pending review';
-      var rc = o.receipt || {};
-      if(st === 'Cancelled') b.cancelled.push(o);
-      else if(rc.dealerAt && rc.adminAt) b.past.push(o);      /* both sides confirmed delivery */
-      else if(st === 'Pending review') b.awaiting.push(o);
-      else if(st === 'Shipped') b.shipped.push(o);
-      else b.production.push(o);
-    });
+    allOrders.forEach(function(o){ if(o.code === code) b[stageOf(o)].push(o); });
     return b;
   }
 
