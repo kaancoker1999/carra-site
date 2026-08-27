@@ -824,7 +824,7 @@
     }
     /* shipped and not yet acknowledged — the customer confirms it arrived */
     if(st && st.status === 'Shipped' && !receipt(o).dealerAt){
-      actions += '<button class="obtn" data-oreceived="' + oi + '" type="button">Mark as received</button>';
+      actions += '<button class="obtn" data-oreceived="' + oi + '" type="button">Order completed</button>';
     }
     return '<details class="order"><summary>' +
       '<span class="ref">' + (o.customer || o.ref) + '</span>' + badge +
@@ -1051,7 +1051,7 @@
       cnote(b, 'This tells LUMIA that order ' + o.ref + ' arrived. Once LUMIA confirms it too, the order moves to Past orders.');
       setTimeout(function(){
         if(b.dataset.armed === '1'){
-          b.dataset.armed = ''; b.classList.remove('armed'); b.textContent = 'Mark as received'; cnote(b, '');
+          b.dataset.armed = ''; b.classList.remove('armed'); b.textContent = 'Order completed'; cnote(b, '');
         }
       }, 8000);
       return;
@@ -1066,7 +1066,7 @@
       if(!r.ok) throw new Error('failed');
       return loadOrders().then(renderOrders);
     }).catch(function(){
-      b.disabled = false; b.textContent = 'Mark as received';
+      b.disabled = false; b.textContent = 'Order completed';
       cnote(b, 'Could not send the confirmation — try again, or e-mail hello@lumiashades.com.');
     });
   }

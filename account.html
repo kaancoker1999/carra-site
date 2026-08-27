@@ -119,7 +119,13 @@
   .rbtn:hover{border-color:#8A2620}
   .rbtn.armed{background:#8A2620;color:#fff;border-color:#8A2620}
   .rbtn[disabled]{opacity:.5;cursor:default}
+  .gbtn{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.13em;text-transform:uppercase;
+    background:var(--white);border:1px solid #B9D4B0;border-radius:8px;padding:7px 12px;cursor:pointer;color:#2F5D25}
+  .gbtn:hover{border-color:#2F5D25}
+  .gbtn.armed{background:#2F5D25;color:#fff;border-color:#2F5D25}
+  .gbtn[disabled]{opacity:.5;cursor:default}
   .confnote{font-size:11.5px;color:#8A2620;margin-top:6px;max-width:230px;white-space:normal;line-height:1.45}
+  .gbtn+.confnote,.confnote.ok{color:#2F5D25}
 
   footer{border-top:1px solid var(--line);background:var(--paper)}
   footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
@@ -351,7 +357,9 @@
         '<td>' + payBadge + '</td>' +
         '<td>' + (pendSt
           ? '<button class="rbtn" type="button" data-cancel="' + esc(o.ref) + '">Cancel order</button>'
-          : '') + '</td>' +
+          : (st.status === 'Shipped' && !rc.dealerAt
+            ? '<button class="gbtn" type="button" data-received="' + esc(o.ref) + '">Order completed</button>'
+            : '')) + '</td>' +
         '</tr>' +
         '<tr class="det" hidden><td colspan="8">' + detailHTML(o) + '</td></tr>';
     }).join('');
@@ -359,10 +367,39 @@
 
   /* a click anywhere on an order row (except its buttons/links) opens the details */
   document.getElementById('orows').addEventListener('click', function(e){
-    if(e.target.closest('.rbtn') || e.target.closest('a')) return;
+    if(e.target.closest('.rbtn') || e.target.closest('.gbtn') || e.target.closest('a')) return;
     var tr = e.target.closest('tr.ord'); if(!tr) return;
     var det = tr.nextElementSibling;
     if(det && det.classList.contains('det')) det.hidden = !det.hidden;
+  });
+
+  /* "Order completed" — the customer confirms the goods arrived; the order
+     then joins the payment schedule. Same inline two-step confirmation. */
+  document.getElementById('orows').addEventListener('click', function(e){
+    var b = e.target.closest('.gbtn'); if(!b) return;
+    if(b.dataset.armed !== '1'){
+      b.dataset.armed = '1'; b.classList.add('armed'); b.textContent = 'Click again to confirm';
+      note(b, 'This confirms the order arrived — it will be billed on the 1st of next month.');
+      setTimeout(function(){
+        if(b.dataset.armed === '1'){
+          b.dataset.armed = ''; b.classList.remove('armed'); b.textContent = 'Order completed'; note(b, '');
+        }
+      }, 8000);
+      return;
+    }
+    b.dataset.armed = ''; b.classList.remove('armed');
+    b.disabled = true; b.textContent = 'Sending…'; note(b, '');
+    fetch('/api/order/received', {
+      method: 'POST',
+      headers: { 'x-dealer-code': SESSION.code || '', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: b.dataset.received })
+    }).then(function(r){
+      if(!r.ok) throw new Error('failed');
+      return load();
+    }).catch(function(){
+      b.disabled = false; b.textContent = 'Order completed';
+      note(b, 'Could not send the confirmation — try again, or e-mail hello@lumiashades.com.');
+    });
   });
 
   /* cancelling is only offered while an order is still awaiting review;
