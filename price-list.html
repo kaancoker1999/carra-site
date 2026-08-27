@@ -282,44 +282,121 @@
 
   render();
 
-  /* ── Excel export: this dealer's full price list, one sheet per product ── */
+  /* ── Excel export: this dealer's full price list, one sheet per product.
+        Uses xlsx-js-style (SheetJS + cell styling) so the file mirrors the
+        LUMIA look: ink header rows, cream row labels, $ formats, banding. ── */
   var xlsbtn = document.getElementById('xlsbtn'), xlsmsg = document.getElementById('xlsmsg');
   function loadSheetJS(){
     return new Promise(function(res, rej){
-      if(window.XLSX) return res();
+      if(window.XLSX && window.XLSX.__styled) return res();
       var sc = document.createElement('script');
-      sc.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
-      sc.onload = res; sc.onerror = function(){ rej(new Error('download library failed to load')); };
+      sc.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js';
+      sc.onload = function(){ window.XLSX.__styled = true; res(); };
+      sc.onerror = function(){ rej(new Error('download library failed to load')); };
       document.head.appendChild(sc);
     });
   }
   function buildWorkbook(){
+    var INK = '14171A', BRONZE = '8A6220', CREAM = 'FAF5EA', LINE = 'D3D2CC',
+        BAND = 'F7F3E8', GRAY = '767A7E', WHITE = 'FFFFFF';
+    function bd(){ var e = { style: 'thin', color: { rgb: LINE } };
+      return { top: e, bottom: e, left: e, right: e }; }
+    var ST = {
+      brand: { font: { bold: true, sz: 18, color: { rgb: BRONZE } } },
+      prod:  { font: { bold: true, sz: 13, color: { rgb: INK } } },
+      sub:   { font: { sz: 9, color: { rgb: GRAY } } },
+      gtitle:{ font: { bold: true, sz: 11, color: { rgb: BRONZE } } },
+      head:  { font: { bold: true, sz: 9, color: { rgb: WHITE } },
+               fill: { patternType: 'solid', fgColor: { rgb: INK } },
+               alignment: { horizontal: 'center' }, border: bd() },
+      corner:{ font: { bold: true, sz: 8, color: { rgb: WHITE } },
+               fill: { patternType: 'solid', fgColor: { rgb: INK } },
+               alignment: { horizontal: 'left' }, border: bd() },
+      label: { font: { bold: true, sz: 9, color: { rgb: INK } },
+               fill: { patternType: 'solid', fgColor: { rgb: CREAM } }, border: bd() },
+      note:  { font: { italic: true, sz: 9, color: { rgb: GRAY } } }
+    };
+    function priceStyle(bandRow){
+      var st = { font: { sz: 9, color: { rgb: INK } }, border: bd(), numFmt: '$#,##0.00',
+                 alignment: { horizontal: 'right' } };
+      if(bandRow) st.fill = { patternType: 'solid', fgColor: { rgb: BAND } };
+      return st;
+    }
+    function cellRef(r, c){ return XLSX.utils.encode_cell({ r: r, c: c }); }
+
     var wb = XLSX.utils.book_new();
-    var today = new Date().toISOString().slice(0,10);
+    var today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    var sub = 'Prices for ' + (s.name || 'trade partner') + ' — ' + today +
+      (s.promo ? ' — includes your ' + s.promo.pct + '% discount' : '') +
+      '. The trade area always has current pricing.';
+
     P.products.forEach(function(prod){
-      var rows = [];
-      rows.push(['LUMIA — ' + prod.name]);
-      rows.push(['Prices as of ' + today + ' — the trade area always has current pricing.']);
-      rows.push([]);
+      var rows = [], meta = [];
+      function push(vals, kind){ rows.push(vals); meta.push(kind || ''); }
+      push(['LUMIA'], 'brand');
+      push([prod.name], 'prod');
+      push([sub], 'sub');
+      push([]);
       prod.grids.forEach(function(g){
-        rows.push([g.name]);
-        rows.push([g.corner || ''].concat(g.cols));
-        g.rows.forEach(function(r){
-          rows.push([r.label].concat(r.vals));
-        });
-        rows.push([]);
+        push([g.name], 'gtitle');
+        push([g.corner || ''].concat(g.cols), 'head');
+        g.rows.forEach(function(r, i){ push([r.label].concat(r.vals), i % 2 ? 'data-band' : 'data'); });
+        push([]);
       });
       if(prod.extras && prod.extras.length){
-        rows.push(['Options & surcharges']);
-        prod.extras.forEach(function(e){
-          rows.push([e.label, ('usd' in e) ? e.usd : ('pct' in e) ? (e.pct ? '+' + e.pct + '%' : 'included') : (e.note || '')]);
+        push(['Options & surcharges'], 'gtitle');
+        prod.extras.forEach(function(e, i){
+          push([e.label, ('usd' in e) ? e.usd : ('pct' in e) ? (e.pct ? '+' + e.pct + '%' : 'included') : (e.note || '')],
+               i % 2 ? 'opt-band' : 'opt');
         });
-        rows.push([]);
+        push([]);
       }
-      ((prod.notes || []).concat(P.notes || [])).forEach(function(n){ rows.push(['Note: ' + n]); });
+      ((prod.notes || []).concat(P.notes || [])).forEach(function(n){ push(['Note: ' + n], 'note'); });
+
       var ws = XLSX.utils.aoa_to_sheet(rows);
-      ws['!cols'] = [{wch:26}].concat((prod.grids[0] ? prod.grids[0].cols : []).map(function(){ return {wch:9}; }));
-      XLSX.utils.book_append_sheet(wb, ws, prod.name.slice(0,31));
+      var maxW = 1;
+      prod.grids.forEach(function(g){ maxW = Math.max(maxW, g.cols.length + 1); });
+      ws['!cols'] = [{ wch: 30 }].concat(Array.apply(null, { length: maxW - 1 }).map(function(){ return { wch: 10 }; }));
+      ws['!rows'] = meta.map(function(k){
+        return k === 'brand' ? { hpt: 26 } : k === 'prod' ? { hpt: 20 } : k === 'head' ? { hpt: 16 } : {};
+      });
+      ws['!merges'] = [];
+      meta.forEach(function(kind, r){
+        if(kind === 'brand' || kind === 'prod' || kind === 'sub' || kind === 'gtitle' || kind === 'note'){
+          if(maxW > 1) ws['!merges'].push({ s: { r: r, c: 0 }, e: { r: r, c: maxW - 1 } });
+          var c0 = ws[cellRef(r, 0)];
+          if(c0) c0.s = ST[kind === 'brand' ? 'brand' : kind === 'prod' ? 'prod' : kind === 'sub' ? 'sub' : kind === 'note' ? 'note' : 'gtitle'];
+          return;
+        }
+        if(kind === 'head'){
+          rows[r].forEach(function(_, c){
+            var cell = ws[cellRef(r, c)]; if(!cell && c > 0){ ws[cellRef(r, c)] = cell = { t: 's', v: '' }; }
+            if(cell) cell.s = c === 0 ? ST.corner : ST.head;
+          });
+          return;
+        }
+        if(kind === 'data' || kind === 'data-band'){
+          var band = kind === 'data-band';
+          rows[r].forEach(function(_, c){
+            var cell = ws[cellRef(r, c)]; if(!cell) return;
+            cell.s = c === 0 ? ST.label : priceStyle(band);
+          });
+          return;
+        }
+        if(kind === 'opt' || kind === 'opt-band'){
+          var b2 = kind === 'opt-band';
+          function optStyle(right){
+            var st = { font: { sz: 9, color: { rgb: INK } }, border: bd() };
+            if(right) st.alignment = { horizontal: 'right' };
+            if(b2) st.fill = { patternType: 'solid', fgColor: { rgb: BAND } };
+            return st;
+          }
+          var l = ws[cellRef(r, 0)], v = ws[cellRef(r, 1)];
+          if(l) l.s = optStyle(false);
+          if(v) v.s = (v.t === 'n') ? priceStyle(b2) : optStyle(true);
+        }
+      });
+      XLSX.utils.book_append_sheet(wb, ws, prod.name.slice(0, 31));
     });
     return wb;
   }
