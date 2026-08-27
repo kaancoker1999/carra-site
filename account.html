@@ -260,7 +260,7 @@
       var g = groups[k];
       var days = (Date.now() - g.due.getTime()) / 86400000;
       var cls = days < 14 ? 'pay-g' : days < 28 ? 'pay-y' : days < 42 ? 'pay-o' : 'pay-r';
-      var tag = days < 0 ? 'collected on ' + fdate(g.due)
+      var tag = days < 0 ? 'will be collected on ' + fdate(g.due)
                          : 'awaiting payment since ' + fdate(g.due);
       var rows = g.orders.map(function(o){
         return '<div class="payrow"><span class="ref">' + esc(o.ref) + '</span>' +
