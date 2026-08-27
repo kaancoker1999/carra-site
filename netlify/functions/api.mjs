@@ -76,13 +76,26 @@ function newCode() {
   return `LUMIA-${pick(4)}-${pick(4)}`;
 }
 
+// cancelled orders are kept for 30 days (measured from when they were
+// cancelled), then purged for good the next time any order list is read
+const CANCELLED_TTL_MS = 30 * 86400000;
+
 async function listOrders(filterCode) {
   const s = store();
   const { blobs } = await s.list({ prefix: "order:" });
   const orders = [];
   for (const b of blobs) {
     const o = await s.get(b.key, { type: "json" });
-    if (o && (!filterCode || o.code === filterCode)) orders.push(o);
+    if (!o) continue;
+    const st = o.status || {};
+    if (st.status === "Cancelled") {
+      const t = Date.parse(st.updatedAt || o.updatedAt || o.at);
+      if (Number.isFinite(t) && Date.now() - t > CANCELLED_TTL_MS) {
+        await s.delete(b.key);
+        continue;
+      }
+    }
+    if (!filterCode || o.code === filterCode) orders.push(o);
   }
   orders.sort((a, b) => (a.at < b.at ? 1 : -1));
   return orders;
