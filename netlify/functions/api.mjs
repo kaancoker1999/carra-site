@@ -113,6 +113,9 @@ export default async (req) => {
     if (!d || d.active === false) return bad("invalid code", 401);
     const base = await store().get("prices", { type: "json" });
     if (!base) return bad("prices not loaded yet", 503);
+    // remember when this dealer last signed in — shown in the admin panel
+    d.lastLogin = new Date().toISOString();
+    await store().setJSON("dealers", dealers);
     const promo = d.promo && d.promo.until && new Date(d.promo.until) > new Date() ? d.promo : null;
     const eff = (d.mult || 1) * (promo ? 1 - promo.pct / 100 : 1);
     return json({ name: d.name, prices: scaled(base, eff), promo });

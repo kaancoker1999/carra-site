@@ -172,8 +172,8 @@
           <button class="btn ghost" id="refreshdealers" type="button">Refresh</button>
         </div>
         <table>
-          <thead><tr><th>Name</th><th>Access code</th><th>Price level</th><th>Orders</th><th>Created</th><th>Status</th><th></th></tr></thead>
-          <tbody id="dealerrows"><tr><td colspan="7">Loading…</td></tr></tbody>
+          <thead><tr><th>Name</th><th>Access code</th><th>Price level</th><th>Orders</th><th>Created</th><th>Last login</th><th>Status</th><th></th></tr></thead>
+          <tbody id="dealerrows"><tr><td colspan="8">Loading…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -537,6 +537,11 @@
           '<td>' + priceCell + '</td>' +
           '<td>' + x.orders + (st.due > 0 ? '<br><span style="color:#8A2620;font-size:11.5px">$' + st.due.toFixed(2) + ' due</span>' : '') + '</td>' +
           '<td>' + (x.created ? new Date(x.created).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : '—') + '</td>' +
+          '<td>' + (x.lastLogin
+            ? new Date(x.lastLogin).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) +
+              '<br><span style="color:var(--muted);font-size:11.5px">' +
+              new Date(x.lastLogin).toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'}) + '</span>'
+            : '—') + '</td>' +
           '<td>' + (x.active === false ? 'Suspended' : 'Active') + '</td>' +
           '<td><div class="row" style="gap:6px">' +
             '<button class="btn ghost d-preview" data-code="' + esc(x.code) + '" type="button" style="padding:6px 12px">Preview</button>' +
@@ -546,7 +551,7 @@
         var sumChip = function(v, k, red){
           return '<span><b' + (red ? ' style="color:#8A2620"' : '') + '>' + v + '</b><span class="k">' + k + '</span></span>';
         };
-        var editor = '<tr class="editrow" data-for="' + xi + '" hidden><td colspan="7" style="background:var(--paper)">' +
+        var editor = '<tr class="editrow" data-for="' + xi + '" hidden><td colspan="8" style="background:var(--paper)">' +
           '<div class="dsum">' +
             sumChip(st.n, 'orders placed') +
             sumChip('$' + st.purch.toFixed(2), 'total purchased') +
@@ -574,8 +579,8 @@
           '</div></td></tr>';
         return main + editor;
       }).join('');
-      $('dealerrows').innerHTML = rows || '<tr><td colspan="7">No customer accounts yet.</td></tr>';
-    }).catch(function(e){ $('dealerrows').innerHTML = '<tr><td colspan="7">' + esc(e.message) + '</td></tr>'; });
+      $('dealerrows').innerHTML = rows || '<tr><td colspan="8">No customer accounts yet.</td></tr>';
+    }).catch(function(e){ $('dealerrows').innerHTML = '<tr><td colspan="8">' + esc(e.message) + '</td></tr>'; });
   }
   $('refreshdealers').addEventListener('click', function(){ loadOrders().then(loadDealers); });
 
