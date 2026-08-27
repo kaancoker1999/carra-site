@@ -52,6 +52,38 @@
   .sum .k{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:6px}
   .sum.due .v{color:#8A2620}
 
+  /* ── monthly payment schedule ──
+     billed on the 1st, delivered orders only; the box BACKGROUND ages
+     green → yellow → orange → red until LUMIA marks the month paid */
+  .paycard{border:1px solid var(--line2);border-radius:14px;background:var(--white);padding:22px 24px;margin:0 0 34px}
+  .paysub{font-size:13.5px;color:var(--muted);margin:6px 0 0;max-width:80ch}
+  .paygrp{border:1px solid;border-radius:12px;padding:16px 18px;margin:16px 0 0}
+  .paygrp .top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  .pdue{font-family:'Archivo',sans-serif;font-weight:600;font-size:17px}
+  .ptag{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+  .pamt{font-family:'Archivo',sans-serif;font-weight:600;font-size:24px}
+  .prows{margin-top:10px}
+  .payrow{display:flex;gap:14px;align-items:baseline;border-top:1px solid rgba(20,23,26,.08);padding:8px 0;font-size:13.5px;flex-wrap:wrap}
+  .payrow .ref{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.06em;color:var(--bronze)}
+  .payrow .pmeta{color:var(--muted);font-size:12.5px}
+  .payrow .lamt{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:13px}
+  .payempty{color:var(--muted);font-size:14px;margin-top:12px}
+  .pay-g{background:#E8F3E3;border-color:#B9D4B0}
+  .pay-y{background:#FAF3D4;border-color:#E3D690}
+  .pay-o{background:#FAE8D2;border-color:#E7BE8C}
+  .pay-r{background:#F9E2E0;border-color:#E0B7B3}
+
+  /* ── clickable order rows: expand to the line items ── */
+  tbody tr.ord{cursor:pointer}
+  tbody tr.ord:hover td{background:#FCFAF3}
+  tr.det>td{background:var(--paper);white-space:normal;padding:16px 18px}
+  .dwrap{border:1px solid var(--line2);border-radius:10px;overflow:hidden;background:var(--white)}
+  .dwrap table{min-width:0}
+  .dwrap th,.dwrap td{white-space:normal;padding:9px 12px;font-size:13px}
+  .dwrap .spec{color:var(--muted);font-size:12px;margin-top:2px}
+  .dmeta{font-size:12.5px;color:var(--muted);margin:10px 2px 0}
+  .dnotes{font-size:13px;margin:8px 2px 0;white-space:pre-wrap}
+
   .actions{display:flex;gap:12px;margin:0 0 34px;flex-wrap:wrap}
   .btn{display:inline-block;padding:15px 30px;border:0;cursor:pointer;text-decoration:none;border-radius:10px;
     font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;transition:.25s}
@@ -128,13 +160,21 @@
   <div class="wrap">
     <div class="sumgrid" id="summary"></div>
 
+    <div class="paycard" id="paycard" hidden>
+      <div class="xtitle">Payments</div>
+      <p class="paysub">Billed monthly on the <b>1st</b>, for <b>delivered orders only</b> &mdash; an order joins
+        the list once you confirm you received it, or once we confirm the delivery. Anything not yet delivered
+        stays in your balance but is not billed.</p>
+      <div id="paygroups"></div>
+    </div>
+
     <div class="actions">
       <a class="btn solid" href="order.html">Place an order</a>
       <a class="btn ghost" href="price-list.html">Price list</a>
     </div>
 
     <div class="xtitle">Your orders</div>
-    <p class="xsub">Newest first. Open any order on the <a href="order.html">Place order</a> page to edit, reorder or print an invoice.</p>
+    <p class="xsub">Newest first &mdash; click an order to see its line items. Editing, reordering and invoices live on the <a href="order.html">Place order</a> page.</p>
     <div class="tablewrap">
       <table id="otable" hidden>
         <thead><tr><th>Date</th><th>Customer / project</th><th>Ref</th><th>Lines</th><th>Total</th><th>Status</th><th>Payment</th><th></th></tr></thead>
@@ -173,6 +213,91 @@
   function tile(v, k, cls){
     return '<div class="sum' + (cls ? ' ' + cls : '') + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
   }
+  function fdate(x){
+    return new Date(x).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'});
+  }
+  function fmtIn(v){
+    var n = Math.round(v * 8) / 8, w = Math.floor(n), e = Math.round((n - w) * 8);
+    if(e === 8){ w += 1; e = 0; }
+    return w + ({0:'',1:' 1/8',2:' 1/4',3:' 3/8',4:' 1/2',5:' 5/8',6:' 3/4',7:' 7/8'})[e] + '″';
+  }
+
+  /* delivered = either side confirmed the goods arrived; billed on the
+     1st of the following month (delivered in Aug -> due Sep 1) */
+  function deliveredAt(o){
+    var rc = o.receipt || {};
+    var a = rc.adminAt ? Date.parse(rc.adminAt) : null;
+    var b = rc.dealerAt ? Date.parse(rc.dealerAt) : null;
+    if(a == null) return b;
+    if(b == null) return a;
+    return Math.min(a, b);
+  }
+  function dueOf(ts){
+    var d = new Date(ts);
+    return new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  }
+  function payable(o){
+    var st = (o.status && o.status.status) || 'Pending review';
+    return st !== 'Cancelled' && !isPaid(o) && deliveredAt(o) != null;
+  }
+
+  function renderPayments(orders){
+    var card = document.getElementById('paycard'), box = document.getElementById('paygroups');
+    card.hidden = !orders.length;
+    var groups = {};
+    orders.filter(payable).forEach(function(o){
+      var due = dueOf(deliveredAt(o));
+      var k = due.getFullYear() + '-' + ('0' + (due.getMonth() + 1)).slice(-2);
+      (groups[k] = groups[k] || { due: due, orders: [], total: 0 }).orders.push(o);
+      groups[k].total += orderTotals(o.lines).total;
+    });
+    var keys = Object.keys(groups).sort();
+    if(!keys.length){
+      box.innerHTML = '<div class="payempty">Nothing to pay right now &mdash; delivered orders appear here and are billed on the 1st of the next month.</div>';
+      return;
+    }
+    box.innerHTML = keys.map(function(k){
+      var g = groups[k];
+      var days = (Date.now() - g.due.getTime()) / 86400000;
+      var cls = days < 14 ? 'pay-g' : days < 28 ? 'pay-y' : days < 42 ? 'pay-o' : 'pay-r';
+      var tag = days < 0 ? 'collected on ' + fdate(g.due)
+                         : 'awaiting payment since ' + fdate(g.due);
+      var rows = g.orders.map(function(o){
+        return '<div class="payrow"><span class="ref">' + esc(o.ref) + '</span>' +
+          '<span class="pmeta">delivered ' + fdate(deliveredAt(o)) + '</span>' +
+          '<span class="lamt">$' + orderTotals(o.lines).total.toFixed(2) + '</span></div>';
+      }).join('');
+      return '<div class="paygrp ' + cls + '"><div class="top">' +
+        '<div><div class="pdue">Due ' + fdate(g.due) + '</div><div class="ptag">' + tag + '</div></div>' +
+        '<div class="pamt">$' + g.total.toFixed(2) + '</div></div>' +
+        '<div class="prows">' + rows + '</div></div>';
+    }).join('');
+  }
+
+  function detailHTML(o){
+    var rows = (o.lines || []).map(function(l, i){
+      var size = l.w == null ? '—' : fmtIn(l.w) + ' × ' + fmtIn(l.h);
+      var amt = l.price == null ? 'TBD' : '$' + (Math.round(l.price * l.qty * 100) / 100).toFixed(2);
+      return '<tr><td>' + (i + 1) + '</td>' +
+        '<td>' + (l.label ? '<b>' + esc(l.label) + '</b><br>' : '') + esc(l.product) +
+          '<div class="spec">' + esc(l.spec || l.desc || '') + '</div></td>' +
+        '<td>' + size + '</td><td>' + l.qty + '</td><td class="num">' + amt + '</td></tr>';
+    }).join('');
+    var rc = o.receipt || {}, d = deliveredAt(o), bits = ['Sent ' + fdate(o.at)];
+    if(d){
+      var who = rc.dealerAt && rc.adminAt ? 'confirmed by both sides'
+              : rc.dealerAt ? 'confirmed by you' : 'confirmed by LUMIA';
+      bits.push('delivered ' + fdate(d) + ' (' + who + ')');
+      if(!isPaid(o)) bits.push('payment due ' + fdate(dueOf(d)));
+    }
+    if(isPaid(o)) bits.push('paid' + (o.payment.updatedAt ? ' ' + fdate(o.payment.updatedAt) : ''));
+    return '<div class="dwrap"><table>' +
+      '<thead><tr><th>#</th><th>Item</th><th>Size</th><th>Qty</th><th>Price</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table></div>' +
+      (o.notes ? '<div class="dnotes"><b>Notes:</b> ' + esc(o.notes) + '</div>' : '') +
+      '<div class="dmeta">' + bits.join(' · ') +
+      ' · <a href="order.html">edit, reorder or print the invoice →</a></div>';
+  }
 
   function render(orders){
     var purch = 0, due = 0, shipped = 0, prod = 0, pend = 0;
@@ -187,13 +312,17 @@
         if(!isPaid(o)) due += t;
       }
     });
+    var pay = 0;
+    orders.filter(payable).forEach(function(o){ pay += orderTotals(o.lines).total; });
     document.getElementById('summary').innerHTML =
       tile(orders.length, 'Orders placed') +
       tile('$' + purch.toFixed(2), 'Total purchased') +
       tile('$' + due.toFixed(2), 'Balance due', due > 0 ? 'due' : '') +
+      tile('$' + pay.toFixed(2), 'Payable · delivered only', pay > 0 ? 'due' : '') +
       tile(shipped, 'In transit') +
       tile(prod, 'In production') +
       tile(pend, 'Awaiting review');
+    renderPayments(orders);
 
     var table = document.getElementById('otable'), body = document.getElementById('orows');
     if(!orders.length){ document.getElementById('noorders').hidden = false; return; }
@@ -210,7 +339,7 @@
       var payBadge = isPaid(o)
         ? '<span class="status paid">Paid</span>'
         : (!pendSt && st.status !== 'Cancelled' ? '<span class="status unpaid">Unpaid</span>' : '&mdash;');
-      return '<tr>' +
+      return '<tr class="ord" title="Click for line items">' +
         '<td>' + when.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) + '</td>' +
         '<td>' + esc(o.customer || '—') + '</td>' +
         '<td><span class="ref">' + esc(o.ref) + '</span></td>' +
@@ -223,9 +352,18 @@
         '<td>' + (pendSt
           ? '<button class="rbtn" type="button" data-cancel="' + esc(o.ref) + '">Cancel order</button>'
           : '') + '</td>' +
-        '</tr>';
+        '</tr>' +
+        '<tr class="det" hidden><td colspan="8">' + detailHTML(o) + '</td></tr>';
     }).join('');
   }
+
+  /* a click anywhere on an order row (except its buttons/links) opens the details */
+  document.getElementById('orows').addEventListener('click', function(e){
+    if(e.target.closest('.rbtn') || e.target.closest('a')) return;
+    var tr = e.target.closest('tr.ord'); if(!tr) return;
+    var det = tr.nextElementSibling;
+    if(det && det.classList.contains('det')) det.hidden = !det.hidden;
+  });
 
   /* cancelling is only offered while an order is still awaiting review;
      two-step inline confirmation — the site never uses confirm()/alert() */
