@@ -30,6 +30,7 @@ Excels (`tools/*.local.*` are gitignored for exactly that reason).
   netlify.app URL). Dealer prices = base × per-dealer multiplier × active promo discount.
   A dealer can also carry per-product overrides (`mults: {roman: 1.3, ...}`) that beat the
   account-level `mult` for that product; set via POST /api/admin/dealer-mult with `product`.
+  Arches never carry their own level — they always follow cellular's (same honeycomb material).
 
 ## Conventions
 - American spelling ("motorized", "aluminum"). Cream background tokens --paper/--paper2.

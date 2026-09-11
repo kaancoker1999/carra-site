@@ -121,7 +121,12 @@ export default async (req) => {
     await store().setJSON("dealers", dealers);
     const promo = d.promo && d.promo.until && new Date(d.promo.until) > new Date() ? d.promo : null;
     const promoF = promo ? 1 - promo.pct / 100 : 1;
-    const multOf = (pid) => ((d.mults && d.mults[pid]) || d.mult || 1) * promoF;
+    // arches are made from the same honeycomb material as cellular shades,
+    // so they always follow cellular's price level — never their own
+    const multOf = (pid) => {
+      const key = pid === "arches" ? "cellular" : pid;
+      return ((d.mults && d.mults[key]) || d.mult || 1) * promoF;
+    };
     return json({ name: d.name, prices: scaled(base, multOf), promo });
   }
 
@@ -258,6 +263,9 @@ export default async (req) => {
       if (product) {
         // per-product level; mult <= 0 clears the override back to the account level
         if (!/^[a-z]+$/.test(product)) return bad("bad product");
+        // arches carry no level of their own (clearing a leftover is still allowed)
+        if (product === "arches" && isFinite(mult) && mult > 0)
+          return bad("arches follow cellular pricing");
         if (isFinite(mult) && mult > 10) return bad("bad multiplier");
         d.mults = d.mults || {};
         if (!isFinite(mult) || mult <= 0) delete d.mults[product];

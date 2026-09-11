@@ -499,9 +499,11 @@
     }).catch(function(){ b.disabled = false; $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Create failed.'; });
   });
   var LEVELS = [['1','Base price (×1.00)'],['1.15','+15% (×1.15)'],['1.3','+30% (×1.30)'],['1.5','+50% (×1.50)']];
-  /* ids match the price-data products the backend scales */
-  var PRODLIST = [['cellular','Cellular'],['roman','Roman'],['pleated','Pleated'],
-                  ['arches','Arches'],['drapery','Drapery'],['fabric','Fabric']];
+  /* ids match the price-data products the backend scales.
+     Arches have no entry: made from the same honeycomb as cellular,
+     they always follow cellular's level. */
+  var PRODLIST = [['cellular','Cellular & Arches'],['roman','Roman'],['pleated','Pleated'],
+                  ['drapery','Drapery'],['fabric','Fabric']];
   var dealersCache = [];
   function promoActive(x){
     return x.promo && x.promo.until && new Date(x.promo.until) > new Date() ? x.promo : null;
