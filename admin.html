@@ -566,7 +566,7 @@
             sumChip(st.pend, 'awaiting review') +
           '</div>' +
           '<div class="row" style="gap:22px;align-items:flex-end;padding:6px 0">' +
-          '<div><label>Price level</label><select class="e-mult" data-code="' + esc(x.code) + '">' +
+          '<div><label>Account price level &mdash; all products</label><select class="e-mult" data-code="' + esc(x.code) + '">' +
             LEVELS.map(function(l){ return '<option value="' + l[0] + '"' + (String(x.mult) === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') +
           '</select> <button class="btn e-mult-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Change price</button></div>' +
           '<div><label>Timed discount</label>' +
@@ -582,18 +582,21 @@
             '<button class="btn ghost e-contact-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Save contact</button></div>' +
           '<div style="margin-left:auto"><button class="btn e-delete" data-code="' + esc(x.code) + '" type="button" style="background:#8A2620;padding:8px 14px">Delete account</button></div>' +
           '</div>' +
-          '<div style="border-top:1px solid var(--line);margin-top:10px;padding:12px 0 4px">' +
-            '<label>Per-product price level &mdash; overrides the account level for that product only</label>' +
+          '<div style="border:1px dashed var(--line2);border-radius:10px;background:var(--white);margin-top:14px;padding:14px 16px">' +
+            '<label style="color:var(--bronze)">Per-product exceptions &mdash; optional</label>' +
+            '<div style="font-size:12px;color:var(--muted);margin:-2px 0 12px;max-width:70ch">' +
+              'Normally every product follows the account price level above. Set an exception only when one ' +
+              'product should be priced differently &mdash; it beats the account level for that product alone.</div>' +
             '<div class="row" style="gap:14px;align-items:flex-end">' +
             PRODLIST.map(function(pp){
               var cur = (x.mults && x.mults[pp[0]] != null) ? String(x.mults[pp[0]]) : '';
               return '<div><label style="margin-bottom:4px">' + pp[1] + '</label>' +
                 '<select class="e-pmult" data-owner="' + esc(x.code) + '" data-product="' + pp[0] + '">' +
-                '<option value=""' + (cur === '' ? ' selected' : '') + '>Account level</option>' +
+                '<option value=""' + (cur === '' ? ' selected' : '') + '>Account level (×' + x.mult + ')</option>' +
                 LEVELS.map(function(l){ return '<option value="' + l[0] + '"' + (cur === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') +
                 '</select></div>';
             }).join('') +
-            '<div><button class="btn e-pmult-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Save product prices</button></div>' +
+            '<div><button class="btn e-pmult-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Save exceptions</button></div>' +
             '</div>' +
           '</div>' +
           '</td></tr>';
