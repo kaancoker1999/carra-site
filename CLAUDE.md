@@ -28,6 +28,8 @@ Excels (`tools/*.local.*` are gitignored for exactly that reason).
   (roman/cellular/pleated/arches from pricing.local.xlsx, drapery from drapery-pricing.local.xlsx).
 - Upload to the backend: `ADMIN_KEY=... python3 tools/seed_prices.py` (uses SITE_URL env or the
   netlify.app URL). Dealer prices = base × per-dealer multiplier × active promo discount.
+  A dealer can also carry per-product overrides (`mults: {roman: 1.3, ...}`) that beat the
+  account-level `mult` for that product; set via POST /api/admin/dealer-mult with `product`.
 
 ## Conventions
 - American spelling ("motorized", "aluminum"). Cream background tokens --paper/--paper2.

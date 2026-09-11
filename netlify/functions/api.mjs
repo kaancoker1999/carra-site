@@ -51,10 +51,13 @@ async function dealerFromReq(req) {
   return d && d.active !== false ? { code, ...d } : null;
 }
 
-/* prices are stored once at group-1 level; each dealer gets them scaled */
-function scaled(base, mult) {
+/* prices are stored once at group-1 level; each dealer gets them scaled.
+   multOf(productId) -> effective multiplier, so a dealer can carry
+   per-product overrides (d.mults) on top of their account level (d.mult) */
+function scaled(base, multOf) {
   const out = JSON.parse(JSON.stringify(base));
   for (const p of out.products || []) {
+    const mult = multOf(p.id);
     for (const g of p.grids || []) {
       for (const r of g.rows || []) {
         r.vals = r.vals.map((v) => Math.round(v * mult * 100) / 100);
@@ -117,8 +120,9 @@ export default async (req) => {
     d.lastLogin = new Date().toISOString();
     await store().setJSON("dealers", dealers);
     const promo = d.promo && d.promo.until && new Date(d.promo.until) > new Date() ? d.promo : null;
-    const eff = (d.mult || 1) * (promo ? 1 - promo.pct / 100 : 1);
-    return json({ name: d.name, prices: scaled(base, eff), promo });
+    const promoF = promo ? 1 - promo.pct / 100 : 1;
+    const multOf = (pid) => ((d.mults && d.mults[pid]) || d.mult || 1) * promoF;
+    return json({ name: d.name, prices: scaled(base, multOf), promo });
   }
 
   // ── dealer: own orders ────────────────────────────────────────
@@ -250,10 +254,21 @@ export default async (req) => {
       const d = dealers[String(body.code || "")];
       if (!d) return bad("no such dealer", 404);
       const mult = Number(body.mult);
-      if (!isFinite(mult) || mult <= 0 || mult > 10) return bad("bad multiplier");
-      d.mult = mult;
+      const product = String(body.product || "").trim();
+      if (product) {
+        // per-product level; mult <= 0 clears the override back to the account level
+        if (!/^[a-z]+$/.test(product)) return bad("bad product");
+        if (isFinite(mult) && mult > 10) return bad("bad multiplier");
+        d.mults = d.mults || {};
+        if (!isFinite(mult) || mult <= 0) delete d.mults[product];
+        else d.mults[product] = mult;
+        if (!Object.keys(d.mults).length) delete d.mults;
+      } else {
+        if (!isFinite(mult) || mult <= 0 || mult > 10) return bad("bad multiplier");
+        d.mult = mult;
+      }
       await s.setJSON("dealers", dealers);
-      return json({ ok: true, mult });
+      return json({ ok: true, mult: d.mult, mults: d.mults || null });
     }
 
     if (path === "/api/admin/dealer-promo" && req.method === "POST") {

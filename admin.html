@@ -499,6 +499,9 @@
     }).catch(function(){ b.disabled = false; $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Create failed.'; });
   });
   var LEVELS = [['1','Base price (×1.00)'],['1.15','+15% (×1.15)'],['1.3','+30% (×1.30)'],['1.5','+50% (×1.50)']];
+  /* ids match the price-data products the backend scales */
+  var PRODLIST = [['cellular','Cellular'],['roman','Roman'],['pleated','Pleated'],
+                  ['arches','Arches'],['drapery','Drapery'],['fabric','Fabric']];
   var dealersCache = [];
   function promoActive(x){
     return x.promo && x.promo.until && new Date(x.promo.until) > new Date() ? x.promo : null;
@@ -527,7 +530,9 @@
       var rows = dealersCache.map(function(x, xi){
         var pr = promoActive(x);
         var st = dealerStats(x.code);
+        var ovr = x.mults ? Object.keys(x.mults).map(function(k){ return k + ' ×' + x.mults[k]; }).join(' · ') : '';
         var priceCell = '×' + x.mult +
+          (ovr ? '<br><span style="color:var(--muted);font-size:11.5px">' + esc(ovr) + '</span>' : '') +
           (pr ? '<br><span style="color:#2F5D25;font-size:11.5px">−' + pr.pct + '% until ' +
             new Date(pr.until).toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '</span>' : '');
         var main = '<tr class="' + (x.active === false ? 'inactive' : '') + '">' +
@@ -576,7 +581,22 @@
             '<input class="e-address" data-code="' + esc(x.code) + '" type="text" placeholder="address" value="' + esc(x.address || '') + '" style="width:240px"> ' +
             '<button class="btn ghost e-contact-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Save contact</button></div>' +
           '<div style="margin-left:auto"><button class="btn e-delete" data-code="' + esc(x.code) + '" type="button" style="background:#8A2620;padding:8px 14px">Delete account</button></div>' +
-          '</div></td></tr>';
+          '</div>' +
+          '<div style="border-top:1px solid var(--line);margin-top:10px;padding:12px 0 4px">' +
+            '<label>Per-product price level &mdash; overrides the account level for that product only</label>' +
+            '<div class="row" style="gap:14px;align-items:flex-end">' +
+            PRODLIST.map(function(pp){
+              var cur = (x.mults && x.mults[pp[0]] != null) ? String(x.mults[pp[0]]) : '';
+              return '<div><label style="margin-bottom:4px">' + pp[1] + '</label>' +
+                '<select class="e-pmult" data-owner="' + esc(x.code) + '" data-product="' + pp[0] + '">' +
+                '<option value=""' + (cur === '' ? ' selected' : '') + '>Account level</option>' +
+                LEVELS.map(function(l){ return '<option value="' + l[0] + '"' + (cur === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') +
+                '</select></div>';
+            }).join('') +
+            '<div><button class="btn e-pmult-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Save product prices</button></div>' +
+            '</div>' +
+          '</div>' +
+          '</td></tr>';
         return main + editor;
       }).join('');
       $('dealerrows').innerHTML = rows || '<tr><td colspan="8">No customer accounts yet.</td></tr>';
@@ -799,6 +819,7 @@
       '<div class="pvhead"><div>' +
         '<div class="pvname">' + esc(d.name) + '</div>' +
         '<div class="pvmeta"><code>' + esc(d.code) + '</code> · price level ×' + d.mult +
+          (d.mults ? ' · ' + esc(Object.keys(d.mults).map(function(k){ return k + ' ×' + d.mults[k]; }).join(' · ')) : '') +
           (pr ? ' · −' + pr.pct + '% until ' + new Date(pr.until).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '') +
           ' · ' + (d.active === false ? 'suspended' : 'active') +
           (contact ? '<br>' + contact : '') + '</div>' +
@@ -860,6 +881,27 @@
         mb.disabled = true;
         api('/api/admin/dealer-mult', 'POST', { code: mb.dataset.code, mult: parseFloat(sel.value) })
           .then(loadDealers).catch(function(){ mb.disabled = false; note(mb, 'Failed — try again.'); });
+      });
+      return;
+    }
+    if((b = e.target.closest('.e-pmult-save'))){
+      var gb = b;
+      var d0 = dealersCache.filter(function(x){ return x.code === gb.dataset.code; })[0] || {};
+      var changes = [];
+      document.querySelectorAll('.e-pmult[data-owner="' + gb.dataset.code + '"]').forEach(function(sel){
+        var want = sel.value ? parseFloat(sel.value) : 0;
+        var cur = (d0.mults && d0.mults[sel.dataset.product]) || 0;
+        if(want !== cur) changes.push({ code: gb.dataset.code, product: sel.dataset.product, mult: want });
+      });
+      if(!changes.length){ note(gb, 'Nothing changed — pick a level first.'); return; }
+      var what = changes.map(function(c){ return c.product + (c.mult ? ' ×' + c.mult : ' back to account level'); }).join(', ');
+      armConfirm(gb, 'Change ' + dealerName(gb.dataset.code) + "'s product prices: " + what +
+        '. They will see the new prices on their next login.', function(){
+        gb.disabled = true;
+        changes.reduce(function(p, c){
+          return p.then(function(){ return api('/api/admin/dealer-mult', 'POST', c); });
+        }, Promise.resolve())
+          .then(loadDealers).catch(function(){ gb.disabled = false; note(gb, 'Failed — try again.'); });
       });
       return;
     }
