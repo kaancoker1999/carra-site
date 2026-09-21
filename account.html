@@ -110,7 +110,7 @@
   .xtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:20px;margin:0 0 6px;color:#F6F3EC}
   .xsub{font-size:13.5px;color:rgba(255,255,255,.6);margin:0 0 18px}
   .xsub a{color:var(--bronze-lt)}
-  .tablewrap{border:1px solid var(--line2);border-radius:12px;overflow-x:auto}
+  .tablewrap{border:1px solid var(--line2);border-radius:12px;overflow-x:auto;background:var(--white)}
   table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
   th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
   th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:500;background:var(--paper);text-transform:uppercase}
@@ -175,14 +175,6 @@
 <section>
   <div class="wrap">
     <div class="sumgrid" id="summary"></div>
-
-    <div class="paycard" id="paycard" hidden>
-      <div class="xtitle">Payments</div>
-      <p class="paysub">Billed monthly on the <b>1st</b>, for <b>delivered orders only</b> &mdash; an order joins
-        the list once you confirm you received it, or once we confirm the delivery. Anything not yet delivered
-        stays in your balance but is not billed.</p>
-      <div id="paygroups"></div>
-    </div>
 
     <div class="actions">
       <a class="btn solid" href="order.html">Place an order</a>
@@ -257,39 +249,6 @@
     return st !== 'Cancelled' && !isPaid(o) && deliveredAt(o) != null;
   }
 
-  function renderPayments(orders){
-    var card = document.getElementById('paycard'), box = document.getElementById('paygroups');
-    card.hidden = !orders.length;
-    var groups = {};
-    orders.filter(payable).forEach(function(o){
-      var due = dueOf(deliveredAt(o));
-      var k = due.getFullYear() + '-' + ('0' + (due.getMonth() + 1)).slice(-2);
-      (groups[k] = groups[k] || { due: due, orders: [], total: 0 }).orders.push(o);
-      groups[k].total += orderTotals(o.lines).total;
-    });
-    var keys = Object.keys(groups).sort();
-    if(!keys.length){
-      box.innerHTML = '<div class="payempty">Nothing to pay right now &mdash; delivered orders appear here and are billed on the 1st of the next month.</div>';
-      return;
-    }
-    box.innerHTML = keys.map(function(k){
-      var g = groups[k];
-      var days = (Date.now() - g.due.getTime()) / 86400000;
-      var cls = days < 14 ? 'pay-g' : days < 28 ? 'pay-y' : days < 42 ? 'pay-o' : 'pay-r';
-      var tag = days < 0 ? 'will be collected on ' + fdate(g.due)
-                         : 'awaiting payment since ' + fdate(g.due);
-      var rows = g.orders.map(function(o){
-        return '<div class="payrow"><span class="ref">' + esc(o.ref) + '</span>' +
-          '<span class="pmeta">delivered ' + fdate(deliveredAt(o)) + '</span>' +
-          '<span class="lamt">$' + orderTotals(o.lines).total.toFixed(2) + '</span></div>';
-      }).join('');
-      return '<div class="paygrp ' + cls + '"><div class="top">' +
-        '<div><div class="pdue">Due ' + fdate(g.due) + '</div><div class="ptag">' + tag + '</div></div>' +
-        '<div class="pamt">$' + g.total.toFixed(2) + '</div></div>' +
-        '<div class="prows">' + rows + '</div></div>';
-    }).join('');
-  }
-
   function detailHTML(o){
     var rows = (o.lines || []).map(function(l, i){
       var size = l.w == null ? '—' : fmtIn(l.w) + ' × ' + fmtIn(l.h);
@@ -338,7 +297,6 @@
       tile(shipped, 'In transit') +
       tile(prod, 'In production') +
       tile(pend, 'Awaiting review');
-    renderPayments(orders);
 
     var table = document.getElementById('otable'), body = document.getElementById('orows');
     if(!orders.length){ document.getElementById('noorders').hidden = false; return; }
