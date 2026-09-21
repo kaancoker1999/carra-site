@@ -104,6 +104,42 @@ async function listOrders(filterCode) {
   return orders;
 }
 
+// e-mail the owner when an order arrives, via Resend. Fully env-driven so no
+// address lives in this public repo, and a no-op until the key is set:
+//   RESEND_API_KEY      – from resend.com
+//   ORDER_NOTIFY_EMAIL  – where notifications go (comma-separated for several)
+//   ORDER_FROM          – optional sender; defaults to Resend's shared address
+async function notifyOrder(order) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const to = process.env.ORDER_NOTIFY_EMAIL;
+  if (!apiKey || !to) return; // not configured yet
+  const from = process.env.ORDER_FROM || "LUMIA orders <onboarding@resend.dev>";
+  const lines = (order.lines || [])
+    .map((l, i) =>
+      `${i + 1}. ${l.label ? "[" + l.label + "] " : ""}${l.product} — ${l.spec || ""}` +
+      (l.w == null ? " — by the yard" : ` — ${l.w}″ × ${l.h}″`) +
+      ` — qty ${l.qty}` + (l.price != null ? ` — $${(l.price * l.qty).toFixed(2)}` : " — TBD"))
+    .join("\n");
+  const subject = `${order.kind === "update" ? "Order update" : "New order"} ${order.ref} — ${order.dealer}`;
+  const text =
+    `${order.kind === "update" ? "Updated order" : "New order"} from ${order.dealer}\n` +
+    `Ref: ${order.ref}\n` +
+    (order.customer ? `Customer / project: ${order.customer}\n` : "") +
+    `Total: ${order.total || ""}\n` +
+    (order.notes ? `Notes: ${order.notes}\n` : "") +
+    `\nLines:\n${lines}\n\n` +
+    `Open the admin panel: https://lumiashades.com/admin.html`;
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+      body: JSON.stringify({ from, to: to.split(",").map((s) => s.trim()).filter(Boolean), subject, text }),
+    });
+  } catch (e) {
+    /* best effort — a mail hiccup must never block the order */
+  }
+}
+
 export default async (req) => {
   const path = new URL(req.url).pathname.replace(/\/$/, "");
   const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
@@ -166,7 +202,8 @@ export default async (req) => {
       test: !!d.test,   // orders from a test account: no e-mail, flagged in admin
     };
     await s.setJSON(key, order);
-    // the client suppresses the e-mail notification when test is true
+    // e-mail the owner when a real (non-test) order lands — best effort
+    if (!order.test) await notifyOrder(order);
     return json({ ok: true, ref, kind: order.kind, test: !!d.test });
   }
 
