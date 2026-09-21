@@ -178,7 +178,8 @@
       <div class="card" id="dcreate">
         <h2 style="font-size:18px;margin-bottom:14px">New customer account</h2>
         <div class="row">
-          <div><label>Company / name</label><input id="d-name" type="text" style="min-width:260px" placeholder="Brooklyn Shades and Blind"></div>
+          <div><label>Account name</label><input id="d-name" type="text" style="min-width:220px" placeholder="Brooklyn Shades"></div>
+          <div><label>Company name (optional)</label><input id="d-company" type="text" style="min-width:220px" placeholder="Brooklyn Shades &amp; Blinds LLC"></div>
           <div><label>E-mail (optional)</label><input id="d-email" type="email" style="min-width:200px" placeholder="orders@dealer.com"></div>
           <div><label>Phone (optional)</label><input id="d-phone" type="tel" style="min-width:150px" placeholder="718-276-0301"></div>
           <div><label>Address (optional)</label><input id="d-address" type="text" style="min-width:260px" placeholder="1554 61st Street, Brooklyn NY 11219"></div>
@@ -610,9 +611,9 @@
     if(!name){ $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Name required.'; return; }
     if(!isFinite(mult) || mult <= 0){ $('dmsg').className = 'msg err'; $('dmsg').textContent = 'Multiplier required.'; return; }
     var b = this; b.disabled = true;
-    api('/api/admin/dealers', 'POST', { name: name, mult: mult, email: $('d-email').value.trim(),
-      phone: $('d-phone').value.trim(), address: $('d-address').value.trim() }).then(function(d){
-      b.disabled = false; $('d-name').value = ''; $('d-email').value = ''; $('d-phone').value = ''; $('d-address').value = '';
+    api('/api/admin/dealers', 'POST', { name: name, mult: mult, company: $('d-company').value.trim(),
+      email: $('d-email').value.trim(), phone: $('d-phone').value.trim(), address: $('d-address').value.trim() }).then(function(d){
+      b.disabled = false; $('d-name').value = ''; $('d-company').value = ''; $('d-email').value = ''; $('d-phone').value = ''; $('d-address').value = '';
       $('dmsg').className = 'msg';
       $('newcode').className = 'newcode on';
       $('newcode').innerHTML = '<b>' + esc(d.name) + '</b> created — access code: <code>' + esc(d.code) + '</code><br>' +
@@ -753,7 +754,8 @@
       '<p style="margin:2px 0">No.: <span contenteditable>' + esc(o.ref.replace(/\D/g,'').slice(-6)) + '</span></p>' +
       '<p style="margin:2px 0">Date: ' + dts + '</p></div></div>' +
       '<div class="blocks"><div><h2>BILLED TO:</h2>' +
-      '<p><span contenteditable>' + esc(o.dealer || 'Customer') + '</span></p>' +
+      '<p><span contenteditable>' + esc(dl.company || o.dealer || 'Customer') + '</span></p>' +
+      (dl.company ? '<p><span contenteditable>' + esc(o.dealer || '') + '</span></p>' : '') +
       '<p><span contenteditable>' + esc(dl.address || 'Street address, City, State ZIP') + '</span></p>' +
       '<p><span contenteditable>' + esc(dl.phone ? 'Phone: ' + dl.phone : '&nbsp;') + '</span></p></div>' +
       '<div><h2>PO DETAILS:</h2>' +
@@ -896,6 +898,7 @@
         (pr ? ' <button class="btn ghost e-promo-clear" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Remove discount</button>' : '') +
       '</div>' +
       '<div><label>Contact</label>' +
+        '<input class="e-company" data-code="' + esc(x.code) + '" type="text" placeholder="company name" value="' + esc(x.company || '') + '" style="width:200px"> ' +
         '<input class="e-email" data-code="' + esc(x.code) + '" type="email" placeholder="e-mail" value="' + esc(x.email || '') + '" style="width:180px"> ' +
         '<input class="e-phone" data-code="' + esc(x.code) + '" type="tel" placeholder="phone" value="' + esc(x.phone || '') + '" style="width:130px"> ' +
         '<input class="e-address" data-code="' + esc(x.code) + '" type="text" placeholder="address" value="' + esc(x.address || '') + '" style="width:240px"> ' +
@@ -945,7 +948,7 @@
     var tile = function(v, k, cls){
       return '<div class="pvtile' + (cls ? ' ' + cls : '') + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
     };
-    var contact = [d.email, d.phone, d.address].filter(Boolean).map(esc).join(' · ');
+    var contact = [d.company, d.email, d.phone, d.address].filter(Boolean).map(esc).join(' · ');
     var rows = mine.map(function(o){
       var ost = o.status || { status: 'Pending review' };
       var rc = o.receipt || {};
@@ -1082,7 +1085,7 @@
       var eb = b;
       var pick = function(cls){ return document.querySelector(cls + '[data-code="' + eb.dataset.code + '"]').value.trim(); };
       eb.disabled = true;
-      api('/api/admin/dealer-contact', 'POST', { code: eb.dataset.code,
+      api('/api/admin/dealer-contact', 'POST', { code: eb.dataset.code, company: pick('.e-company'),
         email: pick('.e-email'), phone: pick('.e-phone'), address: pick('.e-address') })
         .then(function(){ eb.disabled = false; note(eb, ''); eb.textContent = 'Saved ✓';
           setTimeout(function(){ eb.textContent = 'Save contact'; loadDealers(); }, 1200); })

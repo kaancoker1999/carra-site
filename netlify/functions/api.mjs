@@ -231,6 +231,7 @@ export default async (req) => {
       let code = String(body.code || "").trim() || newCode();
       while (dealers[code]) code = newCode();
       dealers[code] = { name, mult, active: true, created: new Date().toISOString(),
+                        company: String(body.company || "").trim().slice(0, 200),
                         email: String(body.email || "").trim().slice(0, 200),
                         phone: String(body.phone || "").trim().slice(0, 60),
                         address: String(body.address || "").trim().slice(0, 300) };
@@ -242,6 +243,7 @@ export default async (req) => {
       const dealers = await getDealers();
       const d = dealers[String(body.code || "")];
       if (!d) return bad("no such dealer", 404);
+      d.company = String(body.company || "").trim().slice(0, 200);
       d.email = String(body.email || "").trim().slice(0, 200);
       d.phone = String(body.phone || "").trim().slice(0, 60);
       d.address = String(body.address || "").trim().slice(0, 300);
