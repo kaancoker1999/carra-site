@@ -163,9 +163,11 @@ export default async (req) => {
       lines: body.lines.slice(0, 200),
       status: existing ? existing.status : { status: "Pending review", locked: false, note: "" },
       payment: existing ? existing.payment || null : null,
+      test: !!d.test,   // orders from a test account: no e-mail, flagged in admin
     };
     await s.setJSON(key, order);
-    return json({ ok: true, ref, kind: order.kind });
+    // the client suppresses the e-mail notification when test is true
+    return json({ ok: true, ref, kind: order.kind, test: !!d.test });
   }
 
   // ── dealer: cancel an order still awaiting review ─────────────
@@ -311,6 +313,42 @@ export default async (req) => {
       d.active = !!body.active;
       await s.setJSON("dealers", dealers);
       return json({ ok: true });
+    }
+
+    // mark an account as a test account (its orders never e-mail the owner
+    // and are flagged in the panel), or back to a live account
+    if (path === "/api/admin/dealer-test" && req.method === "POST") {
+      const dealers = await getDealers();
+      const d = dealers[String(body.code || "")];
+      if (!d) return bad("no such dealer", 404);
+      if (body.test) d.test = true; else delete d.test;
+      await s.setJSON("dealers", dealers);
+      return json({ ok: true, test: !!d.test });
+    }
+
+    // issue a fresh access code for a dealer: the old code stops working,
+    // the account (contacts, level, promo) is kept, and every past order is
+    // moved onto the new code so nothing is orphaned
+    if (path === "/api/admin/dealer-recode" && req.method === "POST") {
+      const dealers = await getDealers();
+      const oldCode = String(body.code || "");
+      const d = dealers[oldCode];
+      if (!d) return bad("no such dealer", 404);
+      let code = newCode();
+      while (dealers[code]) code = newCode();
+      dealers[code] = d;
+      delete dealers[oldCode];
+      await s.setJSON("dealers", dealers);
+      // re-key the dealer's orders (order blobs carry the code as owner)
+      const { blobs } = await s.list({ prefix: "order:" });
+      for (const b of blobs) {
+        const o = await s.get(b.key, { type: "json" });
+        if (o && o.code === oldCode) {
+          o.code = code;
+          await s.setJSON(b.key, o);
+        }
+      }
+      return json({ ok: true, code });
     }
 
     if (path === "/api/admin/orders" && req.method === "GET") {

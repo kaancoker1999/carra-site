@@ -1172,15 +1172,20 @@
         throw new Error('locked');
       }
       if(!r.ok) throw new Error('api unavailable');
-      /* 2: e-mail copy via Netlify Forms (best effort) */
-      fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          'form-name': 'order', ref: ref, kind: isUpdate ? 'update' : 'new',
-          customer: customer, notes: notes, total: totalText, order: body
-        }).toString()
-      }).catch(function(){});
+      return r.json().catch(function(){ return {}; });
+    }).then(function(data){
+      /* 2: e-mail copy via Netlify Forms (best effort) — skipped for
+         test accounts so trial orders never notify the owner */
+      if(!(data && data.test)){
+        fetch('/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            'form-name': 'order', ref: ref, kind: isUpdate ? 'update' : 'new',
+            customer: customer, notes: notes, total: totalText, order: body
+          }).toString()
+        }).catch(function(){});
+      }
       finishOk();
     }).catch(function(err){
       if(String(err.message) === 'locked'){ sendbtn.textContent = 'Send order'; sendbtn.disabled = false; return; }

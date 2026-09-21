@@ -125,6 +125,9 @@
       <input id="key" type="password" style="min-width:320px" placeholder="LMA-ADMIN-…" autocomplete="off">
       <button class="btn" id="keybtn" type="button">Log in</button>
     </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;text-transform:none;letter-spacing:0;font-family:inherit;font-size:13.5px;color:var(--ink);cursor:pointer">
+      <input id="remember" type="checkbox" style="width:auto;min-width:0;padding:0;margin:0"> Keep me signed in on this device for 1 day
+    </label>
     <div class="msg" id="keymsg"></div>
   </div>
 
@@ -141,6 +144,14 @@
 
     <!-- ── orders ── -->
     <div id="tab-orders">
+      <div class="card" id="collectcard" hidden>
+        <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <h2 style="font-size:18px">Collections</h2>
+          <span class="mono">billed the 1st &middot; delivered orders only</span>
+        </div>
+        <p style="color:var(--muted);font-size:13px;margin:0 0 14px;max-width:80ch">Money owed for delivered, unpaid orders, grouped by the day you collect it (delivered in a month &rarr; due the 1st of the next). Mark orders paid below to clear them.</p>
+        <div id="collectbody"></div>
+      </div>
       <div class="card ordwrap">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
           <h2 style="font-size:18px">All orders</h2>
@@ -200,9 +211,33 @@
 (function(){
   var $ = function(id){ return document.getElementById(id); };
   var KEY = 'lumia_admin_key';
-  /* session-only: closing the tab forgets the key — the panel never
-     shows anything without a fresh login */
-  function key(){ return sessionStorage.getItem(KEY) || ''; }
+  /* By default the key lives only for the tab (sessionStorage) — closing it
+     forgets the key. If "keep me signed in" is ticked it is kept in
+     localStorage with a 1-day expiry instead. */
+  function key(){
+    var v = sessionStorage.getItem(KEY);
+    if(v) return v;
+    try{
+      var raw = localStorage.getItem(KEY);
+      if(raw){
+        var o = JSON.parse(raw);
+        if(o && o.k && o.exp && Date.now() < o.exp) return o.k;
+        localStorage.removeItem(KEY);
+      }
+    }catch(e){}
+    return '';
+  }
+  function saveKey(v, remember){
+    if(remember){
+      try{ localStorage.setItem(KEY, JSON.stringify({ k: v, exp: Date.now() + 86400000 })); }catch(e){}
+    } else {
+      sessionStorage.setItem(KEY, v);
+    }
+  }
+  function forgetKey(){
+    sessionStorage.removeItem(KEY);
+    try{ localStorage.removeItem(KEY); }catch(e){}
+  }
 
   function api(path, method, body){
     return fetch(path, {
@@ -232,13 +267,13 @@
       /* dealers render per-account summaries from the order list — load orders first */
       loadOrders().then(loadDealers);
     }).catch(function(){
-      sessionStorage.removeItem(KEY);
+      forgetKey();
       $('panel').hidden = true;
       $('keymsg').className = 'msg err'; $('keymsg').textContent = 'Key rejected.';
     });
   }
   function logout(){
-    sessionStorage.removeItem(KEY);
+    forgetKey();
     $('panel').hidden = true;
     $('keycard').hidden = false;
     $('logoutbar').style.display = 'none';
@@ -249,7 +284,7 @@
   $('keybtn').addEventListener('click', function(){
     var v = $('key').value.trim();
     if(!v) return;
-    sessionStorage.setItem(KEY, v); $('key').value = '';
+    saveKey(v, $('remember').checked); $('key').value = '';
     unlock();
   });
   $('key').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('keybtn').click(); });
@@ -292,7 +327,54 @@
         calMonth = monthOf(allOrders.length ? allOrders[0].at : new Date());
       }
       renderCalendar();
+      renderCollections();
     }).catch(function(e){ $('orderrows').innerHTML = '<tr><td colspan="8">' + esc(e.message) + '</td></tr>'; });
+  }
+
+  /* ── collections: delivered + unpaid orders, grouped by the 1st-of-month
+     they are due (delivered in a month -> due the 1st of the next). Mirrors
+     the customer's own payment schedule so both sides see the same number. */
+  function deliveredAt(o){
+    var rc = o.receipt || {};
+    var a = rc.adminAt ? Date.parse(rc.adminAt) : null;
+    var b = rc.dealerAt ? Date.parse(rc.dealerAt) : null;
+    if(a == null) return b; if(b == null) return a; return Math.min(a, b);
+  }
+  function renderCollections(){
+    var groups = {};
+    allOrders.forEach(function(o){
+      if(o.test) return;
+      var st = (o.status && o.status.status) || 'Pending review';
+      if(st === 'Cancelled') return;
+      if(o.payment && o.payment.paid) return;
+      var d = deliveredAt(o);
+      if(d == null) return;
+      var due = new Date(new Date(d).getFullYear(), new Date(d).getMonth() + 1, 1);
+      var k = due.getFullYear() + '-' + ('0' + (due.getMonth() + 1)).slice(-2);
+      (groups[k] = groups[k] || { due: due, total: 0, n: 0, dealers: {} });
+      var t = orderTotals(o.lines).total;
+      groups[k].total += t; groups[k].n++;
+      groups[k].dealers[o.dealer || o.code] = (groups[k].dealers[o.dealer || o.code] || 0) + t;
+    });
+    var keys = Object.keys(groups).sort();
+    var card = $('collectcard');
+    if(!keys.length){ card.hidden = true; return; }
+    card.hidden = false;
+    var now = Date.now();
+    $('collectbody').innerHTML = keys.map(function(k){
+      var g = groups[k];
+      var days = (now - g.due.getTime()) / 86400000;
+      var bg = days < 0 ? '#F3ECDD' : days < 14 ? '#EFF6EC' : days < 28 ? '#FBF3CF' : days < 42 ? '#FBE7CE' : '#FBE2DF';
+      var when = g.due.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+      var tag = days < 0 ? 'collect on ' + when : 'due since ' + when;
+      var per = Object.keys(g.dealers).sort(function(a,b){ return g.dealers[b] - g.dealers[a]; })
+        .map(function(name){ return esc(name) + ' <b>$' + g.dealers[name].toFixed(2) + '</b>'; }).join(' &middot; ');
+      return '<div style="background:' + bg + ';border:1px solid var(--line2);border-radius:12px;padding:14px 16px;margin:0 0 10px">' +
+        '<div class="row" style="justify-content:space-between;align-items:baseline">' +
+          '<div><b style="font-family:\'Archivo\',sans-serif;font-size:16px">$' + g.total.toFixed(2) + '</b> ' +
+          '<span class="mono" style="margin-left:8px">' + esc(tag) + ' &middot; ' + g.n + ' order' + (g.n === 1 ? '' : 's') + '</span></div></div>' +
+        '<div style="font-size:12.5px;color:var(--ink);margin-top:8px">' + per + '</div></div>';
+    }).join('');
   }
 
   function ordersOn(dayKey){
@@ -553,8 +635,9 @@
           (ovr ? '<br><span style="color:var(--muted);font-size:11.5px">' + esc(ovr) + '</span>' : '') +
           (pr ? '<br><span style="color:#2F5D25;font-size:11.5px">−' + pr.pct + '% until ' +
             new Date(pr.until).toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '</span>' : '');
+        var testTag = x.test ? ' <span class="status" style="background:#EEE9FA;border:1px solid #C9BCEC;color:#5B3FA0">TEST</span>' : '';
         var main = '<tr class="' + (x.active === false ? 'inactive' : '') + '">' +
-          '<td>' + esc(x.name) + ((x.email || x.phone) ? '<br><span style="color:var(--muted);font-size:12px">' +
+          '<td>' + esc(x.name) + testTag + ((x.email || x.phone) ? '<br><span style="color:var(--muted);font-size:12px">' +
             esc([x.email, x.phone].filter(Boolean).join(' · ')) + '</span>' : '') + '</td>' +
           '<td><code>' + esc(x.code) + '</code></td>' +
           '<td>' + priceCell + '</td>' +
@@ -598,6 +681,10 @@
             '<input class="e-phone" data-code="' + esc(x.code) + '" type="tel" placeholder="phone" value="' + esc(x.phone || '') + '" style="width:130px"> ' +
             '<input class="e-address" data-code="' + esc(x.code) + '" type="text" placeholder="address" value="' + esc(x.address || '') + '" style="width:240px"> ' +
             '<button class="btn ghost e-contact-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Save contact</button></div>' +
+          '<div><label>Access &amp; mode</label>' +
+            '<button class="btn ghost e-recode" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Generate new code</button> ' +
+            '<button class="btn ghost e-test" data-code="' + esc(x.code) + '" data-test="' + (x.test ? '1' : '0') + '" type="button" style="padding:8px 14px">' +
+              (x.test ? 'Make live account' : 'Make test account') + '</button></div>' +
           '<div style="margin-left:auto"><button class="btn e-delete" data-code="' + esc(x.code) + '" type="button" style="background:#8A2620;padding:8px 14px">Delete account</button></div>' +
           '</div>' +
           '<div style="border:1px dashed var(--line2);border-radius:10px;background:var(--white);margin-top:14px;padding:14px 16px">' +
@@ -958,6 +1045,39 @@
         .then(function(){ eb.disabled = false; note(eb, ''); eb.textContent = 'Saved ✓';
           setTimeout(function(){ eb.textContent = 'Save contact'; loadDealers(); }, 1200); })
         .catch(function(){ eb.disabled = false; note(eb, 'Failed — try again.'); });
+      return;
+    }
+    if((b = e.target.closest('.e-recode'))){
+      var rb = b;
+      armConfirm(rb, 'Issue a NEW access code for ' + dealerName(rb.dataset.code) +
+        '. The current code stops working right away — you will need to give the new code to the customer. ' +
+        'Their account and past orders are kept.', function(){
+        rb.disabled = true;
+        api('/api/admin/dealer-recode', 'POST', { code: rb.dataset.code })
+          .then(function(res){
+            loadDealers();
+            if(res && res.code){
+              $('newcode').className = 'newcode on';
+              $('newcode').innerHTML = 'New access code for <b>' + esc(dealerName(rb.dataset.code)) +
+                '</b>: <code>' + esc(res.code) + '</code><br>' +
+                '<span style="color:var(--muted);font-size:12.5px">Give this to the customer — the old code no longer works.</span>';
+              $('newcode').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          })
+          .catch(function(){ rb.disabled = false; note(rb, 'Failed — try again.'); });
+      });
+      return;
+    }
+    if((b = e.target.closest('.e-test'))){
+      var xb = b;
+      var makeTest = xb.dataset.test !== '1';
+      armConfirm(xb, makeTest
+        ? 'Mark ' + dealerName(xb.dataset.code) + ' as a TEST account — orders from it will not e-mail you and are flagged in the panel.'
+        : 'Make ' + dealerName(xb.dataset.code) + ' a live account again — its orders will notify you normally.', function(){
+        xb.disabled = true;
+        api('/api/admin/dealer-test', 'POST', { code: xb.dataset.code, test: makeTest })
+          .then(loadDealers).catch(function(){ xb.disabled = false; note(xb, 'Failed — try again.'); });
+      });
       return;
     }
     if((b = e.target.closest('.e-delete'))){
