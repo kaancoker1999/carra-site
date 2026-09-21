@@ -73,7 +73,7 @@
   .cell select.bad{border-color:#8A2620;background:#FFF6F5}
 
   /* ── order lines ── */
-  .lineswrap{margin-top:36px;border:1px solid var(--line2);border-radius:12px;overflow-x:auto;background:var(--white)}
+  .lineswrap{margin-top:36px;border:1px solid var(--line2);border-radius:12px;overflow-x:auto;background:var(--white);padding-bottom:22px}
   table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
   th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
   th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:500;background:var(--paper);text-transform:uppercase}
@@ -89,8 +89,8 @@
   .actions{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap;align-items:center}
   .btn{display:inline-block;padding:15px 30px;border:0;cursor:pointer;text-decoration:none;border-radius:10px;
     font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;transition:.25s}
-  .btn.solid{background:var(--ink);color:#fff}
-  .btn.solid:hover{background:var(--bronze)}
+  .btn.solid{background:var(--bronze-lt);color:#211803}
+  .btn.solid:hover{background:#D9AE5A}
   .btn.ghost{background:var(--white);border:1px solid var(--line2);color:var(--ink)}
   .btn.ghost:hover{border-color:var(--ink)}
   .lgroup{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
@@ -217,7 +217,6 @@
 </div>
 
 <div class="wrap pagehead">
-  <div class="mono">&mdash; Trade partners</div>
   <h1>Place an order</h1>
   <p class="note">Build the line left to right &mdash; product, options, size, quantity &mdash; then add it to the order. Repeat for every window. When the list is complete, send it and we confirm with your pricing the same working day.</p>
 </div>

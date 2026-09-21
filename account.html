@@ -99,8 +99,9 @@
   .actions{display:flex;gap:12px;margin:0 0 34px;flex-wrap:wrap}
   .btn{display:inline-block;padding:15px 30px;border:0;cursor:pointer;text-decoration:none;border-radius:10px;
     font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;transition:.25s}
-  .btn.solid{background:var(--ink);color:#fff}
-  .btn.solid:hover{background:var(--bronze)}
+  /* light fills so the buttons read on the galaxy ground */
+  .btn.solid{background:var(--bronze-lt);color:#211803}
+  .btn.solid:hover{background:#D9AE5A}
   .btn.ghost{background:var(--white);border:1px solid var(--line2);color:var(--ink)}
   .btn.ghost:hover{border-color:var(--ink)}
 
@@ -166,7 +167,6 @@
 </div>
 
 <div class="wrap pagehead">
-  <div class="mono">&mdash; Trade partners</div>
   <h1>Account overview</h1>
   <p class="note" id="hello">Your orders at a glance &mdash; totals, balance and where every order stands.</p>
 </div>
