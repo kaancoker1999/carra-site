@@ -15,12 +15,28 @@
     --line:#E4E3DE; --line2:#D3D2CC; --bronze:#8A6220;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--paper);color:var(--ink);
+  /* galaxy backdrop — deep indigo with two nebula glows and a faint starfield;
+     the content cards stay white so tables read exactly as before */
+  body{margin:0;color:var(--ink);
+    background:
+      radial-gradient(rgba(255,255,255,.32) 1px, transparent 1.4px),
+      radial-gradient(rgba(255,255,255,.18) 1px, transparent 1.3px),
+      radial-gradient(1100px 700px at 82% -12%, rgba(124,82,186,.38), transparent 62%),
+      radial-gradient(1200px 800px at -12% 96%, rgba(46,66,150,.34), transparent 62%),
+      #0E0C1B;
+    background-size: 310px 250px, 210px 170px, auto, auto, auto;
+    background-position: 0 0, 105px 65px, 0 0, 0 0, 0 0;
+    background-attachment: fixed;
     font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap>.mono{color:#B7B0D8}
+  .wrap>h1{color:#F6F3EC}
+  .tab{border-color:transparent}
+  .tab.on{border-color:rgba(255,255,255,.4)}
   h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.02em;margin:0}
   .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .wrap{max-width:1100px;margin:0 auto;padding:36px 22px 100px}
-  .card{background:var(--white);border:1px solid var(--line2);border-radius:14px;padding:24px 26px;margin:0 0 18px}
+  .card{background:var(--white);border:1px solid var(--line2);border-radius:14px;padding:24px 26px;margin:0 0 18px;
+    box-shadow:0 18px 50px rgba(0,0,0,.38)}
   label{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
   input,select,textarea{font:inherit;font-size:14.5px;padding:10px 12px;border:1px solid var(--line2);border-radius:9px;background:var(--white)}
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ink)}
