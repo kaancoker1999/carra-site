@@ -531,7 +531,7 @@
         }).join('') + '</select>';
         return '<tr>' +
           '<td>' + when.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '<br><span class="mono" style="font-size:9px">' + when.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) + '</span></td>' +
-          '<td>' + esc(o.dealer) + '</td>' +
+          '<td>' + esc(o.dealer) + (o.test ? ' <span class="status" style="background:#EEE9FA;border:1px solid #C9BCEC;color:#5B3FA0">TEST</span>' : '') + '</td>' +
           '<td>' + esc(o.customer || '—') + (o.notes ? '<br><span style="color:var(--muted);font-size:12px">' + esc(o.notes) + '</span>' : '') + '</td>' +
           '<td><code>' + esc(o.ref) + '</code>' + (o.kind === 'update' ? '<br><span class="mono" style="font-size:8.5px">updated</span>' : '') + '</td>' +
           '<td>' + esc(o.total || '') + '</td>' +
@@ -548,7 +548,9 @@
             '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:10px" title="LUMIA confirms the delivery — with the customer\'s own confirmation this closes the order"><input type="checkbox" class="st-recv" data-ref="' + esc(o.ref) + '"' + (rc.adminAt ? ' checked' : '') + '>delivered</label></div>' +
             '<input type="text" class="st-note" data-ref="' + esc(o.ref) + '" placeholder="note to customer" value="' + esc(st.note || '') + '" style="width:100%;margin-top:6px;font-size:12.5px">' +
             '<div class="row" style="gap:6px;margin-top:6px"><button class="btn st-save" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px">Save</button>' +
-            '<button class="btn ghost o-inv" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px">Invoice</button></div></td>' +
+            '<button class="btn ghost o-inv" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px">Invoice</button>' +
+            (o.test ? '<button class="btn ghost o-del" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px;color:#8A2620">Delete</button>' : '') +
+            '</div></td>' +
           '</tr>';
       }).join('');
       $('orderrows').innerHTML = rows || '<tr><td colspan="8">No orders this week.</td></tr>';
@@ -813,9 +815,21 @@
     win.document.close();
   }
   $('orderrows').addEventListener('click', function(e){
-    var b = e.target.closest('.o-inv'); if(!b) return;
-    var o = allOrders.filter(function(x){ return x.ref === b.dataset.ref; })[0];
-    if(o) openInvoice(o);
+    var b = e.target.closest('.o-inv');
+    if(b){
+      var o = allOrders.filter(function(x){ return x.ref === b.dataset.ref; })[0];
+      if(o) openInvoice(o);
+      return;
+    }
+    var db = e.target.closest('.o-del');
+    if(db){
+      armConfirm(db, 'Permanently delete test order ' + db.dataset.ref + '. This cannot be undone.', function(){
+        db.disabled = true;
+        api('/api/admin/order-delete', 'POST', { ref: db.dataset.ref })
+          .then(function(){ loadOrders().then(loadDealers); })
+          .catch(function(){ db.disabled = false; note(db, 'Failed — try again.'); });
+      });
+    }
   });
 
   /* two-step inline confirm — browser dialog blockers can't touch it */

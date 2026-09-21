@@ -387,6 +387,14 @@ export default async (req) => {
       return json({ ok: true, receipt: o.receipt });
     }
 
+    // permanently remove one order (e.g. a stray test order)
+    if (path === "/api/admin/order-delete" && req.method === "POST") {
+      const ref = String(body.ref || "");
+      if (!ref) return bad("ref required");
+      await s.delete(`order:${ref}`);
+      return json({ ok: true });
+    }
+
     if (path === "/api/admin/prices" && req.method === "POST") {
       if (!Array.isArray(body.products) || !body.products.length) return bad("products required");
       await s.setJSON("prices", body);
