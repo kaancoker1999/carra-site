@@ -17,7 +17,16 @@
     --line:#E4E3DE; --line2:#D3D2CC; --bronze:#8A6220; --bronze-lt:#C79A45;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--paper);color:var(--ink);
+  /* galaxy backdrop — same look as the admin panel; the login card stays white */
+  body{margin:0;color:#F6F3EC;
+    background:
+      radial-gradient(rgba(255,255,255,.32) 1px, transparent 1.4px),
+      radial-gradient(rgba(255,255,255,.18) 1px, transparent 1.3px),
+      radial-gradient(1100px 700px at 82% -12%, rgba(124,82,186,.38), transparent 62%),
+      radial-gradient(1200px 800px at -12% 96%, rgba(46,66,150,.34), transparent 62%),
+      #0E0C1B;
+    background-size:310px 250px,210px 170px,auto,auto,auto;
+    background-position:0 0,105px 65px,0 0,0 0,0 0;background-attachment:fixed;
     font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.62;
     -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
   h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.025em;margin:0;line-height:1.05}
@@ -25,17 +34,10 @@
   .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .wrap{max-width:1180px;padding:0 44px;margin:0 auto;width:100%}
 
-  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-  header .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;gap:24px}
-  .logo{font-family:'Archivo',sans-serif;font-weight:700;font-size:20px;letter-spacing:.28em;text-decoration:none}
-  .logo img{height:26px;width:auto;display:block;mix-blend-mode:multiply}
-  nav{display:flex;gap:34px;align-items:center}
-  nav a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s}
-  nav a:hover{color:var(--ink)}
-  .partner{border:1px solid var(--line2);padding:8px 15px;color:var(--bronze)!important}
-  .partner:hover{border-color:var(--bronze)}
+  header .wrap{display:flex;align-items:center;justify-content:flex-start;height:82px;gap:24px}
+  .logo{font-family:'Archivo',sans-serif;font-weight:700;font-size:19px;letter-spacing:.30em;text-decoration:none;color:#F6F3EC}
 
-  main{flex:1;display:flex;align-items:center;justify-content:center;padding:60px 22px}
+  main{flex:1;display:flex;align-items:center;justify-content:center;padding:20px 22px 60px}
   .card{background:var(--white);border:1px solid var(--line2);border-radius:16px;padding:44px 46px 40px;max-width:440px;width:100%}
   .card h1{font-size:26px;margin:10px 0 8px}
   .card .sub{color:var(--muted);font-size:14.5px;margin:0 0 28px}
@@ -52,23 +54,15 @@
   .apply{margin:26px 0 0;padding:18px 0 0;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
   .apply a{color:var(--bronze)}
 
-  footer{border-top:1px solid var(--line);background:var(--paper)}
   footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
+  footer .mono{color:rgba(255,255,255,.5)}
 </style>
 </head>
 <body>
 
 <header>
   <div class="wrap">
-    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="LUMIA"></a>
-    <nav>
-      <a href="index.html#products">Products</a>
-      <a href="tdbu.html">TDBU</a>
-      <a href="motorization.html">Motorization</a>
-      <a href="about.html">About us</a>
-      <a href="index.html#contact">Contact</a>
-      <a class="partner" href="trade.html">Trade login</a>
-    </nav>
+    <span class="logo">LUMIA</span>
   </div>
 </header>
 
