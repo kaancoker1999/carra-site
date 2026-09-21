@@ -161,6 +161,7 @@
           </div>
         </div>
         <div class="pvtabs" id="stagetabs" style="margin-bottom:14px"></div>
+        <div id="cancelbar" style="margin:0 0 12px"></div>
         <div class="cal" id="cal"></div>
         <div class="calnote mono" id="calnote" style="margin:0 0 12px"></div>
         <table>
@@ -468,6 +469,14 @@
           x.label + '<span class="n">' + byGroup[x.key].length + '</span></button>';
       }).join('');
     list = byGroup[stageSel];
+    /* on the Cancelled tab, offer to purge every cancelled order in the system
+       (not just the date-filtered view) so they stop piling up */
+    var allCancelled = allOrders.filter(function(o){ return (o.status && o.status.status) === 'Cancelled'; });
+    $('cancelbar').innerHTML = (stageSel === 'cancelled' && allCancelled.length)
+      ? '<button class="btn ghost o-del-all" type="button" style="padding:8px 14px;color:#8A2620;border-color:#E0B7B3">' +
+        'Delete all cancelled (' + allCancelled.length + ')</button>' +
+        '<span class="mono" style="margin-left:12px">removes them permanently</span>'
+      : '';
     var when = calSel.mode === 'day'
       ? prettyDay(calSel.key, {weekday:'long', month:'long', day:'numeric', year:'numeric'})
       : calSel.mode === 'range'
@@ -562,7 +571,7 @@
             '<input type="text" class="st-note" data-ref="' + esc(o.ref) + '" placeholder="note to customer" value="' + esc(st.note || '') + '" style="width:100%;margin-top:6px;font-size:12.5px">' +
             '<div class="row" style="gap:6px;margin-top:6px"><button class="btn st-save" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px">Save</button>' +
             '<button class="btn ghost o-inv" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px">Invoice</button>' +
-            (o.test ? '<button class="btn ghost o-del" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px;color:#8A2620">Delete</button>' : '') +
+            ((o.test || st.status === 'Cancelled') ? '<button class="btn ghost o-del" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px;color:#8A2620">Delete</button>' : '') +
             '</div></td>' +
           '</tr>';
       }).join('');
@@ -773,13 +782,30 @@
     }
     var db = e.target.closest('.o-del');
     if(db){
-      armConfirm(db, 'Permanently delete test order ' + db.dataset.ref + '. This cannot be undone.', function(){
+      armConfirm(db, 'Permanently delete order ' + db.dataset.ref + '. This cannot be undone.', function(){
         db.disabled = true;
         api('/api/admin/order-delete', 'POST', { ref: db.dataset.ref })
           .then(function(){ loadOrders().then(loadDealers); })
           .catch(function(){ db.disabled = false; note(db, 'Failed — try again.'); });
       });
     }
+  });
+
+  /* delete every cancelled order at once */
+  $('cancelbar').addEventListener('click', function(e){
+    var b = e.target.closest('.o-del-all'); if(!b) return;
+    var refs = allOrders.filter(function(o){ return (o.status && o.status.status) === 'Cancelled'; })
+                        .map(function(o){ return o.ref; });
+    if(!refs.length) return;
+    armConfirm(b, 'Permanently delete all ' + refs.length + ' cancelled order' + (refs.length === 1 ? '' : 's') +
+      '. This cannot be undone.', function(){
+      b.disabled = true; b.textContent = 'Deleting…';
+      refs.reduce(function(p, ref){
+        return p.then(function(){ return api('/api/admin/order-delete', 'POST', { ref: ref }); });
+      }, Promise.resolve())
+        .then(function(){ loadOrders().then(loadDealers); })
+        .catch(function(){ b.disabled = false; note(b, 'Some could not be deleted — try again.'); });
+    });
   });
 
   /* two-step inline confirm — browser dialog blockers can't touch it */
