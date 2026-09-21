@@ -363,7 +363,7 @@
   });
 
   /* ── orders ── */
-  var STATUSES = ['Pending review', 'Confirmed', 'In production', 'Shipped', 'On hold', 'Cancelled'];
+  var STATUSES = ['Pending review', 'In production', 'Shipped', 'On hold', 'Cancelled'];
   var allOrders = [];
   var calMonth = null;                          /* first of the month on screen */
   var stageSel = 'orders';                      /* orders (active) | past (paid) | cancelled */
@@ -473,7 +473,7 @@
     if(!$('tab-overview')) return;
     var os = allOrders;
     var pending  = os.filter(function(o){ return statusOf(o) === 'Pending review'; });
-    var inflight = os.filter(function(o){ var s = statusOf(o); return s === 'In production' || s === 'Shipped' || s === 'Confirmed'; });
+    var inflight = os.filter(function(o){ var s = statusOf(o); return s === 'In production' || s === 'Shipped'; });
     var unpaid = 0, payable = 0;
     os.forEach(function(o){
       if(statusOf(o) === 'Cancelled' || isPaid(o)) return;
