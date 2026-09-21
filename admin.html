@@ -520,18 +520,24 @@
         '<div class="ct">$' + g.total.toFixed(2) + '</div></div>';
     }).join('') : '<div class="ovempty">Nothing to collect yet — delivered orders appear here.</div>';
 
-    /* units = total pieces ordered (sum of line quantities), not order count */
-    function unitsOf(o){ return (o.lines || []).reduce(function(a, l){ return a + (parseFloat(l.qty) || 0); }, 0); }
+    /* units = total pieces ordered (sum of line quantities), not order count.
+       Fabric Only is sold by the yard, not per piece — it is left out of the
+       unit count and the average price per unit so it doesn't skew them. */
+    function isFabric(l){ return /fabric/i.test(l.product || '') || l.w == null; }
+    function unitsOf(o){ return (o.lines || []).reduce(function(a, l){ return a + (isFabric(l) ? 0 : (parseFloat(l.qty) || 0)); }, 0); }
     var weeks = [], mon = weekStart(new Date());
     for(var i = 7; i >= 0; i--){ var d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() - i * 7); weeks.push({ key: ymd(d), label: (d.getMonth() + 1) + '/' + d.getDate(), n: 0 }); }
     var wmap = {}; weeks.forEach(function(w){ wmap[w.key] = w; });
     os.forEach(function(o){ if(statusOf(o) === 'Cancelled') return; var wk = ymd(weekStart(o.at)); if(wmap[wk]) wmap[wk].n += unitsOf(o); });
     var maxN = Math.max.apply(null, [1].concat(weeks.map(function(w){ return w.n; })));
-    /* average price per unit across all live orders */
+    /* average price per unit across all live orders — shades only, no fabric */
     var totUnits = 0, totRev = 0;
     os.forEach(function(o){
       if(statusOf(o) === 'Cancelled') return;
-      (o.lines || []).forEach(function(l){ var q = parseFloat(l.qty) || 0; totUnits += q; if(l.price != null) totRev += l.price * q; });
+      (o.lines || []).forEach(function(l){
+        if(isFabric(l)) return;
+        var q = parseFloat(l.qty) || 0; totUnits += q; if(l.price != null) totRev += l.price * q;
+      });
     });
     var avgUnit = totUnits ? totRev / totUnits : 0;
     $('ovtrend').innerHTML = '<div class="ovbars">' + weeks.map(function(w){
@@ -540,7 +546,7 @@
         '<div class="bar" style="height:' + Math.round(w.n / maxN * 72) + 'px"></div><span class="bl">' + w.label + '</span></div>';
     }).join('') + '</div>' +
     '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:6px;padding:10px 8px 4px">' +
-      '<span class="mono">' + Math.round(totUnits) + ' units total</span>' +
+      '<span class="mono">' + Math.round(totUnits) + ' units &middot; shades only</span>' +
       '<span style="font-family:\'Archivo\',sans-serif;font-weight:600;font-size:14px">$' + avgUnit.toFixed(2) + ' <span class="mono" style="font-weight:400">avg / unit</span></span>' +
     '</div>';
 
