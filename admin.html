@@ -138,12 +138,12 @@
 
   <div id="panel" hidden>
     <div class="tabs">
-      <button class="tab on" data-tab="orders" type="button">Orders</button>
-      <button class="tab" data-tab="dealers" type="button">Customers</button>
+      <button class="tab on" data-tab="dealers" type="button">Customers</button>
+      <button class="tab" data-tab="orders" type="button">Orders</button>
     </div>
 
     <!-- ── orders ── -->
-    <div id="tab-orders">
+    <div id="tab-orders" hidden>
       <div class="card" id="collectcard" hidden>
         <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:4px">
           <h2 style="font-size:18px">Collections</h2>
@@ -171,7 +171,7 @@
     </div>
 
     <!-- ── dealers ── -->
-    <div id="tab-dealers" hidden>
+    <div id="tab-dealers">
       <!-- one customer, seen the way they see themselves -->
       <div class="card" id="dpreview" hidden></div>
       <div class="card" id="dcreate">
@@ -199,8 +199,8 @@
           <button class="btn ghost" id="refreshdealers" type="button">Refresh</button>
         </div>
         <table>
-          <thead><tr><th>Name</th><th>Access code</th><th>Price level</th><th>Orders</th><th>Created</th><th>Last login</th><th>Status</th><th></th></tr></thead>
-          <tbody id="dealerrows"><tr><td colspan="8">Loading…</td></tr></tbody>
+          <thead><tr><th>Name</th><th>Open orders</th><th>Balance due</th><th>Last login</th><th></th></tr></thead>
+          <tbody id="dealerrows"><tr><td colspan="5">Loading…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -215,8 +215,8 @@
      forgets the key. If "keep me signed in" is ticked it is kept in
      localStorage with a 1-day expiry instead. */
   function key(){
-    var v = sessionStorage.getItem(KEY);
-    if(v) return v;
+    if(keyMem) return keyMem;
+    try{ var v = sessionStorage.getItem(KEY); if(v) return v; }catch(e){}
     try{
       var raw = localStorage.getItem(KEY);
       if(raw){
@@ -231,11 +231,13 @@
     if(remember){
       try{ localStorage.setItem(KEY, JSON.stringify({ k: v, exp: Date.now() + 86400000 })); }catch(e){}
     } else {
-      sessionStorage.setItem(KEY, v);
+      try{ sessionStorage.setItem(KEY, v); }catch(e){ keyMem = v; }
     }
   }
+  var keyMem = '';   /* last resort if storage is blocked (private mode) */
   function forgetKey(){
-    sessionStorage.removeItem(KEY);
+    keyMem = '';
+    try{ sessionStorage.removeItem(KEY); }catch(e){}
     try{ localStorage.removeItem(KEY); }catch(e){}
   }
 
@@ -304,7 +306,20 @@
   var STATUSES = ['Pending review', 'Confirmed', 'In production', 'Shipped', 'On hold', 'Cancelled'];
   var allOrders = [];
   var calMonth = null;                          /* first of the month on screen */
-  var stageSel = 'all';                         /* all | awaiting | production | shipped | past | cancelled */
+  var stageSel = 'orders';                      /* orders (active) | past (paid) | cancelled */
+  /* top-level split for the Orders tab: paid orders move to Past, cancelled
+     go to their own bucket so they don't clutter the working list */
+  var MAIN_GROUPS = [
+    { key: 'orders',    label: 'Orders' },
+    { key: 'past',      label: 'Past orders' },
+    { key: 'cancelled', label: 'Cancelled' },
+  ];
+  function mainGroupOf(o){
+    var st = (o.status && o.status.status) || 'Pending review';
+    if(st === 'Cancelled') return 'cancelled';
+    if(o.payment && o.payment.paid) return 'past';
+    return 'orders';
+  }
   var calSel = { mode: 'all', key: '' };        /* all | day | week */
   /* LUMIA's week runs Saturday to Friday */
   function weekStart(dt){
@@ -444,17 +459,15 @@
     $('cal').innerHTML = head + grid + '</div>';
 
     var list = selectedOrders();
-    var byStage = { awaiting: [], production: [], shipped: [], past: [], cancelled: [] };
-    list.forEach(function(o){ byStage[stageOf(o)].push(o); });
-    if(stageSel !== 'all' && !byStage[stageSel].length) stageSel = 'all';
+    var byGroup = { orders: [], past: [], cancelled: [] };
+    list.forEach(function(o){ byGroup[mainGroupOf(o)].push(o); });
+    if(!byGroup[stageSel]) stageSel = 'orders';
     $('stagetabs').innerHTML =
-      '<button type="button" class="pvtab' + (stageSel === 'all' ? ' on' : '') + '" data-stage="all">All' +
-        '<span class="n">' + list.length + '</span></button>' +
-      PV_STAGES.map(function(x){
+      MAIN_GROUPS.map(function(x){
         return '<button type="button" class="pvtab' + (x.key === stageSel ? ' on' : '') + '" data-stage="' + x.key + '">' +
-          x.label + '<span class="n">' + byStage[x.key].length + '</span></button>';
+          x.label + '<span class="n">' + byGroup[x.key].length + '</span></button>';
       }).join('');
-    if(stageSel !== 'all') list = byStage[stageSel];
+    list = byGroup[stageSel];
     var when = calSel.mode === 'day'
       ? prettyDay(calSel.key, {weekday:'long', month:'long', day:'numeric', year:'numeric'})
       : calSel.mode === 'range'
@@ -610,7 +623,7 @@
   }
   /* per-account summary, computed from the full order list */
   function dealerStats(code){
-    var s = { n: 0, purch: 0, due: 0, shipped: 0, prod: 0, pend: 0 };
+    var s = { n: 0, purch: 0, due: 0, shipped: 0, prod: 0, pend: 0, open: 0 };
     allOrders.forEach(function(o){
       if(o.code !== code) return;
       s.n++;
@@ -621,7 +634,7 @@
       if(st !== 'Cancelled'){
         var t = orderTotals(o.lines).total;
         s.purch += t;
-        if(!(o.payment && o.payment.paid)) s.due += t;
+        if(!(o.payment && o.payment.paid)){ s.due += t; s.open++; }  /* active, not yet paid */
       }
     });
     return s;
@@ -629,88 +642,25 @@
   function loadDealers(){
     api('/api/admin/dealers').then(function(d){
       dealersCache = d.dealers || [];
-      var rows = dealersCache.map(function(x, xi){
-        var pr = promoActive(x);
+      var rows = dealersCache.map(function(x){
         var st = dealerStats(x.code);
-        var ovr = x.mults ? Object.keys(x.mults).map(function(k){ return k + ' ×' + x.mults[k]; }).join(' · ') : '';
-        var priceCell = '×' + x.mult +
-          (ovr ? '<br><span style="color:var(--muted);font-size:11.5px">' + esc(ovr) + '</span>' : '') +
-          (pr ? '<br><span style="color:#2F5D25;font-size:11.5px">−' + pr.pct + '% until ' +
-            new Date(pr.until).toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '</span>' : '');
         var testTag = x.test ? ' <span class="status" style="background:#EEE9FA;border:1px solid #C9BCEC;color:#5B3FA0">TEST</span>' : '';
-        var main = '<tr class="' + (x.active === false ? 'inactive' : '') + '">' +
-          '<td>' + esc(x.name) + testTag + ((x.email || x.phone) ? '<br><span style="color:var(--muted);font-size:12px">' +
-            esc([x.email, x.phone].filter(Boolean).join(' · ')) + '</span>' : '') + '</td>' +
-          '<td><code>' + esc(x.code) + '</code></td>' +
-          '<td>' + priceCell + '</td>' +
-          '<td>' + x.orders + (st.due > 0 ? '<br><span style="color:#8A2620;font-size:11.5px">$' + st.due.toFixed(2) + ' due</span>' : '') + '</td>' +
-          '<td>' + (x.created ? new Date(x.created).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : '—') + '</td>' +
+        var suspTag = x.active === false ? ' <span class="status st-canc">Suspended</span>' : '';
+        return '<tr class="' + (x.active === false ? 'inactive' : '') + '">' +
+          '<td><b>' + esc(x.name) + '</b>' + testTag + suspTag + '</td>' +
+          '<td>' + (st.open ? st.open + (st.open === 1 ? ' order' : ' orders') : '—') + '</td>' +
+          '<td>' + (st.due > 0 ? '<span style="color:#8A2620">$' + st.due.toFixed(2) + '</span>' : '$0.00') + '</td>' +
           '<td>' + (x.lastLogin
             ? new Date(x.lastLogin).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) +
               '<br><span style="color:var(--muted);font-size:11.5px">' +
               new Date(x.lastLogin).toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'}) + '</span>'
-            : '—') + '</td>' +
-          '<td>' + (x.active === false ? 'Suspended' : 'Active') + '</td>' +
-          '<td><div class="row" style="gap:6px">' +
-            '<button class="btn ghost d-preview" data-code="' + esc(x.code) + '" type="button" style="padding:6px 12px">Preview</button>' +
-            '<button class="btn ghost d-edit" data-i="' + xi + '" type="button" style="padding:6px 12px">Manage</button>' +
-            '<button class="btn ghost d-toggle" data-code="' + esc(x.code) + '" data-active="' + (x.active === false ? 'true' : 'false') + '" type="button" style="padding:6px 12px">' +
-            (x.active === false ? 'Reactivate' : 'Suspend') + '</button></div></td></tr>';
-        var sumChip = function(v, k, red){
-          return '<span><b' + (red ? ' style="color:#8A2620"' : '') + '>' + v + '</b><span class="k">' + k + '</span></span>';
-        };
-        var editor = '<tr class="editrow" data-for="' + xi + '" hidden><td colspan="8" style="background:var(--paper)">' +
-          '<div class="dsum">' +
-            sumChip(st.n, 'orders placed') +
-            sumChip('$' + st.purch.toFixed(2), 'total purchased') +
-            sumChip('$' + st.due.toFixed(2), 'balance due', st.due > 0) +
-            sumChip(st.shipped, 'in transit') +
-            sumChip(st.prod, 'in production') +
-            sumChip(st.pend, 'awaiting review') +
-          '</div>' +
-          '<div class="row" style="gap:22px;align-items:flex-end;padding:6px 0">' +
-          '<div><label>Account price level &mdash; all products</label><select class="e-mult" data-code="' + esc(x.code) + '">' +
-            LEVELS.map(function(l){ return '<option value="' + l[0] + '"' + (String(x.mult) === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') +
-          '</select> <button class="btn e-mult-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Change price</button></div>' +
-          '<div><label>Timed discount</label>' +
-            '<input class="e-pct" data-code="' + esc(x.code) + '" type="number" min="1" max="90" step="0.5" placeholder="%" style="width:76px" value="' + (pr ? pr.pct : '') + '"> ' +
-            '<input class="e-days" data-code="' + esc(x.code) + '" type="number" min="1" max="365" step="1" placeholder="days" style="width:86px"> ' +
-            '<button class="btn e-promo-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Apply discount</button>' +
-            (pr ? ' <button class="btn ghost e-promo-clear" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Remove discount</button>' : '') +
-          '</div>' +
-          '<div><label>Contact</label>' +
-            '<input class="e-email" data-code="' + esc(x.code) + '" type="email" placeholder="e-mail" value="' + esc(x.email || '') + '" style="width:180px"> ' +
-            '<input class="e-phone" data-code="' + esc(x.code) + '" type="tel" placeholder="phone" value="' + esc(x.phone || '') + '" style="width:130px"> ' +
-            '<input class="e-address" data-code="' + esc(x.code) + '" type="text" placeholder="address" value="' + esc(x.address || '') + '" style="width:240px"> ' +
-            '<button class="btn ghost e-contact-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Save contact</button></div>' +
-          '<div><label>Access &amp; mode</label>' +
-            '<button class="btn ghost e-recode" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Generate new code</button> ' +
-            '<button class="btn ghost e-test" data-code="' + esc(x.code) + '" data-test="' + (x.test ? '1' : '0') + '" type="button" style="padding:8px 14px">' +
-              (x.test ? 'Make live account' : 'Make test account') + '</button></div>' +
-          '<div style="margin-left:auto"><button class="btn e-delete" data-code="' + esc(x.code) + '" type="button" style="background:#8A2620;padding:8px 14px">Delete account</button></div>' +
-          '</div>' +
-          '<div style="border:1px dashed var(--line2);border-radius:10px;background:var(--white);margin-top:14px;padding:14px 16px">' +
-            '<label style="color:var(--bronze)">Per-product exceptions &mdash; optional</label>' +
-            '<div style="font-size:12px;color:var(--muted);margin:-2px 0 12px;max-width:70ch">' +
-              'Normally every product follows the account price level above. Set an exception only when one ' +
-              'product should be priced differently &mdash; it beats the account level for that product alone.</div>' +
-            '<div class="row" style="gap:14px;align-items:flex-end">' +
-            PRODLIST.map(function(pp){
-              var cur = (x.mults && x.mults[pp[0]] != null) ? String(x.mults[pp[0]]) : '';
-              return '<div><label style="margin-bottom:4px">' + pp[1] + '</label>' +
-                '<select class="e-pmult" data-owner="' + esc(x.code) + '" data-product="' + pp[0] + '">' +
-                '<option value=""' + (cur === '' ? ' selected' : '') + '>Account level (×' + x.mult + ')</option>' +
-                LEVELS.map(function(l){ return '<option value="' + l[0] + '"' + (cur === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') +
-                '</select></div>';
-            }).join('') +
-            '<div><button class="btn e-pmult-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Save exceptions</button></div>' +
-            '</div>' +
-          '</div>' +
-          '</td></tr>';
-        return main + editor;
+            : '<span class="mono" style="font-size:10px">never</span>') + '</td>' +
+          '<td style="text-align:right"><button class="btn ghost d-preview" data-code="' + esc(x.code) + '" type="button" style="padding:6px 14px">Open &rarr;</button></td>' +
+          '</tr>';
       }).join('');
-      $('dealerrows').innerHTML = rows || '<tr><td colspan="8">No customer accounts yet.</td></tr>';
-    }).catch(function(e){ $('dealerrows').innerHTML = '<tr><td colspan="8">' + esc(e.message) + '</td></tr>'; });
+      $('dealerrows').innerHTML = rows || '<tr><td colspan="5">No customer accounts yet.</td></tr>';
+      if(!$('dpreview').hidden && pvCode) openPreview(pvCode, true);   /* keep an open account fresh */
+    }).catch(function(e){ $('dealerrows').innerHTML = '<tr><td colspan="5">' + esc(e.message) + '</td></tr>'; });
   }
   $('refreshdealers').addEventListener('click', function(){ loadOrders().then(loadDealers); });
 
@@ -893,12 +843,63 @@
     { key: 'past',       label: 'Past orders',   empty: 'No completed orders yet.' },
     { key: 'cancelled',  label: 'Cancelled',     empty: 'No cancelled orders.' },
   ];
-  var pvCode = '', pvStage = 'awaiting';
+  var pvCode = '', pvStage = 'awaiting', pvFlash = null;
 
   function pvBuckets(code){
     var b = { awaiting: [], production: [], shipped: [], past: [], cancelled: [] };
     allOrders.forEach(function(o){ if(o.code === code) b[stageOf(o)].push(o); });
     return b;
+  }
+
+  /* everything you can change about an account — moved out of the list and
+     into the account view, so the list stays a clean overview */
+  function manageSection(x, pr){
+    var facts = '<code>' + esc(x.code) + '</code> &middot; price level ×' + x.mult +
+      (x.mults ? ' &middot; ' + esc(Object.keys(x.mults).map(function(k){ return k + ' ×' + x.mults[k]; }).join(' · ')) : '') +
+      (x.created ? ' &middot; since ' + new Date(x.created).toLocaleDateString('en-US', {month:'short', year:'numeric'}) : '');
+    return '<div class="pvsub" style="margin-top:26px;border-top:1px solid var(--line);padding-top:20px">Manage account</div>' +
+      '<div class="mono" style="margin:-6px 0 14px">' + facts + '</div>' +
+      '<div class="row" style="gap:22px;align-items:flex-end;padding:6px 0">' +
+      '<div><label>Account price level &mdash; all products</label><select class="e-mult" data-code="' + esc(x.code) + '">' +
+        LEVELS.map(function(l){ return '<option value="' + l[0] + '"' + (String(x.mult) === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') +
+      '</select> <button class="btn e-mult-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Change price</button></div>' +
+      '<div><label>Timed discount</label>' +
+        '<input class="e-pct" data-code="' + esc(x.code) + '" type="number" min="1" max="90" step="0.5" placeholder="%" style="width:76px" value="' + (pr ? pr.pct : '') + '"> ' +
+        '<input class="e-days" data-code="' + esc(x.code) + '" type="number" min="1" max="365" step="1" placeholder="days" style="width:86px"> ' +
+        '<button class="btn e-promo-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Apply discount</button>' +
+        (pr ? ' <button class="btn ghost e-promo-clear" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Remove discount</button>' : '') +
+      '</div>' +
+      '<div><label>Contact</label>' +
+        '<input class="e-email" data-code="' + esc(x.code) + '" type="email" placeholder="e-mail" value="' + esc(x.email || '') + '" style="width:180px"> ' +
+        '<input class="e-phone" data-code="' + esc(x.code) + '" type="tel" placeholder="phone" value="' + esc(x.phone || '') + '" style="width:130px"> ' +
+        '<input class="e-address" data-code="' + esc(x.code) + '" type="text" placeholder="address" value="' + esc(x.address || '') + '" style="width:240px"> ' +
+        '<button class="btn ghost e-contact-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Save contact</button></div>' +
+      '</div>' +
+      '<div style="border:1px dashed var(--line2);border-radius:10px;background:var(--white);margin-top:14px;padding:14px 16px">' +
+        '<label style="color:var(--bronze)">Per-product exceptions &mdash; optional</label>' +
+        '<div style="font-size:12px;color:var(--muted);margin:-2px 0 12px;max-width:70ch">' +
+          'Normally every product follows the account price level above. Set an exception only when one ' +
+          'product should be priced differently &mdash; it beats the account level for that product alone.</div>' +
+        '<div class="row" style="gap:14px;align-items:flex-end">' +
+        PRODLIST.map(function(pp){
+          var cur = (x.mults && x.mults[pp[0]] != null) ? String(x.mults[pp[0]]) : '';
+          return '<div><label style="margin-bottom:4px">' + pp[1] + '</label>' +
+            '<select class="e-pmult" data-owner="' + esc(x.code) + '" data-product="' + pp[0] + '">' +
+            '<option value=""' + (cur === '' ? ' selected' : '') + '>Account level (×' + x.mult + ')</option>' +
+            LEVELS.map(function(l){ return '<option value="' + l[0] + '"' + (cur === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') +
+            '</select></div>';
+        }).join('') +
+        '<div><button class="btn e-pmult-save" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Save exceptions</button></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="row" style="gap:10px;align-items:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">' +
+        '<button class="btn ghost e-recode" data-code="' + esc(x.code) + '" type="button" style="padding:8px 14px">Generate new code</button>' +
+        '<button class="btn ghost e-test" data-code="' + esc(x.code) + '" data-test="' + (x.test ? '1' : '0') + '" type="button" style="padding:8px 14px">' +
+          (x.test ? 'Make live account' : 'Make test account') + '</button>' +
+        '<button class="btn ghost d-toggle" data-code="' + esc(x.code) + '" data-active="' + (x.active === false ? 'true' : 'false') + '" type="button" style="padding:8px 14px">' +
+          (x.active === false ? 'Reactivate account' : 'Suspend account') + '</button>' +
+        '<div style="margin-left:auto"><button class="btn e-delete" data-code="' + esc(x.code) + '" type="button" style="background:#8A2620;padding:8px 14px">Delete account</button></div>' +
+      '</div>';
   }
 
   function openPreview(code, keepScroll){
@@ -937,7 +938,10 @@
         '</tr>';
     }).join('');
 
-    $('dpreview').innerHTML =
+    var flash = (pvFlash && pvFlash.code === code)
+      ? '<div class="newcode on" style="margin:0 0 14px"><code>' + esc(pvFlash.msg) + '</code></div>' : '';
+    pvFlash = null;
+    $('dpreview').innerHTML = flash +
       '<div class="pvhead"><div>' +
         '<div class="pvname">' + esc(d.name) + '</div>' +
         '<div class="pvmeta"><code>' + esc(d.code) + '</code> · price level ×' + d.mult +
@@ -962,7 +966,8 @@
       (mine.length
         ? '<div class="ordwrap"><table><thead><tr><th>Date</th><th>End customer</th><th>Ref</th><th>Lines</th>' +
           '<th>Total</th><th>Status</th><th>Payment</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
-        : '<p class="mono">' + stage.empty + '</p>');
+        : '<p class="mono">' + stage.empty + '</p>') +
+      manageSection(d, pr);
 
     $('dpreview').hidden = false;
     $('dcreate').hidden = true;
@@ -975,14 +980,11 @@
     if(t){ pvStage = t.dataset.stage; openPreview(pvCode, true); }
   });
 
-  $('dealerrows').addEventListener('click', function(e){
+  /* bound to the whole Customers tab so the management controls work both in
+     the list (Open) and inside the account preview where they now live */
+  $('tab-dealers').addEventListener('click', function(e){
     var b;
     if((b = e.target.closest('.d-preview'))){ openPreview(b.dataset.code); return; }
-    if((b = e.target.closest('.d-edit'))){
-      var row = document.querySelector('.editrow[data-for="' + b.dataset.i + '"]');
-      if(row) row.hidden = !row.hidden;
-      return;
-    }
     if((b = e.target.closest('.d-toggle'))){
       var verb = b.dataset.active === 'true' ? 'reactivate' : 'suspend';
       var tb = b;
@@ -1069,14 +1071,12 @@
         rb.disabled = true;
         api('/api/admin/dealer-recode', 'POST', { code: rb.dataset.code })
           .then(function(res){
-            loadDealers();
             if(res && res.code){
-              $('newcode').className = 'newcode on';
-              $('newcode').innerHTML = 'New access code for <b>' + esc(dealerName(rb.dataset.code)) +
-                '</b>: <code>' + esc(res.code) + '</code><br>' +
-                '<span style="color:var(--muted);font-size:12.5px">Give this to the customer — the old code no longer works.</span>';
-              $('newcode').scrollIntoView({ behavior: 'smooth', block: 'center' });
+              /* the account's code changed — follow it and flash the new one */
+              pvFlash = { code: res.code, msg: 'New access code: ' + res.code + ' — give this to the customer, the old code no longer works.' };
+              if(pvCode === rb.dataset.code) pvCode = res.code;
             }
+            loadDealers();
           })
           .catch(function(){ rb.disabled = false; note(rb, 'Failed — try again.'); });
       });
@@ -1100,7 +1100,8 @@
         '" — their access code stops working immediately. Past orders are kept.', function(){
         db.disabled = true;
         api('/api/admin/dealer-delete', 'POST', { code: db.dataset.code })
-          .then(loadDealers).catch(function(){ db.disabled = false; note(db, 'Failed — try again.'); });
+          .then(function(){ pvCode = ''; closePreview(); loadDealers(); })
+          .catch(function(){ db.disabled = false; note(db, 'Failed — try again.'); });
       });
       return;
     }
