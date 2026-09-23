@@ -402,7 +402,9 @@ export default async (req) => {
       const status = String(body.status || "Pending review").slice(0, 60);
       // once an order is in production (or beyond, shipped) it locks so the
       // customer can no longer edit or withdraw it
-      const autoLock = status === "In production" || status === "Shipped" || status === "Cancelled";
+      // every status other than "Pending review" locks the order (the customer
+      // can only edit or withdraw it while it is still awaiting review)
+      const autoLock = status !== "Pending review";
       o.status = {
         status,
         locked: autoLock || !!body.locked,
