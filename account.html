@@ -74,6 +74,17 @@
     background:#FBF3CF;border:1px solid #E2D27E;color:#8A6220;border-radius:999px;padding:2px 8px;margin-left:4px}
   .payorow .plate{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
     background:#FBE3E0;border:1px solid #E3A49C;color:#8A2620;border-radius:999px;padding:2px 8px;margin-left:4px}
+  .sum.act{cursor:pointer;transition:transform .15s,box-shadow .15s}
+  .sum.act:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.18)}
+  .sum .go{white-space:nowrap;opacity:.8}
+  .popov{position:fixed;inset:0;z-index:1000;background:rgba(10,8,22,.62);display:flex;align-items:center;justify-content:center;padding:16px;animation:popfade .15s ease}
+  .popbox{position:relative;background:#FBF8F2;border-radius:18px;padding:26px 22px 18px;width:100%;max-width:540px;max-height:calc(100vh - 32px);overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+  .popbox .payinfo{margin:0}
+  .popx{position:absolute;top:10px;right:12px;width:34px;height:34px;border-radius:50%;border:1px solid #D9D2C5;background:#fff;font-size:20px;line-height:1;cursor:pointer;color:#1B1D1F}
+  .popamt{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 44px 14px 2px;color:#1B1D1F}
+  .popamt span{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#5A5E62}
+  .popamt b{font-size:26px;font-weight:600}
+  @keyframes popfade{from{opacity:0}to{opacity:1}}
   .payinfo{background:var(--white,#fff);border:1px solid var(--line,#E4DED3);border-radius:14px;padding:16px 20px;margin:0 0 14px;color:#1B1D1F}
   .payinfo .pihead{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze,#8A6A3E);margin-bottom:8px}
   .payinfo .pirow{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid #EEE9E0;font-size:14px}
@@ -263,8 +274,9 @@
     return { total: Math.round(total * 100) / 100, unknown: unknown };
   }
 
-  function tile(v, k, cls){
-    return '<div class="sum' + (cls ? ' ' + cls : '') + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
+  function tile(v, k, cls, act){
+    return '<div class="sum' + (cls ? ' ' + cls : '') + (act ? ' act" data-act="' + act + '" role="button" tabindex="0"' : '"') +
+      '><div class="v">' + v + '</div><div class="k">' + k + (act ? ' <span class="go">— how to pay →</span>' : '') + '</div></div>';
   }
   function fdate(x){
     return new Date(x).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'});
@@ -359,6 +371,33 @@
       '<div class="pimemo">Memo: please include your LUMIA order number' +
       (ex ? ' (e.g. <b>' + esc(ex.ref) + '</b>)' : '') + ' with each payment.</div></div>';
   }
+  /* pop-up with the ACH details, opened from the Payable tile / "How to pay" */
+  var LASTORDERS = [];
+  function openPayPop(){
+    if(!PAYINFO) return;
+    closePayPop();
+    var owed = 0; LASTORDERS.forEach(function(o){ if(payable(o)) owed += orderTotals(o.lines).total; });
+    var ov = document.createElement('div');
+    ov.className = 'popov'; ov.id = 'paypop';
+    ov.innerHTML = '<div class="popbox" role="dialog" aria-modal="true" aria-label="Payment instructions">' +
+      '<button class="popx" type="button" aria-label="Close">&times;</button>' +
+      '<div class="popamt"><span>Payable now</span><b>$' + owed.toFixed(2) + '</b></div>' +
+      payInfoHTML(LASTORDERS) + '</div>';
+    document.body.appendChild(ov);
+    document.body.style.overflow = 'hidden';
+  }
+  function closePayPop(){
+    var ov = document.getElementById('paypop'); if(!ov) return;
+    ov.remove(); document.body.style.overflow = '';
+  }
+  document.addEventListener('click', function(e){
+    if(e.target.closest('[data-act="paypop"]')){ openPayPop(); return; }
+    if(e.target.id === 'paypop' || e.target.closest('.popx')){ closePayPop(); return; }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closePayPop();
+    if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.sum[data-act="paypop"]')){ e.preventDefault(); openPayPop(); }
+  });
   document.addEventListener('click', function(e){
     var b = e.target.closest('.picopy'); if(!b) return;
     navigator.clipboard.writeText(b.dataset.copy).then(function(){
@@ -390,7 +429,13 @@
       ? '<div class="paywarn">⚠ <b>' + late.length + ' order' + (late.length === 1 ? ' is' : 's are') + ' still unpaid ' + LATE_DAYS +
         '+ days after shipping</b> — $' + lateT.toFixed(2) + ' (' + late.map(function(o){ return esc(o.ref); }).join(', ') + '). Please arrange payment as soon as possible.</div>'
       : '';
-    document.getElementById('paydue').innerHTML = warn + payInfoHTML(orders) + allbtn + keys.map(function(k){
+    LASTORDERS = orders;
+    var howbtn = PAYINFO ? '<button class="paybtn wht" data-act="paypop" type="button" style="padding:9px 16px">How to pay</button>' : '';
+    if(howbtn || allbtn){
+      allbtn = '<div style="display:flex;justify-content:flex-end;gap:8px;margin:0 0 10px">' + howbtn +
+        (claimable > 1 ? '<button class="paybtn wht" data-payallclaim="1" type="button" style="padding:9px 16px">I&rsquo;ve paid all (' + claimable + ')</button>' : '') + '</div>';
+    }
+    document.getElementById('paydue').innerHTML = warn + allbtn + keys.map(function(k){
       var g = groups[k], over = g.due.getTime() < today && g.owed > 0;
       var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
       var rows = g.orders.map(function(o){
@@ -433,7 +478,7 @@
       tile(orders.length, 'Orders placed') +
       tile('$' + purch.toFixed(2), 'Total purchased') +
       tile('$' + due.toFixed(2), 'Balance due', due > 0 ? 'due' : '') +
-      tile('$' + pay.toFixed(2), 'Payable · shipped', pay > 0 ? 'due' : '') +
+      tile('$' + pay.toFixed(2), 'Payable · shipped', pay > 0 ? 'due' : '', PAYINFO ? 'paypop' : '') +
       tile(shipped, 'In transit') +
       tile(prod, 'In production') +
       tile(pend, 'Awaiting review');
