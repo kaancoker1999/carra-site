@@ -600,14 +600,24 @@
   var payFilter = '';   /* '' = all customers, else a dealer code */
   function renderPayments(){
     var payables = allOrders.filter(function(o){ return payDue(o); });
-    /* customer filter dropdown — only dealers that actually owe something */
-    var names = {}; payables.forEach(function(o){ names[o.code] = o.dealer || o.code; });
+    /* customer filter dropdown — every (non-test) customer, with what they owe */
+    var names = {}, owe = {};
+    dealersCache.forEach(function(d){ if(!d.test) names[d.code] = d.name || d.code; });
+    payables.forEach(function(o){
+      if(!names[o.code]) names[o.code] = o.dealer || o.code;
+      owe[o.code] = owe[o.code] || { n: 0, total: 0 };
+      owe[o.code].n++; owe[o.code].total += orderTotals(o.lines).total;
+    });
     var opts = Object.keys(names).map(function(c){ return { code: c, name: names[c] }; })
       .sort(function(a, b){ return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1; });
-    if(payFilter && !names[payFilter]) payFilter = '';   /* selected dealer no longer owes */
+    if(payFilter && !names[payFilter]) payFilter = '';   /* selected dealer was deleted */
     var sel = $('payfilter');
     sel.innerHTML = '<option value="">All customers (' + payables.length + ')</option>' +
-      opts.map(function(o){ return '<option value="' + esc(o.code) + '"' + (o.code === payFilter ? ' selected' : '') + '>' + esc(o.name) + '</option>'; }).join('');
+      opts.map(function(o){
+        var w = owe[o.code];
+        var tail = w ? ' — $' + w.total.toFixed(2) + ' due (' + w.n + ')' : ' — nothing due';
+        return '<option value="' + esc(o.code) + '"' + (o.code === payFilter ? ' selected' : '') + '>' + esc(o.name) + tail + '</option>';
+      }).join('');
 
     var shown = payFilter ? payables.filter(function(o){ return o.code === payFilter; }) : payables;
     $('payall').innerHTML = shown.length
@@ -982,6 +992,7 @@
   function loadDealers(){
     api('/api/admin/dealers').then(function(d){
       dealersCache = d.dealers || [];
+      renderPayments();   /* the Payments customer filter lists every account */
       var rows = dealersCache.map(function(x){
         var st = dealerStats(x.code);
         var testTag = x.test ? ' <span class="status" style="background:#EEE9FA;border:1px solid #C9BCEC;color:#5B3FA0">TEST</span>' : '';
