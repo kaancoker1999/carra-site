@@ -663,11 +663,15 @@
       if(!refs.length) return;
       var total = allOrders.filter(function(o){ return refs.indexOf(o.ref) >= 0; }).reduce(function(a, o){ return a + orderTotals(o.lines).total; }, 0);
       var who = payFilter ? ' for this customer' : '';
-      armConfirm(all, 'Mark all ' + refs.length + ' order' + (refs.length === 1 ? '' : 's') + who + ' as paid ($' + total.toFixed(2) + ')? This cannot be undone here.', function(){
-        all.disabled = true; all.textContent = 'Marking…';
-        refs.reduce(function(p, ref){ return p.then(function(){ return api('/api/admin/paid', 'POST', { ref: ref, paid: true }); }); }, Promise.resolve())
-          .then(function(){ loadOrders().then(loadDealers); })
-          .catch(function(){ all.disabled = false; note(all, 'Some could not be marked — try again.'); });
+      var n = refs.length + ' order' + (refs.length === 1 ? '' : 's');
+      /* two confirmations for a bulk, irreversible action */
+      armConfirm(all, 'Mark all ' + n + who + ' as paid ($' + total.toFixed(2) + ')?', function(){
+        armConfirm(all, 'Are you sure? This marks ' + n + ' paid at once and cannot be undone. Click once more to proceed.', function(){
+          all.disabled = true; all.textContent = 'Marking…';
+          refs.reduce(function(p, ref){ return p.then(function(){ return api('/api/admin/paid', 'POST', { ref: ref, paid: true }); }); }, Promise.resolve())
+            .then(function(){ loadOrders().then(loadDealers); })
+            .catch(function(){ all.disabled = false; note(all, 'Some could not be marked — try again.'); });
+        });
       });
     }
   });
