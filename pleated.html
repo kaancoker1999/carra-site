@@ -327,7 +327,8 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
       if(g.showIf && [].concat(g.showIf.value).indexOf(state[g.showIf.key]) === -1) return;
       r.push([g.label, state[g.key]]);
     });
-    if(CONFIG.sizeRange) r.push(['Size range', CONFIG.sizeRange]);
+    if(CONFIG.sizeRange) r.push(['Size range', sizeRangeText()]);
+    if(CONFIG.depth) r.push(['Min. depth', CONFIG.depth]);
     if(CONFIG.note) r.push(['Included', CONFIG.note]);
     return r;
   }
@@ -352,8 +353,45 @@ var CONFIG = {"code": "03", "name": "Pleated Shades", "img": "assets/product-ple
     });
   }
 
+  /* cellular: size limits depend on cell type, drive and TDBU (sizeRules) */
+  function cellClass(){
+    if(state.cell === 'Single') return 'S';
+    if(state.cell === 'Double') return state.opacity === 'Blackout' ? 'DBO' : 'DLF';
+    return 'T';
+  }
+  function sizeRule(drive, tdbu){
+    var cls = cellClass();
+    return (CONFIG.sizeRules || []).filter(function(r){
+      return r.drive === drive && r.tdbu === tdbu && (!r.cls || r.cls.indexOf(cls) !== -1);
+    })[0] || null;
+  }
+  function refreshSizeRules(){
+    if(!CONFIG.sizeRules) return;
+    var tchips = document.querySelectorAll('.chip[data-g="tdbu"]');
+    tchips.forEach(function(ch){
+      var r = sizeRule(state.drive, ch.dataset.v), na = !r || r.na;
+      ch.disabled = na;
+      ch.title = na ? 'Not available with this cell type and drive' : '';
+      if(!na) setChipSub(ch, r.w, r.h);
+      else { var sub = ch.querySelector('.chipsub'); if(sub) sub.innerHTML = 'n/a'; }
+    });
+    if(tchips.length && [].some.call(tchips, function(ch){ return ch.disabled && ch.dataset.v === state.tdbu; })){
+      state.tdbu = 'No';
+      tchips.forEach(function(ch){ ch.classList.toggle('on', ch.dataset.v === 'No'); });
+    }
+    document.querySelectorAll('.chip[data-g="drive"]').forEach(function(ch){
+      var r = sizeRule(ch.dataset.v, state.tdbu);
+      if(r && !r.na) setChipSub(ch, r.w, r.h);
+    });
+  }
+  function sizeRangeText(){
+    var r = CONFIG.sizeRules && sizeRule(state.drive, state.tdbu);
+    return (r && !r.na) ? 'W ' + r.w[0] + '" – ' + r.w[1] + '" · H ' + r.h[0] + '" – ' + r.h[1] + '"' : CONFIG.sizeRange;
+  }
+
   function update(){
     applyExcludes();
+    refreshSizeRules();
     document.querySelectorAll('.grp[data-si-key]').forEach(function(grp){
       grp.hidden = grp.dataset.siVal.split('|').indexOf(state[grp.dataset.siKey]) === -1;
     });

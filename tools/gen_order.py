@@ -42,6 +42,10 @@ SERIES_COLOURS = {
              "021", "040", "101"],
 }
 
+# size-rule class per series (see sizeRules on cellular in gen_pages.py)
+CELL_CLASS = {"BH": "S", "XH": "S", "DH": "S", "SH": "S", "BHBO": "S", "XHBO": "S",
+              "CH": "DLF", "CHBO": "DBO", "TH": "T"}
+
 CELL_CHOICES = [
     ("Light Filtering · Single Cell", "BH"),
     ("Light Filtering · Double Cell", "CH"),
@@ -71,7 +75,7 @@ def fabric_first(steps):
 # price. Update these if the workbook grids grow.
 GRID_LIMITS = {
     "roman": {"width": [18, 98], "height": [24, 106]},
-    "cellular": {"width": [18, 120], "height": [24, 137]},
+    "cellular": {"width": [19, 105], "height": [20, 137]},
     "pleated": {"width": [18, 120], "height": [24, 137]},
 }
 
@@ -187,6 +191,9 @@ def build():
             "hLabel": cfg.get("hLabel", "Height"),
             "steps": steps,
         })
+        if cfg.get("sizeRules"):
+            products[-1]["sizeRules"] = cfg["sizeRules"]
+            products[-1]["cellClass"] = CELL_CLASS
 
     products.append(arches_product())
     products.append(fabric_product())

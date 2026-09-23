@@ -343,10 +343,10 @@
     var row3 = '<div class="cell"><label>Room / label (optional)</label>' +
       '<input id="c-label" type="text" placeholder="e.g. Living room 2" autocomplete="off" style="min-width:190px"></div>';
     if(!p.noSize){
-      row3 += '<div class="cell"><label>Width (in) ' + p.width[0] + '&ndash;' + p.width[1] + '</label>' +
+      row3 += '<div class="cell"><label id="l-w">Width (in) ' + p.width[0] + '&ndash;' + p.width[1] + '</label>' +
         '<div style="display:flex;gap:6px"><select id="c-w" style="min-width:86px">' + sizeOpts(p.width, 'W') + '</select>' +
         '<select id="c-wf" style="min-width:74px" title="Eighths">' + FRACS + '</select></div></div>';
-      row3 += '<div class="cell"><label>' + p.hLabel + ' (in) ' + p.height[0] + '&ndash;' + p.height[1] + '</label>' +
+      row3 += '<div class="cell"><label id="l-h">' + p.hLabel + ' (in) ' + p.height[0] + '&ndash;' + p.height[1] + '</label>' +
         '<div style="display:flex;gap:6px"><select id="c-h" style="min-width:86px">' + sizeOpts(p.height, 'H') + '</select>' +
         '<select id="c-hf" style="min-width:74px" title="Eighths">' + FRACS + '</select></div></div>';
     }
@@ -405,8 +405,47 @@
     });
   }
 
+  /* cellular: width/height limits follow cell type, drive and TDBU
+     (sizeRules from the factory constraints sheet); a TDBU that isn't
+     offered for the combination is disabled */
+  function sizeRule(p, drive, tdbu){
+    var colSel = document.getElementById('c-collection');
+    var cls = p.cellClass && colSel ? p.cellClass[colSel.value] : null;
+    return (p.sizeRules || []).filter(function(r){
+      return r.drive === drive && r.tdbu === tdbu && (!r.cls || r.cls.indexOf(cls) !== -1);
+    })[0] || null;
+  }
+  function sizeLimits(p){
+    var d = document.getElementById('c-drive'), t = document.getElementById('c-tdbu');
+    var r = p.sizeRules && d && t ? sizeRule(p, d.value, t.value) : null;
+    return (r && !r.na) ? { w: r.w, h: r.h } : { w: p.width, h: p.height };
+  }
+  function applySizeRules(){
+    var p = CFG.products[+document.getElementById('c-product').value];
+    if(!p.sizeRules || p.noSize) return;
+    var d = document.getElementById('c-drive'), t = document.getElementById('c-tdbu');
+    if(d && t){
+      [].forEach.call(t.options, function(o){
+        var r = sizeRule(p, d.value, o.value), off = !!(r && r.na);
+        o.disabled = off;
+        o.textContent = o.value + (off ? ' (not available)' : '');
+      });
+      if(t.selectedOptions[0] && t.selectedOptions[0].disabled) t.value = 'No';
+    }
+    var lim = sizeLimits(p);
+    [['w', lim.w, 'Width', 'W'], ['h', lim.h, p.hLabel, 'H']].forEach(function(x){
+      document.getElementById('l-' + x[0]).innerHTML = x[2] + ' (in) ' + x[1][0] + '&ndash;' + x[1][1];
+      var el = document.getElementById('c-' + x[0]), keep = el.value;
+      var out = '<option value="">' + x[3] + '</option>';
+      for(var v = x[1][0]; v <= x[1][1]; v++){ out += '<option value="' + v + '">' + v + '&Prime;</option>'; }
+      el.innerHTML = out;
+      el.value = (keep && +keep >= x[1][0] && +keep <= x[1][1]) ? keep : '';
+    });
+  }
+
   function refreshShowIf(){
     applyExcludes();
+    applySizeRules();
     /* a cell is visible only if its condition holds AND the cell it depends on
        is itself visible (cgroup -> trackopt -> track chains) */
     for(var pass = 0; pass < 3; pass++){
@@ -686,10 +725,11 @@
       ? Math.round((parseFloat(document.getElementById('c-qty').value) || 1) * 100) / 100
       : (parseInt(document.getElementById('c-qty').value, 10) || 1);
     if(qty <= 0) qty = 1;
-    if(!p.noSize && (isNaN(w) || w < p.width[0] || w > p.width[1] ||
-       isNaN(h) || h < p.height[0] || h > p.height[1])){
-      fail('Check the size — width ' + p.width[0] + '–' + p.width[1] +
-        '″, ' + p.hLabel.toLowerCase() + ' ' + p.height[0] + '–' + p.height[1] + '″.',
+    var lim = sizeLimits(p);
+    if(!p.noSize && (isNaN(w) || w < lim.w[0] || w > lim.w[1] ||
+       isNaN(h) || h < lim.h[0] || h > lim.h[1])){
+      fail('Check the size — width ' + lim.w[0] + '–' + lim.w[1] +
+        '″, ' + p.hLabel.toLowerCase() + ' ' + lim.h[0] + '–' + lim.h[1] + '″.',
         [document.getElementById('c-w'), document.getElementById('c-h')]);
       return;
     }

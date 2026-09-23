@@ -355,7 +355,8 @@ var CONFIG = @@CONFIG@@;
       if(g.showIf && [].concat(g.showIf.value).indexOf(state[g.showIf.key]) === -1) return;
       r.push([g.label, state[g.key]]);
     });
-    if(CONFIG.sizeRange) r.push(['Size range', CONFIG.sizeRange]);
+    if(CONFIG.sizeRange) r.push(['Size range', sizeRangeText()]);
+    if(CONFIG.depth) r.push(['Min. depth', CONFIG.depth]);
     if(CONFIG.note) r.push(['Included', CONFIG.note]);
     return r;
   }
@@ -380,8 +381,45 @@ var CONFIG = @@CONFIG@@;
     });
   }
 
+  /* cellular: size limits depend on cell type, drive and TDBU (sizeRules) */
+  function cellClass(){
+    if(state.cell === 'Single') return 'S';
+    if(state.cell === 'Double') return state.opacity === 'Blackout' ? 'DBO' : 'DLF';
+    return 'T';
+  }
+  function sizeRule(drive, tdbu){
+    var cls = cellClass();
+    return (CONFIG.sizeRules || []).filter(function(r){
+      return r.drive === drive && r.tdbu === tdbu && (!r.cls || r.cls.indexOf(cls) !== -1);
+    })[0] || null;
+  }
+  function refreshSizeRules(){
+    if(!CONFIG.sizeRules) return;
+    var tchips = document.querySelectorAll('.chip[data-g="tdbu"]');
+    tchips.forEach(function(ch){
+      var r = sizeRule(state.drive, ch.dataset.v), na = !r || r.na;
+      ch.disabled = na;
+      ch.title = na ? 'Not available with this cell type and drive' : '';
+      if(!na) setChipSub(ch, r.w, r.h);
+      else { var sub = ch.querySelector('.chipsub'); if(sub) sub.innerHTML = 'n/a'; }
+    });
+    if(tchips.length && [].some.call(tchips, function(ch){ return ch.disabled && ch.dataset.v === state.tdbu; })){
+      state.tdbu = 'No';
+      tchips.forEach(function(ch){ ch.classList.toggle('on', ch.dataset.v === 'No'); });
+    }
+    document.querySelectorAll('.chip[data-g="drive"]').forEach(function(ch){
+      var r = sizeRule(ch.dataset.v, state.tdbu);
+      if(r && !r.na) setChipSub(ch, r.w, r.h);
+    });
+  }
+  function sizeRangeText(){
+    var r = CONFIG.sizeRules && sizeRule(state.drive, state.tdbu);
+    return (r && !r.na) ? 'W ' + r.w[0] + '" – ' + r.w[1] + '" · H ' + r.h[0] + '" – ' + r.h[1] + '"' : CONFIG.sizeRange;
+  }
+
   function update(){
     applyExcludes();
+    refreshSizeRules();
     document.querySelectorAll('.grp[data-si-key]').forEach(function(grp){
       grp.hidden = grp.dataset.siVal.split('|').indexOf(state[grp.dataset.siKey]) === -1;
     });
@@ -471,9 +509,24 @@ PRODUCTS = {
         "code": "02", "name": "Cellular Shades", "img": "assets/product-cellular.jpg",
         "pdf": "assets/pdf/lumia-cellular-shades-catalogue-2025.pdf", "pdfsize": "3.9 MB",
         "desc": "Single, double and triple cell honeycomb in sheer, light-filtering and blackout, bonded so the cell holds its shape for the life of the shade. The most energy-efficient range we build.",
-        "hLabel": "Height", "width": [18, 105], "height": [24, 120],
-        "sizeRange": 'W 18" – 105" · H 24" – 120"',
+        "hLabel": "Height", "width": [19, 105], "height": [20, 137],
+        "sizeRange": 'W 19" – 105" · H 20" – 137"',
+        "depth": "Inside 1½″ · fully recessed 2⅜″ · outside surface 2¼″",
         "fabrics": "cell",
+        # "TDC Honeycomb Shades Constraints and Specifications" (single headrail).
+        # Cell classes: S = single cell (any opacity), DLF = double light-filtering,
+        # DBO = double blackout, T = triple. First matching rule wins; na = not offered.
+        "sizeRules": [
+            {"drive": "Cordless", "tdbu": "No", "cls": ["S", "DLF"], "w": [19, 96], "h": [20, 96]},
+            {"drive": "Cordless", "tdbu": "No", "cls": ["DBO", "T"], "w": [19, 84], "h": [20, 84]},
+            {"drive": "Cordless", "tdbu": "Yes", "cls": ["S"], "w": [24, 84], "h": [20, 84]},
+            {"drive": "Cordless", "tdbu": "Yes", "cls": ["DLF"], "w": [24, 72], "h": [20, 72]},
+            {"drive": "Cordless", "tdbu": "Yes", "cls": ["DBO", "T"], "na": True},
+            {"drive": "Cord loop", "tdbu": "No", "w": [19, 105], "h": [20, 137]},
+            {"drive": "Cord loop", "tdbu": "Yes", "w": [24, 105], "h": [20, 137]},
+            {"drive": "Motorized", "tdbu": "No", "w": [24, 105], "h": [20, 137]},
+            {"drive": "Motorized", "tdbu": "Yes", "w": [34, 105], "h": [20, 137]},
+        ],
         "groups": [
             {"key": "cell", "label": "Cell", "options": ["Single", "Double", "Triple"]},
             {"key": "opacity", "label": "Opacity", "options": ["Sheer", "Light-filtering", "Blackout"]},
