@@ -77,6 +77,8 @@
     background:var(--ink);color:#fff;border:0;border-radius:8px;padding:7px 12px;cursor:pointer}
   .paybtn:hover{background:var(--bronze)}
   .paybtn.ghost{background:transparent;border:1px solid #E2D27E;color:#8A6220}
+  .paybtn.wht{background:#fff;color:var(--ink);border:1px solid var(--line2)}
+  .paybtn.wht:hover{background:#fff;border-color:var(--ink)}
   .paybtn[disabled]{opacity:.6;cursor:default}
 
   /* ── summary tiles ── */
@@ -342,7 +344,7 @@
     var today = startOfToday();
     var claimable = orders.filter(function(o){ return payShow(o) && !isPaid(o) && !(o.payment && o.payment.customerPaidAt); }).length;
     var allbtn = claimable > 1
-      ? '<div style="display:flex;justify-content:flex-end;margin:0 0 10px"><button class="paybtn" data-payallclaim="1" type="button" style="padding:9px 16px">I&rsquo;ve paid all (' + claimable + ')</button></div>'
+      ? '<div style="display:flex;justify-content:flex-end;margin:0 0 10px"><button class="paybtn wht" data-payallclaim="1" type="button" style="padding:9px 16px">I&rsquo;ve paid all (' + claimable + ')</button></div>'
       : '';
     document.getElementById('paydue').innerHTML = allbtn + keys.map(function(k){
       var g = groups[k], over = g.due.getTime() < today && g.owed > 0;
