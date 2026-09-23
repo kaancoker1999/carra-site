@@ -136,6 +136,11 @@
   .order summary .when{font-size:13.5px;color:var(--ink)}
   .order summary .meta{display:flex;align-items:baseline;gap:10px;margin-left:auto}
   .order[open] summary{border-bottom:1px solid var(--line)}
+  .track{display:flex;align-items:center;gap:12px;margin:2px 0 12px;padding:12px 16px;background:#EEF2FB;border:1px solid #C3D2EC;border-radius:10px;font-size:13px;color:#274690}
+  .track i{font-style:normal;font-size:18px}
+  .track .tn{font-family:'IBM Plex Mono',monospace;letter-spacing:.04em}
+  .track a{margin-left:auto;color:#1C56B0;font-weight:500;text-decoration:none;white-space:nowrap}
+  .track a:hover{text-decoration:underline}
   .order .obody{padding:4px 18px 16px;overflow-x:auto}
   .order table{min-width:640px}
   .order .oactions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;align-items:flex-start}
@@ -843,6 +848,8 @@
       '<p class="mono" style="margin:6px 0 10px;font-size:10px">Ref: ' + o.ref + '</p>' +
       (o.notes ? '<p class="onote" style="color:#4A4E52">Note: ' + o.notes + '</p>' : '') +
       (o.status && o.status.note ? '<p class="onote">LUMIA: ' + o.status.note + '</p>' : '') +
+      (o.tracking ? '<div class="track"><i>📦</i><div><b>Shipped &middot; FedEx tracking</b><br><span class="tn">' + esc(o.tracking) + '</span></div>' +
+        '<a href="https://www.fedex.com/fedextrack/?trknbr=' + encodeURIComponent(o.tracking) + '" target="_blank" rel="noopener">Track it →</a></div>' : '') +
       lineTables(indexed(o.lines), false) +
       '<div class="oactions">' + actions + '</div></div></details>';
   }

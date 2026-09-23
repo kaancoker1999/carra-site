@@ -399,14 +399,20 @@ export default async (req) => {
       const key = `order:${String(body.ref || "")}`;
       const o = await s.get(key, { type: "json" });
       if (!o) return bad("no such order", 404);
+      const status = String(body.status || "Pending review").slice(0, 60);
+      // once an order is in production (or beyond, shipped) it locks so the
+      // customer can no longer edit or withdraw it
+      const autoLock = status === "In production" || status === "Shipped" || status === "Cancelled";
       o.status = {
-        status: String(body.status || "Pending review").slice(0, 60),
-        locked: !!body.locked,
+        status,
+        locked: autoLock || !!body.locked,
         note: String(body.note || "").slice(0, 500),
         updatedAt: new Date().toISOString(),
       };
+      // FedEx tracking number, entered when the order ships — shown to the customer
+      o.tracking = String(body.tracking || "").trim().slice(0, 80);
       await s.setJSON(key, o);
-      return json({ ok: true, status: o.status });
+      return json({ ok: true, status: o.status, tracking: o.tracking });
     }
 
     if (path === "/api/admin/paid" && req.method === "POST") {
