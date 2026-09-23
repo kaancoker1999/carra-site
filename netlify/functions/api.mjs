@@ -400,8 +400,6 @@ export default async (req) => {
       const o = await s.get(key, { type: "json" });
       if (!o) return bad("no such order", 404);
       const status = String(body.status || "Pending review").slice(0, 60);
-      // once an order is in production (or beyond, shipped) it locks so the
-      // customer can no longer edit or withdraw it
       // every status other than "Pending review" locks the order (the customer
       // can only edit or withdraw it while it is still awaiting review)
       const autoLock = status !== "Pending review";
@@ -413,8 +411,12 @@ export default async (req) => {
       };
       // FedEx tracking number, entered when the order ships — shown to the customer
       o.tracking = String(body.tracking || "").trim().slice(0, 80);
+      // stamp the ship date the first time it ships — payment is due the
+      // Wednesday after this. Reverting to "Pending review" clears it.
+      if (status === "Shipped") { if (!o.shippedAt) o.shippedAt = new Date().toISOString(); }
+      else if (status === "Pending review") { delete o.shippedAt; }
       await s.setJSON(key, o);
-      return json({ ok: true, status: o.status, tracking: o.tracking });
+      return json({ ok: true, status: o.status, tracking: o.tracking, shippedAt: o.shippedAt || null });
     }
 
     if (path === "/api/admin/paid" && req.method === "POST") {

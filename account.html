@@ -56,7 +56,10 @@
   section{padding:36px 0 90px}
 
   /* light cards on the dark ground keep dark text inside */
-  .sum,.paycard,.tablewrap,.paybucket,.paygrp{color:var(--ink)}
+  .sum,.paycard,.tablewrap,.paybucket,.paygrp,.paybox{color:var(--ink)}
+  .paybox{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;
+    border:1px solid #B9D4B0;border-radius:12px;background:#E8F3E3;padding:16px 18px;margin:0 0 12px}
+  .paybox.over{background:#F9E2E0;border-color:#E0B7B3}
 
   /* ── summary tiles ── */
   .sumgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:0 0 34px}
@@ -186,6 +189,12 @@
       <a class="btn ghost" href="price-list.html">Price list</a>
     </div>
 
+    <div id="paysection" hidden>
+      <div class="xtitle">Payments due</div>
+      <p class="xsub">Once an order ships, payment is due by the <b>first Wednesday after it ships</b>. Overdue weeks are marked in red.</p>
+      <div id="paydue" style="margin:0 0 34px"></div>
+    </div>
+
     <div class="xtitle">Your orders</div>
     <p class="xsub">Newest first &mdash; click an order to see its line items. Editing, reordering and invoices live on the <a href="order.html">Place order</a> page.</p>
     <div class="tablewrap">
@@ -245,14 +254,19 @@
     if(b == null) return a;
     return Math.min(a, b);
   }
-  function dueOf(ts){
-    var d = new Date(ts);
-    return new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  /* payment is due the first Wednesday after an order ships */
+  function nextWednesday(date){
+    var d = new Date(date);
+    var delta = (3 - d.getDay() + 7) % 7; if(delta === 0) delta = 7;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + delta);
   }
-  function payable(o){
+  function payDue(o){
     var st = (o.status && o.status.status) || 'Pending review';
-    return st !== 'Cancelled' && !isPaid(o) && deliveredAt(o) != null;
+    if(st === 'Cancelled' || isPaid(o) || !o.shippedAt) return null;
+    return nextWednesday(o.shippedAt);
   }
+  function payable(o){ return payDue(o) != null; }
+  function startOfToday(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime(); }
 
   function detailHTML(o){
     var rows = (o.lines || []).map(function(l, i){
@@ -264,12 +278,14 @@
         '<td>' + size + '</td><td>' + l.qty + '</td><td class="num">' + amt + '</td></tr>';
     }).join('');
     var rc = o.receipt || {}, d = deliveredAt(o), bits = ['Sent ' + fdate(o.at)];
+    if(o.shippedAt) bits.push('shipped ' + fdate(o.shippedAt));
     if(d){
       var who = rc.dealerAt && rc.adminAt ? 'confirmed by both sides'
               : rc.dealerAt ? 'confirmed by you' : 'confirmed by LUMIA';
       bits.push('delivered ' + fdate(d) + ' (' + who + ')');
-      if(!isPaid(o)) bits.push('payment due ' + fdate(dueOf(d)));
     }
+    var pdw = payDue(o);
+    if(pdw) bits.push('payment due ' + fdate(pdw));
     if(isPaid(o)) bits.push('paid' + (o.payment.updatedAt ? ' ' + fdate(o.payment.updatedAt) : ''));
     var track = o.tracking
       ? '<div class="track"><i>📦</i><div><b>Shipped &middot; FedEx tracking</b><br><span class="tn">' + esc(o.tracking) + '</span></div>' +
@@ -281,6 +297,28 @@
       (o.notes ? '<div class="dnotes"><b>Notes:</b> ' + esc(o.notes) + '</div>' : '') +
       '<div class="dmeta">' + bits.join(' · ') +
       ' · <a href="order.html">edit, reorder or print the invoice →</a></div>';
+  }
+
+  function renderPayDue(orders){
+    var groups = {};
+    orders.forEach(function(o){
+      var w = payDue(o); if(!w) return;
+      var k = w.getFullYear() + '-' + ('0'+(w.getMonth()+1)).slice(-2) + '-' + ('0'+w.getDate()).slice(-2);
+      (groups[k] = groups[k] || { due: w, total: 0, n: 0 });
+      groups[k].total += orderTotals(o.lines).total; groups[k].n++;
+    });
+    var keys = Object.keys(groups).sort();
+    document.getElementById('paysection').hidden = !keys.length;
+    if(!keys.length) return;
+    var today = startOfToday();
+    document.getElementById('paydue').innerHTML = keys.map(function(k){
+      var g = groups[k], over = g.due.getTime() < today;
+      var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+      return '<div class="paybox' + (over ? ' over' : '') + '">' +
+        '<div><div class="pdue">Due ' + when + '</div>' +
+        '<div class="ptag">' + (over ? 'overdue' : 'payable') + ' &middot; ' + g.n + ' order' + (g.n === 1 ? '' : 's') + '</div></div>' +
+        '<div class="pamt">$' + g.total.toFixed(2) + '</div></div>';
+    }).join('');
   }
 
   function render(orders){
@@ -302,10 +340,11 @@
       tile(orders.length, 'Orders placed') +
       tile('$' + purch.toFixed(2), 'Total purchased') +
       tile('$' + due.toFixed(2), 'Balance due', due > 0 ? 'due' : '') +
-      tile('$' + pay.toFixed(2), 'Payable · delivered only', pay > 0 ? 'due' : '') +
+      tile('$' + pay.toFixed(2), 'Payable · shipped', pay > 0 ? 'due' : '') +
       tile(shipped, 'In transit') +
       tile(prod, 'In production') +
       tile(pend, 'Awaiting review');
+    renderPayDue(orders);
 
     var table = document.getElementById('otable'), body = document.getElementById('orows');
     if(!orders.length){ document.getElementById('noorders').hidden = false; return; }

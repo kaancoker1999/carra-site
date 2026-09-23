@@ -161,6 +161,17 @@
   .ovbar .bar{width:100%;background:var(--bronze);border-radius:4px 4px 0 0;min-height:2px}
   .ovbar .bl{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:var(--muted)}
   .ovbar .bn{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--ink)}
+
+  /* ── payments due ── */
+  .paybox{border:1px solid var(--line2);border-radius:12px;background:#EFF6EC;padding:14px 16px;margin:0 0 12px}
+  .paybox.over{background:#FBE2DF;border-color:#E0A49E}
+  .paytop{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin:0 0 8px}
+  .paytop b{font-family:'Archivo',sans-serif;font-size:15px}
+  .paysum{font-family:'Archivo',sans-serif;font-weight:600;font-size:20px}
+  .payrow{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid rgba(0,0,0,.08);flex-wrap:wrap}
+  .payrow .pd{flex:1;font-size:13px;min-width:200px}
+  .payrow .pd code{color:var(--bronze)}
+  .payrow .pa{font-family:'Archivo',sans-serif;font-weight:600;font-size:14px}
 </style>
 </head>
 <body>
@@ -190,6 +201,20 @@
       <button class="tab on" data-tab="overview" type="button">Overview</button>
       <button class="tab" data-tab="dealers" type="button">Customers</button>
       <button class="tab" data-tab="orders" type="button">Orders</button>
+      <button class="tab" data-tab="payments" type="button">Payments</button>
+    </div>
+
+    <!-- ── payments due ── -->
+    <div id="tab-payments" hidden>
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <h2 style="font-size:18px">Payments due</h2>
+          <span class="mono">shipped orders &middot; due the next Wednesday</span>
+        </div>
+        <p style="color:var(--muted);font-size:13px;margin:0 0 16px;max-width:82ch">Once an order ships, its payment is due by the <b>first Wednesday after the ship date</b>. Orders are grouped by that Wednesday; overdue weeks turn red. Mark each order paid as the money comes in.</p>
+        <div class="ovgrid" id="paykpi" style="margin-bottom:20px"></div>
+        <div id="paybody"></div>
+      </div>
     </div>
 
     <!-- ── overview ── -->
@@ -199,7 +224,7 @@
         <div>
           <div class="ovhead"><i class="ti"></i>Needs your attention</div>
           <div class="card ovcard" id="ovattention"></div>
-          <div class="ovhead">This month&rsquo;s collections</div>
+          <div class="ovhead">Payments due &middot; by Wednesday</div>
           <div class="card ovcard" id="ovcollect"></div>
           <div class="ovhead">Units ordered &middot; last 8 weeks</div>
           <div class="card ovcard" id="ovtrend"></div>
@@ -219,14 +244,6 @@
 
     <!-- ── orders ── -->
     <div id="tab-orders" hidden>
-      <div class="card" id="collectcard" hidden>
-        <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:4px">
-          <h2 style="font-size:18px">Collections</h2>
-          <span class="mono">billed the 1st &middot; delivered orders only</span>
-        </div>
-        <p style="color:var(--muted);font-size:13px;margin:0 0 14px;max-width:80ch">Money owed for delivered, unpaid orders, grouped by the day you collect it (delivered in a month &rarr; due the 1st of the next). Mark orders paid below to clear them.</p>
-        <div id="collectbody"></div>
-      </div>
       <div class="card ordwrap">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
           <h2 style="font-size:18px">All orders</h2>
@@ -377,6 +394,7 @@
       $('tab-overview').hidden = t.dataset.tab !== 'overview';
       $('tab-orders').hidden = t.dataset.tab !== 'orders';
       $('tab-dealers').hidden = t.dataset.tab !== 'dealers';
+      $('tab-payments').hidden = t.dataset.tab !== 'payments';
     });
   });
 
@@ -420,8 +438,8 @@
         calMonth = monthOf(allOrders.length ? allOrders[0].at : new Date());
       }
       renderCalendar();
-      renderCollections();
-    }).catch(function(e){ $('orderrows').innerHTML = '<tr><td colspan="8">' + esc(e.message) + '</td></tr>'; });
+      renderPayments();
+    }).catch(function(e){ $('orderrows').innerHTML = '<tr><td colspan="7">' + esc(e.message) + '</td></tr>'; });
   }
 
   /* ── collections: delivered + unpaid orders, grouped by the 1st-of-month
@@ -433,42 +451,6 @@
     var b = rc.dealerAt ? Date.parse(rc.dealerAt) : null;
     if(a == null) return b; if(b == null) return a; return Math.min(a, b);
   }
-  function renderCollections(){
-    var groups = {};
-    allOrders.forEach(function(o){
-      if(o.test) return;
-      var st = (o.status && o.status.status) || 'Pending review';
-      if(st === 'Cancelled') return;
-      if(o.payment && o.payment.paid) return;
-      var d = deliveredAt(o);
-      if(d == null) return;
-      var due = new Date(new Date(d).getFullYear(), new Date(d).getMonth() + 1, 1);
-      var k = due.getFullYear() + '-' + ('0' + (due.getMonth() + 1)).slice(-2);
-      (groups[k] = groups[k] || { due: due, total: 0, n: 0, dealers: {} });
-      var t = orderTotals(o.lines).total;
-      groups[k].total += t; groups[k].n++;
-      groups[k].dealers[o.dealer || o.code] = (groups[k].dealers[o.dealer || o.code] || 0) + t;
-    });
-    var keys = Object.keys(groups).sort();
-    var card = $('collectcard');
-    if(!keys.length){ card.hidden = true; return; }
-    card.hidden = false;
-    var now = Date.now();
-    $('collectbody').innerHTML = keys.map(function(k){
-      var g = groups[k];
-      var days = (now - g.due.getTime()) / 86400000;
-      var bg = days < 0 ? '#F3ECDD' : days < 14 ? '#EFF6EC' : days < 28 ? '#FBF3CF' : days < 42 ? '#FBE7CE' : '#FBE2DF';
-      var when = g.due.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
-      var tag = days < 0 ? 'collect on ' + when : 'due since ' + when;
-      var per = Object.keys(g.dealers).sort(function(a,b){ return g.dealers[b] - g.dealers[a]; })
-        .map(function(name){ return esc(name) + ' <b>$' + g.dealers[name].toFixed(2) + '</b>'; }).join(' &middot; ');
-      return '<div style="background:' + bg + ';border:1px solid var(--line2);border-radius:12px;padding:14px 16px;margin:0 0 10px">' +
-        '<div class="row" style="justify-content:space-between;align-items:baseline">' +
-          '<div><b style="font-family:\'Archivo\',sans-serif;font-size:16px">$' + g.total.toFixed(2) + '</b> ' +
-          '<span class="mono" style="margin-left:8px">' + esc(tag) + ' &middot; ' + g.n + ' order' + (g.n === 1 ? '' : 's') + '</span></div></div>' +
-        '<div style="font-size:12.5px;color:var(--ink);margin-top:8px">' + per + '</div></div>';
-    }).join('');
-  }
 
   /* ── overview dashboard ── */
   function statusOf(o){ return (o.status && o.status.status) || 'Pending review'; }
@@ -476,10 +458,8 @@
   function collectionGroups(){
     var groups = {};
     allOrders.forEach(function(o){
-      if(o.test || statusOf(o) === 'Cancelled' || isPaid(o)) return;
-      var d = deliveredAt(o); if(d == null) return;
-      var due = new Date(new Date(d).getFullYear(), new Date(d).getMonth() + 1, 1);
-      var k = due.getFullYear() + '-' + ('0' + (due.getMonth() + 1)).slice(-2);
+      var due = payDue(o); if(!due) return;   /* shipped + unpaid, due next Wed */
+      var k = ymd(due);
       (groups[k] = groups[k] || { due: due, total: 0, n: 0 });
       groups[k].total += orderTotals(o.lines).total; groups[k].n++;
     });
@@ -496,7 +476,7 @@
     os.forEach(function(o){
       if(statusOf(o) === 'Cancelled' || isPaid(o)) return;
       var t = orderTotals(o.lines).total; unpaid += t;
-      if(deliveredAt(o) != null) payable += t;
+      if(payDue(o) != null) payable += t;   /* shipped + unpaid = payable */
     });
     var activeCust = dealersCache.filter(function(d){ return d.active !== false && !d.test; }).length;
 
@@ -507,7 +487,7 @@
       kpi(pending.length, 'Awaiting review', pending.length ? 'warn' : '', 'orders') +
       kpi(inflight.length, 'In production / on the way', '', 'orders') +
       kpi('$' + unpaid.toFixed(2), 'Unpaid balance', unpaid > 0 ? 'due' : '') +
-      kpi('$' + payable.toFixed(2), 'Payable now · delivered', payable > 0 ? 'due' : '') +
+      kpi('$' + payable.toFixed(2), 'Payable · shipped', payable > 0 ? 'due' : '', 'payments') +
       kpi(activeCust, 'Active customers', '', 'dealers');
 
     function item(icon, cls, title, sub, ct, go){
@@ -517,26 +497,24 @@
         (ct != null ? '<div class="ct">' + ct + '</div>' : '') + '</div>';
     }
     var now = Date.now();
-    var shippedNoRcpt = os.filter(function(o){ var rc = o.receipt || {}; return statusOf(o) === 'Shipped' && !(rc.dealerAt || rc.adminAt); });
     var groups = collectionGroups();
-    var overdueTotal = 0, overdueN = 0;
-    Object.keys(groups).forEach(function(k){ if(groups[k].due.getTime() < now){ overdueTotal += groups[k].total; overdueN += groups[k].n; } });
+    var overdueTotal = 0, overdueN = 0, todayTs = startOfToday();
+    Object.keys(groups).forEach(function(k){ if(groups[k].due.getTime() < todayTs){ overdueTotal += groups[k].total; overdueN += groups[k].n; } });
     var suspended = dealersCache.filter(function(d){ return d.active === false; });
     var att = [];
     if(pending.length)      att.push(item('inbox', 'ovi-red', 'New orders to review', 'Waiting for your approval', pending.length, 'orders'));
-    if(shippedNoRcpt.length) att.push(item('truck-delivery', 'ovi-amber', 'Shipped, delivery not confirmed', 'Mark delivered to close them', shippedNoRcpt.length, 'orders'));
-    if(overdueN)            att.push(item('cash', 'ovi-red', 'Overdue collections', '$' + overdueTotal.toFixed(2) + ' past due', overdueN, 'orders'));
+    if(overdueN)            att.push(item('cash', 'ovi-red', 'Overdue payments', '$' + overdueTotal.toFixed(2) + ' past due', overdueN, 'payments'));
     if(suspended.length)    att.push(item('user-off', 'ovi-amber', 'Suspended accounts', suspended.map(function(d){ return esc(d.name); }).join(', '), suspended.length, 'dealers'));
     $('ovattention').innerHTML = att.length ? att.join('') : '<div class="ovempty"><i class="ti ti-check"></i> All clear — nothing needs action right now.</div>';
 
     var ckeys = Object.keys(groups).sort();
     $('ovcollect').innerHTML = ckeys.length ? ckeys.map(function(k){
-      var g = groups[k], over = g.due.getTime() < now;
+      var g = groups[k], over = g.due.getTime() < todayTs;
       return '<div class="ovitem"><div class="ovicon ' + (over ? 'ovi-red' : 'ovi-green') + '"><i class="ti ti-calendar"></i></div>' +
-        '<div class="tx">Due ' + g.due.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'}) +
-        '<small>' + g.n + ' order' + (g.n === 1 ? '' : 's') + (over ? ' · past due' : '') + '</small></div>' +
+        '<div class="tx">Due ' + g.due.toLocaleDateString('en-US', {weekday:'short', month:'long', day:'numeric'}) +
+        '<small>' + g.n + ' order' + (g.n === 1 ? '' : 's') + (over ? ' · overdue' : '') + '</small></div>' +
         '<div class="ct">$' + g.total.toFixed(2) + '</div></div>';
-    }).join('') : '<div class="ovempty">Nothing to collect yet — delivered orders appear here.</div>';
+    }).join('') : '<div class="ovempty">Nothing due — shipped orders appear here until paid.</div>';
 
     /* units = total pieces ordered (sum of line quantities), not order count.
        Fabric Only is sold by the yard, not per piece — it is left out of the
@@ -599,11 +577,71 @@
     $('ovalerts').innerHTML = al.length ? al.join('') : '<div class="ovempty">No alerts.</div>';
   }
 
+  /* ── payments due: shipped + unpaid, due the first Wednesday after shipping ── */
+  function nextWednesday(date){
+    var d = new Date(date);
+    var delta = (3 - d.getDay() + 7) % 7; if(delta === 0) delta = 7;   /* Wed→+7 */
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + delta);
+  }
+  function payDue(o){
+    if(o.test || statusOf(o) === 'Cancelled' || isPaid(o) || !o.shippedAt) return null;
+    return nextWednesday(o.shippedAt);
+  }
+  function startOfToday(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime(); }
+
+  function renderPayments(){
+    var groups = {};
+    allOrders.forEach(function(o){
+      var due = payDue(o); if(!due) return;
+      var k = ymd(due);
+      (groups[k] = groups[k] || { due: due, orders: [], total: 0 });
+      groups[k].orders.push(o);
+      groups[k].total += orderTotals(o.lines).total;
+    });
+    var keys = Object.keys(groups).sort();
+    var today = startOfToday(), overdue = 0, grand = 0, n = 0;
+    keys.forEach(function(k){ var g = groups[k]; grand += g.total; n += g.orders.length; if(g.due.getTime() < today) overdue += g.total; });
+    function kpi(v, k, cls){ return '<div class="ovkpi' + (cls ? ' ' + cls : '') + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>'; }
+    $('paykpi').innerHTML =
+      kpi('$' + overdue.toFixed(2), 'Overdue', overdue > 0 ? 'due' : '') +
+      kpi('$' + grand.toFixed(2), 'Total outstanding', grand > 0 ? 'due' : '') +
+      kpi(n, 'Orders awaiting payment');
+
+    if(!keys.length){ $('paybody').innerHTML = '<div class="ovempty">Nothing due — shipped orders appear here until they are marked paid.</div>'; return; }
+    $('paybody').innerHTML = keys.map(function(k){
+      var g = groups[k], over = g.due.getTime() < today;
+      var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+      var rows = g.orders.slice().sort(function(a,b){ return (a.dealer||'') < (b.dealer||'') ? -1 : 1; }).map(function(o){
+        var shipped = o.shippedAt ? new Date(o.shippedAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '—';
+        return '<div class="payrow"><div class="pd"><b>' + esc(o.dealer) + '</b> <code>' + esc(o.ref) + '</code>' +
+          '<span class="mono" style="margin-left:8px">shipped ' + shipped + '</span>' +
+          (o.customer ? '<span class="mono" style="margin-left:8px">' + esc(o.customer) + '</span>' : '') + '</div>' +
+          '<div class="pa">$' + orderTotals(o.lines).total.toFixed(2) + '</div>' +
+          '<button class="btn pay-mark" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px">Mark paid</button></div>';
+      }).join('');
+      return '<div class="paybox' + (over ? ' over' : '') + '">' +
+        '<div class="paytop"><div><b>' + when + '</b>' + (over ? ' <span class="status st-canc">overdue</span>' : '') +
+        '<div class="mono" style="margin-top:2px">' + g.orders.length + ' order' + (g.orders.length === 1 ? '' : 's') + '</div></div>' +
+        '<div class="paysum">$' + g.total.toFixed(2) + '</div></div>' + rows + '</div>';
+    }).join('');
+  }
+
+  $('tab-payments').addEventListener('click', function(e){
+    var b = e.target.closest('.pay-mark'); if(!b) return;
+    armConfirm(b, 'Mark order ' + b.dataset.ref + ' as paid?', function(){
+      b.disabled = true;
+      api('/api/admin/paid', 'POST', { ref: b.dataset.ref, paid: true })
+        .then(function(){ loadOrders().then(loadDealers); })
+        .catch(function(){ b.disabled = false; note(b, 'Failed — try again.'); });
+    });
+  });
+
   document.getElementById('tab-overview').addEventListener('click', function(e){
     var g = e.target.closest('[data-go]');
     if(g){
       if(g.dataset.go === 'orders'){ stageSel = 'orders'; calSel = { mode: 'all', key: '' }; renderCalendar(); gotoTab('orders'); }
       else if(g.dataset.go === 'dealers'){ gotoTab('dealers'); }
+      else if(g.dataset.go === 'payments'){ gotoTab('payments'); }
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
