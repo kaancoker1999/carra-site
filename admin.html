@@ -212,6 +212,8 @@
           <span class="mono">shipped orders &middot; due the next Wednesday</span>
         </div>
         <p style="color:var(--muted);font-size:13px;margin:0 0 16px;max-width:82ch">Once an order ships, its payment is due by the <b>first Wednesday after the ship date</b>. Orders are grouped by that Wednesday; overdue weeks turn red. Mark each order paid as the money comes in.</p>
+        <div style="margin:0 0 18px"><label style="display:inline">Customer</label>
+          <select id="payfilter" style="min-width:240px;margin-left:8px"></select></div>
         <div class="ovgrid" id="paykpi" style="margin-bottom:20px"></div>
         <div id="paybody"></div>
       </div>
@@ -589,12 +591,23 @@
   }
   function startOfToday(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime(); }
 
+  var payFilter = '';   /* '' = all customers, else a dealer code */
   function renderPayments(){
+    var payables = allOrders.filter(function(o){ return payDue(o); });
+    /* customer filter dropdown — only dealers that actually owe something */
+    var names = {}; payables.forEach(function(o){ names[o.code] = o.dealer || o.code; });
+    var opts = Object.keys(names).map(function(c){ return { code: c, name: names[c] }; })
+      .sort(function(a, b){ return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1; });
+    if(payFilter && !names[payFilter]) payFilter = '';   /* selected dealer no longer owes */
+    var sel = $('payfilter');
+    sel.innerHTML = '<option value="">All customers (' + payables.length + ')</option>' +
+      opts.map(function(o){ return '<option value="' + esc(o.code) + '"' + (o.code === payFilter ? ' selected' : '') + '>' + esc(o.name) + '</option>'; }).join('');
+
+    var shown = payFilter ? payables.filter(function(o){ return o.code === payFilter; }) : payables;
     var groups = {};
-    allOrders.forEach(function(o){
-      var due = payDue(o); if(!due) return;
-      var k = ymd(due);
-      (groups[k] = groups[k] || { due: due, orders: [], total: 0 });
+    shown.forEach(function(o){
+      var k = ymd(payDue(o));
+      (groups[k] = groups[k] || { due: payDue(o), orders: [], total: 0 });
       groups[k].orders.push(o);
       groups[k].total += orderTotals(o.lines).total;
     });
@@ -607,7 +620,7 @@
       kpi('$' + grand.toFixed(2), 'Total outstanding', grand > 0 ? 'due' : '') +
       kpi(n, 'Orders awaiting payment');
 
-    if(!keys.length){ $('paybody').innerHTML = '<div class="ovempty">Nothing due — shipped orders appear here until they are marked paid.</div>'; return; }
+    if(!keys.length){ $('paybody').innerHTML = '<div class="ovempty">' + (payFilter ? 'This customer has nothing due.' : 'Nothing due — shipped orders appear here until they are marked paid.') + '</div>'; return; }
     $('paybody').innerHTML = keys.map(function(k){
       var g = groups[k], over = g.due.getTime() < today;
       var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
@@ -626,6 +639,7 @@
     }).join('');
   }
 
+  $('payfilter').addEventListener('change', function(){ payFilter = this.value; renderPayments(); });
   $('tab-payments').addEventListener('click', function(e){
     var b = e.target.closest('.pay-mark'); if(!b) return;
     armConfirm(b, 'Mark order ' + b.dataset.ref + ' as paid?', function(){
