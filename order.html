@@ -792,13 +792,19 @@
       .catch(function(){ /* offline: keep whatever we had */ });
   }
 
+  /* copied text leaves out "No"/"None" answers — "TDBU: No" is easy to
+     misread as a request, so only what was actually chosen is written */
+  function textSpec(l){
+    return specPairs(l).filter(function(p){ return !/^(no|none|all groups)$/i.test(p.v); })
+      .map(function(p){ return p.k ? p.k + ': ' + p.v : p.v; }).join(' · ');
+  }
   function linesText(ref, at, ls, customer, notes){
     var t = orderTotals(ls);
     return 'LUMIA order request ' + ref + '\n' + at.slice(0,10) +
       (customer ? '\nCustomer: ' + customer : '') +
       (notes ? '\nNotes: ' + notes : '') + '\n\n' +
       ls.map(function(l,i){
-        return (i+1) + '. ' + (l.label ? '[' + l.label + '] ' : '') + l.product + ' — ' + l.spec +
+        return (i+1) + '. ' + (l.label ? '[' + l.label + '] ' : '') + l.product + ' — ' + textSpec(l) +
           ' — ' + (l.w == null ? 'by the yard' : fmtIn(l.w) + '" x ' + fmtIn(l.h) + '"') + ' — qty ' + l.qty +
           ' — ' + (l.price == null ? 'price on request' : '$' + l.price.toFixed(2) + ' ea = $' + (l.price*l.qty).toFixed(2));
       }).join('\n') +
