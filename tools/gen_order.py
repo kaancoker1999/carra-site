@@ -171,20 +171,11 @@ def build():
         steps = fabric_first(steps)
 
         pid = fname.replace(".html", "")
-        if pid == "roman":
+        if pid in ("roman", "drapery"):
             # colour group is only a filter: "All groups" lists every fabric,
             # a group narrows the list; price follows the chosen fabric's group
             steps.insert(0, {"key": "cgroup", "label": "Colour group",
                              "options": ["All groups", "Group 1", "Group 2", "Group 3", "Group 4"]})
-        elif pid == "drapery":
-            # colour group first; everything else appears once it is chosen,
-            # and the fabric list narrows to that group's collections
-            gate = {"key": "cgroup", "value": ["Group 1", "Group 2", "Group 3", "Group 4"]}
-            for st in steps:
-                if "showIf" not in st:
-                    st["showIf"] = gate
-            steps.insert(0, {"key": "cgroup", "label": "Colour group",
-                             "options": [SELECT, "Group 1", "Group 2", "Group 3", "Group 4"]})
         lim = GRID_LIMITS.get(pid, {})
         products.append({
             "id": pid,
