@@ -72,6 +72,9 @@
   .payorow .poamt.done{text-decoration:line-through;color:var(--muted)}
   .payorow .pclaim{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
     background:#FBF3CF;border:1px solid #E2D27E;color:#8A6220;border-radius:999px;padding:2px 8px;margin-left:4px}
+  .payorow .plate{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+    background:#FBE3E0;border:1px solid #E3A49C;color:#8A2620;border-radius:999px;padding:2px 8px;margin-left:4px}
+  .paywarn{background:#FBE3E0;border:1px solid #E3A49C;color:#8A2620;border-radius:12px;padding:12px 16px;margin:0 0 12px;font-size:14px;line-height:1.5}
   .payorow .por{display:flex;flex-direction:column;align-items:flex-end;gap:6px;white-space:nowrap}
   .paybtn{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
     background:var(--ink);color:#fff;border:0;border-radius:8px;padding:7px 12px;cursor:pointer}
@@ -293,6 +296,10 @@
   function payDue(o){ return payShow(o) && !isPaid(o) ? dueWed(o) : null; }
   function payable(o){ return payShow(o) && !isPaid(o); }   /* still owed */
   function startOfToday(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime(); }
+  /* still unpaid 15+ days after shipping -> warning */
+  var LATE_DAYS = 15;
+  function daysSinceShip(o){ return o.shippedAt ? Math.floor((Date.now() - Date.parse(o.shippedAt)) / 86400000) : 0; }
+  function isLate(o){ return payable(o) && daysSinceShip(o) >= LATE_DAYS; }
   function orderItems(o){
     return (o.lines || []).map(function(l){ return (l.label ? esc(l.label) + ' — ' : '') + esc(l.product); }).join(' &middot; ');
   }
@@ -346,7 +353,13 @@
     var allbtn = claimable > 1
       ? '<div style="display:flex;justify-content:flex-end;margin:0 0 10px"><button class="paybtn wht" data-payallclaim="1" type="button" style="padding:9px 16px">I&rsquo;ve paid all (' + claimable + ')</button></div>'
       : '';
-    document.getElementById('paydue').innerHTML = allbtn + keys.map(function(k){
+    var late = orders.filter(isLate), lateT = 0;
+    late.forEach(function(o){ lateT += orderTotals(o.lines).total; });
+    var warn = late.length
+      ? '<div class="paywarn">⚠ <b>' + late.length + ' order' + (late.length === 1 ? ' is' : 's are') + ' still unpaid ' + LATE_DAYS +
+        '+ days after shipping</b> — $' + lateT.toFixed(2) + ' (' + late.map(function(o){ return esc(o.ref); }).join(', ') + '). Please arrange payment as soon as possible.</div>'
+      : '';
+    document.getElementById('paydue').innerHTML = warn + allbtn + keys.map(function(k){
       var g = groups[k], over = g.due.getTime() < today && g.owed > 0;
       var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
       var rows = g.orders.map(function(o){
@@ -354,6 +367,7 @@
         var claimed = !!(o.payment && o.payment.customerPaidAt && !paid);
         var badge = paid ? ' <span class="ppaid">Paid</span>'
                   : claimed ? ' <span class="pclaim">Awaiting confirmation</span>' : '';
+        if(!paid && !claimed && isLate(o)) badge += ' <span class="plate">' + daysSinceShip(o) + ' days unpaid</span>';
         var action = paid ? ''
           : claimed ? '<button class="paybtn ghost" data-paidcancel="' + esc(o.ref) + '" type="button">Not yet</button>'
           : '<button class="paybtn" data-paidclaim="' + esc(o.ref) + '" type="button">I&rsquo;ve paid</button>';
