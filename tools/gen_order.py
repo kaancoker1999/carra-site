@@ -159,6 +159,8 @@ def build():
                 step["options"] = [SELECT] + step["options"]
             if "showIf" in g:
                 step["showIf"] = g["showIf"]
+            if "exclude" in g:
+                step["exclude"] = g["exclude"]
             steps.append(step)
 
         if fab == "cell":

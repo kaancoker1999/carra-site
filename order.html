@@ -385,7 +385,28 @@
     fillColours();
   }
 
+  /* "exclude": options unavailable while another choice is made (relaxed
+     fold -> no motor); an excluded pick drops back to the first allowed one */
+  function applyExcludes(){
+    var p = CFG.products[+document.getElementById('c-product').value];
+    p.steps.forEach(function(st){
+      if(!st.exclude) return;
+      var X = st.exclude, dep = document.getElementById('c-' + X.key), el = document.getElementById('c-' + st.key);
+      if(!dep || !el) return;
+      var active = X.value.indexOf(dep.value) !== -1;
+      [].forEach.call(el.options, function(o){
+        var off = active && X.options.indexOf(o.value) !== -1;
+        o.disabled = off;
+        o.textContent = o.value + (off ? ' (not with ' + dep.value + ')' : '');
+      });
+      if(el.selectedOptions[0] && el.selectedOptions[0].disabled){
+        el.value = [].filter.call(el.options, function(o){ return !o.disabled; })[0].value;
+      }
+    });
+  }
+
   function refreshShowIf(){
+    applyExcludes();
     /* a cell is visible only if its condition holds AND the cell it depends on
        is itself visible (cgroup -> trackopt -> track chains) */
     for(var pass = 0; pass < 3; pass++){

@@ -92,6 +92,7 @@ TEMPLATE = r"""<!doctype html>
   .grp .code{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--bronze);text-transform:uppercase}
   .grp h3{font-size:18px;margin:8px 0 16px}
   .chips{display:flex;flex-wrap:wrap;gap:10px}
+  .chip:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through}
   .chip{font:inherit;font-size:14.5px;border:1px solid var(--line2);background:var(--white);color:var(--ink);
     padding:10px 17px;border-radius:10px;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
   .chip:hover{border-color:var(--ink)}
@@ -359,7 +360,28 @@ var CONFIG = @@CONFIG@@;
     return r;
   }
 
+  /* "exclude": some options are unavailable while another choice is made
+     (e.g. relaxed fold -> no motor); an excluded pick falls back to the first allowed one */
+  function applyExcludes(){
+    CONFIG.groups.forEach(function(g){
+      if(!g.exclude) return;
+      var X = g.exclude, active = X.value.indexOf(state[X.key]) !== -1;
+      var chips = document.querySelectorAll('[data-g="' + g.key + '"]');
+      chips.forEach(function(ch){
+        var off = active && X.options.indexOf(ch.dataset.v) !== -1;
+        ch.disabled = off;
+        ch.title = off ? 'Not available with ' + state[X.key] + ' ' + X.key : '';
+      });
+      if(active && X.options.indexOf(state[g.key]) !== -1){
+        var first = [].filter.call(chips, function(ch){ return !ch.disabled; })[0];
+        state[g.key] = first.dataset.v;
+        chips.forEach(function(ch){ ch.classList.toggle('on', ch === first); });
+      }
+    });
+  }
+
   function update(){
+    applyExcludes();
     document.querySelectorAll('.grp[data-si-key]').forEach(function(grp){
       grp.hidden = grp.dataset.siVal.split('|').indexOf(state[grp.dataset.siKey]) === -1;
     });
@@ -433,7 +455,9 @@ PRODUCTS = {
                 {"n": "Relaxed", "img": "assets/fold-relaxed.jpg"},
                 {"n": "Hobbled", "img": "assets/fold-hobbled.jpg"}]},
             {"type": "fabrics"},
-            {"key": "drive", "label": "Mechanism", "options": ["Cordless", "Continuous cord loop", "Motorized"]},
+            {"key": "drive", "label": "Mechanism", "options": ["Cordless", "Continuous cord loop", "Motorized"],
+             # a relaxed fold can't be motorized
+             "exclude": {"key": "fold", "value": ["Relaxed"], "options": ["Motorized"]}},
             {"key": "chain", "label": "Control side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": ["Continuous cord loop", "Motorized"]}},
             {"key": "remote", "label": "Remote control", "options": ["No remote", "1-channel remote", "5-channel remote", "15-channel remote"], "showIf": {"key": "drive", "value": "Motorized"}},
             {"key": "cable", "label": "USB-C charging cable", "options": ["No", "Yes"], "showIf": {"key": "drive", "value": "Motorized"}},
