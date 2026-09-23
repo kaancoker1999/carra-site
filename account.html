@@ -57,9 +57,19 @@
 
   /* light cards on the dark ground keep dark text inside */
   .sum,.paycard,.tablewrap,.paybucket,.paygrp,.paybox{color:var(--ink)}
-  .paybox{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;
-    border:1px solid #B9D4B0;border-radius:12px;background:#E8F3E3;padding:16px 18px;margin:0 0 12px}
+  .paybox{border:1px solid #B9D4B0;border-radius:12px;background:#E8F3E3;padding:16px 18px;margin:0 0 12px}
   .paybox.over{background:#F9E2E0;border-color:#E0B7B3}
+  .paytop{display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .payorows{margin-top:10px;border-top:1px solid rgba(0,0,0,.09);padding-top:6px}
+  .payorow{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:8px 0}
+  .payorow+.payorow{border-top:1px solid rgba(0,0,0,.06)}
+  .payorow .pref{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.05em;color:var(--bronze)}
+  .payorow .pcust{font-size:13px}
+  .payorow .ppaid{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+    background:#D8ECD2;border:1px solid #A9CB9F;color:#2F5D25;border-radius:999px;padding:2px 8px;margin-left:4px}
+  .payorow .pitems{font-size:12.5px;color:#4A4E52;margin-top:3px}
+  .payorow .poamt{font-family:'IBM Plex Mono',monospace;font-size:13px;white-space:nowrap}
+  .payorow .poamt.done{text-decoration:line-through;color:var(--muted)}
 
   /* ── summary tiles ── */
   .sumgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:0 0 34px}
@@ -260,13 +270,22 @@
     var delta = (3 - d.getDay() + 7) % 7; if(delta === 0) delta = 7;
     return new Date(d.getFullYear(), d.getMonth(), d.getDate() + delta);
   }
-  function payDue(o){
+  /* the Wednesday a shipped order's payment is due */
+  function dueWed(o){ return o.shippedAt ? nextWednesday(o.shippedAt) : null; }
+  function paidAt(o){ return (o.payment && o.payment.paid && o.payment.updatedAt) ? Date.parse(o.payment.updatedAt) : null; }
+  /* shown in Payments due while it is owed — and, once paid, for 2 more days */
+  function payShow(o){
     var st = (o.status && o.status.status) || 'Pending review';
-    if(st === 'Cancelled' || isPaid(o) || !o.shippedAt) return null;
-    return nextWednesday(o.shippedAt);
+    if(st === 'Cancelled' || !o.shippedAt) return false;
+    if(isPaid(o)){ var pa = paidAt(o); return pa != null && (Date.now() - pa) < 2 * 86400000; }
+    return true;
   }
-  function payable(o){ return payDue(o) != null; }
+  function payDue(o){ return payShow(o) && !isPaid(o) ? dueWed(o) : null; }
+  function payable(o){ return payShow(o) && !isPaid(o); }   /* still owed */
   function startOfToday(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime(); }
+  function orderItems(o){
+    return (o.lines || []).map(function(l){ return (l.label ? esc(l.label) + ' — ' : '') + esc(l.product); }).join(' &middot; ');
+  }
 
   function detailHTML(o){
     var rows = (o.lines || []).map(function(l, i){
@@ -302,22 +321,32 @@
   function renderPayDue(orders){
     var groups = {};
     orders.forEach(function(o){
-      var w = payDue(o); if(!w) return;
+      if(!payShow(o)) return;
+      var w = dueWed(o);
       var k = w.getFullYear() + '-' + ('0'+(w.getMonth()+1)).slice(-2) + '-' + ('0'+w.getDate()).slice(-2);
-      (groups[k] = groups[k] || { due: w, total: 0, n: 0 });
-      groups[k].total += orderTotals(o.lines).total; groups[k].n++;
+      (groups[k] = groups[k] || { due: w, orders: [], owed: 0 });
+      groups[k].orders.push(o);
+      if(!isPaid(o)) groups[k].owed += orderTotals(o.lines).total;
     });
     var keys = Object.keys(groups).sort();
     document.getElementById('paysection').hidden = !keys.length;
     if(!keys.length) return;
     var today = startOfToday();
     document.getElementById('paydue').innerHTML = keys.map(function(k){
-      var g = groups[k], over = g.due.getTime() < today;
+      var g = groups[k], over = g.due.getTime() < today && g.owed > 0;
       var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+      var rows = g.orders.map(function(o){
+        var paid = isPaid(o), t = orderTotals(o.lines).total;
+        return '<div class="payorow"><div class="pi">' +
+          '<span class="pref">' + esc(o.ref) + '</span>' + (o.customer ? ' <span class="pcust">' + esc(o.customer) + '</span>' : '') +
+          (paid ? ' <span class="ppaid">Paid</span>' : '') +
+          '<div class="pitems">' + orderItems(o) + '</div></div>' +
+          '<div class="poamt' + (paid ? ' done' : '') + '">$' + t.toFixed(2) + '</div></div>';
+      }).join('');
       return '<div class="paybox' + (over ? ' over' : '') + '">' +
-        '<div><div class="pdue">Due ' + when + '</div>' +
-        '<div class="ptag">' + (over ? 'overdue' : 'payable') + ' &middot; ' + g.n + ' order' + (g.n === 1 ? '' : 's') + '</div></div>' +
-        '<div class="pamt">$' + g.total.toFixed(2) + '</div></div>';
+        '<div class="paytop"><div class="pdue">Due ' + when + '</div>' +
+        '<div class="pamt">$' + g.owed.toFixed(2) + '</div></div>' +
+        '<div class="payorows">' + rows + '</div></div>';
     }).join('');
   }
 
