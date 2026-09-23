@@ -437,7 +437,7 @@
       pp = prodPrices('roman'); if(!pp) return null;
       var grid = pp.grids[(sel.group || 1) - 1] || pp.grids[0];
       base = gridPrice(grid, w, h); if(base == null) return null;
-      pct += ({'Back rods':0, 'Front rods':10, 'Relaxed':10, 'Hobbled':25})[sel.fold] || 0;
+      pct += ({'Flat':0, 'Back rods':0, 'Front rods':10, 'Relaxed':10, 'Hobbled':25})[sel.fold] || 0;
       pct += ({'White liner':10, 'Blackout liner':20})[sel.liner] || 0;
       if(sel.banding === 'Yes') pct += 50;
       base = base * (1 + pct / 100);

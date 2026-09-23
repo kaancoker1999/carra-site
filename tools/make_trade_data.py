@@ -126,6 +126,7 @@ def parse_workbook():
         rom_grids.append(g)
     roman_extras = [
         {"label": "Seamless flat fold", "pct": 0},
+        {"label": "Flat", "pct": 0},
         {"label": "Classic flat fold", "pct": 10},
         {"label": "Relaxed fold", "pct": 10},
         {"label": "Soft hobbled fold", "pct": 25},
