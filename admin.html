@@ -172,6 +172,7 @@
   .payrow .pd{flex:1;font-size:13px;min-width:200px}
   .payrow .pd code{color:var(--bronze)}
   .payrow .pa{font-family:'Archivo',sans-serif;font-weight:600;font-size:14px}
+  .payrow.claimed{background:#EFF6EC;border:1px solid #B9D4B0;border-radius:10px;padding:10px 12px;margin:6px 0}
 </style>
 </head>
 <body>
@@ -506,9 +507,11 @@
     var overdueTotal = 0, overdueN = 0, todayTs = startOfToday();
     Object.keys(groups).forEach(function(k){ if(groups[k].due.getTime() < todayTs){ overdueTotal += groups[k].total; overdueN += groups[k].n; } });
     var suspended = dealersCache.filter(function(d){ return d.active === false; });
+    var claimed = os.filter(function(o){ return o.payment && o.payment.customerPaidAt && !o.payment.paid && statusOf(o) !== 'Cancelled'; });
     var att = [];
     if(pending.length)      att.push(item('inbox', 'ovi-red', 'New orders to review', 'Waiting for your approval', pending.length, 'orders'));
-    if(overdueN)            att.push(item('cash', 'ovi-red', 'Overdue payments', '$' + overdueTotal.toFixed(2) + ' past due', overdueN, 'payments'));
+    if(claimed.length)      att.push(item('cash', 'ovi-green', 'Payments to confirm', 'Customers marked these paid', claimed.length, 'payments'));
+    if(overdueN)            att.push(item('alert-triangle', 'ovi-red', 'Overdue payments', '$' + overdueTotal.toFixed(2) + ' past due', overdueN, 'payments'));
     if(suspended.length)    att.push(item('user-off', 'ovi-amber', 'Suspended accounts', suspended.map(function(d){ return esc(d.name); }).join(', '), suspended.length, 'dealers'));
     $('ovattention').innerHTML = att.length ? att.join('') : '<div class="ovempty"><i class="ti ti-check"></i> All clear — nothing needs action right now.</div>';
 
@@ -630,13 +633,20 @@
     $('paybody').innerHTML = keys.map(function(k){
       var g = groups[k], over = g.due.getTime() < today;
       var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
-      var rows = g.orders.slice().sort(function(a,b){ return (a.dealer||'') < (b.dealer||'') ? -1 : 1; }).map(function(o){
+      var rows = g.orders.slice().sort(function(a,b){
+        var ca = a.payment && a.payment.customerPaidAt, cb = b.payment && b.payment.customerPaidAt;
+        if(!!ca !== !!cb) return ca ? -1 : 1;   /* customer-claimed first */
+        return (a.dealer||'') < (b.dealer||'') ? -1 : 1;
+      }).map(function(o){
         var shipped = o.shippedAt ? new Date(o.shippedAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '—';
-        return '<div class="payrow"><div class="pd"><b>' + esc(o.dealer) + '</b> <code>' + esc(o.ref) + '</code>' +
+        var claimed = !!(o.payment && o.payment.customerPaidAt && !(o.payment && o.payment.paid));
+        var claimDate = claimed ? new Date(o.payment.customerPaidAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+        return '<div class="payrow' + (claimed ? ' claimed' : '') + '"><div class="pd"><b>' + esc(o.dealer) + '</b> <code>' + esc(o.ref) + '</code>' +
           '<span class="mono" style="margin-left:8px">shipped ' + shipped + '</span>' +
-          (o.customer ? '<span class="mono" style="margin-left:8px">' + esc(o.customer) + '</span>' : '') + '</div>' +
+          (o.customer ? '<span class="mono" style="margin-left:8px">' + esc(o.customer) + '</span>' : '') +
+          (claimed ? '<div class="mono" style="margin-top:3px;color:#2F5D25">✓ customer marked paid ' + claimDate + '</div>' : '') + '</div>' +
           '<div class="pa">$' + orderTotals(o.lines).total.toFixed(2) + '</div>' +
-          '<button class="btn pay-mark" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px">Mark paid</button></div>';
+          '<button class="btn pay-mark" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px' + (claimed ? ';background:#2F5D25' : '') + '">' + (claimed ? 'Confirm payment' : 'Mark paid') + '</button></div>';
       }).join('');
       return '<div class="paybox' + (over ? ' over' : '') + '">' +
         '<div class="paytop"><div><b>' + when + '</b>' + (over ? ' <span class="status st-canc">overdue</span>' : '') +

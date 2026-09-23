@@ -70,6 +70,14 @@
   .payorow .pitems{font-size:12.5px;color:#4A4E52;margin-top:3px}
   .payorow .poamt{font-family:'IBM Plex Mono',monospace;font-size:13px;white-space:nowrap}
   .payorow .poamt.done{text-decoration:line-through;color:var(--muted)}
+  .payorow .pclaim{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+    background:#FBF3CF;border:1px solid #E2D27E;color:#8A6220;border-radius:999px;padding:2px 8px;margin-left:4px}
+  .payorow .por{display:flex;flex-direction:column;align-items:flex-end;gap:6px;white-space:nowrap}
+  .paybtn{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+    background:var(--ink);color:#fff;border:0;border-radius:8px;padding:7px 12px;cursor:pointer}
+  .paybtn:hover{background:var(--bronze)}
+  .paybtn.ghost{background:transparent;border:1px solid #E2D27E;color:#8A6220}
+  .paybtn[disabled]{opacity:.6;cursor:default}
 
   /* ── summary tiles ── */
   .sumgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:0 0 34px}
@@ -337,11 +345,16 @@
       var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
       var rows = g.orders.map(function(o){
         var paid = isPaid(o), t = orderTotals(o.lines).total;
+        var claimed = !!(o.payment && o.payment.customerPaidAt && !paid);
+        var badge = paid ? ' <span class="ppaid">Paid</span>'
+                  : claimed ? ' <span class="pclaim">Awaiting confirmation</span>' : '';
+        var action = paid ? ''
+          : claimed ? '<button class="paybtn ghost" data-paidcancel="' + esc(o.ref) + '" type="button">Not yet</button>'
+          : '<button class="paybtn" data-paidclaim="' + esc(o.ref) + '" type="button">I&rsquo;ve paid</button>';
         return '<div class="payorow"><div class="pi">' +
-          '<span class="pref">' + esc(o.ref) + '</span>' + (o.customer ? ' <span class="pcust">' + esc(o.customer) + '</span>' : '') +
-          (paid ? ' <span class="ppaid">Paid</span>' : '') +
+          '<span class="pref">' + esc(o.ref) + '</span>' + (o.customer ? ' <span class="pcust">' + esc(o.customer) + '</span>' : '') + badge +
           '<div class="pitems">' + orderItems(o) + '</div></div>' +
-          '<div class="poamt' + (paid ? ' done' : '') + '">$' + t.toFixed(2) + '</div></div>';
+          '<div class="por"><div class="poamt' + (paid ? ' done' : '') + '">$' + t.toFixed(2) + '</div>' + action + '</div></div>';
       }).join('');
       return '<div class="paybox' + (over ? ' over' : '') + '">' +
         '<div class="paytop"><div class="pdue">Due ' + when + '</div>' +
@@ -478,6 +491,20 @@
       b.disabled = false; b.textContent = 'Cancel order';
       note(b, 'Could not cancel — it may already be in production. Try again or e-mail hello@lumiashades.com.');
     });
+  });
+
+  /* customer claims (or takes back) a payment — LUMIA still confirms it */
+  document.getElementById('paydue').addEventListener('click', function(e){
+    var b = e.target.closest('[data-paidclaim],[data-paidcancel]'); if(!b) return;
+    var claim = b.hasAttribute('data-paidclaim');
+    var ref = b.getAttribute(claim ? 'data-paidclaim' : 'data-paidcancel');
+    b.disabled = true; b.textContent = '…';
+    fetch('/api/order/paid-claim', {
+      method: 'POST',
+      headers: { 'x-dealer-code': SESSION.code || '', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: ref, claim: claim })
+    }).then(function(r){ if(!r.ok) throw new Error('failed'); return load(); })
+      .catch(function(){ b.disabled = false; b.textContent = claim ? 'I’ve paid' : 'Not yet'; });
   });
 
   function load(){

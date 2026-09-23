@@ -246,6 +246,23 @@ export default async (req) => {
     return json({ ok: true, receipt: o.receipt });
   }
 
+  // ── dealer: claim a payment (LUMIA still confirms it) ─────────
+  if (path === "/api/order/paid-claim" && req.method === "POST") {
+    const d = await dealerFromReq(req);
+    if (!d) return bad("unauthorized", 401);
+    const s = store();
+    const key = `order:${String(body.ref || "").slice(0, 40)}`;
+    const o = await s.get(key, { type: "json" });
+    if (!o || o.code !== d.code) return bad("no such order", 404);
+    const p = o.payment || {};
+    if (p.paid) return bad("already confirmed paid", 409);
+    // toggle the claim: a customer can also take it back before we confirm
+    o.payment = { ...p, paid: false,
+      customerPaidAt: body.claim === false ? null : new Date().toISOString() };
+    await s.setJSON(key, o);
+    return json({ ok: true, payment: o.payment });
+  }
+
   // ── admin ──────────────────────────────────────────────────────
   if (path.startsWith("/api/admin/")) {
     if (!isAdmin(req)) return bad("unauthorized", 401);
@@ -423,7 +440,8 @@ export default async (req) => {
       const key = `order:${String(body.ref || "")}`;
       const o = await s.get(key, { type: "json" });
       if (!o) return bad("no such order", 404);
-      o.payment = { paid: !!body.paid, updatedAt: new Date().toISOString() };
+      // keep the customer's "I paid" claim as a record when confirming
+      o.payment = { ...(o.payment || {}), paid: !!body.paid, updatedAt: new Date().toISOString() };
       await s.setJSON(key, o);
       return json({ ok: true, payment: o.payment });
     }
