@@ -340,7 +340,11 @@
     document.getElementById('paysection').hidden = !keys.length;
     if(!keys.length) return;
     var today = startOfToday();
-    document.getElementById('paydue').innerHTML = keys.map(function(k){
+    var claimable = orders.filter(function(o){ return payShow(o) && !isPaid(o) && !(o.payment && o.payment.customerPaidAt); }).length;
+    var allbtn = claimable > 1
+      ? '<div style="display:flex;justify-content:flex-end;margin:0 0 10px"><button class="paybtn" data-payallclaim="1" type="button" style="padding:9px 16px">I&rsquo;ve paid all (' + claimable + ')</button></div>'
+      : '';
+    document.getElementById('paydue').innerHTML = allbtn + keys.map(function(k){
       var g = groups[k], over = g.due.getTime() < today && g.owed > 0;
       var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
       var rows = g.orders.map(function(o){
@@ -493,17 +497,33 @@
     });
   });
 
+  function claimPaid(ref, claim){
+    return fetch('/api/order/paid-claim', {
+      method: 'POST',
+      headers: { 'x-dealer-code': SESSION.code || '', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: ref, claim: claim })
+    }).then(function(r){ if(!r.ok) throw new Error('failed'); });
+  }
   /* customer claims (or takes back) a payment — LUMIA still confirms it */
   document.getElementById('paydue').addEventListener('click', function(e){
+    var all = e.target.closest('[data-payallclaim]');
+    if(all){
+      if(all.dataset.armed !== '1'){
+        all.dataset.armed = '1'; all.textContent = 'Tap again to confirm';
+        setTimeout(function(){ if(all.dataset.armed === '1'){ all.dataset.armed = ''; load(); } }, 6000);
+        return;
+      }
+      all.disabled = true; all.textContent = '…';
+      var refs = [].slice.call(document.querySelectorAll('#paydue [data-paidclaim]')).map(function(x){ return x.getAttribute('data-paidclaim'); });
+      refs.reduce(function(p, ref){ return p.then(function(){ return claimPaid(ref, true); }); }, Promise.resolve())
+        .then(load).catch(function(){ all.disabled = false; all.textContent = 'I’ve paid all'; });
+      return;
+    }
     var b = e.target.closest('[data-paidclaim],[data-paidcancel]'); if(!b) return;
     var claim = b.hasAttribute('data-paidclaim');
     var ref = b.getAttribute(claim ? 'data-paidclaim' : 'data-paidcancel');
     b.disabled = true; b.textContent = '…';
-    fetch('/api/order/paid-claim', {
-      method: 'POST',
-      headers: { 'x-dealer-code': SESSION.code || '', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ref: ref, claim: claim })
-    }).then(function(r){ if(!r.ok) throw new Error('failed'); return load(); })
+    claimPaid(ref, claim).then(load)
       .catch(function(){ b.disabled = false; b.textContent = claim ? 'I’ve paid' : 'Not yet'; });
   });
 
