@@ -792,8 +792,6 @@
         '<div style="font-family:\'Archivo\',sans-serif;font-weight:600;font-size:13px;text-align:right;margin-top:8px">Total $' + t.total.toFixed(2) + (t.unknown ? ' + ' + t.unknown + ' TBD' : '') + '</div>' +
         '<div class="octl">' +
           '<label class="fld"><span>Status</span>' + sel + '</label>' +
-          '<label class="chk"><input type="checkbox" class="st-paid" data-ref="' + esc(o.ref) + '"' + (paid ? ' checked' : '') + '> paid</label>' +
-          '<label class="chk" title="LUMIA confirms delivery — with the customer\'s own confirmation this closes the order"><input type="checkbox" class="st-recv" data-ref="' + esc(o.ref) + '"' + (rc.adminAt ? ' checked' : '') + '> delivered</label>' +
           '<label class="fld" style="flex:1;min-width:220px"><span>Note to customer</span><input type="text" class="st-note" data-ref="' + esc(o.ref) + '" value="' + esc(st.note || '') + '" placeholder="optional" style="width:100%"></label>' +
         '</div>' +
         '<div class="trackwrap' + (st.status === 'Shipped' ? ' on' : '') + '" data-ref="' + esc(o.ref) + '" style="margin-top:12px">' +
@@ -842,22 +840,13 @@
     var ref = b.dataset.ref;
     var find = function(cls){ return [].slice.call(document.querySelectorAll(cls)).filter(function(x){ return x.dataset.ref === ref; })[0]; };
     b.disabled = true; b.textContent = 'Saving…';
-    Promise.all([
-      api('/api/admin/status', 'POST', {
-        ref: ref,
-        status: find('.st-sel') ? find('.st-sel').value : 'Pending review',
-        note: find('.st-note') ? find('.st-note').value : '',
-        tracking: find('.st-track') ? find('.st-track').value : ''
-      }),
-      api('/api/admin/paid', 'POST', {
-        ref: ref,
-        paid: find('.st-paid') ? find('.st-paid').checked : false
-      }),
-      api('/api/admin/received', 'POST', {
-        ref: ref,
-        received: find('.st-recv') ? find('.st-recv').checked : false
-      })
-    ]).then(function(){ loadOrders().then(loadDealers); }).catch(function(){ b.disabled = false; b.textContent = 'Save'; note(b, 'Save failed — try again.'); });
+    api('/api/admin/status', 'POST', {
+      ref: ref,
+      status: find('.st-sel') ? find('.st-sel').value : 'Pending review',
+      note: find('.st-note') ? find('.st-note').value : '',
+      tracking: find('.st-track') ? find('.st-track').value : ''
+    }).then(function(){ loadOrders().then(loadDealers); })
+      .catch(function(){ b.disabled = false; b.textContent = 'Save'; note(b, 'Save failed — try again.'); });
   });
 
   /* ── dealers ── */
