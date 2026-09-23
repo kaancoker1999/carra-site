@@ -212,8 +212,11 @@
           <span class="mono">shipped orders &middot; due the next Wednesday</span>
         </div>
         <p style="color:var(--muted);font-size:13px;margin:0 0 16px;max-width:82ch">Once an order ships, its payment is due by the <b>first Wednesday after the ship date</b>. Orders are grouped by that Wednesday; overdue weeks turn red. Mark each order paid as the money comes in.</p>
-        <div style="margin:0 0 18px"><label style="display:inline">Customer</label>
-          <select id="payfilter" style="min-width:240px;margin-left:8px"></select></div>
+        <div class="row" style="margin:0 0 18px;gap:12px;align-items:center">
+          <label style="display:inline">Customer</label>
+          <select id="payfilter" style="min-width:240px"></select>
+          <span id="payall" style="margin-left:auto"></span>
+        </div>
         <div class="ovgrid" id="paykpi" style="margin-bottom:20px"></div>
         <div id="paybody"></div>
       </div>
@@ -604,6 +607,9 @@
       opts.map(function(o){ return '<option value="' + esc(o.code) + '"' + (o.code === payFilter ? ' selected' : '') + '>' + esc(o.name) + '</option>'; }).join('');
 
     var shown = payFilter ? payables.filter(function(o){ return o.code === payFilter; }) : payables;
+    $('payall').innerHTML = shown.length
+      ? '<button class="btn pay-all" type="button" style="padding:8px 16px">Mark all paid (' + shown.length + ')</button>'
+      : '';
     var groups = {};
     shown.forEach(function(o){
       var k = ymd(payDue(o));
@@ -641,13 +647,29 @@
 
   $('payfilter').addEventListener('change', function(){ payFilter = this.value; renderPayments(); });
   $('tab-payments').addEventListener('click', function(e){
-    var b = e.target.closest('.pay-mark'); if(!b) return;
-    armConfirm(b, 'Mark order ' + b.dataset.ref + ' as paid?', function(){
-      b.disabled = true;
-      api('/api/admin/paid', 'POST', { ref: b.dataset.ref, paid: true })
-        .then(function(){ loadOrders().then(loadDealers); })
-        .catch(function(){ b.disabled = false; note(b, 'Failed — try again.'); });
-    });
+    var one = e.target.closest('.pay-mark');
+    if(one){
+      armConfirm(one, 'Mark order ' + one.dataset.ref + ' as paid?', function(){
+        one.disabled = true;
+        api('/api/admin/paid', 'POST', { ref: one.dataset.ref, paid: true })
+          .then(function(){ loadOrders().then(loadDealers); })
+          .catch(function(){ one.disabled = false; note(one, 'Failed — try again.'); });
+      });
+      return;
+    }
+    var all = e.target.closest('.pay-all');
+    if(all){
+      var refs = allOrders.filter(function(o){ return payDue(o) && (!payFilter || o.code === payFilter); }).map(function(o){ return o.ref; });
+      if(!refs.length) return;
+      var total = allOrders.filter(function(o){ return refs.indexOf(o.ref) >= 0; }).reduce(function(a, o){ return a + orderTotals(o.lines).total; }, 0);
+      var who = payFilter ? ' for this customer' : '';
+      armConfirm(all, 'Mark all ' + refs.length + ' order' + (refs.length === 1 ? '' : 's') + who + ' as paid ($' + total.toFixed(2) + ')? This cannot be undone here.', function(){
+        all.disabled = true; all.textContent = 'Marking…';
+        refs.reduce(function(p, ref){ return p.then(function(){ return api('/api/admin/paid', 'POST', { ref: ref, paid: true }); }); }, Promise.resolve())
+          .then(function(){ loadOrders().then(loadDealers); })
+          .catch(function(){ all.disabled = false; note(all, 'Some could not be marked — try again.'); });
+      });
+    }
   });
 
   document.getElementById('tab-overview').addEventListener('click', function(e){
