@@ -163,7 +163,8 @@ export default async (req) => {
       const key = pid === "arches" ? "cellular" : pid;
       return ((d.mults && d.mults[key]) || d.mult || 1) * promoF;
     };
-    return json({ name: d.name, prices: scaled(base, multOf), promo });
+    return json({ name: d.name, prices: scaled(base, multOf), promo,
+      contact: { company: d.company || "", address: d.address || "", phone: d.phone || "" } });
   }
 
   // ── dealer: own orders ────────────────────────────────────────

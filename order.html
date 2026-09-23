@@ -272,7 +272,7 @@
   <input type="text" name="total"><textarea name="notes"></textarea><textarea name="order"></textarea>
 </form>
 
-<script src="assets/trade.js?v=5"></script>
+<script src="assets/trade.js?v=6"></script>
 <script>
 (function(){
   var SESSION = LUMIA_TRADE.require();
@@ -958,16 +958,20 @@
 
   /* ── printable invoice, modelled on the TDC invoice layout ── */
   function esc(t){ return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  /* invoice — identical to the admin panel's; the dealer's billing details
+     come from the session (same fields the admin reads from the account) */
   function openInvoice(o){
+    var dl = (SESSION && SESSION.contact) || {};
+    var dealerName = o.dealer || (SESSION && SESSION.name) || '';
     var t = orderTotals(o.lines);
     var d = new Date(o.at);
     var dts = (d.getMonth()+1) + '.' + d.getDate() + '.' + d.getFullYear();
-    var rows = o.lines.map(function(l, i){
+    var rows = (o.lines || []).map(function(l, i){
       var m = (l.spec || '').match(/(?:Fabric|Cell & opacity|Style): ([^·]+)/) ||
               (l.spec || '').match(/^[^:]+: ([^·]+)/);
       var desc = esc(l.product) + ' — ' + esc(l.desc || (m ? m[1].trim() : ''));
       return '<tr><td>' + (i+1) + '</td><td class="l">' + desc + '</td>' +
-        '<td>' + (l.w == null ? '&mdash;' : fmtIn(l.w)) + '</td><td>' + (l.h == null ? '&mdash;' : fmtIn(l.h)) + '</td><td>' + esc(l.label || '') + '</td>' +
+        '<td>' + (l.w == null ? '—' : fmtIn(l.w)) + '</td><td>' + (l.h == null ? '—' : fmtIn(l.h)) + '</td><td>' + esc(l.label || '') + '</td>' +
         '<td>' + l.qty + '</td><td class="r">' + (l.price == null ? 'TBD' : '$' + l.price.toFixed(2)) + '</td>' +
         '<td class="r">' + (l.price == null ? 'TBD' : '$' + (l.price * l.qty).toFixed(2)) + '</td></tr>';
     }).join('');
@@ -986,11 +990,9 @@
       '.total{text-align:right;font-size:13px;font-weight:bold;margin:18px 0 30px}' +
       '.foot{text-align:center;font-size:11px;margin-top:34px}' +
       '.printbtn{position:fixed;top:14px;right:14px;padding:10px 18px;font-size:12px;cursor:pointer}' +
-      '.hint{position:fixed;top:52px;right:14px;font-size:10px;color:#888;max-width:160px;text-align:right}' +
-      '@media print{.printbtn,.hint{display:none}[contenteditable]{outline:none}}' +
+      '@media print{.printbtn{display:none}[contenteditable]{outline:none}}' +
       '</style></head><body>' +
       '<button class="printbtn" onclick="print()">Print / save PDF</button>' +
-      '<div class="hint">Dashed fields are editable — click and type before printing.</div>' +
       '<div class="top"><div><h1>TDC PRODUCTS LLC</h1>' +
       '<p style="margin:2px 0"><b>7907 Candle Lane, Houston, TX 77071 U.S.A.</b></p>' +
       '<p style="margin:2px 0"><b>hello@lumiashades.com</b></p></div>' +
@@ -998,9 +1000,10 @@
       '<p style="margin:2px 0">No.: <span contenteditable>' + esc(o.ref.replace(/\D/g,'').slice(-6)) + '</span></p>' +
       '<p style="margin:2px 0">Date: ' + dts + '</p></div></div>' +
       '<div class="blocks"><div><h2>BILLED TO:</h2>' +
-      '<p><span contenteditable>' + esc(o.customer || 'Customer name') + '</span></p>' +
-      '<p><span contenteditable>Street address</span></p>' +
-      '<p><span contenteditable>City, State ZIP</span></p></div>' +
+      '<p><span contenteditable>' + esc(dl.company || dealerName || 'Customer') + '</span></p>' +
+      (dl.company ? '<p><span contenteditable>' + esc(dealerName || '') + '</span></p>' : '') +
+      '<p><span contenteditable>' + esc(dl.address || 'Street address, City, State ZIP') + '</span></p>' +
+      '<p><span contenteditable>' + esc(dl.phone ? 'Phone: ' + dl.phone : '&nbsp;') + '</span></p></div>' +
       '<div><h2>PO DETAILS:</h2>' +
       '<p>PO # ' + esc(o.ref) + '</p>' +
       '<p>PO Date ' + dts + '</p>' +
