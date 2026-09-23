@@ -74,6 +74,14 @@
     background:#FBF3CF;border:1px solid #E2D27E;color:#8A6220;border-radius:999px;padding:2px 8px;margin-left:4px}
   .payorow .plate{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
     background:#FBE3E0;border:1px solid #E3A49C;color:#8A2620;border-radius:999px;padding:2px 8px;margin-left:4px}
+  .payinfo{background:var(--white,#fff);border:1px solid var(--line,#E4DED3);border-radius:14px;padding:16px 20px;margin:0 0 14px;color:#1B1D1F}
+  .payinfo .pihead{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze,#8A6A3E);margin-bottom:8px}
+  .payinfo .pirow{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid #EEE9E0;font-size:14px}
+  .payinfo .pirow span{color:#5A5E62}
+  .payinfo .pirow b{font-family:'IBM Plex Mono',monospace;font-weight:600;letter-spacing:.03em;word-break:break-all}
+  .payinfo .picopy{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;background:none;border:1px solid #CFC8BC;border-radius:999px;padding:4px 10px;cursor:pointer;color:#1B1D1F}
+  .payinfo .pimemo{font-size:13px;color:#4A4E52;margin-top:10px;line-height:1.5}
+  @media (max-width:560px){ .payinfo .pirow{grid-template-columns:1fr auto} .payinfo .pirow span{grid-column:1/-1;font-size:12px} }
   .paywarn{background:#FBE3E0;border:1px solid #E3A49C;color:#8A2620;border-radius:12px;padding:12px 16px;margin:0 0 12px;font-size:14px;line-height:1.5}
   .payorow .por{display:flex;flex-direction:column;align-items:flex-end;gap:6px;white-space:nowrap}
   .paybtn{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
@@ -335,6 +343,29 @@
       ' · <a href="order.html">edit, reorder or print the invoice →</a></div>';
   }
 
+  /* ACH details come from the API (logged-in dealers only) — never in the page */
+  var PAYINFO = null;
+  function payInfoHTML(orders){
+    var P = PAYINFO; if(!P) return '';
+    var ex = orders.filter(payable)[0];
+    function row(k, v, copy){
+      if(!v) return '';
+      return '<div class="pirow"><span>' + k + '</span><b>' + esc(v) + '</b>' +
+        (copy ? '<button class="picopy" type="button" data-copy="' + esc(v) + '">Copy</button>' : '<i></i>') + '</div>';
+    }
+    return '<div class="payinfo"><div class="pihead">Payment instructions (ACH)</div>' +
+      row('Account holder', P.holder, true) + row('Bank', P.bank) + row('Account type', P.type) +
+      row('Routing number', P.routing, true) + row('Account number', P.account, true) +
+      '<div class="pimemo">Memo: please include your LUMIA order number' +
+      (ex ? ' (e.g. <b>' + esc(ex.ref) + '</b>)' : '') + ' with each payment.</div></div>';
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('.picopy'); if(!b) return;
+    navigator.clipboard.writeText(b.dataset.copy).then(function(){
+      b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy'; }, 1400);
+    });
+  });
+
   function renderPayDue(orders){
     var groups = {};
     orders.forEach(function(o){
@@ -359,7 +390,7 @@
       ? '<div class="paywarn">⚠ <b>' + late.length + ' order' + (late.length === 1 ? ' is' : 's are') + ' still unpaid ' + LATE_DAYS +
         '+ days after shipping</b> — $' + lateT.toFixed(2) + ' (' + late.map(function(o){ return esc(o.ref); }).join(', ') + '). Please arrange payment as soon as possible.</div>'
       : '';
-    document.getElementById('paydue').innerHTML = warn + allbtn + keys.map(function(k){
+    document.getElementById('paydue').innerHTML = warn + payInfoHTML(orders) + allbtn + keys.map(function(k){
       var g = groups[k], over = g.due.getTime() < today && g.owed > 0;
       var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
       var rows = g.orders.map(function(o){
@@ -549,7 +580,7 @@
       if(r.status === 401){ LUMIA_TRADE.clearSession(); location.href = 'trade.html'; throw new Error('logged out'); }
       return r.json();
     })
-    .then(function(d){ render(d.orders || []); })
+    .then(function(d){ PAYINFO = d.payInfo || null; render(d.orders || []); })
     .catch(function(){ render([]); });
   }
   load();

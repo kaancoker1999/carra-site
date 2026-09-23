@@ -43,6 +43,18 @@ async function getDealers() {
   return (await store().get("dealers", { type: "json" })) || {};
 }
 
+/* ACH payment instructions — only ever sent to a logged-in dealer, never in
+   the public site/repo. Set on Netlify: PAY_ACCOUNT_HOLDER, PAY_BANK,
+   PAY_ACCOUNT_TYPE, PAY_ROUTING, PAY_ACCOUNT_NUMBER */
+function payInfo() {
+  const e = process.env;
+  const info = {
+    holder: e.PAY_ACCOUNT_HOLDER || "", bank: e.PAY_BANK || "", type: e.PAY_ACCOUNT_TYPE || "",
+    routing: e.PAY_ROUTING || "", account: e.PAY_ACCOUNT_NUMBER || "",
+  };
+  return info.routing && info.account ? info : null;
+}
+
 async function dealerFromReq(req) {
   const code = (req.headers.get("x-dealer-code") || "").trim();
   if (!code) return null;
@@ -171,7 +183,7 @@ export default async (req) => {
   if (path === "/api/orders" && req.method === "GET") {
     const d = await dealerFromReq(req);
     if (!d) return bad("unauthorized", 401);
-    return json({ orders: await listOrders(d.code) });
+    return json({ orders: await listOrders(d.code), payInfo: payInfo() });
   }
 
   // ── dealer: submit or update an order ─────────────────────────
