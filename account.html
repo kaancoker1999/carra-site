@@ -245,7 +245,7 @@
 
     <div id="paysection" hidden>
       <div class="xtitle">Payments due</div>
-      <p class="xsub">Once an order ships, payment is due by the <b>first Wednesday after it ships</b>. Overdue weeks are marked in red.</p>
+      <p class="xsub">You can pay as soon as an order goes <b>into production</b>; payment is due <b>within 20 days</b> of that. Late payments are marked in red.</p>
       <div id="paydue" style="margin:0 0 34px"></div>
     </div>
 
@@ -309,29 +309,34 @@
     if(b == null) return a;
     return Math.min(a, b);
   }
-  /* payment is due the first Wednesday after an order ships */
-  function nextWednesday(date){
-    var d = new Date(date);
-    var delta = (3 - d.getDay() + 7) % 7; if(delta === 0) delta = 7;
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + delta);
+  /* payment opens once an order goes In production and is due PAY_DAYS later */
+  var PAY_DAYS = 20;
+  function prodStart(o){
+    if(o.productionAt) return o.productionAt;
+    var st = (o.status && o.status.status) || 'Pending review';
+    if(st === 'In production' && o.status.updatedAt) return o.status.updatedAt;
+    return o.shippedAt || null;
   }
-  /* the Wednesday a shipped order's payment is due */
-  function dueWed(o){ return o.shippedAt ? nextWednesday(o.shippedAt) : null; }
+  function dueWed(o){
+    var p = prodStart(o); if(!p) return null;
+    var d = new Date(p);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + PAY_DAYS);
+  }
   function paidAt(o){ return (o.payment && o.payment.paid && o.payment.updatedAt) ? Date.parse(o.payment.updatedAt) : null; }
   /* shown in Payments due while it is owed — and, once paid, for 2 more days */
   function payShow(o){
     var st = (o.status && o.status.status) || 'Pending review';
-    if(st === 'Cancelled' || !o.shippedAt) return false;
+    if(st === 'Cancelled' || !prodStart(o)) return false;
     if(isPaid(o)){ var pa = paidAt(o); return pa != null && (Date.now() - pa) < 2 * 86400000; }
     return true;
   }
   function payDue(o){ return payShow(o) && !isPaid(o) ? dueWed(o) : null; }
   function payable(o){ return payShow(o) && !isPaid(o); }   /* still owed */
   function startOfToday(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime(); }
-  /* still unpaid 15+ days after shipping -> warning */
-  var LATE_DAYS = 15;
-  function daysSinceShip(o){ return o.shippedAt ? Math.floor((Date.now() - Date.parse(o.shippedAt)) / 86400000) : 0; }
-  function isLate(o){ return payable(o) && daysSinceShip(o) >= LATE_DAYS; }
+  /* past the 20-day window and still unpaid -> late warning */
+  function daysLate(o){ var d = dueWed(o); return d ? Math.round((startOfToday() - d.getTime()) / 86400000) : 0; }
+  function isLate(o){ return payable(o) && daysLate(o) > 0; }
+  function lateTag(o){ var n = daysLate(o); return 'Late · ' + n + ' day' + (n === 1 ? '' : 's'); }
   function orderItems(o){
     return (o.lines || []).map(function(l){ return (l.label ? esc(l.label) + ' — ' : '') + esc(l.product); }).join(' &middot; ');
   }
@@ -398,7 +403,7 @@
     document.body.appendChild(ov);
     document.body.style.overflow = 'hidden';
   }
-  /* compact "Payments due" for the pop-up: each due Wednesday with its orders */
+  /* compact "Payments due" for the pop-up: each due date with its orders */
   function popDueHTML(orders){
     var groups = {}, today = startOfToday();
     orders.filter(payable).forEach(function(o){
@@ -411,13 +416,13 @@
     return '<div class="popdue"><div class="pihead">Payments due</div>' + keys.map(function(k){
       var g = groups[k], over = g.due.getTime() < today;
       return '<div class="pdgrp' + (over ? ' over' : '') + '"><div class="pdtop"><span>Due ' +
-        g.due.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}) + (over ? ' · overdue' : '') +
+        g.due.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}) + (over ? ' · late' : '') +
         '</span><b>$' + g.owed.toFixed(2) + '</b></div>' +
         g.orders.map(function(o){
           var claimed = !!(o.payment && o.payment.customerPaidAt);
           return '<div class="pdrow"><span class="pref">' + esc(o.ref) + '</span>' +
             (claimed ? ' <span class="pclaim">Awaiting confirmation</span>'
-              : isLate(o) ? ' <span class="plate">' + daysSinceShip(o) + ' days unpaid</span>' : '') +
+              : isLate(o) ? ' <span class="plate">' + lateTag(o) + '</span>' : '') +
             '<i>$' + orderTotals(o.lines).total.toFixed(2) + '</i></div>';
         }).join('') + '</div>';
     }).join('') + '</div>';
@@ -462,8 +467,8 @@
     var late = orders.filter(isLate), lateT = 0;
     late.forEach(function(o){ lateT += orderTotals(o.lines).total; });
     var warn = late.length
-      ? '<div class="paywarn">⚠ <b>' + late.length + ' order' + (late.length === 1 ? ' is' : 's are') + ' still unpaid ' + LATE_DAYS +
-        '+ days after shipping</b> — $' + lateT.toFixed(2) + ' (' + late.map(function(o){ return esc(o.ref); }).join(', ') + '). Please arrange payment as soon as possible.</div>'
+      ? '<div class="paywarn">⚠ <b>Your payment is late.</b> ' + late.length + ' order' + (late.length === 1 ? ' is' : 's are') + ' past the ' + PAY_DAYS +
+        '-day payment window — $' + lateT.toFixed(2) + ' (' + late.map(function(o){ return esc(o.ref); }).join(', ') + '). Please pay as soon as possible.</div>'
       : '';
     LASTORDERS = orders;
     var howbtn = PAYINFO ? '<button class="paybtn wht" data-act="paypop" type="button" style="padding:9px 16px">Pay from here</button>' : '';
@@ -479,7 +484,7 @@
         var claimed = !!(o.payment && o.payment.customerPaidAt && !paid);
         var badge = paid ? ' <span class="ppaid">Paid</span>'
                   : claimed ? ' <span class="pclaim">Awaiting confirmation</span>' : '';
-        if(!paid && !claimed && isLate(o)) badge += ' <span class="plate">' + daysSinceShip(o) + ' days unpaid</span>';
+        if(!paid && !claimed && isLate(o)) badge += ' <span class="plate">' + lateTag(o) + '</span>';
         var action = paid ? ''
           : claimed ? '<button class="paybtn ghost" data-paidcancel="' + esc(o.ref) + '" type="button">Not yet</button>'
           : '<button class="paybtn" data-paidclaim="' + esc(o.ref) + '" type="button">I&rsquo;ve paid</button>';
@@ -514,7 +519,7 @@
       tile(orders.length, 'Orders placed') +
       tile('$' + purch.toFixed(2), 'Total purchased') +
       tile('$' + due.toFixed(2), 'Balance due', due > 0 ? 'due' : '') +
-      tile('$' + pay.toFixed(2), 'Payable · shipped', pay > 0 ? 'due' : '', PAYINFO ? 'paypop' : '') +
+      tile('$' + pay.toFixed(2), 'Payable', pay > 0 ? 'due' : '', PAYINFO ? 'paypop' : '') +
       tile(shipped, 'In transit') +
       tile(prod, 'In production') +
       tile(pend, 'Awaiting review');

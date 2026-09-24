@@ -210,9 +210,9 @@
       <div class="card">
         <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:4px">
           <h2 style="font-size:18px">Payments due</h2>
-          <span class="mono">shipped orders &middot; due the next Wednesday</span>
+          <span class="mono">from In production &middot; due within 20 days</span>
         </div>
-        <p style="color:var(--muted);font-size:13px;margin:0 0 16px;max-width:82ch">Once an order ships, its payment is due by the <b>first Wednesday after the ship date</b>. Orders are grouped by that Wednesday; overdue weeks turn red. Mark each order paid as the money comes in.</p>
+        <p style="color:var(--muted);font-size:13px;margin:0 0 16px;max-width:82ch">Payment opens as soon as an order goes <b>In production</b> and is due <b>20 days</b> after that. Orders are grouped by due date; late ones turn red. Mark each order paid as the money comes in.</p>
         <div class="row" style="margin:0 0 18px;gap:12px;align-items:center">
           <label style="display:inline">Customer</label>
           <select id="payfilter" style="min-width:240px"></select>
@@ -230,7 +230,7 @@
         <div>
           <div class="ovhead"><i class="ti"></i>Needs your attention</div>
           <div class="card ovcard" id="ovattention"></div>
-          <div class="ovhead">Payments due &middot; by Wednesday</div>
+          <div class="ovhead">Payments due &middot; by due date</div>
           <div class="card ovcard" id="ovcollect"></div>
           <div class="ovhead">Units ordered &middot; last 8 weeks</div>
           <div class="card ovcard" id="ovtrend"></div>
@@ -464,7 +464,7 @@
   function collectionGroups(){
     var groups = {};
     allOrders.forEach(function(o){
-      var due = payDue(o); if(!due) return;   /* shipped + unpaid, due next Wed */
+      var due = payDue(o); if(!due) return;   /* in production (or later) + unpaid */
       var k = ymd(due);
       (groups[k] = groups[k] || { due: due, total: 0, n: 0 });
       groups[k].total += orderTotals(o.lines).total; groups[k].n++;
@@ -482,7 +482,7 @@
     os.forEach(function(o){
       if(statusOf(o) === 'Cancelled' || isPaid(o)) return;
       var t = orderTotals(o.lines).total; unpaid += t;
-      if(payDue(o) != null) payable += t;   /* shipped + unpaid = payable */
+      if(payDue(o) != null) payable += t;   /* in production (or later) + unpaid = payable */
     });
     var activeCust = dealersCache.filter(function(d){ return d.active !== false && !d.test; }).length;
 
@@ -493,7 +493,7 @@
       kpi(pending.length, 'Awaiting review', pending.length ? 'warn' : '', 'orders') +
       kpi(inflight.length, 'In production / on the way', '', 'orders') +
       kpi('$' + unpaid.toFixed(2), 'Unpaid balance', unpaid > 0 ? 'due' : '') +
-      kpi('$' + payable.toFixed(2), 'Payable · shipped', payable > 0 ? 'due' : '', 'payments') +
+      kpi('$' + payable.toFixed(2), 'Payable', payable > 0 ? 'due' : '', 'payments') +
       kpi(activeCust, 'Active customers', '', 'dealers');
 
     function item(icon, cls, title, sub, ct, go){
@@ -511,9 +511,8 @@
     var att = [];
     if(pending.length)      att.push(item('inbox', 'ovi-red', 'New orders to review', 'Waiting for your approval', pending.length, 'orders'));
     if(claimed.length)      att.push(item('cash', 'ovi-green', 'Payments to confirm', 'Customers marked these paid', claimed.length, 'payments'));
-    var lateOs = os.filter(isLate), lateT = 0; lateOs.forEach(function(o){ lateT += orderTotals(o.lines).total; });
-    if(lateOs.length)       att.push(item('alert-octagon', 'ovi-red', 'Unpaid ' + LATE_DAYS + '+ days after shipping', '$' + lateT.toFixed(2) + ' — ' + lateOs.map(function(o){ return esc(o.dealer); }).filter(function(v, i, a){ return a.indexOf(v) === i; }).join(', '), lateOs.length, 'payments'));
-    if(overdueN)            att.push(item('alert-triangle', 'ovi-red', 'Overdue payments', '$' + overdueTotal.toFixed(2) + ' past due', overdueN, 'payments'));
+    var lateOs = os.filter(isLate);
+    if(overdueN)            att.push(item('alert-triangle', 'ovi-red', 'Late payments', '$' + overdueTotal.toFixed(2) + ' past the ' + PAY_DAYS + '-day window — ' + lateOs.map(function(o){ return esc(o.dealer); }).filter(function(v, i, a){ return a.indexOf(v) === i; }).join(', '), overdueN, 'payments'));
     if(suspended.length)    att.push(item('user-off', 'ovi-amber', 'Suspended accounts', suspended.map(function(d){ return esc(d.name); }).join(', '), suspended.length, 'dealers'));
     $('ovattention').innerHTML = att.length ? att.join('') : '<div class="ovempty"><i class="ti ti-check"></i> All clear — nothing needs action right now.</div>';
 
@@ -522,9 +521,9 @@
       var g = groups[k], over = g.due.getTime() < todayTs;
       return '<div class="ovitem"><div class="ovicon ' + (over ? 'ovi-red' : 'ovi-green') + '"><i class="ti ti-calendar"></i></div>' +
         '<div class="tx">Due ' + g.due.toLocaleDateString('en-US', {weekday:'short', month:'long', day:'numeric'}) +
-        '<small>' + g.n + ' order' + (g.n === 1 ? '' : 's') + (over ? ' · overdue' : '') + '</small></div>' +
+        '<small>' + g.n + ' order' + (g.n === 1 ? '' : 's') + (over ? ' · late' : '') + '</small></div>' +
         '<div class="ct">$' + g.total.toFixed(2) + '</div></div>';
-    }).join('') : '<div class="ovempty">Nothing due — shipped orders appear here until paid.</div>';
+    }).join('') : '<div class="ovempty">Nothing due — orders appear here once they go into production, until paid.</div>';
 
     /* units = total pieces ordered (sum of line quantities), not order count.
        Fabric Only is sold by the yard, not per piece — it is left out of the
@@ -587,21 +586,24 @@
     $('ovalerts').innerHTML = al.length ? al.join('') : '<div class="ovempty">No alerts.</div>';
   }
 
-  /* ── payments due: shipped + unpaid, due the first Wednesday after shipping ── */
-  function nextWednesday(date){
-    var d = new Date(date);
-    var delta = (3 - d.getDay() + 7) % 7; if(delta === 0) delta = 7;   /* Wed→+7 */
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + delta);
+  /* ── payments: open once an order goes In production, due PAY_DAYS later;
+     after that the order is late (warning here and on the customer account) ── */
+  var PAY_DAYS = 20;
+  function prodStart(o){
+    if(o.productionAt) return o.productionAt;
+    /* orders put in production before productionAt was stamped */
+    if(statusOf(o) === 'In production' && o.status.updatedAt) return o.status.updatedAt;
+    return o.shippedAt || null;
   }
   function payDue(o){
-    if(o.test || statusOf(o) === 'Cancelled' || isPaid(o) || !o.shippedAt) return null;
-    return nextWednesday(o.shippedAt);
+    if(o.test || statusOf(o) === 'Cancelled' || isPaid(o)) return null;
+    var p = prodStart(o); if(!p) return null;
+    var d = new Date(p);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + PAY_DAYS);
   }
   function startOfToday(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime(); }
-  /* still unpaid 15+ days after shipping -> warning (admin + customer account) */
-  var LATE_DAYS = 15;
-  function daysSinceShip(o){ return o.shippedAt ? Math.floor((Date.now() - Date.parse(o.shippedAt)) / 86400000) : 0; }
-  function isLate(o){ return !!payDue(o) && daysSinceShip(o) >= LATE_DAYS; }
+  function daysLate(o){ var d = payDue(o); return d ? Math.round((startOfToday() - d.getTime()) / 86400000) : 0; }
+  function isLate(o){ return !!payDue(o) && daysLate(o) > 0; }
 
   var payFilter = '';   /* '' = all customers, else a dealer code */
   function renderPayments(){
@@ -641,13 +643,11 @@
     keys.forEach(function(k){ var g = groups[k]; grand += g.total; n += g.orders.length; if(g.due.getTime() < today) overdue += g.total; });
     function kpi(v, k, cls){ return '<div class="ovkpi' + (cls ? ' ' + cls : '') + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>'; }
     $('paykpi').innerHTML =
-      kpi('$' + overdue.toFixed(2), 'Overdue', overdue > 0 ? 'due' : '') +
+      kpi('$' + overdue.toFixed(2), 'Late (past ' + PAY_DAYS + ' days)', overdue > 0 ? 'due' : '') +
       kpi('$' + grand.toFixed(2), 'Total outstanding', grand > 0 ? 'due' : '') +
-      kpi(n, 'Orders awaiting payment') +
-      (function(){ var late = shown.filter(isLate), lt = 0; late.forEach(function(o){ lt += orderTotals(o.lines).total; });
-        return kpi(late.length ? late.length + ' · $' + lt.toFixed(2) : '0', 'Unpaid ' + LATE_DAYS + '+ days after shipping', late.length ? 'due' : ''); })();
+      kpi(n, 'Orders awaiting payment');
 
-    if(!keys.length){ $('paybody').innerHTML = '<div class="ovempty">' + (payFilter ? 'This customer has nothing due.' : 'Nothing due — shipped orders appear here until they are marked paid.') + '</div>'; return; }
+    if(!keys.length){ $('paybody').innerHTML = '<div class="ovempty">' + (payFilter ? 'This customer has nothing due.' : 'Nothing due — orders appear here once they go into production, until they are marked paid.') + '</div>'; return; }
     $('paybody').innerHTML = keys.map(function(k){
       var g = groups[k], over = g.due.getTime() < today;
       var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
@@ -656,19 +656,19 @@
         if(!!ca !== !!cb) return ca ? -1 : 1;   /* customer-claimed first */
         return (a.dealer||'') < (b.dealer||'') ? -1 : 1;
       }).map(function(o){
-        var shipped = o.shippedAt ? new Date(o.shippedAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '—';
+        var prod = prodStart(o) ? new Date(prodStart(o)).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '—';
         var claimed = !!(o.payment && o.payment.customerPaidAt && !(o.payment && o.payment.paid));
         var claimDate = claimed ? new Date(o.payment.customerPaidAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
         return '<div class="payrow' + (claimed ? ' claimed' : '') + '"><div class="pd"><b>' + esc(o.dealer) + '</b> <code>' + esc(o.ref) + '</code>' +
-          '<span class="mono" style="margin-left:8px">shipped ' + shipped + '</span>' +
+          '<span class="mono" style="margin-left:8px">in production ' + prod + '</span>' +
           (o.customer ? '<span class="mono" style="margin-left:8px">' + esc(o.customer) + '</span>' : '') +
-          (isLate(o) ? ' <span class="status st-canc">⚠ ' + daysSinceShip(o) + ' days unpaid</span>' : '') +
+          (isLate(o) ? ' <span class="status st-canc">⚠ late · ' + daysLate(o) + ' day' + (daysLate(o) === 1 ? '' : 's') + '</span>' : '') +
           (claimed ? '<div class="mono" style="margin-top:3px;color:#2F5D25">✓ customer marked paid ' + claimDate + '</div>' : '') + '</div>' +
           '<div class="pa">$' + orderTotals(o.lines).total.toFixed(2) + '</div>' +
           '<button class="btn pay-mark" data-ref="' + esc(o.ref) + '" type="button" style="padding:7px 14px' + (claimed ? ';background:#2F5D25' : '') + '">' + (claimed ? 'Confirm payment' : 'Mark paid') + '</button></div>';
       }).join('');
       return '<div class="paybox' + (over ? ' over' : '') + '">' +
-        '<div class="paytop"><div><b>' + when + '</b>' + (over ? ' <span class="status st-canc">overdue</span>' : '') +
+        '<div class="paytop"><div><b>' + when + '</b>' + (over ? ' <span class="status st-canc">late</span>' : '') +
         '<div class="mono" style="margin-top:2px">' + g.orders.length + ' order' + (g.orders.length === 1 ? '' : 's') + '</div></div>' +
         '<div class="paysum">$' + g.total.toFixed(2) + '</div></div>' + rows + '</div>';
     }).join('');

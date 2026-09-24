@@ -432,6 +432,9 @@ export default async (req) => {
       // every status other than "Pending review" locks the order (the customer
       // can only edit or withdraw it while it is still awaiting review)
       const autoLock = status !== "Pending review";
+      // an order already in production from before productionAt existed keeps
+      // its original start (the last status change), not today
+      const prevStart = o.status && o.status.status === "In production" ? o.status.updatedAt : null;
       o.status = {
         status,
         locked: autoLock || !!body.locked,
@@ -440,12 +443,15 @@ export default async (req) => {
       };
       // FedEx tracking number, entered when the order ships — shown to the customer
       o.tracking = String(body.tracking || "").trim().slice(0, 80);
-      // stamp the ship date the first time it ships — payment is due the
-      // Wednesday after this. Reverting to "Pending review" clears it.
-      if (status === "Shipped") { if (!o.shippedAt) o.shippedAt = new Date().toISOString(); }
-      else if (status === "Pending review") { delete o.shippedAt; }
+      // stamp when production starts — payment opens then and is due 20 days
+      // later (shipping without a production step counts as starting then) —
+      // and the ship date the first time it ships. "Pending review" clears both.
+      const nowIso = new Date().toISOString();
+      if (status === "In production" || status === "Shipped") { if (!o.productionAt) o.productionAt = prevStart || o.shippedAt || nowIso; }
+      if (status === "Shipped") { if (!o.shippedAt) o.shippedAt = nowIso; }
+      else if (status === "Pending review") { delete o.shippedAt; delete o.productionAt; }
       await s.setJSON(key, o);
-      return json({ ok: true, status: o.status, tracking: o.tracking, shippedAt: o.shippedAt || null });
+      return json({ ok: true, status: o.status, tracking: o.tracking, shippedAt: o.shippedAt || null, productionAt: o.productionAt || null });
     }
 
     if (path === "/api/admin/paid" && req.method === "POST") {
