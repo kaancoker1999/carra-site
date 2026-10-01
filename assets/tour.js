@@ -21,6 +21,28 @@
   function flag(k, v) { try { if (v == null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} }
   function mode() { try { return sessionStorage.getItem(CHAIN); } catch (e) { return null; } }
 
+  /* several elements lit up as one (e.g. the width and height fields) */
+  function group(els) {
+    els = [].filter.call(els, function (e) { return !!e; });
+    if (!els.length) return null;
+    return {
+      group: els,
+      getBoundingClientRect: function () {
+        var l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+        els.forEach(function (e) { var q = e.getBoundingClientRect(); l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); b = Math.max(b, q.bottom); });
+        return { left: l, top: t, right: r, bottom: b, width: r - l, height: b - t };
+      }
+    };
+  }
+  /* Orders page: open the first shipped order that has a FedEx number, so its
+     tracking link and Invoice button can be pointed at */
+  function shippedDetail() {
+    var rows = document.querySelectorAll('.osec.shipped tr.det');
+    for (var k = 0; k < rows.length; k++) {
+      if (rows[k].querySelector('.track')) { rows[k].hidden = false; return rows[k]; }
+    }
+    return null;
+  }
   function byText(sel, re) {
     return [].filter.call(document.querySelectorAll(sel), function (el) { return re.test(el.textContent); })[0] || null;
   }
@@ -52,13 +74,17 @@
       { el: '#production', title: 'In production',
         text: 'Orders being made. From this point the order is locked and becomes payable — payment is due within 20 days.' },
       { el: '#shipped', title: 'Shipped',
-        text: 'Orders that have left our factory. Click one for its FedEx tracking number and its invoice.' },
+        text: 'Orders that have left our factory.' },
       { el: function () { return document.querySelector('.osec.shipped tr.ord:not(.done)'); }, title: 'Shipped — not paid yet',
         text: 'White rows are shipped orders that are still unpaid. They stay at the top until the payment is confirmed.' },
       { el: function () { return document.querySelector('.osec.shipped tr.ord.done'); }, title: 'Shipped — paid',
         text: 'Light grey rows are shipped and paid: finished orders, kept here for your records.' },
-      { el: function () { return document.querySelector('.osec tr.ord'); }, title: 'Order details',
-        text: 'Click any row to open it: the line items, any note from LUMIA, tracking and the invoice once it has shipped.' }
+      { el: function () { var d = shippedDetail(); return d || document.querySelector('.osec tr.ord'); }, title: 'Order details',
+        text: 'Click any order to open it and see its line items, sizes and prices, plus any note from LUMIA.' },
+      { el: function () { var d = shippedDetail(); return d ? d.querySelector('.track') : null; }, title: 'FedEx tracking number',
+        text: 'When an order ships, its FedEx tracking number appears here. Click the number — or “Track it” — to open FedEx and follow the shipment.' },
+      { el: function () { var d = shippedDetail(); return d ? d.querySelector('[data-invoice]') : null; }, title: 'Invoice',
+        text: 'The Invoice button appears as soon as the FedEx number has been entered for the order — not before. Click it to open the invoice, then print it or save it as a PDF.' }
     ],
     'price-list.html': [
       { title: 'Your price list',
@@ -87,8 +113,9 @@
         text: 'Mechanism, liner, top-down bottom-up and the other options for that product. The form only offers combinations that can actually be made.' },
       { el: '#c-label', title: '3 · Room / label',
         text: 'Optional: name the window (for example “Living room 2”). It is printed on the order and the invoice so each shade is easy to identify.' },
-      { el: function () { var w = document.getElementById('c-w'); return w ? w.closest('.cell') : null; }, title: '4 · Size',
-        text: 'Whole inches plus eighths, for width and height. The allowed range is written above each field and changes with the product and options you picked.' },
+      { el: function () { var w = document.getElementById('c-w'), h = document.getElementById('c-h');
+                          return w && h ? group([w.closest('.cell'), h.closest('.cell')]) : null; }, title: '4 · Size',
+        text: 'Enter the width and the height: whole inches in the first box, eighths in the second. The allowed range is written above each one and changes with the product and options you picked.' },
       { el: '#c-qty', title: '5 · Quantity',
         text: 'How many identical shades of this size. Fabric by the yard is entered in yards.' },
       { el: '#addbtn', title: '6 · Add to order',
@@ -125,6 +152,7 @@
 
   function visible(el) {
     if (!el) return false;
+    if (el.group) return el.group.every(visible);
     var r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
   }
