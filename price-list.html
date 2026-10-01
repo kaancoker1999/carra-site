@@ -39,6 +39,9 @@
   nav{display:flex;gap:30px;align-items:center}
   nav a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.62);text-decoration:none;transition:color .2s}
   nav a:hover{color:#fff}
+  .hleft{display:flex;align-items:center;gap:28px}
+  .homelnk{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.62);text-decoration:none;transition:color .2s}
+  .homelnk:hover{color:#fff}
   nav a[style]{color:#fff!important;font-weight:500}
   .partner{border:1px solid rgba(255,255,255,.25);padding:8px 15px;color:var(--bronze-lt)!important;border-radius:8px}
   .partner:hover{border-color:var(--bronze-lt)}
@@ -112,9 +115,11 @@
 
 <header>
   <div class="wrap">
-    <a class="logo" href="account.html">LUMIA</a>
+    <div class="hleft">
+      <a class="logo" href="account.html">LUMIA</a>
+      <a class="homelnk" href="index.html">Home</a>
+    </div>
     <nav>
-      <a href="index.html">Home</a>
       <a class="partner" href="trade.html">Trade login</a>
     </nav>
   </div>
