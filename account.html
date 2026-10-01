@@ -96,6 +96,8 @@
   .pdrow .pclaim,.pdrow .plate{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;border-radius:999px;padding:2px 8px}
   .pdrow .pclaim{background:#FBF3CF;border:1px solid #E2D27E;color:#8A6220}
   .pdrow .plate{background:#FBE3E0;border:1px solid #E3A49C;color:#8A2620}
+  .popclaim{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 2px 0;color:#1B1D1F;font-size:14px}
+  .popdone{margin:12px 2px 0;padding:11px 14px;border-radius:12px;background:#D8ECD2;border:1px solid #A9CB9F;color:#2F5D25;font-size:13.5px}
   @keyframes popfade{from{opacity:0}to{opacity:1}}
   .payinfo{background:var(--white,#fff);border:1px solid var(--line,#E4DED3);border-radius:14px;padding:16px 20px;margin:0 0 14px;color:#1B1D1F}
   .payinfo .pihead{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze,#8A6A3E);margin-bottom:8px}
@@ -415,10 +417,38 @@
     ov.innerHTML = '<div class="popbox" role="dialog" aria-modal="true" aria-label="Payment instructions">' +
       '<button class="popx" type="button" aria-label="Close">&times;</button>' +
       '<div class="popamt"><span>Payable now</span><b>$' + owed.toFixed(2) + '</b></div>' +
-      popDueHTML(LASTORDERS) + payInfoHTML(LASTORDERS) + '</div>';
+      popDueHTML(LASTORDERS) + payInfoHTML(LASTORDERS) + popClaimHTML(LASTORDERS) + '</div>';
     document.body.appendChild(ov);
     document.body.style.overflow = 'hidden';
   }
+  /* "I've paid all" inside the pop-up: marks every payable order as paid by
+     the customer (LUMIA then confirms) — same two-step tap as on the page */
+  function unclaimed(orders){
+    return orders.filter(function(o){ return payable(o) && !(o.payment && o.payment.customerPaidAt); });
+  }
+  function popClaimHTML(orders){
+    var n = unclaimed(orders).length, waiting = orders.filter(payable).length - n;
+    if(!n){
+      return waiting ? '<div class="popdone">✓ Marked as paid — LUMIA will confirm once the payment arrives.</div>' : '';
+    }
+    return '<div class="popclaim"><span>Sent the payment?</span>' +
+      '<button class="paybtn" data-popclaim="1" type="button" style="padding:11px 18px">' +
+      (n === 1 ? 'I&rsquo;ve paid' : 'I&rsquo;ve paid all (' + n + ')') + '</button></div>';
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-popclaim]'); if(!b) return;
+    var label = b.textContent;
+    if(b.dataset.armed !== '1'){
+      b.dataset.armed = '1'; b.textContent = 'Tap again to confirm';
+      setTimeout(function(){ if(b.dataset.armed === '1'){ b.dataset.armed = ''; b.textContent = label; } }, 6000);
+      return;
+    }
+    b.dataset.armed = ''; b.disabled = true; b.textContent = '…';
+    unclaimed(LASTORDERS).map(function(o){ return o.ref; })
+      .reduce(function(p, ref){ return p.then(function(){ return claimPaid(ref, true); }); }, Promise.resolve())
+      .then(load).then(openPayPop)
+      .catch(function(){ b.disabled = false; b.textContent = 'Could not save — try again'; });
+  });
   /* compact "Payments due" for the pop-up: each due date with its orders */
   function popDueHTML(orders){
     var groups = {}, today = startOfToday();
