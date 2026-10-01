@@ -225,7 +225,6 @@
 
 <div class="wrap pagehead">
   <h1>Account overview</h1>
-  <p class="note" id="hello">Your orders at a glance &mdash; totals, balance and where every order stands.</p>
 </div>
 
 <section>
@@ -269,8 +268,6 @@
 (function(){
   var SESSION = LUMIA_TRADE.require();
   if(!SESSION) return;
-  document.getElementById('hello').textContent =
-    'Signed in as ' + (SESSION.name || 'trade partner') + ' — totals, balance and where every order stands.';
 
   function esc(t){ return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
   function isPaid(o){ return !!(o.payment && o.payment.paid); }
