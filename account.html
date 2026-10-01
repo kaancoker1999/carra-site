@@ -250,7 +250,7 @@
     </div>
 
     <div class="xtitle">Your orders</div>
-    <p class="xsub">Newest first &mdash; click an order to see its line items. Editing, reordering and invoices live on the <a href="order.html">Place order</a> page.</p>
+    <p class="xsub">Newest first &mdash; click an order to see its line items. Editing, reordering and invoices (available once an order ships with a tracking number) live on the <a href="order.html">Place order</a> page.</p>
     <div class="tablewrap">
       <table id="otable" hidden>
         <thead><tr><th>Date</th><th>Customer / project</th><th>Ref</th><th>Lines</th><th>Total</th><th>Status</th><th>Payment</th><th></th></tr></thead>
@@ -369,7 +369,7 @@
       '<tbody>' + rows + '</tbody></table></div>' + track +
       (o.notes ? '<div class="dnotes"><b>Notes:</b> ' + esc(o.notes) + '</div>' : '') +
       '<div class="dmeta">' + bits.join(' · ') +
-      ' · <a href="order.html">edit, reorder or print the invoice →</a></div>';
+      ' · <a href="order.html">' + (o.tracking ? 'edit, reorder or print the invoice →' : 'edit or reorder →') + '</a></div>';
   }
 
   /* ACH details come from the API (logged-in dealers only) — never in the page */

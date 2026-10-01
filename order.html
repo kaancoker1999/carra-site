@@ -892,7 +892,8 @@
     else if(receipt(o).dealerAt){ badge += ' <span class="status pend">Receipt sent to LUMIA</span>'; }
     if(isPaid(o)){ badge += ' <span class="status paid">Paid</span>'; }
     else if(st && st.status !== 'Cancelled'){ badge += ' <span class="status unpaid">Unpaid</span>'; }
-    var actions = '<button class="obtn" data-oinv="' + oi + '" type="button">Invoice</button>' +
+    /* the invoice is issued with the shipment: only once a FedEx tracking number is on the order */
+    var actions = (o.tracking ? '<button class="obtn" data-oinv="' + oi + '" type="button">Invoice</button>' : '') +
       '<button class="obtn" data-ocopy="' + oi + '" type="button">Copy as text</button>' +
       '<button class="obtn" data-oreorder="' + oi + '" type="button">Reorder</button>';
     if(!locked){

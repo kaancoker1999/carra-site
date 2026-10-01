@@ -900,11 +900,12 @@
         '</div>' +
         '<div class="trackwrap' + (st.status === 'Shipped' ? ' on' : '') + '" data-ref="' + esc(o.ref) + '" style="margin-top:12px">' +
           '<label class="fld"><span>FedEx tracking number</span><input type="text" class="st-track" data-ref="' + esc(o.ref) + '" value="' + esc(o.tracking || '') + '" placeholder="e.g. 771234567890" style="width:260px"></label>' +
-          '<div style="font-size:11px;color:var(--muted);margin-top:5px">The customer sees this number and a track-it link once you save a Shipped order.</div>' +
+          '<div style="font-size:11px;color:var(--muted);margin-top:5px">The customer sees this number and a track-it link once you save a Shipped order. The invoice becomes available (here and for the customer) once a tracking number is saved.</div>' +
         '</div>' +
         '<div class="row" style="gap:8px;margin-top:14px;align-items:center">' +
           '<button class="btn st-save" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 16px">Save</button>' +
-          '<button class="btn ghost o-inv" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px">Invoice</button>' +
+          /* invoice only once the FedEx tracking number is saved on the order */
+          (o.tracking ? '<button class="btn ghost o-inv" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px">Invoice</button>' : '') +
           ((o.test || st.status === 'Cancelled') ? '<button class="btn ghost o-del" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px;color:#8A2620">Delete</button>' : '') +
           '<span style="font-size:11px;color:var(--muted)">Any status other than “Pending review” locks the order automatically.</span>' +
         '</div>';
