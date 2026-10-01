@@ -1,8 +1,8 @@
 /* LUMIA trade portal — one guided tutorial across the whole portal.
-   The "Tutorial" button on any portal page (and a dealer's first visit to the
-   account page) opens a chooser: one of the four topics — My account, Orders,
-   Place an order, Price list — or the whole portal, which walks through all
-   four, moving from page to page by itself.
+   It starts with My account (on a dealer's first visit, or from the "Tutorial"
+   button on any portal page) and walks on through Orders, Place an order and
+   the Price list, moving from page to page by itself. The four topics sit as
+   tabs at the top of the card, so any of them can be jumped to directly.
    Steps whose target is missing or hidden are skipped, so it also works for a
    new account with no orders and on a phone. */
 (function () {
@@ -19,15 +19,7 @@
       ? '_' + name.replace('.html', '_test.html') : name;
   }
   function flag(k, v) { try { if (v == null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} }
-  /* '1' = the whole portal, page after page · 'one' = just this page's topic */
   function mode() { try { return sessionStorage.getItem(CHAIN); } catch (e) { return null; } }
-  var single = false;
-  var BLURB = {
-    'account.html': 'Your balance, payments due and latest orders',
-    'orders.html': 'Awaiting review, in production, shipped',
-    'order.html': 'How to build and send an order',
-    'price-list.html': 'Products, sub-groups, options, Excel download'
-  };
 
   function byText(sel, re) {
     return [].filter.call(document.querySelectorAll(sel), function (el) { return re.test(el.textContent); })[0] || null;
@@ -35,7 +27,7 @@
 
   var TOURS = {
     'account.html': [
-      { chain: true, title: 'Welcome to your LUMIA trade portal',
+      { title: 'Welcome to your LUMIA trade portal',
         text: 'This tutorial walks you through the whole portal: your account, your orders, placing an order and your price list. You can skip it and replay it any time.' },
       { el: '#sum-orders', title: 'Your orders at a glance',
         text: 'How many orders you have placed, and how many are awaiting review, in production or shipped. Click a tile to open them on the Orders page.' },
@@ -83,7 +75,7 @@
         text: 'Some products have a second choice under the first. Pick it to narrow down to one table.' },
       { el: function () { return document.querySelector('#xwrap:not([hidden])'); }, title: 'Options & surcharges',
         text: 'Below each price table: the extras for that product and what each one adds. A percentage (for example a liner or fold style) is added on top of the table price; a dollar amount (for example motorization, top-down bottom-up or a remote) is added per shade. “Standard” means it is included at no extra cost.' },
-      { chain: true, el: '#tourlink', title: 'That’s the whole portal',
+      { el: '#tourlink', title: 'That’s the whole portal',
         text: 'You can replay this tutorial any time with the “Tutorial” button at the top of every page.' }
     ],
     'order.html': [
@@ -125,7 +117,7 @@
     var a = document.createElement('button');
     a.id = 'tourlink'; a.type = 'button'; a.className = 'tour-btn'; a.textContent = 'Tutorial';
     row.appendChild(a);
-    a.addEventListener('click', menu);
+    a.addEventListener('click', function () { pick(SEQ[0]); });
   }
 
   /* ── the tour itself ── */
@@ -136,7 +128,7 @@
     var r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
   }
-  function usable(step) { return !(single && step.chain) && (!step.el || !!resolve(step)); }
+  function usable(step) { return !step.el || !!resolve(step); }
   function resolve(step) {
     if (!step.el) return null;
     var el = typeof step.el === 'function' ? step.el() : document.querySelector(step.el);
@@ -153,19 +145,16 @@
       '.tour-shade{position:fixed;z-index:2000;border-radius:12px;box-shadow:0 0 0 9999px rgba(8,6,20,.72);pointer-events:none;transition:all .25s ease}' +
       '.tour-shade.none{left:50%;top:50%;width:0;height:0}' +
       '.tour-block{position:fixed;inset:0;z-index:1999}' +
-      '.tour-card{position:fixed;z-index:2001;width:340px;max-width:calc(100vw - 24px);background:#FBF8F2;color:#1B1D1F;border-radius:16px;padding:18px 20px 14px;box-shadow:0 24px 70px rgba(0,0,0,.5);font-family:inherit}' +
+      '.tour-card{position:fixed;z-index:2001;width:400px;max-width:calc(100vw - 24px);background:#FBF8F2;color:#1B1D1F;border-radius:16px;padding:18px 20px 14px;box-shadow:0 24px 70px rgba(0,0,0,.5);font-family:inherit}' +
       '.tour-card h4{margin:0 0 6px;font-size:16px;font-weight:600;color:#1B1D1F}' +
       '.tour-card p{margin:0 0 14px;font-size:14px;line-height:1.5;color:#3E4246}' +
       '.tour-foot{display:flex;align-items:center;gap:8px}' +
       '.tour-bar{height:4px;border-radius:99px;background:#E6E0D5;overflow:hidden;margin:0 0 12px}' +
       '.tour-bar i{display:block;height:100%;background:#B8934A;border-radius:99px;transition:width .3s ease}' +
-      '.tour-menu{width:420px}' +
-      '.tour-topics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px}' +
-      '.tour-card .tour-topics button{text-align:left;border-radius:12px;padding:12px 14px;text-transform:none;letter-spacing:0;font-family:inherit;display:block;transition:border-color .15s,background .15s}' +
-      '.tour-card .tour-topics button:hover{border-color:#1B1D1F;background:#fff}' +
-      '.tour-topics b{display:block;font-size:14px;font-weight:600;color:#1B1D1F;margin-bottom:3px}' +
-      '.tour-topics span{display:block;font-size:12px;line-height:1.35;color:#5A5E62}' +
-      '@media(max-width:480px){.tour-topics{grid-template-columns:1fr}}' +
+      '.tour-tabs{display:flex;gap:4px;margin:0 0 12px;padding:3px;background:#EDE8DE;border-radius:999px}' +
+      '.tour-card .tour-tabs button{flex:1 1 auto;border:0;background:none;color:#5A5E62;font-size:9px;letter-spacing:.08em;padding:7px 6px;white-space:nowrap}' +
+      '.tour-card .tour-tabs button:hover{color:#1B1D1F}' +
+      '.tour-card .tour-tabs button.on{background:#1B1D1F;color:#fff}' +
       '.tour-part{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A6A3E;margin:0 0 6px}' +
       '.tour-card button{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;border-radius:999px;padding:8px 14px;cursor:pointer;border:1px solid #CFC8BC;background:#fff;color:#1B1D1F}' +
       '.tour-card button.pri{background:#1B1D1F;border-color:#1B1D1F;color:#fff}' +
@@ -198,7 +187,7 @@
     while (i >= 0 && i < steps.length && !usable(steps[i])) i += dir;
     if (i < 0) { i = 0; while (i < steps.length && !usable(steps[i])) i++; }
     if (i >= steps.length) {
-      var nextPage = single ? null : SEQ[SEQ.indexOf(page) + 1];
+      var nextPage = SEQ[SEQ.indexOf(page) + 1];
       if (!nextPage) return end();
       flag(CHAIN, '1');
       location.href = urlOf(nextPage);          /* the tutorial continues on the next page */
@@ -210,10 +199,14 @@
     var last = true;
     for (var j = i + 1; j < steps.length; j++) { if (usable(steps[j])) { last = false; break; } }
     var pi = SEQ.indexOf(page), finalPage = pi === SEQ.length - 1;
-    var theEnd = last && (single || finalPage);
+    var theEnd = last && finalPage;
     var first = true;
     for (var f = 0; f < i; f++) { if (usable(steps[f])) { first = false; break; } }
-    card.innerHTML = '<div class="tour-bar"><i></i></div><div class="tour-part"></div><h4></h4><p></p><div class="tour-foot">' +
+    /* the four topics stay on top of the card — click one to jump to it */
+    var tabs = SEQ.map(function (name) {
+      return '<button type="button" data-topic="' + name + '"' + (name === page ? ' class="on"' : '') + '>' + PART[name] + '</button>';
+    }).join('');
+    card.innerHTML = '<div class="tour-tabs">' + tabs + '</div><div class="tour-bar"><i></i></div><h4></h4><p></p><div class="tour-foot">' +
       (theEnd ? '' : '<button class="skip" data-t="skip" type="button">Skip tutorial</button>') +
       '<span style="margin-right:auto"></span>' +
       (!first ? '<button data-t="back" type="button">Back</button>' : '') +
@@ -222,11 +215,8 @@
     card.querySelector('p').textContent = st.text;
     /* one progress bar for the whole tutorial, across all pages */
     var before = 0, total = 0;
-    var pos = i + 1;
-    if (single) { var mine = steps.filter(usable); total = mine.length; pos = mine.indexOf(st) + 1; }
-    else SEQ.forEach(function (name, k) { var n = (TOURS[name] || []).length; total += n; if (k < pi) before += n; });
-    card.querySelector('.tour-bar i').style.width = Math.round((before + pos) / total * 100) + '%';
-    card.querySelector('.tour-part').textContent = single ? PART[page] : PART[page] + ' · part ' + (pi + 1) + ' of ' + SEQ.length;
+    SEQ.forEach(function (name, k) { var n = (TOURS[name] || []).length; total += n; if (k < pi) before += n; });
+    card.querySelector('.tour-bar i').style.width = Math.round((before + i + 1) / total * 100) + '%';
     if (target) {
       var r = target.getBoundingClientRect();
       if (r.top < 90 || r.bottom > window.innerHeight - 40) {
@@ -240,7 +230,6 @@
   function end() {
     try { localStorage.setItem(DONE, '1'); } catch (e) {}
     flag(CHAIN, null);
-    single = false;
     [shade, card, document.querySelector('.tour-block')].forEach(function (el) { if (el && el.parentNode) el.parentNode.removeChild(el); });
     window.removeEventListener('resize', place); window.removeEventListener('scroll', place, true);
     document.removeEventListener('keydown', onKey);
@@ -248,35 +237,20 @@
   }
   function onKey(e) {
     if (e.key === 'Escape') end();
-    else if (idx < 0) return;                      /* chooser: no stepping */
     else if (e.key === 'ArrowRight') show(idx + 1, 1);
     else if (e.key === 'ArrowLeft') show(idx - 1, -1);
   }
 
-  /* the chooser: one topic, or the whole portal */
-  function menu() {
-    if (card) end();
-    shell();
-    steps = []; target = null; idx = -1;
-    card.classList.add('tour-menu');
-    card.innerHTML = '<h4>Tutorial</h4><p>What would you like to see?</p><div class="tour-topics">' +
-      SEQ.map(function (name) {
-        return '<button type="button" data-topic="' + name + '"><b>' + PART[name] + '</b><span>' + BLURB[name] + '</span></button>';
-      }).join('') + '</div><div class="tour-foot"><button class="skip" data-t="skip" type="button">Close</button>' +
-      '<span style="margin-right:auto"></span><button class="pri" data-topic="all" type="button">Show me everything</button></div>';
-    place();
-  }
+  /* jump to a topic (a tab on the card, or the Tutorial button → My account) */
   function pick(topic) {
-    var all = topic === 'all', dest = all ? SEQ[0] : topic;
-    flag(CHAIN, all ? '1' : 'one');
-    if (dest !== page) { location.href = urlOf(dest); return; }
-    end(true); flag(CHAIN, all ? '1' : 'one');
-    start();
+    flag(CHAIN, '1');
+    if (topic !== page) { location.href = urlOf(topic); return; }
+    if (card) show(0, 1); else start();
   }
 
   function start() {
     if (card || !TOURS[page]) return;
-    single = mode() === 'one';
+    flag(CHAIN, '1');
     shell();
     steps = TOURS[page];
     show(0, 1);
@@ -309,11 +283,11 @@
     /* it begins on the account page on a first visit, and carries on here if
        it is already under way; give the page a moment to load its data first */
     if (forced) flag(CHAIN, '1');
-    if (mode()) setTimeout(start, 900);                         /* picked in the chooser / already under way */
-    else if (!seen && page === SEQ[0]) setTimeout(menu, 900);   /* first visit: offer the tutorial */
+    /* under way / a topic was picked → carry on here; first visit → begin with My account */
+    if (mode() || (!seen && page === SEQ[0])) setTimeout(start, 900);
   }
 
-  window.LUMIA_TOUR = { start: start, menu: menu };
+  window.LUMIA_TOUR = { start: start, pick: pick };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(init, 0); });
   else setTimeout(init, 0);
 })();
