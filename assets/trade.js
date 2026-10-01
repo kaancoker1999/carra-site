@@ -77,9 +77,8 @@
         var frag = document.createElement('span');
         frag.innerHTML =
           '<a href="account.html"' + cls + mark('account.html') + '>My account</a> ' +
-          '<a href="orders.html"' + cls + mark('orders.html') + '>Orders</a> ' +
-          '<a href="price-list.html"' + cls + mark('price-list.html') + '>Price list</a> ' +
-          '<a href="order.html"' + cls + mark('order.html') + '>Place order</a>';
+          '<a href="orders.html"' + cls + (here === 'order.html' ? ' style="color:var(--ink)"' : mark('orders.html')) + '>Orders</a> ' +
+          '<a href="price-list.html"' + cls + mark('price-list.html') + '>Price list</a>';
         var anchor = partner || null;
         while (frag.firstChild) nav.insertBefore(frag.firstChild, anchor);
       }
