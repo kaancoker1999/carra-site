@@ -118,6 +118,19 @@
   /* ── summary tiles ── */
   .sumgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:0 0 34px}
   .sum{border:1px solid var(--line2);border-radius:14px;background:var(--paper);padding:18px 20px}
+  #summary{grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
+  .sumpanel{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.045);border-radius:20px;padding:16px 16px 18px}
+  .sumhead{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.72);margin:2px 4px 12px}
+  .sumrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  #sum-balance .sumrow{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .sumrow .sum{padding:16px 14px}
+  .sumrow .sum .v{font-size:22px;white-space:nowrap}
+  .sum .go{display:block;white-space:nowrap}
+  @media(max-width:1060px){ #summary{grid-template-columns:1fr} }
+  @media(max-width:560px){
+    .sumrow{grid-template-columns:repeat(2,minmax(0,1fr))}
+    #sum-balance .sumrow{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+  }
   .sum .v{font-family:'Archivo',sans-serif;font-weight:600;font-size:26px;line-height:1.1}
   .sum .k{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:6px}
   .sum.due .v{color:#8A2620}
@@ -262,7 +275,7 @@
 </footer>
 
 <script src="assets/trade.js?v=6"></script>
-<script src="assets/tour.js?v=2"></script>
+<script src="assets/tour.js?v=3"></script>
 <script src="assets/invoice.js?v=1"></script>
 <script>
 (function(){
@@ -281,7 +294,7 @@
 
   function tile(v, k, cls, act){
     return '<div class="sum' + (cls ? ' ' + cls : '') + (act ? ' act" data-act="' + act + '" role="button" tabindex="0"' : '"') +
-      '><div class="v">' + v + '</div><div class="k">' + k + (act ? ' <span class="go">— pay from here →</span>' : '') + '</div></div>';
+      '><div class="v">' + v + '</div><div class="k">' + k + (act ? ' <span class="go">pay from here →</span>' : '') + '</div></div>';
   }
   function fdate(x){
     return new Date(x).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'});
@@ -525,14 +538,19 @@
     });
     var pay = 0;
     orders.filter(payable).forEach(function(o){ pay += orderTotals(o.lines).total; });
+    /* two boxes: where the orders stand, and the money side */
     document.getElementById('summary').innerHTML =
-      tile(orders.length, 'Orders placed') +
-      tile('$' + purch.toFixed(2), 'Total purchased') +
-      tile('$' + due.toFixed(2), 'Balance due', due > 0 ? 'due' : '') +
-      tile('$' + pay.toFixed(2), 'Payable', pay > 0 ? 'due' : '', PAYINFO ? 'paypop' : '') +
-      tile(shipped, 'In transit') +
-      tile(prod, 'In production') +
-      tile(pend, 'Awaiting review');
+      '<div class="sumpanel" id="sum-orders"><div class="sumhead">Orders</div><div class="sumrow">' +
+        tile(orders.length, 'Orders placed') +
+        tile(pend, 'Awaiting review') +
+        tile(prod, 'In production') +
+        tile(shipped, 'In transit') +
+      '</div></div>' +
+      '<div class="sumpanel" id="sum-balance"><div class="sumhead">Balance</div><div class="sumrow">' +
+        tile('$' + purch.toFixed(2), 'Total purchased') +
+        tile('$' + due.toFixed(2), 'Balance due', due > 0 ? 'due' : '') +
+        tile('$' + pay.toFixed(2), 'Payable', pay > 0 ? 'due' : '', PAYINFO ? 'paypop' : '') +
+      '</div></div>';
     renderPayDue(orders);
 
     var table = document.getElementById('otable'), body = document.getElementById('orows');

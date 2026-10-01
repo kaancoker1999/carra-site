@@ -15,8 +15,10 @@
     'account.html': [
       { title: 'Welcome to your LUMIA trade portal',
         text: 'This one-minute tour shows where everything is. You can skip it and replay it any time.' },
-      { el: '#summary', title: 'Your account at a glance',
-        text: 'Orders placed, what you have purchased, your balance, and how many orders are in review, in production or on the way.' },
+      { el: '#sum-orders', title: 'Your orders at a glance',
+        text: 'How many orders you have placed, and how many are awaiting review, in production or on the way.' },
+      { el: '#sum-balance', title: 'Your balance',
+        text: 'What you have purchased in total, what is still unpaid, and what is payable right now.' },
       { el: function () { return byText('#summary .sum', /Payable/); }, title: 'Payable — pay from here',
         text: 'As soon as an order goes into production it becomes payable, and payment is due within 20 days. Click this tile for the amounts due and our bank details.' },
       { el: '.actions a[href="order.html"]', title: 'Place an order',
