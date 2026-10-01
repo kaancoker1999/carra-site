@@ -1119,9 +1119,8 @@
       '</div></div>' +
       '<div class="blocks"><div><h2>BILLED TO:</h2>' +
       '<p><span contenteditable>' + esc(dl.company || o.dealer || 'Customer') + '</span></p>' +
-      (dl.company ? '<p><span contenteditable>' + esc(o.dealer || '') + '</span></p>' : '') +
       '<p><span contenteditable>' + esc(dl.address || 'Street address, City, State ZIP') + '</span></p>' +
-      '<p><span contenteditable>' + esc(dl.phone ? 'Phone: ' + dl.phone : '&nbsp;') + '</span></p></div>' +
+      '<p><span contenteditable>' + (dl.phone ? esc('Phone: ' + dl.phone) : 'Phone number') + '</span></p></div>' +
       '<div><h2>PO DETAILS:</h2>' +
       '<p>PO # ' + esc(o.ref) + '</p>' +
       '<p>PO Date ' + dts + '</p>' +
