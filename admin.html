@@ -459,6 +459,12 @@
   }
 
   /* ── overview dashboard ── */
+  /* a TDBU that wasn't chosen is left out — only "Top-down bottom-up: Yes" is written */
+  function cleanSpec(t){
+    return String(t || '').split(' · ').filter(function(part){
+      return !/^(top-down bottom-up|tdbu): no$/i.test(part.trim());
+    }).join(' · ');
+  }
   function statusOf(o){ return (o.status && o.status.status) || 'Pending review'; }
   function isPaid(o){ return !!(o.payment && o.payment.paid); }
   function collectionGroups(){
@@ -881,7 +887,7 @@
       var lrows = (o.lines || []).map(function(l, i){
         var size = l.w == null ? 'by the yard' : fmtIn(l.w) + '″ × ' + fmtIn(l.h) + '″';
         return '<tr><td>' + (i+1) + '</td><td class="l">' + (l.label ? '<b>' + esc(l.label) + '</b> · ' : '') + esc(l.product) +
-          '<div style="color:var(--muted);font-size:11px">' + esc(l.spec || '') + '</div></td>' +
+          '<div style="color:var(--muted);font-size:11px">' + esc(cleanSpec(l.spec)) + '</div></td>' +
           '<td>' + size + '</td><td>' + l.qty + '</td>' +
           '<td>' + (l.price == null ? 'TBD' : '$' + l.price.toFixed(2)) + '</td>' +
           '<td>' + (l.price == null ? 'TBD' : '$' + (l.price * l.qty).toFixed(2)) + '</td></tr>';

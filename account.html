@@ -341,13 +341,19 @@
     return (o.lines || []).map(function(l){ return (l.label ? esc(l.label) + ' — ' : '') + esc(l.product); }).join(' &middot; ');
   }
 
+  /* a TDBU that wasn't chosen is left out — only "Top-down bottom-up: Yes" is written */
+  function cleanSpec(t){
+    return String(t || '').split(' · ').filter(function(part){
+      return !/^(top-down bottom-up|tdbu): no$/i.test(part.trim());
+    }).join(' · ');
+  }
   function detailHTML(o){
     var rows = (o.lines || []).map(function(l, i){
       var size = l.w == null ? '—' : fmtIn(l.w) + ' × ' + fmtIn(l.h);
       var amt = l.price == null ? 'TBD' : '$' + (Math.round(l.price * l.qty * 100) / 100).toFixed(2);
       return '<tr><td>' + (i + 1) + '</td>' +
         '<td>' + (l.label ? '<b>' + esc(l.label) + '</b><br>' : '') + esc(l.product) +
-          '<div class="spec">' + esc(l.spec || l.desc || '') + '</div></td>' +
+          '<div class="spec">' + esc(cleanSpec(l.spec || l.desc)) + '</div></td>' +
         '<td>' + size + '</td><td>' + l.qty + '</td><td class="num">' + amt + '</td></tr>';
     }).join('');
     var rc = o.receipt || {}, d = deliveredAt(o), bits = ['Sent ' + fdate(o.at)];

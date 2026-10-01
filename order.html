@@ -654,9 +654,12 @@
       return i < 0 ? { k: '', v: part.trim() } : { k: part.slice(0, i).trim(), v: part.slice(i + 2).trim() };
     }).filter(function(p){ return p.v; });
   }
+  /* a TDBU that wasn't chosen is simply left out — "Top-down bottom-up: No"
+     is easy to misread, so only "Yes" is ever written */
+  function tdbuNo(p){ return /^(top-down bottom-up|tdbu)$/i.test(p.k || '') && /^no$/i.test(p.v || ''); }
   function specMap(l){
     var m = {};
-    specPairs(l).forEach(function(p){ if(p.k) m[p.k] = p.v; });
+    specPairs(l).forEach(function(p){ if(p.k && !tdbuNo(p)) m[p.k] = p.v; });
     return m;
   }
   /* One table per product, so the column headers are that product's own steps —
@@ -668,7 +671,7 @@
       if(!byProduct[name]){ byProduct[name] = { name: name, items: [], keys: [] }; groups.push(byProduct[name]); }
       var g = byProduct[name];
       g.items.push(it);
-      specPairs(it.l).forEach(function(p){ if(p.k && g.keys.indexOf(p.k) < 0) g.keys.push(p.k); });
+      specPairs(it.l).forEach(function(p){ if(p.k && !tdbuNo(p) && g.keys.indexOf(p.k) < 0) g.keys.push(p.k); });
     });
     return groups.map(function(g){
       var head = '<tr><th>#</th><th>Room / label</th>' +
