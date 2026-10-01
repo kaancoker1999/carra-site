@@ -307,6 +307,18 @@
     }
     renderPayDue(orders);
     renderSections(orders);
+    renderLast(orders);
+  }
+
+  /* account page: the three most recent orders, with a link to the full list */
+  function renderLast(orders){
+    var box = document.getElementById('lastorders'); if(!box) return;
+    var last = orders.slice().sort(function(a, b){ return Date.parse(b.at) - Date.parse(a.at); }).slice(0, 3);
+    box.innerHTML = last.length
+      ? '<div class="tablewrap"><table><thead><tr><th>Date</th><th>Customer / project</th><th>Ref</th><th>Lines</th><th>Total</th><th>Status</th><th>Payment</th><th></th></tr></thead>' +
+        '<tbody class="orows">' + last.map(rowHTML).join('') + '</tbody></table></div>' +
+        (orders.length > 3 ? '<div class="lastmore"><a href="orders.html">View all ' + orders.length + ' orders →</a></div>' : '')
+      : '<div class="osec"><div class="none">No orders sent yet &mdash; <a href="order.html" style="color:#fff">place your first order</a>.</div></div>';
   }
 
   /* one order = a summary row + a hidden details row */

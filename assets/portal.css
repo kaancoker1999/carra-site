@@ -229,3 +229,6 @@
   .osec.shipped thead th{background:var(--paper)}
   a.sum{display:block;text-decoration:none;color:var(--ink);transition:transform .15s,box-shadow .15s}
   a.sum:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.18)}
+  .lastmore{margin:12px 2px 0;text-align:right}
+  .lastmore a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.8);text-decoration:none}
+  .lastmore a:hover{color:#fff}
