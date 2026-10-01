@@ -1,6 +1,6 @@
 /* LUMIA trade portal — guided tour.
    Runs once per page on a dealer's first visit (remembered in localStorage)
-   and again whenever "Take the tour" in the nav is clicked. Steps whose
+   and again whenever the "Tutorial" button next to the page heading is clicked. Steps whose
    target is missing or hidden are skipped, so the same tour works for a new
    account with no orders and on a phone. */
 (function () {
@@ -26,8 +26,8 @@
         text: 'Every order with its status and payment. Click an order to see its items, the FedEx tracking number and — once it has shipped — the invoice.' },
       { el: 'header nav a[href="price-list.html"]', title: 'Price list',
         text: 'Your own trade prices for every product, always up to date.' },
-      { el: '#tourlink', title: 'Replay the tour',
-        text: 'That’s it. Click “Take the tour” whenever you want to see this again.' }
+      { el: '#tourlink', title: 'Replay the tutorial',
+        text: 'That’s it. Click “Tutorial” whenever you want to see this again.' }
     ],
     'order.html': [
       { title: 'Placing an order',
@@ -49,18 +49,18 @@
     ]
   };
 
-  /* ── "Take the tour" link in the portal nav (every trade page) ── */
+  /* ── "Tutorial" button opposite the page heading (every trade page) ── */
   function addLink() {
-    var nav = document.querySelector('header nav');
-    if (!nav || document.getElementById('tourlink') || !nav.querySelector('a[href="account.html"]')) return;
-    var a = document.createElement('a');
-    a.id = 'tourlink'; a.href = '#'; a.textContent = 'Take the tour';
-    var sample = nav.querySelector('a.lnk'); if (sample) a.className = 'lnk';
-    var out = nav.querySelector('.partner');
-    nav.insertBefore(a, out || null);
-    nav.insertBefore(document.createTextNode(' '), out || null);
-    a.addEventListener('click', function (e) {
-      e.preventDefault();
+    var head = document.querySelector('.pagehead'), h1 = head && head.querySelector('h1');
+    if (!h1 || document.getElementById('tourlink')) return;
+    css();
+    var row = document.createElement('div'); row.className = 'tour-headrow';
+    h1.parentNode.insertBefore(row, h1);
+    row.appendChild(h1);
+    var a = document.createElement('button');
+    a.id = 'tourlink'; a.type = 'button'; a.className = 'tour-btn'; a.textContent = 'Tutorial';
+    row.appendChild(a);
+    a.addEventListener('click', function () {
       if (TOURS[page]) start(); else location.href = 'account.html?tour=1';
     });
   }
@@ -83,6 +83,9 @@
     if (document.getElementById('tourcss')) return;
     var s = document.createElement('style'); s.id = 'tourcss';
     s.textContent =
+      '.tour-headrow{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}' +
+      '.tour-btn{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#F6F3EC;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:10px 18px;cursor:pointer;margin-bottom:6px;transition:background .2s,border-color .2s}' +
+      '.tour-btn:hover{background:rgba(255,255,255,.14);border-color:#fff}' +
       '.tour-shade{position:fixed;z-index:2000;border-radius:12px;box-shadow:0 0 0 9999px rgba(8,6,20,.72);pointer-events:none;transition:all .25s ease}' +
       '.tour-shade.none{left:50%;top:50%;width:0;height:0}' +
       '.tour-block{position:fixed;inset:0;z-index:1999}' +
