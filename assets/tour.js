@@ -34,23 +34,65 @@
       { el: '#tourlink', title: 'Replay the tutorial',
         text: 'That’s it. Click “Tutorial” whenever you want to see this again.' }
     ],
+    'orders.html': [
+      { title: 'Your orders',
+        text: 'Every order you have sent, sorted into three groups by where it stands.' },
+      { el: '.actions a[href="order.html"]', title: 'Place an order',
+        text: 'Start a new order from here at any time.' },
+      { el: '#awaiting', title: 'Awaiting review',
+        text: 'Orders we have received but not started yet. While an order is here you can still cancel it, or edit it from the order form.' },
+      { el: '#production', title: 'In production',
+        text: 'Orders being made. From this point the order is locked and becomes payable — payment is due within 20 days.' },
+      { el: '#shipped', title: 'Shipped',
+        text: 'Orders that have left our factory. Click one for its FedEx tracking number and its invoice.' },
+      { el: function () { return document.querySelector('.osec.shipped tr.ord:not(.done)'); }, title: 'Shipped — not paid yet',
+        text: 'White rows are shipped orders that are still unpaid. They stay at the top until the payment is confirmed.' },
+      { el: function () { return document.querySelector('.osec.shipped tr.ord.done'); }, title: 'Shipped — paid',
+        text: 'Light grey rows are shipped and paid: finished orders, kept here for your records.' },
+      { el: function () { return document.querySelector('.osec tr.ord'); }, title: 'Order details',
+        text: 'Click any row to open it: the line items, any note from LUMIA, tracking and the invoice once it has shipped.' }
+    ],
+    'price-list.html': [
+      { title: 'Your price list',
+        text: 'These are your own trade prices, in USD per unit. Here is how to read them.' },
+      { el: '#xlsbtn', title: 'Download as Excel',
+        text: 'Saves the complete price list — every product and every table — as an Excel file you can keep or print.' },
+      { el: '#ptabs', title: 'Products',
+        text: 'Pick a product: cellular, roman, pleated, drapery, arches or fabric by the yard. Each has its own price tables.' },
+      { el: function () { var g = document.getElementById('gtabs'), t = document.getElementById('ttabs');
+                          return (g && g.children.length) ? g : t; }, title: 'Sub-groups',
+        text: 'Each product is split into sub-groups — for example the fabric colour group for roman shades, the cell type and opacity for cellular, or the heading style for drapery. Choose the one that matches your shade to see its table.' },
+      { el: function () { var g = document.getElementById('gtabs'), t = document.getElementById('ttabs');
+                          return (g && g.children.length && t && t.children.length) ? t : null; }, title: 'Second level',
+        text: 'Some products have a second choice under the first. Pick it to narrow down to one table.' },
+      { el: function () { return document.querySelector('#xwrap:not([hidden])'); }, title: 'Options & surcharges',
+        text: 'Below each price table: the extras for that product and what each one adds. A percentage (for example a liner or fold style) is added on top of the table price; a dollar amount (for example motorization, top-down bottom-up or a remote) is added per shade. “Standard” means it is included at no extra cost.' }
+    ],
     'order.html': [
       { title: 'Placing an order',
-        text: 'A quick look at how to build and send an order.' },
-      { el: '#cells', title: 'Build one line at a time',
-        text: 'Pick the product, then the fabric and options. The form only offers what is actually available for your choices.' },
-      { el: function () { var w = document.getElementById('c-w'); return w ? w.closest('.cellrow') : null; }, title: 'Size and quantity',
-        text: 'Sizes are in inches plus eighths. The allowed range is shown above each field and follows the product and options you chose.' },
-      { el: '#addbtn', title: 'Add to order',
-        text: 'Adds the line to your order below, with its price. Repeat for every shade.' },
+        text: 'You build an order one shade at a time, add each one to the list, then send the whole list to LUMIA. Here is each part of the form.' },
+      { el: function () { var p = document.getElementById('c-product'); return p ? p.closest('.cellrow') : null; }, title: '1 · Product and fabric',
+        text: 'Choose the product first, then the fabric and colour. For roman shades and drapery the colour group is only a filter — leave it on “All groups” to see every fabric.' },
+      { el: function () { var rows = document.querySelectorAll('#cells .cellrow'); return rows.length > 1 ? rows[1] : null; }, title: '2 · Options',
+        text: 'Mechanism, liner, top-down bottom-up and the other options for that product. The form only offers combinations that can actually be made.' },
+      { el: '#c-label', title: '3 · Room / label',
+        text: 'Optional: name the window (for example “Living room 2”). It is printed on the order and the invoice so each shade is easy to identify.' },
+      { el: function () { var w = document.getElementById('c-w'); return w ? w.closest('.cell') : null; }, title: '4 · Size',
+        text: 'Whole inches plus eighths, for width and height. The allowed range is written above each field and changes with the product and options you picked.' },
+      { el: '#c-qty', title: '5 · Quantity',
+        text: 'How many identical shades of this size. Fabric by the yard is entered in yards.' },
+      { el: '#addbtn', title: '6 · Add to order',
+        text: 'Adds the line to the list below with its price. Then build the next shade the same way.' },
       { el: function () { return document.querySelector('#lines:not([hidden])') || document.getElementById('empty'); }, title: 'Your order so far',
-        text: 'All lines with unit prices and totals. Use Edit to change a line or × to remove it.' },
+        text: 'Every line with its unit price and total. Use Edit to change a line or × to remove it.' },
       { el: '#customer', title: 'Customer / project',
-        text: 'Name the job (it becomes the sidemark) and add any notes, such as a requested delivery date.' },
+        text: 'Name the job — it becomes the sidemark on the order and invoice. Use the notes field for anything else, such as a requested delivery date.' },
       { el: '#sendbtn', title: 'Send order',
-        text: 'Sends the order to LUMIA. You can still edit or withdraw it while it is pending review.' },
+        text: 'Sends the order to LUMIA for review. Until it goes into production you can still edit or cancel it.' },
+      { el: '#copybtn', title: 'Copy as text',
+        text: 'Copies the whole order as plain text, handy for an e-mail or a message to your customer.' },
       { el: '#orders', title: 'Orders you have sent',
-        text: 'Status, FedEx tracking, reorder — and the invoice once an order has shipped.' }
+        text: 'Your sent orders with their status: edit while pending, reorder, track the shipment, and open the invoice once it has shipped.' }
     ]
   };
 
@@ -141,7 +183,9 @@
       '<button class="pri" data-t="next" type="button">' + (last ? 'Done' : 'Next') + '</button></div>';
     card.querySelector('h4').textContent = st.title;
     card.querySelector('p').textContent = st.text;
-    card.querySelector('.tour-n').textContent = (i + 1) + ' / ' + steps.length;
+    /* count only the steps this account/device actually shows */
+    var shown = steps.filter(function (s) { return !s.el || resolve(s); });
+    card.querySelector('.tour-n').textContent = (shown.indexOf(st) + 1) + ' / ' + shown.length;
     if (target) {
       var r = target.getBoundingClientRect();
       if (r.top < 90 || r.bottom > window.innerHeight - 40) {
