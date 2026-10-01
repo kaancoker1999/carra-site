@@ -217,8 +217,8 @@
   .osec .xtitle .n{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.55);margin-left:8px;font-weight:400}
   .osec .none{border:1px dashed rgba(255,255,255,.2);border-radius:12px;padding:16px 18px;color:rgba(255,255,255,.55);font-size:13.5px}
   .osec .tablewrap.dimmed{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.14)}
-  tr.ord.done td{background:rgba(255,255,255,.74);color:#6B6F73}
-  tr.ord.done:hover td{background:rgba(255,255,255,.84)}
+  tr.ord.done td{background:#EEECE7;color:#7A7E82}
+  tr.ord.done:hover td{background:#F4F2EE}
   tr.ord.done .ref,tr.ord.done .status{opacity:.8}
   tr.ord.open td{background:#fff}
   .osec.shipped .tablewrap{background:transparent}
