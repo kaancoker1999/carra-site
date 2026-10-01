@@ -442,7 +442,12 @@ export default async (req) => {
         updatedAt: new Date().toISOString(),
       };
       // FedEx tracking number, entered when the order ships — shown to the customer
+      const prevTracking = o.tracking || "";
       o.tracking = String(body.tracking || "").trim().slice(0, 80);
+      // when the tracking number was entered — the invoice is dated the Friday of that week
+      if (!o.tracking) delete o.trackingAt;
+      else if (o.tracking !== prevTracking) o.trackingAt = new Date().toISOString();
+      else if (!o.trackingAt) o.trackingAt = o.shippedAt || new Date().toISOString();   // entered before this stamp existed
       // stamp when production starts — payment opens then and is due 20 days
       // later (shipping without a production step counts as starting then) —
       // and the ship date the first time it ships. "Pending review" clears both.

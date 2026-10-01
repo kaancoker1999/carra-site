@@ -155,7 +155,7 @@
   .dnotes{font-size:13px;margin:8px 2px 0;white-space:pre-wrap}
   .track{display:flex;align-items:center;gap:12px;margin:12px 0 0;padding:12px 16px;background:#EEF2FB;border:1px solid #C3D2EC;border-radius:10px;font-size:13px;color:#274690}
   .track i{font-style:normal;font-size:18px}
-  .track .tn{font-family:'IBM Plex Mono',monospace;letter-spacing:.04em}
+  .track .tn{font-family:'IBM Plex Mono',monospace;letter-spacing:.04em;color:inherit;text-decoration:underline;text-underline-offset:3px}
   .track a{margin-left:auto;color:#1C56B0;font-weight:500;text-decoration:none;white-space:nowrap}
   .track a:hover{text-decoration:underline}
 
@@ -361,7 +361,7 @@
     if(pdw) bits.push('payment due ' + fdate(pdw));
     if(isPaid(o)) bits.push('paid' + (o.payment.updatedAt ? ' ' + fdate(o.payment.updatedAt) : ''));
     var track = o.tracking
-      ? '<div class="track"><i>📦</i><div><b>Shipped &middot; FedEx tracking</b><br><span class="tn">' + esc(o.tracking) + '</span></div>' +
+      ? '<div class="track"><i>📦</i><div><b>Shipped &middot; FedEx tracking</b><br><a class="tn" href="https://www.fedex.com/fedextrack/?trknbr=' + encodeURIComponent(o.tracking) + '" target="_blank" rel="noopener" title="Track on FedEx">' + esc(o.tracking) + '</a></div>' +
         '<a href="https://www.fedex.com/fedextrack/?trknbr=' + encodeURIComponent(o.tracking) + '" target="_blank" rel="noopener">Track it →</a></div>'
       : '';
     return '<div class="dwrap"><table>' +

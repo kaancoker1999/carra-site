@@ -875,7 +875,7 @@
       var badges = '<span class="status ' + stCls + '">' + (st.locked ? '🔒 ' : '') + esc(st.status) + '</span>' +
         (done ? ' <span class="status st-acc">Completed</span>' : '') +
         ' <span class="status ' + (paid ? 'pay-paid' : 'pay-un') + '">' + (paid ? 'Paid' : 'Unpaid') + '</span>' +
-        (o.tracking ? '<br><span class="mono" style="font-size:9px;color:#274690">📦 ' + esc(o.tracking) + '</span>' : '') +
+        (o.tracking ? '<br><a class="mono" href="' + fedexUrl(o.tracking) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Track on FedEx" style="font-size:9px;color:#274690">📦 ' + esc(o.tracking) + '</a>' : '') +
         (st.note ? '<br><span style="font-size:11px;color:#2F5D25">“' + esc(st.note) + '”</span>' : '');
 
       var lrows = (o.lines || []).map(function(l, i){
@@ -900,6 +900,7 @@
         '</div>' +
         '<div class="trackwrap' + (st.status === 'Shipped' ? ' on' : '') + '" data-ref="' + esc(o.ref) + '" style="margin-top:12px">' +
           '<label class="fld"><span>FedEx tracking number</span><input type="text" class="st-track" data-ref="' + esc(o.ref) + '" value="' + esc(o.tracking || '') + '" placeholder="e.g. 771234567890" style="width:260px"></label>' +
+          (o.tracking ? ' <a href="' + fedexUrl(o.tracking) + '" target="_blank" rel="noopener" style="font-size:12.5px;margin-left:10px">Track ' + esc(o.tracking) + ' on FedEx →</a>' : '') +
           '<div style="font-size:11px;color:var(--muted);margin-top:5px">The customer sees this number and a track-it link once you save a Shipped order. The invoice becomes available (here and for the customer) once a tracking number is saved.</div>' +
         '</div>' +
         '<div class="row" style="gap:8px;margin-top:14px;align-items:center">' +
@@ -1067,11 +1068,19 @@
     });
     return { units: units, total: Math.round(total * 100) / 100, unknown: unknown };
   }
+  /* invoice date = the Friday of the week (Mon–Sun) the FedEx number was entered */
+  function invoiceDate(o){
+    var d = new Date(o.trackingAt || o.shippedAt || o.at);
+    var dow = (d.getDay() + 6) % 7;   /* Monday = 0 */
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() - dow + 4);
+  }
+  function mdy(d){ d = new Date(d); return (d.getMonth()+1) + '.' + d.getDate() + '.' + d.getFullYear(); }
+  function fedexUrl(n){ return 'https://www.fedex.com/fedextrack/?trknbr=' + encodeURIComponent(n); }
   function openInvoice(o){
     var dl = dealersCache.filter(function(x){ return x.code === o.code; })[0] || {};
     var t = orderTotals(o.lines);
-    var d = new Date(o.at);
-    var dts = (d.getMonth()+1) + '.' + d.getDate() + '.' + d.getFullYear();
+    var dts = mdy(o.at);                 /* order (PO) date */
+    var ids = mdy(invoiceDate(o));       /* invoice date */
     var rows = (o.lines || []).map(function(l, i){
       var m = (l.spec || '').match(/(?:Fabric|Cell & opacity|Style): ([^·]+)/) ||
               (l.spec || '').match(/^[^:]+: ([^·]+)/);
@@ -1093,7 +1102,7 @@
       'table{border-collapse:collapse;width:100%;font-size:11.5px}' +
       'th,td{border:1px solid #333;padding:6px 8px;text-align:center}' +
       'th{background:#d9d9d9}td.l{text-align:left}td.r{text-align:right}' +
-      '.total{text-align:right;font-size:13px;font-weight:bold;margin:18px 0 30px}' +
+      '.total{text-align:right;font-size:13px;font-weight:bold;margin:18px 0 30px}a{color:#0b57d0}' +
       '.foot{text-align:center;font-size:11px;margin-top:34px}' +
       '.printbtn{position:fixed;top:14px;right:14px;padding:10px 18px;font-size:12px;cursor:pointer}' +
       '@media print{.printbtn{display:none}[contenteditable]{outline:none}}' +
@@ -1104,7 +1113,10 @@
       '<p style="margin:2px 0"><b>hello@lumiashades.com</b></p></div>' +
       '<div class="right"><div class="inv">INVOICE</div>' +
       '<p style="margin:2px 0">No.: <span contenteditable>' + esc(o.ref.replace(/\D/g,'').slice(-6)) + '</span></p>' +
-      '<p style="margin:2px 0">Date: ' + dts + '</p></div></div>' +
+      '<p style="margin:2px 0">Date: ' + ids + '</p>' +
+      '<p style="margin:2px 0">Order ref.: <b>' + esc(o.ref) + '</b></p>' +
+      (o.tracking ? '<p style="margin:2px 0">FedEx tracking: <a href="' + fedexUrl(o.tracking) + '" target="_blank" rel="noopener"><b>' + esc(o.tracking) + '</b></a></p>' : '') +
+      '</div></div>' +
       '<div class="blocks"><div><h2>BILLED TO:</h2>' +
       '<p><span contenteditable>' + esc(dl.company || o.dealer || 'Customer') + '</span></p>' +
       (dl.company ? '<p><span contenteditable>' + esc(o.dealer || '') + '</span></p>' : '') +
@@ -1114,8 +1126,8 @@
       '<p>PO # ' + esc(o.ref) + '</p>' +
       '<p>PO Date ' + dts + '</p>' +
       '<p>Sidemark <span contenteditable>' + esc(o.customer || '') + '</span></p>' +
-      '<p>Ship Ref. <span contenteditable>&nbsp;</span></p>' +
-      '<p>Ship Date <span contenteditable>&nbsp;</span></p></div></div>' +
+      '<p>Ship Ref. ' + (o.tracking ? 'FedEx <a href="' + fedexUrl(o.tracking) + '" target="_blank" rel="noopener">' + esc(o.tracking) + '</a>' : '<span contenteditable>&nbsp;</span>') + '</p>' +
+      '<p>Ship Date ' + (o.shippedAt ? mdy(o.shippedAt) : '<span contenteditable>&nbsp;</span>') + '</p></div></div>' +
       '<table><thead><tr><th>#</th><th>Description</th><th>Width</th><th>Height</th><th>Room</th><th>Qty</th><th>Price</th><th>Amount</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table>' +
       '<p class="total">TOTAL&nbsp;&nbsp;$ ' + t.total.toFixed(2) + (t.unknown ? ' + ' + t.unknown + ' line(s) TBD' : '') + '</p>' +
