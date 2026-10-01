@@ -467,7 +467,7 @@ var CONFIG = @@CONFIG@@;
   update();
 })();
 </script>
-<script src="assets/trade.js?v=6" defer></script>
+<script src="assets/trade.js?v=7" defer></script>
 </body>
 </html>
 """

@@ -12,7 +12,11 @@ Excels (`tools/*.local.*` are gitignored for exactly that reason).
   (roman/cellular/pleated/drapery) **generated** by `python3 tools/gen_pages.py` — edit the
   generator, not the generated files.
 - Order form config: `python3 tools/gen_order.py` → assets/order-config.json (run after gen_pages changes).
-- Trade area: trade.html (dealer login), price-list.html, order.html, admin.html (owner panel).
+- Trade area: trade.html (dealer login), account.html (overview + payments), orders.html
+  (Awaiting review / In production / Shipped), price-list.html, order.html, admin.html (owner panel).
+  account.html and orders.html share `assets/portal.css` + `assets/account.js` (each block renders
+  only if its container exists); the invoice is `assets/invoice.js`, the guided tour `assets/tour.js`.
+  All are version-stamped (`?v=N`) — bump when editing.
 - Backend: `netlify/functions/api.mjs` — Netlify Function + Blobs (store "trade", STRONG
   consistency required). Dealers, orders and base prices live in Blobs, not in the repo.
 - `assets/trade.js` is shared by every page (session, nav injection, mobile menu). Its URL is

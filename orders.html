@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LUMIA — My account</title>
+<title>LUMIA — Orders</title>
 <meta name="robots" content="noindex">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -25,25 +25,13 @@
 </header>
 
 <div class="wrap pagehead">
-  <h1>Account overview</h1>
+  <h1>Orders</h1>
 </div>
 
 <section>
   <div class="wrap">
-    <div class="sumgrid" id="summary"></div>
-
-    <div class="actions">
-      <a class="btn solid" href="order.html">Place an order</a>
-      <a class="btn ghost" href="orders.html">Orders</a>
-      <a class="btn ghost" href="price-list.html">Price list</a>
-    </div>
-
-    <div id="paysection" hidden>
-      <div class="xtitle">Payments due</div>
-      <p class="xsub">You can pay as soon as an order goes <b>into production</b>; payment is due <b>within 20 days</b> of that. Late payments are marked in red.</p>
-      <div id="paydue" style="margin:0 0 34px"></div>
-    </div>
-
+    <p class="xsub" style="margin-top:14px">Click an order to see its line items, FedEx tracking and &mdash; once it has shipped &mdash; the invoice. Shipped orders that are paid are shown dimmed.</p>
+    <div id="osections"></div>
   </div>
 </section>
 
