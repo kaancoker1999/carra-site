@@ -1,11 +1,24 @@
-/* LUMIA trade portal — guided tour.
-   Runs once per page on a dealer's first visit (remembered in localStorage)
-   and again whenever the "Tutorial" button next to the page heading is clicked. Steps whose
-   target is missing or hidden are skipped, so the same tour works for a new
-   account with no orders and on a phone. */
+/* LUMIA trade portal — one guided tutorial across the whole portal.
+   It starts on the account page (automatically on a dealer's first visit, or
+   from the "Tutorial" button on any portal page) and walks on through Orders,
+   Place an order and the Price list, moving from page to page by itself.
+   Steps whose target is missing or hidden are skipped, so it also works for a
+   new account with no orders and on a phone. */
 (function () {
-  var page = (location.pathname.split('/').pop() || 'index.html').replace(/^_|_test/g, '');
-  var DONE = 'lumia_tour_done_';
+  var file = location.pathname.split('/').pop() || 'index.html';
+  var page = file.replace(/^_|_test/g, '');
+  var DONE = 'lumia_tour_done_all', CHAIN = 'lumia_tour_chain';
+  /* the order the tutorial visits the pages in */
+  var SEQ = ['account.html', 'orders.html', 'order.html', 'price-list.html'];
+  var PART = { 'account.html': 'My account', 'orders.html': 'Orders', 'order.html': 'Place an order', 'price-list.html': 'Price list' };
+  /* local previews (_account_test.html …) keep the walk inside the preview pages */
+  var demo = /^_.+_test\.html$/.test(file);
+  function urlOf(name) {
+    return (demo || /_test\.html/.test(document.referrer)) && (name === 'account.html' || name === 'orders.html')
+      ? '_' + name.replace('.html', '_test.html') : name;
+  }
+  function flag(k, v) { try { if (v == null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} }
+  function chained() { try { return sessionStorage.getItem(CHAIN) === '1'; } catch (e) { return false; } }
 
   function byText(sel, re) {
     return [].filter.call(document.querySelectorAll(sel), function (el) { return re.test(el.textContent); })[0] || null;
@@ -14,7 +27,7 @@
   var TOURS = {
     'account.html': [
       { title: 'Welcome to your LUMIA trade portal',
-        text: 'This one-minute tour shows where everything is. You can skip it and replay it any time.' },
+        text: 'This tutorial walks you through the whole portal: your account, your orders, placing an order and your price list. You can skip it and replay it any time.' },
       { el: '#sum-orders', title: 'Your orders at a glance',
         text: 'How many orders you have placed, and how many are awaiting review, in production or shipped. Click a tile to open them on the Orders page.' },
       { el: '#sum-balance', title: 'Your balance',
@@ -26,16 +39,10 @@
       { el: function () { return document.querySelector('#paysection:not([hidden])'); }, title: 'Payments due',
         text: 'Every unpaid order, grouped by its due date. Use “Pay from here” for our bank details, then “I’ve paid” so we know to look for your payment. Late payments turn red.' },
       { el: '#lastsection', title: 'Last 3 orders',
-        text: 'Your three most recent orders with their status and payment. Click one to see its items, the FedEx tracking number and the invoice once it has shipped.' },
-      { el: 'header nav a[href="orders.html"]', title: 'Orders',
-        text: 'The full list lives here, in three groups: awaiting review, in production and shipped.' },
-      { el: 'header nav a[href="price-list.html"]', title: 'Price list',
-        text: 'Your own trade prices for every product, always up to date.' },
-      { el: '#tourlink', title: 'Replay the tutorial',
-        text: 'That’s it. Click “Tutorial” whenever you want to see this again.' }
+        text: 'Your three most recent orders with their status and payment. Click one to see its items, the FedEx tracking number and the invoice once it has shipped.' }
     ],
     'orders.html': [
-      { title: 'Your orders',
+      { title: 'The Orders page',
         text: 'Every order you have sent, sorted into three groups by where it stands.' },
       { el: '.actions a[href="order.html"]', title: 'Place an order',
         text: 'Start a new order from here at any time.' },
@@ -66,11 +73,13 @@
                           return (g && g.children.length && t && t.children.length) ? t : null; }, title: 'Second level',
         text: 'Some products have a second choice under the first. Pick it to narrow down to one table.' },
       { el: function () { return document.querySelector('#xwrap:not([hidden])'); }, title: 'Options & surcharges',
-        text: 'Below each price table: the extras for that product and what each one adds. A percentage (for example a liner or fold style) is added on top of the table price; a dollar amount (for example motorization, top-down bottom-up or a remote) is added per shade. “Standard” means it is included at no extra cost.' }
+        text: 'Below each price table: the extras for that product and what each one adds. A percentage (for example a liner or fold style) is added on top of the table price; a dollar amount (for example motorization, top-down bottom-up or a remote) is added per shade. “Standard” means it is included at no extra cost.' },
+      { el: '#tourlink', title: 'That’s the whole portal',
+        text: 'You can replay this tutorial any time with the “Tutorial” button at the top of every page.' }
     ],
     'order.html': [
       { title: 'Placing an order',
-        text: 'You build an order one shade at a time, add each one to the list, then send the whole list to LUMIA. Here is each part of the form.' },
+        text: 'This is the order form. You build an order one shade at a time, add each one to the list, then send the whole list to LUMIA.' },
       { el: function () { var p = document.getElementById('c-product'); return p ? p.closest('.cellrow') : null; }, title: '1 · Product and fabric',
         text: 'Choose the product first, then the fabric and colour. For roman shades and drapery the colour group is only a filter — leave it on “All groups” to see every fabric.' },
       { el: function () { var rows = document.querySelectorAll('#cells .cellrow'); return rows.length > 1 ? rows[1] : null; }, title: '2 · Options',
@@ -108,7 +117,8 @@
     a.id = 'tourlink'; a.type = 'button'; a.className = 'tour-btn'; a.textContent = 'Tutorial';
     row.appendChild(a);
     a.addEventListener('click', function () {
-      if (TOURS[page]) start(); else location.href = 'account.html?tour=1';
+      flag(CHAIN, '1');
+      if (page === SEQ[0]) start(); else location.href = urlOf(SEQ[0]);
     });
   }
 
@@ -140,7 +150,9 @@
       '.tour-card h4{margin:0 0 6px;font-size:16px;font-weight:600;color:#1B1D1F}' +
       '.tour-card p{margin:0 0 14px;font-size:14px;line-height:1.5;color:#3E4246}' +
       '.tour-foot{display:flex;align-items:center;gap:8px}' +
-      '.tour-n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.12em;color:#7A7E82;margin-right:auto}' +
+      '.tour-bar{height:4px;border-radius:99px;background:#E6E0D5;overflow:hidden;margin:0 0 12px}' +
+      '.tour-bar i{display:block;height:100%;background:#B8934A;border-radius:99px;transition:width .3s ease}' +
+      '.tour-part{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A6A3E;margin:0 0 6px}' +
       '.tour-card button{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;border-radius:999px;padding:8px 14px;cursor:pointer;border:1px solid #CFC8BC;background:#fff;color:#1B1D1F}' +
       '.tour-card button.pri{background:#1B1D1F;border-color:#1B1D1F;color:#fff}' +
       '.tour-card button.skip{border-color:transparent;background:none;color:#7A7E82;padding:8px 6px}';
@@ -171,21 +183,32 @@
     /* skip steps whose target isn't on screen for this account / device */
     while (i >= 0 && i < steps.length && steps[i].el && !resolve(steps[i])) i += dir;
     if (i < 0) i = 0;
-    if (i >= steps.length) return end();
+    if (i >= steps.length) {
+      var nextPage = SEQ[SEQ.indexOf(page) + 1];
+      if (!nextPage) return end();
+      flag(CHAIN, '1');
+      location.href = urlOf(nextPage);          /* the tutorial continues on the next page */
+      return;
+    }
     idx = i;
     var st = steps[i];
     target = resolve(st);
     var last = true;
     for (var j = i + 1; j < steps.length; j++) { if (!steps[j].el || resolve(steps[j])) { last = false; break; } }
-    card.innerHTML = '<h4></h4><p></p><div class="tour-foot"><span class="tour-n"></span>' +
-      (last ? '' : '<button class="skip" data-t="skip" type="button">Skip</button>') +
+    var pi = SEQ.indexOf(page), finalPage = pi === SEQ.length - 1;
+    var theEnd = last && finalPage;
+    card.innerHTML = '<div class="tour-bar"><i></i></div><div class="tour-part"></div><h4></h4><p></p><div class="tour-foot">' +
+      (theEnd ? '' : '<button class="skip" data-t="skip" type="button">Skip tutorial</button>') +
+      '<span style="margin-right:auto"></span>' +
       (i > 0 ? '<button data-t="back" type="button">Back</button>' : '') +
-      '<button class="pri" data-t="next" type="button">' + (last ? 'Done' : 'Next') + '</button></div>';
+      '<button class="pri" data-t="next" type="button">' + (theEnd ? 'Done' : 'Next') + '</button></div>';
     card.querySelector('h4').textContent = st.title;
     card.querySelector('p').textContent = st.text;
-    /* count only the steps this account/device actually shows */
-    var shown = steps.filter(function (s) { return !s.el || resolve(s); });
-    card.querySelector('.tour-n').textContent = (shown.indexOf(st) + 1) + ' / ' + shown.length;
+    /* one progress bar for the whole tutorial, across all pages */
+    var before = 0, total = 0;
+    SEQ.forEach(function (name, k) { var n = (TOURS[name] || []).length; total += n; if (k < pi) before += n; });
+    card.querySelector('.tour-bar i').style.width = Math.round((before + i + 1) / total * 100) + '%';
+    card.querySelector('.tour-part').textContent = PART[page] + ' · part ' + (pi + 1) + ' of ' + SEQ.length;
     if (target) {
       var r = target.getBoundingClientRect();
       if (r.top < 90 || r.bottom > window.innerHeight - 40) {
@@ -197,7 +220,8 @@
   }
 
   function end() {
-    try { localStorage.setItem(DONE + page, '1'); } catch (e) {}
+    try { localStorage.setItem(DONE, '1'); } catch (e) {}
+    flag(CHAIN, null);
     [shade, card, document.querySelector('.tour-block')].forEach(function (el) { if (el && el.parentNode) el.parentNode.removeChild(el); });
     window.removeEventListener('resize', place); window.removeEventListener('scroll', place, true);
     document.removeEventListener('keydown', onKey);
@@ -212,6 +236,7 @@
   function start() {
     if (card || !TOURS[page]) return;
     css();
+    try { localStorage.setItem(DONE, '1'); } catch (e) {}   /* seen once it has started */
     steps = TOURS[page];
     var block = document.createElement('div'); block.className = 'tour-block';
     shade = document.createElement('div'); shade.className = 'tour-shade none';
@@ -233,9 +258,10 @@
     addLink();
     if (!TOURS[page]) return;
     var forced = /[?&]tour=1/.test(location.search), seen = false;
-    try { seen = !!localStorage.getItem(DONE + page); } catch (e) { seen = true; }
-    /* give the page a moment to load its orders before pointing at them */
-    if (forced || !seen) setTimeout(start, 900);
+    try { seen = !!localStorage.getItem(DONE); } catch (e) { seen = true; }
+    /* it begins on the account page on a first visit, and carries on here if
+       it is already under way; give the page a moment to load its data first */
+    if (forced || chained() || (!seen && page === SEQ[0])) { flag(CHAIN, '1'); setTimeout(start, 900); }
   }
 
   window.LUMIA_TOUR = { start: start };

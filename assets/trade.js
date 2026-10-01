@@ -70,15 +70,18 @@
     if (!nav) return;
     var partner = nav.querySelector('.partner');
     if (getSession()) {
-      if (!nav.querySelector('a[href="price-list.html"]')) {
+      if (!nav.querySelector('a[href="account.html"]')) {
         var cls = (nav.querySelector('a.lnk') ? ' class="lnk"' : '');
-        var here = location.pathname.split('/').pop();
+        var here = location.pathname.split('/').pop().replace(/^_|_test/g, '');   /* local previews: _orders_test.html */
         var mark = function (href) { return href === here ? ' style="color:var(--ink)"' : ''; };
         var frag = document.createElement('span');
-        frag.innerHTML =
-          '<a href="account.html"' + cls + mark('account.html') + '>My account</a> ' +
-          '<a href="orders.html"' + cls + (here === 'order.html' ? ' style="color:var(--ink)"' : mark('orders.html')) + '>Orders</a> ' +
-          '<a href="price-list.html"' + cls + mark('price-list.html') + '>Price list</a>';
+        /* inside the portal: its own pages; on the public site: one "Portal" link */
+        var inPortal = ['account.html', 'orders.html', 'order.html', 'price-list.html'].indexOf(here) !== -1;
+        frag.innerHTML = inPortal
+          ? '<a href="account.html"' + cls + mark('account.html') + '>My account</a> ' +
+            '<a href="orders.html"' + cls + (here === 'order.html' ? ' style="color:var(--ink)"' : mark('orders.html')) + '>Orders</a> ' +
+            '<a href="price-list.html"' + cls + mark('price-list.html') + '>Price list</a>'
+          : '<a href="account.html"' + cls + '>Portal</a>';
         var anchor = partner || null;
         while (frag.firstChild) nav.insertBefore(frag.firstChild, anchor);
       }
