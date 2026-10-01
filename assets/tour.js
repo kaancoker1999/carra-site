@@ -16,7 +16,7 @@
       { title: 'Welcome to your LUMIA trade portal',
         text: 'This one-minute tour shows where everything is. You can skip it and replay it any time.' },
       { el: '#sum-orders', title: 'Your orders at a glance',
-        text: 'How many orders you have placed, and how many are awaiting review, in production or on the way.' },
+        text: 'How many orders you have placed, and how many are awaiting review, in production or shipped.' },
       { el: '#sum-balance', title: 'Your balance',
         text: 'What you have purchased in total, what is still unpaid, and what is payable right now.' },
       { el: function () { return byText('#summary .sum', /Payable/); }, title: 'Payable — pay from here',

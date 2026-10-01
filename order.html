@@ -279,7 +279,7 @@
 </form>
 
 <script src="assets/trade.js?v=6"></script>
-<script src="assets/tour.js?v=3"></script>
+<script src="assets/tour.js?v=4"></script>
 <script src="assets/invoice.js?v=1"></script>
 <script>
 (function(){
@@ -966,7 +966,7 @@
       tile(orders.length, 'Orders placed') +
       tile('$' + purch.toFixed(2), 'Total purchased') +
       tile('$' + due.toFixed(2), 'Balance due', due > 0 ? 'due' : '') +
-      tile(shipped, 'In transit') +
+      tile(shipped, 'Shipped') +
       tile(prod, 'In production') +
       tile(pend, 'Awaiting review');
   }

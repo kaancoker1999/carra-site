@@ -498,7 +498,7 @@
     }
     $('ovkpi').innerHTML =
       kpi(pending.length, 'Awaiting review', pending.length ? 'warn' : '', 'orders') +
-      kpi(inflight.length, 'In production / on the way', '', 'orders') +
+      kpi(inflight.length, 'In production / shipped', '', 'orders') +
       kpi('$' + unpaid.toFixed(2), 'Unpaid balance', unpaid > 0 ? 'due' : '') +
       kpi('$' + payable.toFixed(2), 'Payable', payable > 0 ? 'due' : '', 'payments') +
       kpi(activeCust, 'Active customers', '', 'dealers');
@@ -1288,7 +1288,7 @@
         tile(st.n, 'Orders placed') +
         tile('$' + st.purch.toFixed(2), 'Total purchased') +
         tile('$' + st.due.toFixed(2), 'Balance due', st.due > 0 ? 'due' : '') +
-        tile(st.shipped, 'In transit') +
+        tile(st.shipped, 'Shipped') +
         tile(st.prod, 'In production') +
         tile(st.pend, 'Awaiting review') +
       '</div>' +
