@@ -10,14 +10,14 @@
 //   POST /api/thread           {orderRef,text} (chat about an order) or {kind,subject,text}
 //   POST /api/thread/reply     {id,text}  ·  POST /api/thread/seen {id}
 //
-// Admin endpoints (header authorization: Bearer <key> — the owner's ADMIN_KEY, or a
-// named admin's own key; see PERMS/NEEDS for who may do what):
+// Admin endpoints (header authorization: Bearer <ADMIN_KEY> for the owner's master key, or
+// Bearer <name>:<password> for a named admin; see PERMS/NEEDS for who may do what):
 //   GET  /api/admin/dealers                           -> list with order counts
 //   POST /api/admin/dealers    {name, mult}           -> {code}
 //   POST /api/admin/dealer-active {code, active}
 //   GET  /api/admin/orders                            -> all orders
 //   GET  /api/admin/me                                -> {name, perms, owner}
-//   GET/POST /api/admin/admins · POST /admin-update {id,perms,active} · /admin-rekey {id} · /admin-delete {id}
+//   GET/POST /api/admin/admins · POST /admin-update {id,perms,active} · /admin-password {id,password} · /admin-delete {id}
 //   POST /api/admin/status     {ref, status, locked, note, tracking, productNo}
 //   POST /api/admin/paid       {ref, paid}            (mark order paid / unpaid)
 //   POST /api/admin/received   {ref, received}        (LUMIA confirms delivery; together with
@@ -30,7 +30,7 @@
 //   POST /api/admin/dm         {to,text} | {to,seen:true}    (direct chat between two admins)
 
 import { getStore } from "@netlify/blobs";
-import { createHash, randomBytes } from "node:crypto";
+import { pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 
 export const config = { path: "/api/*" };
 
@@ -46,11 +46,11 @@ const json = (data, status = 200) =>
 const bad = (msg, status = 400) => json({ error: msg }, status);
 
 // ── admins ──
-// The ADMIN_KEY env var is the owner's master key (full access; it also
-// creates the named admin accounts). Each named admin logs in with their own
-// key — only its SHA-256 is stored, in the "admins" blob — and can do what
-// their permissions allow. Every admin can SEE customers, orders, payments
-// and messages; the permissions below gate what they can CHANGE.
+// The ADMIN_KEY env var is the owner's master key (full access). Each named
+// admin signs in with their NAME and a PASSWORD that the account manager sets
+// in the Admins tab; only a salted PBKDF2 hash is stored, in the "admins"
+// blob. Every admin can SEE customers, orders, payments and messages; the
+// permissions below gate what they can CHANGE.
 const PERMS = {
   orders:   "Review orders, move them to production, ship, add FedEx / product no.",
   payments: "Confirm payments received",
@@ -67,14 +67,14 @@ const ROLE_PRESETS = {
   payments: ["payments", "dealers"],
   support:  ["messages"],
 };
-const hashKey = (k) => createHash("sha256").update(String(k)).digest("hex");
-function newAdminKey() {
-  const a = randomBytes(9).toString("base64url").replace(/[-_]/g, "x").toUpperCase();
-  return `LMA-ADM-${a.slice(0, 4)}-${a.slice(4, 8)}-${a.slice(8, 12)}`;
-}
+const PASS_MIN = 8, LOCK_AFTER = 8, LOCK_MS = 15 * 60000;
+const hashPass = (pw, salt) => pbkdf2Sync(String(pw), salt, 60000, 32, "sha256").toString("hex");
 async function getAdmins() {
   return (await store().get("admins", { type: "json" })) || {};
 }
+// a verified "name:password" stays good for a few minutes on a warm instance,
+// so the hash isn't recomputed on every request
+const verified = new Map();
 // -> { id, name, perms: [...], owner } or null
 async function adminFromReq(req) {
   const h = req.headers.get("authorization") || "";
@@ -85,12 +85,32 @@ async function adminFromReq(req) {
   if (master && token === master) {
     return { id: "owner", name: process.env.ADMIN_NAME || "LUMIA", perms: Object.keys(PERMS), owner: true };
   }
+  // named admin: "Name:password" (the name may be URI-encoded for non-ASCII letters)
+  const i = token.indexOf(":");
+  if (i < 1) return null;
+  let name = token.slice(0, i), pw = token.slice(i + 1);
+  try { name = decodeURIComponent(name); pw = decodeURIComponent(pw); } catch { return null; }
   const admins = await getAdmins();
-  const hk = hashKey(token);
-  for (const [id, a] of Object.entries(admins)) {
-    if (a.keyHash === hk && a.active !== false) return { id, name: a.name, perms: a.perms || [], owner: false };
+  const entry = Object.entries(admins).find(([, a]) => a.name.toLowerCase() === name.trim().toLowerCase());
+  if (!entry) return null;
+  const [id, a] = entry;
+  if (a.active === false || !a.passHash) return null;
+  const hit = verified.get(token);
+  if (hit && hit.id === id && hit.hash === a.passHash && hit.exp > Date.now()) {
+    return { id, name: a.name, perms: a.perms || [], owner: false };
   }
-  return null;
+  // too many wrong passwords: locked for a while
+  const f = a.fails || { n: 0, at: 0 };
+  if (f.n >= LOCK_AFTER && Date.now() - f.at < LOCK_MS) return null;
+  const good = Buffer.from(a.passHash, "hex"), got = Buffer.from(hashPass(pw, a.salt), "hex");
+  if (good.length !== got.length || !timingSafeEqual(good, got)) {
+    a.fails = { n: (Date.now() - f.at < LOCK_MS ? f.n : 0) + 1, at: Date.now() };
+    await store().setJSON("admins", admins);
+    return null;
+  }
+  if (f.n) { delete a.fails; await store().setJSON("admins", admins); }
+  verified.set(token, { id, hash: a.passHash, exp: Date.now() + 5 * 60000 });
+  return { id, name: a.name, perms: a.perms || [], owner: false };
 }
 // what each changing endpoint needs; anything not listed is open to every admin
 const NEEDS = {
@@ -100,7 +120,7 @@ const NEEDS = {
   "/api/admin/dealer-promo": "dealers", "/api/admin/dealer-active": "dealers", "/api/admin/dealer-test": "dealers",
   "/api/admin/dealer-delete": "admins", "/api/admin/dealer-recode": "dealers",
   "/api/admin/prices": "admins", "/api/admin/backup": "admins",
-  "/api/admin/admins": "accounts", "/api/admin/admin-update": "accounts", "/api/admin/admin-delete": "accounts", "/api/admin/admin-rekey": "accounts",
+  "/api/admin/admins": "accounts", "/api/admin/admin-update": "accounts", "/api/admin/admin-delete": "accounts", "/api/admin/admin-password": "accounts",
 };
 
 async function getDealers() {
@@ -458,7 +478,7 @@ export default async (req) => {
       const admins = await getAdmins();
       return json({ admins: Object.entries(admins).map(([id, a]) => ({
         id, name: a.name, role: a.role, perms: a.perms || [], active: a.active !== false,
-        created: a.created, keyed: !!a.keyHash, rekeyedAt: a.rekeyedAt || null })),
+        created: a.created, hasPassword: !!a.passHash, passwordSetAt: a.passwordSetAt || null })),
         perms: PERMS, presets: ROLE_PRESETS });
     }
     if (path === "/api/admin/admins" && req.method === "POST") {
@@ -467,11 +487,19 @@ export default async (req) => {
       const admins = await getAdmins();
       if (Object.values(admins).some((a) => a.name.toLowerCase() === name.toLowerCase())) return bad("an admin with this name already exists", 409);
       const role = ROLE_PRESETS[body.role] ? body.role : "support";
+      if (name.includes(":")) return bad("the name can't contain ':'");
       const id = `adm_${randomBytes(5).toString("hex")}`;
-      const key = newAdminKey();
-      admins[id] = { name, role, perms: ROLE_PRESETS[role].slice(), keyHash: hashKey(key), active: true, created: new Date().toISOString() };
+      admins[id] = { name, role, perms: ROLE_PRESETS[role].slice(), active: true, created: new Date().toISOString() };
+      // a password can be given right away, or set afterwards
+      if (body.password !== undefined) {
+        const pw = String(body.password);
+        if (pw.length < PASS_MIN) return bad(`the password needs at least ${PASS_MIN} characters`);
+        admins[id].salt = randomBytes(16).toString("hex");
+        admins[id].passHash = hashPass(pw, admins[id].salt);
+        admins[id].passwordSetAt = new Date().toISOString();
+      }
       await s.setJSON("admins", admins);
-      return json({ ok: true, id, key });      // the key is shown once; only its hash is kept
+      return json({ ok: true, id });
     }
     if (path === "/api/admin/admin-update" && req.method === "POST") {
       const admins = await getAdmins();
@@ -483,14 +511,19 @@ export default async (req) => {
       await s.setJSON("admins", admins);
       return json({ ok: true });
     }
-    if (path === "/api/admin/admin-rekey" && req.method === "POST") {
+    // the account manager chooses each admin's password; only its salted hash is kept
+    if (path === "/api/admin/admin-password" && req.method === "POST") {
       const admins = await getAdmins();
       const a = admins[String(body.id || "")];
       if (!a) return bad("no such admin", 404);
-      const key = newAdminKey();
-      a.keyHash = hashKey(key); a.rekeyedAt = new Date().toISOString();
+      const pw = String(body.password || "");
+      if (pw.length < PASS_MIN) return bad(`the password needs at least ${PASS_MIN} characters`);
+      a.salt = randomBytes(16).toString("hex");
+      a.passHash = hashPass(pw, a.salt);
+      a.passwordSetAt = new Date().toISOString();
+      delete a.keyHash; delete a.fails;
       await s.setJSON("admins", admins);
-      return json({ ok: true, key });
+      return json({ ok: true });
     }
     if (path === "/api/admin/admin-delete" && req.method === "POST") {
       const admins = await getAdmins();

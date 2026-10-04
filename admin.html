@@ -102,7 +102,10 @@
   .arow .ap{display:flex;flex-direction:column;gap:5px;flex:1;min-width:280px}
   .arow .ap label{display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-family:inherit;font-size:13px;color:var(--ink);margin:0;cursor:pointer}
   .arow .ap input{width:auto;min-width:0;padding:0;margin:0}
-  .arow .ab{display:flex;gap:8px;flex-wrap:wrap}
+  .arow .ab{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
+  .apw{display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex-basis:100%}
+  .apw input{min-width:170px;padding:8px 10px}
+  .apst{font-size:12px;color:var(--muted);flex-basis:100%}
   /* notifications bell + messages */
   .bellwrap{position:relative}
   #bellbtn{position:relative;padding-left:14px;padding-right:14px}
@@ -239,9 +242,9 @@
   <h1 style="font-size:28px;margin:8px 0 22px">Trade admin</h1>
 
   <div class="card" id="keycard">
-    <label for="key">Admin key</label>
-    <div class="row">
-      <input id="key" type="password" style="min-width:320px" placeholder="Your admin key" autocomplete="off">
+    <div class="row" style="align-items:flex-end">
+      <div><label for="keyname">Name</label><input id="keyname" type="text" style="min-width:200px" placeholder="e.g. Nesrin" autocomplete="username"></div>
+      <div><label for="key">Password</label><input id="key" type="password" style="min-width:260px" placeholder="Your password" autocomplete="current-password"></div>
       <button class="btn" id="keybtn" type="button">Log in</button>
     </div>
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px;text-transform:none;letter-spacing:0;font-family:inherit;font-size:13.5px;color:var(--ink);cursor:pointer">
@@ -274,7 +277,7 @@
     <div id="tab-admins" hidden>
       <div class="card">
         <h2 style="font-size:18px;margin-bottom:6px">Admin accounts</h2>
-        <p style="color:var(--muted);font-size:13px;margin:0 0 16px;max-width:86ch">Each admin signs in with their own key and can only change what is ticked for them. Everyone can <b>see</b> customers, orders, payments and messages. A key is shown once, when it is created &mdash; use <b>New key</b> to issue another (the old one stops working).</p>
+        <p style="color:var(--muted);font-size:13px;margin:0 0 16px;max-width:86ch">Each admin signs in with their <b>name</b> and the <b>password you set here</b>, and can only change what is ticked for them. Everyone can <b>see</b> customers, orders, payments and messages. Passwords are not stored in readable form, so they can't be shown again &mdash; set a new one if someone forgets theirs.</p>
         <div id="adminlist"></div>
         <div class="row" style="margin-top:18px;align-items:flex-end">
           <div><label>Name</label><input id="a-name" type="text" style="min-width:200px" placeholder="e.g. Nesrin"></div>
@@ -285,9 +288,9 @@
               <option value="payments">Payments — confirm payments, customer accounts</option>
               <option value="support" selected>Support — customer messages</option>
             </select></div>
+          <div><label>Password (8+ characters)</label><input id="a-pass" type="text" style="min-width:200px" placeholder="Set it now or later" autocomplete="off"></div>
           <button class="btn" id="a-create" type="button">Add admin</button>
         </div>
-        <div class="newcode" id="akey"></div>
         <div class="msg" id="amsg"></div>
       </div>
     </div>
@@ -485,7 +488,7 @@
     }).catch(function(){
       forgetKey();
       $('panel').hidden = true;
-      $('keymsg').className = 'msg err'; $('keymsg').textContent = 'Key rejected.';
+      $('keymsg').className = 'msg err'; $('keymsg').textContent = 'Name or password not accepted.';
     });
   }
   function logout(){
@@ -498,12 +501,16 @@
       $('keymsg').className = 'msg'; $('keymsg').textContent = '';
   }
   $('keybtn').addEventListener('click', function(){
-    var v = $('key').value.trim();
-    if(!v) return;
-    saveKey(v, $('remember').checked); $('key').value = '';
+    var v = $('key').value, name = $('keyname').value.trim();
+    if(!v.trim()) return;
+    /* a named admin signs in as "Name:password"; the owner's master key goes in
+       the password field with the name left empty */
+    saveKey(name ? encodeURIComponent(name) + ':' + encodeURIComponent(v) : v.trim(), $('remember').checked);
+    $('key').value = '';
     unlock();
   });
   $('key').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('keybtn').click(); });
+  $('keyname').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('key').focus(); });
   $('logoutbtn').addEventListener('click', logout);
   if(key()) unlock();
 
@@ -889,23 +896,27 @@
           '<div class="ap">' + Object.keys(perms).map(function(k){
             return '<label><input type="checkbox" class="a-perm" value="' + k + '"' + (a.perms.indexOf(k) !== -1 ? ' checked' : '') + '> ' + esc(perms[k]) + '</label>';
           }).join('') + '</div>' +
-          '<div class="ab"><button class="btn ghost a-rekey" type="button" style="padding:8px 14px">New key</button>' +
+          '<div class="ab"><div class="apw"><input type="text" class="a-newpass" placeholder="' + (a.hasPassword ? 'New password' : 'Set a password') + '" autocomplete="off">' +
+            '<button class="btn ghost a-setpass" type="button" style="padding:8px 14px">' + (a.hasPassword ? 'Change password' : 'Set password') + '</button>' +
+            '<small class="apst">' + (a.hasPassword ? 'Password set' + (a.passwordSetAt ? ' ' + new Date(a.passwordSetAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '') : 'No password yet — can\'t sign in') + '</small></div>' +
           '<button class="btn ghost a-active" data-to="' + (a.active ? '0' : '1') + '" type="button" style="padding:8px 14px">' + (a.active ? 'Suspend' : 'Reactivate') + '</button>' +
           '<button class="btn ghost a-del" type="button" style="padding:8px 14px;color:#8A2620">Delete</button></div></div>';
       }).join('') : '<div class="ovempty">No admin accounts yet — add the first one below.</div>';
     }).catch(function(){ $('adminlist').innerHTML = '<div class="ovempty">Could not load the admin accounts.</div>'; });
   }
-  function showKey(name, key){
-    $('akey').className = 'newcode on';
-    $('akey').innerHTML = 'Key for <b>' + esc(name) + '</b> — copy it now, it is not shown again:<br><code style="font-size:15px;user-select:all">' + esc(key) + '</code>';
-  }
+  function amsg(text, ok){ $('amsg').className = 'msg ' + (ok ? 'ok' : 'err'); $('amsg').textContent = text; }
   $('a-create').addEventListener('click', function(){
-    var name = $('a-name').value.trim();
+    var name = $('a-name').value.trim(), pw = $('a-pass').value;
     $('amsg').textContent = '';
-    if(!name){ $('amsg').className = 'msg err'; $('amsg').textContent = 'Enter a name.'; return; }
-    api('/api/admin/admins', 'POST', { name: name, role: $('a-role').value }).then(function(d){
-      if(d.error){ $('amsg').className = 'msg err'; $('amsg').textContent = d.error; return; }
-      $('a-name').value = ''; showKey(name, d.key); loadAdmins();
+    if(!name){ amsg('Enter a name.'); return; }
+    if(pw && pw.length < 8){ amsg('The password needs at least 8 characters.'); return; }
+    var body = { name: name, role: $('a-role').value };
+    if(pw) body.password = pw;
+    api('/api/admin/admins', 'POST', body).then(function(d){
+      if(d.error){ amsg(d.error); return; }
+      $('a-name').value = ''; $('a-pass').value = '';
+      amsg(name + ' added' + (pw ? ' — they can sign in with that name and password.' : ' — set a password so they can sign in.'), true);
+      loadAdmins();
     });
   });
   $('adminlist').addEventListener('change', function(e){
@@ -922,16 +933,25 @@
       api('/api/admin/admin-update', 'POST', { id: id, active: b.dataset.to === '1' }).then(loadAdmins);
       return;
     }
-    /* New key / Delete: inline two-step confirmation */
+    if(b.classList.contains('a-setpass')){
+      var inp = row.querySelector('.a-newpass'), pw = inp.value;
+      if(pw.length < 8){ amsg('The password needs at least 8 characters.'); inp.focus(); return; }
+      b.disabled = true;
+      api('/api/admin/admin-password', 'POST', { id: id, password: pw }).then(function(d){
+        if(d.error){ amsg(d.error); b.disabled = false; return; }
+        amsg('Password for ' + name + ' saved. They sign in with the name “' + name + '” and this password.', true);
+        loadAdmins();
+      });
+      return;
+    }
+    /* Delete: inline two-step confirmation */
     if(b.dataset.armed !== '1'){
       var label = b.textContent;
       b.dataset.armed = '1'; b.textContent = 'Click again to confirm';
       setTimeout(function(){ if(b.dataset.armed === '1'){ b.dataset.armed = ''; b.textContent = label; } }, 5000);
       return;
     }
-    if(b.classList.contains('a-rekey')){
-      api('/api/admin/admin-rekey', 'POST', { id: id }).then(function(d){ if(d.key) showKey(name, d.key); loadAdmins(); });
-    } else if(b.classList.contains('a-del')){
+    if(b.classList.contains('a-del')){
       api('/api/admin/admin-delete', 'POST', { id: id }).then(loadAdmins);
     }
   });
