@@ -25,8 +25,9 @@
 //                                                      closes the order — both sides agree)
 //   POST /api/admin/prices     {currency, products, notes}   (seed/update base prices)
 //   GET  /api/admin/threads                           -> every message thread
-//   POST /api/admin/thread/reply {id|orderRef,text,by} (id "TEAM" = admins' own chat)
-//        · /status {id,status} · /seen {id} · /delete {id}
+//   POST /api/admin/thread/reply {id|orderRef,text} · /status {id,status} · /seen {id} · /delete {id}
+//   GET  /api/admin/team                              -> the other admins one can write to
+//   POST /api/admin/dm         {to,text} | {to,seen:true}    (direct chat between two admins)
 
 import { getStore } from "@netlify/blobs";
 import { createHash, randomBytes } from "node:crypto";
@@ -180,10 +181,11 @@ async function listOrders(filterCode) {
 // One blob per thread ("thread:<id>") holding its messages:
 //   · an order chat  — id "ORD-<order ref>", one per order, either side can start it
 //   · a request / question from a dealer — id "MSG-…"
-//   · the admins' own team chat — id "TEAM" (never visible to dealers)
+//   · a direct chat between two admins — id "DM-<idA>-<idB>" (kind "DM"; only its
+//     two members can read or write it, and dealers never see it)
 // "Unread" is derived: the other side wrote after this side last opened the thread.
 const THREAD_KINDS = ["Request", "Question"];
-const TEAM_ID = "TEAM";
+const dmId = (a, b) => `DM-${[a, b].sort().join("-")}`;
 const MSG_MAX = 2000, THREAD_MAX_MSGS = 300;
 
 async function listThreads(filterCode) {
@@ -193,7 +195,7 @@ async function listThreads(filterCode) {
   for (const b of blobs) {
     const t = await s.get(b.key, { type: "json" });
     if (!t) continue;
-    if (filterCode ? (t.code === filterCode && t.id !== TEAM_ID) : true) out.push(t);
+    if (filterCode ? (t.code === filterCode && t.kind !== "DM") : true) out.push(t);
   }
   out.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
   return out;
@@ -495,8 +497,45 @@ export default async (req) => {
       return json({ ok: true });
     }
 
+    // customer threads for everyone; direct chats only for their two members
     if (path === "/api/admin/threads" && req.method === "GET") {
-      return json({ threads: await listThreads() });
+      const all = await listThreads();
+      return json({ threads: all.filter((t) => t.kind !== "DM" || (t.members || []).includes(admin.id)) });
+    }
+
+    // the people an admin can write to: every active named admin
+    if (path === "/api/admin/team" && req.method === "GET") {
+      const admins = await getAdmins();
+      return json({ me: admin.id, team: Object.entries(admins)
+        .filter(([, a]) => a.active !== false).map(([id, a]) => ({ id, name: a.name })) });
+    }
+
+    // direct message to another admin: {to, text} — or {to, seen:true} to mark it read
+    if (path === "/api/admin/dm" && req.method === "POST") {
+      const to = String(body.to || "");
+      const admins = await getAdmins();
+      const other = to === "owner" ? { name: process.env.ADMIN_NAME || "LUMIA" } : admins[to];
+      if (!other || to === admin.id) return bad("no such admin", 404);
+      const key = `thread:${dmId(admin.id, to)}`;
+      const now = new Date().toISOString();
+      let t = await s.get(key, { type: "json" });
+      if (body.seen) {
+        if (!t) return json({ ok: true });
+        t.seen = { ...(t.seen || {}), [admin.id]: now };
+        await s.setJSON(key, t);
+        return json({ ok: true, thread: t });
+      }
+      const text = cleanText(body.text, MSG_MAX);
+      if (!text) return bad("message required");
+      if (!t) t = { id: dmId(admin.id, to), kind: "DM", code: "", members: [admin.id, to].sort(),
+                    names: {}, seen: {}, createdAt: now, messages: [] };
+      t.names = { ...(t.names || {}), [admin.id]: admin.name, [to]: other.name };
+      if (t.messages.length >= THREAD_MAX_MSGS) t.messages = t.messages.slice(-(THREAD_MAX_MSGS - 1));   // keeps rolling
+      t.messages.push({ fromId: admin.id, by: admin.name, text, at: now });
+      t.updatedAt = now;
+      t.seen = { ...(t.seen || {}), [admin.id]: now };
+      await s.setJSON(key, t);
+      return json({ ok: true, thread: t });
     }
 
     if (path.startsWith("/api/admin/thread/") && req.method === "POST") {
@@ -504,35 +543,28 @@ export default async (req) => {
       const now = new Date().toISOString();
       const by = admin.name;                      // the logged-in admin, never client-supplied
       let id = String(body.id || "").slice(0, 60);
-      // the team chat is open to every admin; writing to customers needs "messages"
-      if (id !== TEAM_ID && act !== "seen" && !can("messages")) return bad("you don't have permission for this", 403);
+      // writing to customers needs "messages" (opening one to read it does not)
+      if (act !== "seen" && !can("messages")) return bad("you don't have permission for this", 403);
       // LUMIA writing first about an order: {orderRef} opens that order's chat
       const orderRef = cleanText(body.orderRef, 40);
       if (!id && orderRef) id = `ORD-${orderRef}`;
       const key = `thread:${id}`;
       let t = await s.get(key, { type: "json" });
-      if (!t && act === "reply") {
-        if (id === TEAM_ID) {
-          t = { id: TEAM_ID, code: "", dealer: "", kind: "Team", subject: "Team chat", orderRef: "",
-                status: "open", createdAt: now, messages: [] };
-        } else if (orderRef) {
-          const o = await s.get(`order:${orderRef}`, { type: "json" });
-          if (!o) return bad("no such order", 404);
-          t = { id, code: o.code, dealer: o.dealer || "", test: !!o.test, kind: "Order",
-                subject: `Order ${orderRef}`, orderRef, status: "open", createdAt: now,
-                dealerSeenAt: null, messages: [] };
-        }
+      if (t && t.kind === "DM") return bad("no such conversation", 404);   // admins' chats go through /api/admin/dm
+      if (!t && act === "reply" && orderRef) {
+        const o = await s.get(`order:${orderRef}`, { type: "json" });
+        if (!o) return bad("no such order", 404);
+        t = { id, code: o.code, dealer: o.dealer || "", test: !!o.test, kind: "Order",
+              subject: `Order ${orderRef}`, orderRef, status: "open", createdAt: now,
+              dealerSeenAt: null, messages: [] };
       }
       if (!t) return bad("no such conversation", 404);
       if (act === "delete") { await s.delete(key); return json({ ok: true }); }
       if (act === "reply") {
         const text = cleanText(body.text, MSG_MAX);
         if (!text) return bad("message required");
-        if (t.messages.length >= THREAD_MAX_MSGS) {
-          if (id !== TEAM_ID) return bad("conversation is full", 409);
-          t.messages = t.messages.slice(-(THREAD_MAX_MSGS - 1));   // team chat keeps rolling
-        }
-        t.messages.push({ from: id === TEAM_ID ? "admin" : "lumia", by, text, at: now });
+        if (t.messages.length >= THREAD_MAX_MSGS) return bad("conversation is full", 409);
+        t.messages.push({ from: "lumia", by, text, at: now });
         t.updatedAt = now;
         t.adminSeenAt = now;
       } else if (act === "status") {

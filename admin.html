@@ -130,7 +130,22 @@
   .bub.them{align-self:flex-start;background:#fff;border:1px solid var(--line2);border-bottom-left-radius:4px}
   .treply textarea{display:block;width:100%;box-sizing:border-box;font:inherit;font-size:14px;border:1px solid var(--line2);border-radius:9px;padding:10px 12px;resize:vertical;line-height:1.45;background:var(--white)}
   .merr{font-size:12.5px;color:#8A2620;margin-right:auto}
-  .teambox{border:1px solid var(--line2);border-radius:12px;background:#FBF9F4;padding:14px 16px;max-height:52vh;overflow:auto;margin:0 0 12px}
+  .mhead .ncount,.dmside .ncount{margin-left:0}
+  .dmgrid{display:grid;grid-template-columns:270px 1fr;gap:16px;align-items:start}
+  .dmlist{border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--white)}
+  .dmitem{display:flex;gap:11px;align-items:center;padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--line)}
+  .dmitem:last-child{border-bottom:0}
+  .dmitem:hover{background:var(--paper)}
+  .dmitem.on{background:#F1EEE6}
+  .dmav{width:34px;height:34px;border-radius:50%;background:#1B1D1F;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:600;flex:none}
+  .dmtx{min-width:0;flex:1}
+  .dmtx b{display:block;font-size:14px}
+  .dmtx small{display:block;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dmside{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none}
+  .dmside .when{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--muted)}
+  .dmhead{font-family:'Archivo',sans-serif;font-weight:600;font-size:16px;margin:0 0 10px}
+  .dmbox{border:1px solid var(--line2);border-radius:12px;background:#FBF9F4;padding:14px 16px;height:46vh;min-height:220px;overflow:auto;margin:0 0 12px}
+  @media(max-width:760px){ .dmgrid{grid-template-columns:1fr} .dmbox{height:38vh} }
   .st-new{background:#1B1D1F;border:1px solid #1B1D1F;color:#fff}
   .tab{font:inherit;font-size:14px;border:1px solid var(--line2);background:var(--white);border-radius:9px;padding:9px 18px;cursor:pointer}
   .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
@@ -282,16 +297,20 @@
       <div class="card">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;flex-wrap:wrap">
           <div class="pvtabs" id="msgtabs" style="margin:0"></div>
+          <label id="msgcustpick" style="display:flex;align-items:center;gap:8px;margin:0">Customer
+            <select id="msgcustsel" style="min-width:240px"></select>
+          </label>
         </div>
         <div id="msgcust">
           <div class="pvtabs" id="msgfilter" style="margin-bottom:14px"></div>
           <div id="msglist"></div>
         </div>
         <div id="msgteam" hidden>
-          <p style="color:var(--muted);font-size:13px;margin:0 0 14px;max-width:82ch">A private chat between the LUMIA admins. Customers never see it.</p>
-          <div class="teambox" id="teambox"></div>
-          <div class="treply"><textarea id="teamtext" rows="2" maxlength="2000" placeholder="Write to the team…"></textarea>
-            <div class="row" style="justify-content:flex-end;gap:10px;margin-top:8px;align-items:center"><span class="merr" id="teamerr"></span><button class="btn" id="teamsend" type="button" style="padding:8px 18px">Send</button></div></div>
+          <p style="color:var(--muted);font-size:13px;margin:0 0 14px;max-width:82ch">Private conversations between LUMIA admins. Only the two people in a conversation can read it; customers never see any of it.</p>
+          <div class="dmgrid">
+            <div class="dmlist" id="dmlist"></div>
+            <div class="dmpane" id="dmpane"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -561,11 +580,12 @@
   }
 
   /* ── messages + notifications ──
-     Threads: an order's chat ("ORD-<ref>"), a dealer's request/question
-     ("MSG-…"), and the admins' own team chat ("TEAM"). */
-  var allThreads = [], msgView = 'cust', msgFilter = 'open', msgOpen = null;
+     Customer threads: an order's chat ("ORD-<ref>") or a dealer's
+     request/question ("MSG-…"). Team: a direct chat between two admins
+     ("DM-…", kind "DM" — the API only returns the ones this admin is in). */
+  var allThreads = [], team = [], msgView = 'cust', msgFilter = 'open', msgOpen = null, msgCust = '', dmWith = null;
   /* the signed-in admin (GET /api/admin/me): name + what they may change */
-  var ME = { name: '', perms: [], owner: false };
+  var ME = { id: '', name: '', perms: [], owner: false };
   function me(){ return ME.name || ''; }
   function can(p){ return ME.perms.indexOf(p) !== -1; }
   function applyPerms(){
@@ -573,6 +593,288 @@
     $('whoami').textContent = 'Signed in as ' + ME.name;
     $('adminstab').hidden = !can('admins');
   }
+  function msgWhen(x){
+    var d = new Date(x);
+    return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' · ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+  }
+  function lastMsg(t){ return t.messages[t.messages.length - 1] || null; }
+  function custThreads(){ return allThreads.filter(function(t){ return t.kind !== 'DM'; }); }
+  function orderThread(ref){ return allThreads.filter(function(t){ return t.orderRef === ref; })[0] || null; }
+  /* how many messages the customer has sent since an admin last opened the thread */
+  function unreadCount(t){
+    var seen = t.adminSeenAt || '', n = 0;
+    for(var i = t.messages.length - 1; i >= 0; i--){
+      var m = t.messages[i];
+      if(m.from !== 'dealer' || m.at <= seen) break;
+      n++;
+    }
+    return n;
+  }
+  function threadUnread(t){ return unreadCount(t) > 0; }
+  /* direct chats */
+  function dmThread(otherId){
+    return allThreads.filter(function(t){ return t.kind === 'DM' && t.members.indexOf(otherId) !== -1 && t.members.indexOf(ME.id) !== -1; })[0] || null;
+  }
+  function dmUnread(t){
+    if(!t) return 0;
+    var seen = (t.seen || {})[ME.id] || '';
+    return t.messages.filter(function(m){ return m.fromId !== ME.id && m.at > seen; }).length;
+  }
+  /* everyone I can write to: the named admins, plus anyone who already wrote to me */
+  function people(){
+    var list = team.filter(function(a){ return a.id !== ME.id; }).map(function(a){ return { id: a.id, name: a.name }; });
+    allThreads.forEach(function(t){
+      if(t.kind !== 'DM') return;
+      var other = t.members.filter(function(x){ return x !== ME.id; })[0];
+      if(other && !list.some(function(a){ return a.id === other; })) list.push({ id: other, name: (t.names || {})[other] || 'Admin' });
+    });
+    /* most recent conversation first, then by name */
+    return list.sort(function(a, b){
+      var ta = dmThread(a.id), tb = dmThread(b.id);
+      var xa = ta ? ta.updatedAt : '', xb = tb ? tb.updatedAt : '';
+      if(xa !== xb) return xa < xb ? 1 : -1;
+      return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
+    });
+  }
+
+  function loadThreads(){
+    return Promise.all([
+      api('/api/admin/threads'),
+      api('/api/admin/team').catch(function(){ return { team: [] }; })
+    ]).then(function(r){
+      allThreads = r[0].threads || [];
+      team = r[1].team || [];
+      renderBell();
+      if(!$('tab-messages').hidden) renderMessages();
+    }).catch(function(){});
+  }
+
+  /* ── bell: everything waiting for an admin, newest first ── */
+  function notifications(){
+    var n = [];
+    allOrders.forEach(function(o){
+      if(o.test) return;
+      if(statusOf(o) === 'Pending review'){
+        n.push({ cls: 'o', icon: 'inbox', at: o.updatedAt || o.at, title: 'New order — ' + (o.dealer || ''), sub: o.ref + ' · $' + orderTotals(o.lines).total.toFixed(2), go: 'orders' });
+      }
+      if(o.payment && o.payment.customerPaidAt && !o.payment.paid && statusOf(o) !== 'Cancelled'){
+        n.push({ cls: 'p', icon: 'cash', at: o.payment.customerPaidAt, title: 'Payment reported — ' + (o.dealer || ''), sub: o.ref + ' · $' + orderTotals(o.lines).total.toFixed(2) + ' · confirm it arrived', go: 'payments' });
+      }
+    });
+    custThreads().forEach(function(t){
+      var c = unreadCount(t); if(!c) return;
+      var l = lastMsg(t);
+      n.push({ cls: 'm', icon: 'message', at: l.at, title: (c > 1 ? c + ' messages — ' : 'Message — ') + (t.dealer || ''), sub: t.subject + ': ' + l.text, go: 'messages', thread: t.id });
+    });
+    people().forEach(function(a){
+      var t = dmThread(a.id), c = dmUnread(t); if(!c) return;
+      var l = lastMsg(t);
+      n.push({ cls: 't', icon: 'users', at: l.at, title: (c > 1 ? c + ' messages — ' : 'Message — ') + a.name, sub: l.text, go: 'messages', dm: a.id });
+    });
+    return n.sort(function(a, b){ return a.at < b.at ? 1 : -1; });
+  }
+  var bellItems = [];
+  function totalUnread(){
+    var n = 0;
+    custThreads().forEach(function(t){ n += unreadCount(t); });
+    people().forEach(function(a){ n += dmUnread(dmThread(a.id)); });
+    return n;
+  }
+  function renderBell(){
+    bellItems = notifications();
+    $('bellcount').innerHTML = bellItems.length ? '<span class="ncount">' + bellItems.length + '</span>' : '';
+    var u = totalUnread();
+    $('msgcount').innerHTML = u ? '<span class="ncount">' + u + '</span>' : '';
+    $('bellmenu').innerHTML = '<div class="bh">Notifications</div>' + (bellItems.length
+      ? bellItems.map(function(x, i){
+          return '<div class="nitem" data-n="' + i + '"><div class="ni ' + x.cls + '"><i class="ti ti-' + x.icon + '"></i></div>' +
+            '<div><b>' + esc(x.title) + '</b><small>' + esc(x.sub) + '</small><small>' + msgWhen(x.at) + '</small></div></div>';
+        }).join('')
+      : '<div class="nempty"><i class="ti ti-check"></i> Nothing new.</div>');
+  }
+  $('bellbtn').addEventListener('click', function(e){ e.stopPropagation(); renderBell(); $('bellmenu').hidden = !$('bellmenu').hidden; });
+  document.addEventListener('click', function(e){
+    var it = e.target.closest('.nitem');
+    if(it){
+      var x = bellItems[+it.dataset.n];
+      $('bellmenu').hidden = true;
+      if(x){
+        if(x.thread){ msgView = 'cust'; msgOpen = x.thread; msgFilter = 'all'; msgCust = ''; }
+        if(x.dm){ msgView = 'team'; dmWith = x.dm; }
+        gotoTab(x.go);
+      }
+      return;
+    }
+    if(!e.target.closest('.bellwrap')) $('bellmenu').hidden = true;
+  });
+
+  /* ── Messages tab ── */
+  function threadHTML(t){
+    var l = lastMsg(t), open = t.id === msgOpen, closed = t.status === 'closed', c = unreadCount(t);
+    var head = '<div class="mhead" data-mopen="' + esc(t.id) + '"><span class="who">' + esc(t.dealer || '—') + '</span>' +
+      (t.test ? '<span class="status" style="background:#EEE9FA;border:1px solid #C9BCEC;color:#5B3FA0">TEST</span>' : '') +
+      '<span class="sub">' + esc(t.subject) + '</span>' +
+      (c ? '<span class="ncount" title="' + c + ' new message' + (c === 1 ? '' : 's') + '">' + c + '</span>' : '') +
+      '<span class="status ' + (t.kind === 'Order' ? 'st-acc' : 'pay-un') + '">' + esc(t.kind) + '</span>' +
+      (closed ? '<span class="status st-canc">Closed</span>' : '') +
+      '<span class="when">' + (l ? msgWhen(l.at) : 'new') + '</span></div>';
+    if(!open) return '<div class="mthread' + (closed ? ' closed' : '') + '">' + head + '</div>';
+    var bubbles = t.messages.map(function(m){
+      var mine = m.from !== 'dealer';
+      return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="bwho">' + esc(m.by || (mine ? 'LUMIA' : t.dealer)) + ' · ' + msgWhen(m.at) + '</span>' + esc(m.text) + '</div>';
+    }).join('');
+    return '<div class="mthread' + (closed ? ' closed' : '') + '">' + head + '<div class="mbody">' +
+      (bubbles ? '<div class="bubbles">' + bubbles + '</div>'
+               : '<p style="font-size:13.5px;color:var(--muted);margin:0 0 12px">No messages yet — write the first one to the customer.</p>') +
+      '<div class="ronly r-messages">You can read this conversation; answering customers is not part of your account.</div>' +
+      '<div class="treply"><textarea rows="3" maxlength="2000" class="m-text" placeholder="Reply to ' + esc(t.dealer || 'the customer') + '…"></textarea>' +
+      '<div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px;align-items:center"><span class="merr"></span>' +
+        (t.orderRef ? '<button class="btn ghost m-order" data-ref="' + esc(t.orderRef) + '" type="button" style="padding:8px 14px">Open order</button>' : '') +
+        (t.virtual ? '' : '<button class="btn ghost m-status" data-id="' + esc(t.id) + '" data-to="' + (closed ? 'open' : 'closed') + '" type="button" style="padding:8px 14px">' + (closed ? 'Reopen' : 'Close conversation') + '</button>') +
+        '<button class="btn m-send" data-id="' + esc(t.id) + '" data-ref="' + esc(t.orderRef || '') + '" type="button" style="padding:8px 18px">Send</button>' +
+      '</div></div></div></div>';
+  }
+  function renderCustomers(){
+    var cu = custThreads();
+    /* customer picker (right): every customer that has a conversation, with their unread count */
+    var byCode = {};
+    cu.forEach(function(t){
+      var k = t.code || t.dealer;
+      (byCode[k] = byCode[k] || { name: t.dealer || '—', n: 0, unread: 0 });
+      byCode[k].n++; byCode[k].unread += unreadCount(t);
+    });
+    if(msgCust && !byCode[msgCust]) msgCust = '';
+    $('msgcustsel').innerHTML = '<option value="">All customers (' + cu.length + ')</option>' +
+      Object.keys(byCode).sort(function(a, b){ return byCode[a].name.toLowerCase() < byCode[b].name.toLowerCase() ? -1 : 1; }).map(function(k){
+        var c = byCode[k];
+        return '<option value="' + esc(k) + '"' + (k === msgCust ? ' selected' : '') + '>' + esc(c.name) + ' (' + c.n + ')' + (c.unread ? ' — ' + c.unread + ' new' : '') + '</option>';
+      }).join('');
+    var mine = cu.filter(function(t){ return !msgCust || (t.code || t.dealer) === msgCust; });
+    /* a thread opened from the bell or an order counts as read, like one clicked open */
+    var ot = msgOpen && cu.filter(function(x){ return x.id === msgOpen; })[0];
+    if(ot && threadUnread(ot)){
+      ot.adminSeenAt = new Date().toISOString();
+      api('/api/admin/thread/seen', 'POST', { id: ot.id }).catch(function(){});
+      renderBellSoon();
+    }
+    var counts = { open: mine.filter(function(t){ return t.status !== 'closed'; }).length, closed: mine.filter(function(t){ return t.status === 'closed'; }).length, all: mine.length };
+    $('msgfilter').innerHTML = [['open','Open'],['closed','Closed'],['all','All']].map(function(f){
+      return '<button type="button" class="pvtab' + (msgFilter === f[0] ? ' on' : '') + '" data-mfilter="' + f[0] + '" style="font-size:12.5px;padding:6px 12px">' + f[1] + '<span class="n">' + counts[f[0]] + '</span></button>';
+    }).join('');
+    var list = mine.filter(function(t){ return msgFilter === 'all' || (msgFilter === 'closed') === (t.status === 'closed'); });
+    /* "Message customer" on an order that has no chat yet: a blank thread to write into */
+    if(msgOpen && /^ORD-/.test(msgOpen) && !orderThread(msgOpen.slice(4))){
+      var o = allOrders.filter(function(x){ return x.ref === msgOpen.slice(4); })[0];
+      if(o) list.unshift({ id: msgOpen, virtual: true, dealer: o.dealer, test: o.test, kind: 'Order', subject: 'Order ' + o.ref, orderRef: o.ref, status: 'open', messages: [] });
+    }
+    list.sort(function(a, b){ return (threadUnread(b) ? 1 : 0) - (threadUnread(a) ? 1 : 0); });
+    $('msglist').innerHTML = list.length ? list.map(threadHTML).join('')
+      : '<div class="ovempty">' + (msgFilter === 'closed' ? 'No closed conversations.' : 'No conversations here yet — customers write from an order or from “Request or question” in the portal.') + '</div>';
+  }
+  function renderTeam(){
+    var ppl = people();
+    if(dmWith && !ppl.some(function(a){ return a.id === dmWith; })) dmWith = null;
+    if(!dmWith && ppl.length) dmWith = ppl[0].id;
+    var cur = dmThread(dmWith);
+    /* the open conversation counts as read */
+    if(cur && dmUnread(cur)){
+      cur.seen = cur.seen || {}; cur.seen[ME.id] = new Date().toISOString();
+      api('/api/admin/dm', 'POST', { to: dmWith, seen: true }).catch(function(){});
+      renderBellSoon();
+    }
+    $('dmlist').innerHTML = ppl.length ? ppl.map(function(a){
+      var t = dmThread(a.id), l = t && lastMsg(t), c = dmUnread(t);
+      return '<div class="dmitem' + (a.id === dmWith ? ' on' : '') + '" data-dm="' + esc(a.id) + '">' +
+        '<div class="dmav">' + esc(a.name.charAt(0).toUpperCase()) + '</div>' +
+        '<div class="dmtx"><b>' + esc(a.name) + '</b>' +
+          '<small>' + (l ? (l.fromId === ME.id ? 'You: ' : '') + esc(l.text) : 'No messages yet') + '</small></div>' +
+        '<div class="dmside">' + (l ? '<span class="when">' + msgWhen(l.at).split(' · ')[0] + '</span>' : '') +
+          (c ? '<span class="ncount" style="margin:0">' + c + '</span>' : '') + '</div></div>';
+    }).join('') : '<div class="ovempty">No other admin accounts yet.</div>';
+    var who = ppl.filter(function(a){ return a.id === dmWith; })[0];
+    if(!who){ $('dmpane').innerHTML = '<div class="ovempty">Choose someone on the left to start a conversation.</div>'; return; }
+    var keep = $('dmtext') && $('dmtext').dataset.to === dmWith ? $('dmtext').value : '';
+    $('dmpane').innerHTML = '<div class="dmhead">' + esc(who.name) + '</div>' +
+      '<div class="dmbox" id="dmbox">' + (cur && cur.messages.length
+        ? '<div class="bubbles" style="margin:0">' + cur.messages.map(function(m){
+            var mine = m.fromId === ME.id;
+            return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="bwho">' + (mine ? 'You' : esc(m.by)) + ' · ' + msgWhen(m.at) + '</span>' + esc(m.text) + '</div>';
+          }).join('') + '</div>'
+        : '<div class="ovempty">No messages with ' + esc(who.name) + ' yet.</div>') + '</div>' +
+      '<div class="treply"><textarea id="dmtext" data-to="' + esc(dmWith) + '" rows="2" maxlength="2000" placeholder="Write to ' + esc(who.name) + '…"></textarea>' +
+      '<div class="row" style="justify-content:flex-end;gap:10px;margin-top:8px;align-items:center"><span class="merr" id="dmerr"></span>' +
+      '<button class="btn" id="dmsend" type="button" style="padding:8px 18px">Send</button></div></div>';
+    $('dmtext').value = keep;
+    $('dmbox').scrollTop = $('dmbox').scrollHeight;
+  }
+  function renderMessages(){
+    var nCust = 0, nTeam = 0;
+    custThreads().forEach(function(t){ nCust += unreadCount(t); });
+    people().forEach(function(a){ nTeam += dmUnread(dmThread(a.id)); });
+    $('msgtabs').innerHTML =
+      '<button type="button" class="pvtab' + (msgView === 'cust' ? ' on' : '') + '" data-mview="cust">Customers' + (nCust ? '<span class="n">' + nCust + '</span>' : '') + '</button>' +
+      '<button type="button" class="pvtab' + (msgView === 'team' ? ' on' : '') + '" data-mview="team">Team' + (nTeam ? '<span class="n">' + nTeam + '</span>' : '') + '</button>';
+    $('msgcust').hidden = msgView !== 'cust';
+    $('msgcustpick').style.display = msgView === 'cust' ? 'flex' : 'none';
+    $('msgteam').hidden = msgView !== 'team';
+    if(msgView === 'cust') renderCustomers(); else renderTeam();
+  }
+  var bellTimer = null;
+  function renderBellSoon(){ clearTimeout(bellTimer); bellTimer = setTimeout(renderBell, 50); }
+
+  $('msgcustsel').addEventListener('change', function(){ msgCust = this.value; msgOpen = null; renderMessages(); });
+  $('tab-messages').addEventListener('click', function(e){
+    var v = e.target.closest('[data-mview]');
+    if(v){ msgView = v.dataset.mview; renderMessages(); return; }
+    var f = e.target.closest('[data-mfilter]');
+    if(f){ msgFilter = f.dataset.mfilter; renderMessages(); return; }
+    var dm = e.target.closest('[data-dm]');
+    if(dm){ dmWith = dm.dataset.dm; renderMessages(); return; }
+    if(e.target.closest('#dmsend')){
+      var b = e.target.closest('#dmsend'), text = $('dmtext').value.trim();
+      $('dmerr').textContent = '';
+      if(!text) return;
+      b.disabled = true;
+      api('/api/admin/dm', 'POST', { to: dmWith, text: text })
+        .then(function(d){ if(d.error) throw new Error(d.error); $('dmtext').value = ''; return loadThreads(); })
+        .catch(function(){ $('dmerr').textContent = 'Could not send — try again.'; b.disabled = false; });
+      return;
+    }
+    var ob = e.target.closest('.m-order');
+    if(ob){ gotoTab('orders'); return; }
+    var sb = e.target.closest('.m-status');
+    if(sb){
+      sb.disabled = true;
+      api('/api/admin/thread/status', 'POST', { id: sb.dataset.id, status: sb.dataset.to }).then(loadThreads);
+      return;
+    }
+    var send = e.target.closest('.m-send');
+    if(send){
+      var box = send.closest('.mbody'), ta = box.querySelector('.m-text'), err = box.querySelector('.merr'), txt = ta.value.trim();
+      if(!txt){ err.textContent = 'Write a message first.'; return; }
+      send.disabled = true; send.textContent = 'Sending…';
+      var real = allThreads.some(function(t){ return t.id === send.dataset.id; });
+      api('/api/admin/thread/reply', 'POST', real ? { id: send.dataset.id, text: txt } : { orderRef: send.dataset.ref, text: txt })
+        .then(function(d){ if(d.error) throw new Error(d.error); return loadThreads(); })
+        .catch(function(){ err.textContent = 'Could not send — try again.'; send.disabled = false; send.textContent = 'Send'; });
+      return;
+    }
+    var h = e.target.closest('[data-mopen]');
+    if(h){ msgOpen = msgOpen === h.dataset.mopen ? null : h.dataset.mopen; renderMessages(); }
+  });
+  /* keep the bell and the conversations fresh without disturbing the order
+     list: threads reload; orders are re-read, and only swapped into the page
+     when no order is open for editing */
+  setInterval(function(){
+    if(document.hidden || $('panel').hidden) return;
+    var typing = [].some.call(document.querySelectorAll('#tab-messages textarea'), function(x){ return x.value.trim(); });
+    if(!typing) loadThreads();
+    api('/api/admin/orders').then(function(d){
+      var fresh = d.orders || [];
+      if($('tab-orders').hidden && $('tab-dealers').hidden){ allOrders = fresh; renderCalendar(); renderPayments(); renderOverview(); renderBell(); }
+      else { var keep = allOrders; allOrders = fresh; renderBell(); allOrders = keep; }
+    }).catch(function(){});
+  }, 60000);
 
   /* ── admin accounts (owner) ── */
   var ROLE_LABEL = { owner: 'Owner', orders: 'Orders', payments: 'Payments', support: 'Support' };
@@ -633,214 +935,6 @@
       api('/api/admin/admin-delete', 'POST', { id: id }).then(loadAdmins);
     }
   });
-  function teamSeen(){ try{ return localStorage.getItem('lumia_team_seen') || ''; }catch(e){ return ''; } }
-  function msgWhen(x){
-    var d = new Date(x);
-    return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' · ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
-  }
-  function lastMsg(t){ return t.messages[t.messages.length - 1] || null; }
-  function custThreads(){ return allThreads.filter(function(t){ return t.id !== 'TEAM'; }); }
-  function teamThread(){ return allThreads.filter(function(t){ return t.id === 'TEAM'; })[0] || { id: 'TEAM', messages: [] }; }
-  /* a customer wrote and no admin has opened the thread since */
-  function threadUnread(t){
-    var l = lastMsg(t);
-    return !!l && l.from === 'dealer' && (!t.adminSeenAt || l.at > t.adminSeenAt);
-  }
-  function teamUnread(){
-    var seen = teamSeen(), mine = me();
-    return teamThread().messages.filter(function(m){ return m.at > seen && m.by !== mine; });
-  }
-  function orderThread(ref){ return allThreads.filter(function(t){ return t.orderRef === ref; })[0] || null; }
-
-  function loadThreads(){
-    return api('/api/admin/threads').then(function(d){
-      allThreads = d.threads || [];
-      renderBell();
-      if(!$('tab-messages').hidden) renderMessages();
-    }).catch(function(){});
-  }
-
-  /* ── bell: everything waiting for an admin, newest first ── */
-  function notifications(){
-    var n = [];
-    allOrders.forEach(function(o){
-      if(o.test) return;
-      if(statusOf(o) === 'Pending review'){
-        n.push({ cls: 'o', icon: 'inbox', at: o.updatedAt || o.at, title: 'New order — ' + (o.dealer || ''), sub: o.ref + ' · $' + orderTotals(o.lines).total.toFixed(2), go: 'orders' });
-      }
-      if(o.payment && o.payment.customerPaidAt && !o.payment.paid && statusOf(o) !== 'Cancelled'){
-        n.push({ cls: 'p', icon: 'cash', at: o.payment.customerPaidAt, title: 'Payment reported — ' + (o.dealer || ''), sub: o.ref + ' · $' + orderTotals(o.lines).total.toFixed(2) + ' · confirm it arrived', go: 'payments' });
-      }
-    });
-    custThreads().forEach(function(t){
-      if(!threadUnread(t)) return;
-      var l = lastMsg(t);
-      n.push({ cls: 'm', icon: 'message', at: l.at, title: 'Message — ' + (t.dealer || ''), sub: t.subject + ': ' + l.text, go: 'messages', thread: t.id });
-    });
-    var tu = teamUnread();
-    if(tu.length){
-      var l = tu[tu.length - 1];
-      n.push({ cls: 't', icon: 'users', at: l.at, title: 'Team chat — ' + l.by + (tu.length > 1 ? ' (+' + (tu.length - 1) + ')' : ''), sub: l.text, go: 'messages', team: true });
-    }
-    return n.sort(function(a, b){ return a.at < b.at ? 1 : -1; });
-  }
-  var bellItems = [];
-  function renderBell(){
-    bellItems = notifications();
-    $('bellcount').innerHTML = bellItems.length ? '<span class="ncount">' + bellItems.length + '</span>' : '';
-    var unreadMsgs = custThreads().filter(threadUnread).length + (teamUnread().length ? 1 : 0);
-    $('msgcount').innerHTML = unreadMsgs ? '<span class="ncount">' + unreadMsgs + '</span>' : '';
-    $('bellmenu').innerHTML = '<div class="bh">Notifications</div>' + (bellItems.length
-      ? bellItems.map(function(x, i){
-          return '<div class="nitem" data-n="' + i + '"><div class="ni ' + x.cls + '"><i class="ti ti-' + x.icon + '"></i></div>' +
-            '<div><b>' + esc(x.title) + '</b><small>' + esc(x.sub) + '</small><small>' + msgWhen(x.at) + '</small></div></div>';
-        }).join('')
-      : '<div class="nempty"><i class="ti ti-check"></i> Nothing new.</div>');
-  }
-  $('bellbtn').addEventListener('click', function(e){ e.stopPropagation(); renderBell(); $('bellmenu').hidden = !$('bellmenu').hidden; });
-  document.addEventListener('click', function(e){
-    var it = e.target.closest('.nitem');
-    if(it){
-      var x = bellItems[+it.dataset.n];
-      $('bellmenu').hidden = true;
-      if(x){
-        if(x.thread){ msgView = 'cust'; msgOpen = x.thread; msgFilter = 'all'; }
-        if(x.team) msgView = 'team';
-        gotoTab(x.go);
-      }
-      return;
-    }
-    if(!e.target.closest('.bellwrap')) $('bellmenu').hidden = true;
-  });
-
-  /* ── Messages tab ── */
-  function bubblesHTML(t, mineFn){
-    return t.messages.map(function(m){
-      var mine = mineFn(m);
-      return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="bwho">' + esc(m.by || (m.from === 'dealer' ? t.dealer : 'LUMIA')) + ' · ' + msgWhen(m.at) + '</span>' + esc(m.text) + '</div>';
-    }).join('');
-  }
-  function threadHTML(t){
-    var l = lastMsg(t), open = t.id === msgOpen, closed = t.status === 'closed';
-    var head = '<div class="mhead" data-mopen="' + esc(t.id) + '"><span class="who">' + esc(t.dealer || '—') + '</span>' +
-      (t.test ? '<span class="status" style="background:#EEE9FA;border:1px solid #C9BCEC;color:#5B3FA0">TEST</span>' : '') +
-      '<span class="sub">' + esc(t.subject) + '</span>' +
-      (threadUnread(t) ? '<span class="status st-new">New</span>' : '') +
-      '<span class="status ' + (t.kind === 'Order' ? 'st-acc' : 'pay-un') + '">' + esc(t.kind) + '</span>' +
-      (closed ? '<span class="status st-canc">Closed</span>' : '') +
-      '<span class="when">' + (l ? msgWhen(l.at) : 'new') + '</span></div>';
-    if(!open) return '<div class="mthread' + (closed ? ' closed' : '') + '">' + head + '</div>';
-    return '<div class="mthread' + (closed ? ' closed' : '') + '">' + head + '<div class="mbody">' +
-      (t.messages.length ? '<div class="bubbles">' + bubblesHTML(t, function(m){ return m.from !== 'dealer'; }) + '</div>'
-                         : '<p style="font-size:13.5px;color:var(--muted);margin:0 0 12px">No messages yet — write the first one to the customer.</p>') +
-      '<div class="ronly r-messages">You can read this conversation; answering customers is not part of your account.</div>' +
-      '<div class="treply"><textarea rows="3" maxlength="2000" class="m-text" placeholder="Reply to ' + esc(t.dealer || 'the customer') + '…"></textarea>' +
-      '<div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px;align-items:center"><span class="merr"></span>' +
-        (t.orderRef ? '<button class="btn ghost m-order" data-ref="' + esc(t.orderRef) + '" type="button" style="padding:8px 14px">Open order</button>' : '') +
-        (t.virtual ? '' : '<button class="btn ghost m-status" data-id="' + esc(t.id) + '" data-to="' + (closed ? 'open' : 'closed') + '" type="button" style="padding:8px 14px">' + (closed ? 'Reopen' : 'Close conversation') + '</button>') +
-        '<button class="btn m-send" data-id="' + esc(t.id) + '" data-ref="' + esc(t.orderRef || '') + '" type="button" style="padding:8px 18px">Send</button>' +
-      '</div></div></div></div>';
-  }
-  function renderMessages(){
-    var cu = custThreads(), nCust = cu.filter(threadUnread).length, nTeam = teamUnread().length;
-    $('msgtabs').innerHTML =
-      '<button type="button" class="pvtab' + (msgView === 'cust' ? ' on' : '') + '" data-mview="cust">Customers' + (nCust ? '<span class="n">' + nCust + '</span>' : '') + '</button>' +
-      '<button type="button" class="pvtab' + (msgView === 'team' ? ' on' : '') + '" data-mview="team">Team' + (nTeam ? '<span class="n">' + nTeam + '</span>' : '') + '</button>';
-    $('msgcust').hidden = msgView !== 'cust';
-    $('msgteam').hidden = msgView !== 'team';
-    if(msgView === 'cust'){
-      /* a thread opened from the bell or an order counts as read, like one clicked open */
-      var ot = msgOpen && cu.filter(function(x){ return x.id === msgOpen; })[0];
-      if(ot && threadUnread(ot)){
-        ot.adminSeenAt = new Date().toISOString();
-        api('/api/admin/thread/seen', 'POST', { id: ot.id }).catch(function(){});
-        renderBellSoon();
-      }
-      var counts = { open: cu.filter(function(t){ return t.status !== 'closed'; }).length, closed: cu.filter(function(t){ return t.status === 'closed'; }).length, all: cu.length };
-      $('msgfilter').innerHTML = [['open','Open'],['closed','Closed'],['all','All']].map(function(f){
-        return '<button type="button" class="pvtab' + (msgFilter === f[0] ? ' on' : '') + '" data-mfilter="' + f[0] + '" style="font-size:12.5px;padding:6px 12px">' + f[1] + '<span class="n">' + counts[f[0]] + '</span></button>';
-      }).join('');
-      var list = cu.filter(function(t){ return msgFilter === 'all' || (msgFilter === 'closed') === (t.status === 'closed'); });
-      /* "Message customer" on an order that has no chat yet: a blank thread to write into */
-      if(msgOpen && /^ORD-/.test(msgOpen) && !orderThread(msgOpen.slice(4))){
-        var o = allOrders.filter(function(x){ return x.ref === msgOpen.slice(4); })[0];
-        if(o) list.unshift({ id: msgOpen, virtual: true, dealer: o.dealer, test: o.test, kind: 'Order', subject: 'Order ' + o.ref, orderRef: o.ref, status: 'open', messages: [] });
-      }
-      list.sort(function(a, b){ return (threadUnread(b) ? 1 : 0) - (threadUnread(a) ? 1 : 0); });
-      $('msglist').innerHTML = list.length ? list.map(threadHTML).join('')
-        : '<div class="ovempty">' + (msgFilter === 'closed' ? 'No closed conversations.' : 'No conversations here yet — customers write from an order or from “Request or question” in the portal.') + '</div>';
-    } else {
-      var t = teamThread(), mine = me();
-      $('teambox').innerHTML = t.messages.length
-        ? '<div class="bubbles" style="margin:0">' + bubblesHTML(t, function(m){ return m.by === mine; }) + '</div>'
-        : '<div class="ovempty">No team messages yet.</div>';
-      $('teambox').scrollTop = $('teambox').scrollHeight;
-      if(t.messages.length){ try{ localStorage.setItem('lumia_team_seen', t.messages[t.messages.length - 1].at); }catch(e){} renderBellSoon(); }
-    }
-  }
-  var bellTimer = null;
-  function renderBellSoon(){ clearTimeout(bellTimer); bellTimer = setTimeout(renderBell, 50); }
-
-  $('tab-messages').addEventListener('click', function(e){
-    var v = e.target.closest('[data-mview]');
-    if(v){ msgView = v.dataset.mview; renderMessages(); return; }
-    var f = e.target.closest('[data-mfilter]');
-    if(f){ msgFilter = f.dataset.mfilter; renderMessages(); return; }
-    var ob = e.target.closest('.m-order');
-    if(ob){ gotoTab('orders'); return; }
-    var sb = e.target.closest('.m-status');
-    if(sb){
-      sb.disabled = true;
-      api('/api/admin/thread/status', 'POST', { id: sb.dataset.id, status: sb.dataset.to }).then(loadThreads);
-      return;
-    }
-    var send = e.target.closest('.m-send');
-    if(send){
-      var box = send.closest('.mbody'), ta = box.querySelector('.m-text'), err = box.querySelector('.merr'), text = ta.value.trim();
-      if(!text){ err.textContent = 'Write a message first.'; return; }
-      send.disabled = true; send.textContent = 'Sending…';
-      var real = allThreads.some(function(t){ return t.id === send.dataset.id; });
-      api('/api/admin/thread/reply', 'POST', real ? { id: send.dataset.id, text: text } : { orderRef: send.dataset.ref, text: text })
-        .then(function(d){ if(d.error) throw new Error(d.error); return loadThreads(); })
-        .catch(function(){ err.textContent = 'Could not send — try again.'; send.disabled = false; send.textContent = 'Send'; });
-      return;
-    }
-    var h = e.target.closest('[data-mopen]');
-    if(h){
-      var id = h.dataset.mopen;
-      msgOpen = msgOpen === id ? null : id;
-      var t = allThreads.filter(function(x){ return x.id === id; })[0];
-      if(msgOpen && t && threadUnread(t)){
-        t.adminSeenAt = new Date().toISOString();
-        api('/api/admin/thread/seen', 'POST', { id: id }).catch(function(){});
-        renderBell();
-      }
-      renderMessages();
-    }
-  });
-  $('teamsend').addEventListener('click', function(){
-    var b = this, text = $('teamtext').value.trim();
-    $('teamerr').textContent = '';
-    if(!text) return;
-    b.disabled = true;
-    api('/api/admin/thread/reply', 'POST', { id: 'TEAM', text: text })
-      .then(function(d){ if(d.error) throw new Error(d.error); $('teamtext').value = ''; return loadThreads(); })
-      .catch(function(){ $('teamerr').textContent = 'Could not send — try again.'; })
-      .then(function(){ b.disabled = false; });
-  });
-  /* keep the bell and the conversations fresh without disturbing the order
-     list: threads reload; orders are re-read, and only swapped into the page
-     when no order is open for editing */
-  setInterval(function(){
-    if(document.hidden || $('panel').hidden) return;
-    var typing = [].some.call(document.querySelectorAll('#tab-messages textarea'), function(x){ return x.value.trim(); });
-    if(!typing) loadThreads();
-    api('/api/admin/orders').then(function(d){
-      var fresh = d.orders || [];
-      if($('tab-orders').hidden && $('tab-dealers').hidden){ allOrders = fresh; renderCalendar(); renderPayments(); renderOverview(); renderBell(); }
-      else { var keep = allOrders; allOrders = fresh; renderBell(); allOrders = keep; }
-    }).catch(function(){});
-  }, 60000);
 
   /* ── overview dashboard ── */
   /* a TDBU that wasn't chosen is left out — only "Top-down bottom-up: Yes" is written */
@@ -1265,7 +1359,7 @@
       var badges = '<span class="status ' + stCls + '">' + (st.locked ? '🔒 ' : '') + esc(st.status) + '</span>' +
         (done ? ' <span class="status st-acc">Completed</span>' : '') +
         (o.test ? '' : ' <span class="status ' + (paid ? 'pay-paid' : 'pay-un') + '">' + (paid ? 'Paid' : 'Unpaid') + '</span>') +
-        (orderThread(o.ref) && threadUnread(orderThread(o.ref)) ? ' <span class="status st-new">New message</span>' : '') +
+        (orderThread(o.ref) && threadUnread(orderThread(o.ref)) ? ' <span class="status st-new">' + unreadCount(orderThread(o.ref)) + ' new message' + (unreadCount(orderThread(o.ref)) === 1 ? '' : 's') + '</span>' : '') +
         (o.tracking ? '<br><a class="mono" href="' + fedexUrl(o.tracking) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Track on FedEx" style="font-size:9px;color:#274690">📦 ' + esc(o.tracking) + '</a>' : '') +
         (st.note ? '<br><span style="font-size:11px;color:#2F5D25">“' + esc(st.note) + '”</span>' : '');
 
