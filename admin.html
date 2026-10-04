@@ -253,6 +253,19 @@
     <div class="msg" id="keymsg"></div>
   </div>
 
+  <!-- first sign-in: the password the manager set is only a starting one -->
+  <div class="card" id="newpasscard" hidden>
+    <h2 style="font-size:18px;margin-bottom:6px">Create your password</h2>
+    <p style="color:var(--muted);font-size:13.5px;margin:0 0 14px;max-width:70ch" id="newpassintro">Before you continue, choose your own password. You will use it with your name from now on.</p>
+    <div class="row" style="align-items:flex-end">
+      <div><label for="np1">New password (8+ characters)</label><input id="np1" type="password" style="min-width:240px" autocomplete="new-password"></div>
+      <div><label for="np2">Repeat it</label><input id="np2" type="password" style="min-width:240px" autocomplete="new-password"></div>
+      <button class="btn" id="npbtn" type="button">Save and continue</button>
+      <button class="btn ghost" id="npcancel" type="button">Log out</button>
+    </div>
+    <div class="msg" id="npmsg"></div>
+  </div>
+
   <div id="logoutbar" style="display:none;justify-content:flex-end;gap:10px;margin:0 0 14px">
     <span class="mono" id="whoami" style="margin-right:auto;align-self:center;color:rgba(255,255,255,.7)"></span>
     <div class="bellwrap">
@@ -277,7 +290,7 @@
     <div id="tab-admins" hidden>
       <div class="card">
         <h2 style="font-size:18px;margin-bottom:6px">Admin accounts</h2>
-        <p style="color:var(--muted);font-size:13px;margin:0 0 16px;max-width:86ch">Each admin signs in with their <b>name</b> and the <b>password you set here</b>, and can only change what is ticked for them. Everyone can <b>see</b> customers, orders, payments and messages. Passwords are not stored in readable form, so they can't be shown again &mdash; set a new one if someone forgets theirs.</p>
+        <p style="color:var(--muted);font-size:13px;margin:0 0 16px;max-width:86ch">Each admin signs in with their <b>name</b> and a password, and can only change what is ticked for them. The password you set here is a <b>starting password</b>: at their first sign-in they must choose their own, which you never see. Everyone can <b>see</b> customers, orders, payments and messages. Passwords are not stored in readable form, so they can't be shown again &mdash; set a new one if someone forgets theirs.</p>
         <div id="adminlist"></div>
         <div class="row" style="margin-top:18px;align-items:flex-end">
           <div><label>Name</label><input id="a-name" type="text" style="min-width:200px"></div>
@@ -478,7 +491,17 @@
   function unlock(){
     api('/api/admin/me').then(function(m){
       if(!m || !m.name) throw new Error('unauthorized');
-      ME = m; applyPerms();
+      ME = m;
+      if(m.mustChange){
+        /* nothing else is available until they have chosen their own password */
+        $('keycard').hidden = true; $('panel').hidden = true; $('logoutbar').style.display = 'none';
+        $('newpasscard').hidden = false;
+        $('newpassintro').textContent = 'Welcome, ' + m.name + '. Before you continue, choose your own password. You will use it with your name from now on.';
+        $('np1').focus();
+        return;
+      }
+      $('newpasscard').hidden = true;
+      applyPerms();
       $('panel').hidden = false;
       $('keycard').hidden = true;
       $('logoutbar').style.display = 'flex';
@@ -509,6 +532,30 @@
     $('key').value = '';
     unlock();
   });
+  $('npbtn').addEventListener('click', function(){
+    var a = $('np1').value, b = $('np2').value, msg = $('npmsg');
+    msg.className = 'msg err';
+    if(a.length < 8){ msg.textContent = 'The password needs at least 8 characters.'; return; }
+    if(a !== b){ msg.textContent = 'The two passwords are not the same.'; return; }
+    var btn = this; btn.disabled = true;
+    fetch('/api/admin/my-password', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + key(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: a })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+      .then(function(r){
+        btn.disabled = false;
+        if(!r.ok){ msg.textContent = (r.d && r.d.error) ? r.d.error.charAt(0).toUpperCase() + r.d.error.slice(1) + '.' : 'Could not save — try again.'; return; }
+        /* carry on signed in with the new password, remembered the same way as before */
+        var remembered = false; try{ remembered = !!localStorage.getItem(KEY); }catch(e){}
+        forgetKey();
+        saveKey(encodeURIComponent(ME.name) + ':' + encodeURIComponent(a), remembered);
+        $('np1').value = ''; $('np2').value = ''; msg.textContent = '';
+        unlock();
+      }).catch(function(){ btn.disabled = false; msg.textContent = 'Could not save — try again.'; });
+  });
+  $('np2').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('npbtn').click(); });
+  $('npcancel').addEventListener('click', function(){ $('newpasscard').hidden = true; logout(); });
   $('key').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('keybtn').click(); });
   $('keyname').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('key').focus(); });
   $('logoutbtn').addEventListener('click', logout);
@@ -897,8 +944,8 @@
             return '<label><input type="checkbox" class="a-perm" value="' + k + '"' + (a.perms.indexOf(k) !== -1 ? ' checked' : '') + '> ' + esc(perms[k]) + '</label>';
           }).join('') + '</div>' +
           '<div class="ab"><div class="apw"><input type="text" class="a-newpass" placeholder="' + (a.hasPassword ? 'New password' : 'Set a password') + '" autocomplete="off">' +
-            '<button class="btn ghost a-setpass" type="button" style="padding:8px 14px">' + (a.hasPassword ? 'Change password' : 'Set password') + '</button>' +
-            '<small class="apst">' + (a.hasPassword ? 'Password set' + (a.passwordSetAt ? ' ' + new Date(a.passwordSetAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '') : 'No password yet — can\'t sign in') + '</small></div>' +
+            '<button class="btn ghost a-setpass" type="button" style="padding:8px 14px">' + (a.hasPassword ? 'Reset password' : 'Set password') + '</button>' +
+            '<small class="apst">' + (!a.hasPassword ? 'No password yet — can\'t sign in' : a.mustChange ? 'Starting password set — they choose their own at first sign-in' : 'Has chosen their own password' + (a.passwordSetAt ? ' · ' + new Date(a.passwordSetAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '')) + '</small></div>' +
           '<button class="btn ghost a-active" data-to="' + (a.active ? '0' : '1') + '" type="button" style="padding:8px 14px">' + (a.active ? 'Suspend' : 'Reactivate') + '</button>' +
           '<button class="btn ghost a-del" type="button" style="padding:8px 14px;color:#8A2620">Delete</button></div></div>';
       }).join('') : '<div class="ovempty">No admin accounts yet — add the first one below.</div>';
@@ -939,7 +986,7 @@
       b.disabled = true;
       api('/api/admin/admin-password', 'POST', { id: id, password: pw }).then(function(d){
         if(d.error){ amsg(d.error); b.disabled = false; return; }
-        amsg('Password for ' + name + ' saved. They sign in with the name “' + name + '” and this password.', true);
+        amsg('Starting password for ' + name + ' saved. They sign in with the name “' + name + '” and this password, then choose their own.', true);
         loadAdmins();
       });
       return;

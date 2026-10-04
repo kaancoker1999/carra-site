@@ -18,6 +18,7 @@
 //   GET  /api/admin/orders                            -> all orders
 //   GET  /api/admin/me                                -> {name, perms, owner}
 //   GET/POST /api/admin/admins · POST /admin-update {id,perms,active} · /admin-password {id,password} · /admin-delete {id}
+//   POST /api/admin/my-password {password}             (an admin sets their own; required on first sign-in)
 //   POST /api/admin/status     {ref, status, locked, note, tracking, productNo}
 //   POST /api/admin/paid       {ref, paid}            (mark order paid / unpaid)
 //   POST /api/admin/received   {ref, received}        (LUMIA confirms delivery; together with
@@ -97,7 +98,7 @@ async function adminFromReq(req) {
   if (a.active === false || !a.passHash) return null;
   const hit = verified.get(token);
   if (hit && hit.id === id && hit.hash === a.passHash && hit.exp > Date.now()) {
-    return { id, name: a.name, perms: a.perms || [], owner: false };
+    return { id, name: a.name, perms: a.perms || [], owner: false, mustChange: !!a.mustChange };
   }
   // too many wrong passwords: locked for a while
   const f = a.fails || { n: 0, at: 0 };
@@ -110,7 +111,7 @@ async function adminFromReq(req) {
   }
   if (f.n) { delete a.fails; await store().setJSON("admins", admins); }
   verified.set(token, { id, hash: a.passHash, exp: Date.now() + 5 * 60000 });
-  return { id, name: a.name, perms: a.perms || [], owner: false };
+  return { id, name: a.name, perms: a.perms || [], owner: false, mustChange: !!a.mustChange };
 }
 // what each changing endpoint needs; anything not listed is open to every admin
 const NEEDS = {
@@ -470,15 +471,39 @@ export default async (req) => {
 
     // who am I — the panel shows and hides its controls from this
     if (path === "/api/admin/me" && req.method === "GET") {
-      return json({ id: admin.id, name: admin.name, perms: admin.perms, owner: admin.owner, allPerms: PERMS });
+      return json({ id: admin.id, name: admin.name, perms: admin.perms, owner: admin.owner,
+                    mustChange: !!admin.mustChange, allPerms: PERMS });
     }
+
+    // an admin chooses their own password — required on first sign-in, since the
+    // one the manager set is only a starting password
+    if (path === "/api/admin/my-password" && req.method === "POST") {
+      if (admin.owner) return bad("the master key has no password to change", 400);
+      const admins = await getAdmins();
+      const a = admins[admin.id];
+      if (!a) return bad("no such admin", 404);
+      const pw = String(body.password || "");
+      if (pw.length < PASS_MIN) return bad(`the password needs at least ${PASS_MIN} characters`);
+      if (hashPass(pw, a.salt) === a.passHash) return bad("choose a password different from the one you were given");
+      a.salt = randomBytes(16).toString("hex");
+      a.passHash = hashPass(pw, a.salt);
+      a.passwordSetAt = new Date().toISOString();
+      a.ownPassword = true;
+      delete a.mustChange; delete a.fails;
+      await s.setJSON("admins", admins);
+      return json({ ok: true });
+    }
+
+    // until then nothing else is available
+    if (admin.mustChange) return bad("choose your own password first", 403);
 
     // ── admin accounts (owner) ──
     if (path === "/api/admin/admins" && req.method === "GET") {
       const admins = await getAdmins();
       return json({ admins: Object.entries(admins).map(([id, a]) => ({
         id, name: a.name, role: a.role, perms: a.perms || [], active: a.active !== false,
-        created: a.created, hasPassword: !!a.passHash, passwordSetAt: a.passwordSetAt || null })),
+        created: a.created, hasPassword: !!a.passHash, passwordSetAt: a.passwordSetAt || null,
+        mustChange: !!a.mustChange })),
         perms: PERMS, presets: ROLE_PRESETS });
     }
     if (path === "/api/admin/admins" && req.method === "POST") {
@@ -497,6 +522,7 @@ export default async (req) => {
         admins[id].salt = randomBytes(16).toString("hex");
         admins[id].passHash = hashPass(pw, admins[id].salt);
         admins[id].passwordSetAt = new Date().toISOString();
+        admins[id].mustChange = true;            // a starting password: they pick their own on first sign-in
       }
       await s.setJSON("admins", admins);
       return json({ ok: true, id });
@@ -521,7 +547,8 @@ export default async (req) => {
       a.salt = randomBytes(16).toString("hex");
       a.passHash = hashPass(pw, a.salt);
       a.passwordSetAt = new Date().toISOString();
-      delete a.keyHash; delete a.fails;
+      a.mustChange = true;                       // a starting password: they pick their own on first sign-in
+      delete a.ownPassword; delete a.keyHash; delete a.fails;
       await s.setJSON("admins", admins);
       return json({ ok: true });
     }
