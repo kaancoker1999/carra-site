@@ -56,9 +56,12 @@ const PERMS = {
   payments: "Confirm payments received",
   dealers:  "Create customer accounts and set their price level",
   messages: "Answer customer messages",
-  admins:   "Manage admin accounts, base prices and backups (owner)",
+  admins:   "Base prices, backups, deleting customers",
+  accounts: "Manage admin accounts (add, remove, keys, permissions)",
 };
 const ROLE_PRESETS = {
+  // full access to the business side; managing admin accounts ("accounts") is
+  // granted separately, by whoever already holds it
   owner:    ["orders", "payments", "dealers", "messages", "admins"],
   orders:   ["orders"],
   payments: ["payments", "dealers"],
@@ -97,7 +100,7 @@ const NEEDS = {
   "/api/admin/dealer-promo": "dealers", "/api/admin/dealer-active": "dealers", "/api/admin/dealer-test": "dealers",
   "/api/admin/dealer-delete": "admins", "/api/admin/dealer-recode": "dealers",
   "/api/admin/prices": "admins", "/api/admin/backup": "admins",
-  "/api/admin/admins": "admins", "/api/admin/admin-update": "admins", "/api/admin/admin-delete": "admins", "/api/admin/admin-rekey": "admins",
+  "/api/admin/admins": "accounts", "/api/admin/admin-update": "accounts", "/api/admin/admin-delete": "accounts", "/api/admin/admin-rekey": "accounts",
 };
 
 async function getDealers() {
@@ -440,7 +443,7 @@ export default async (req) => {
   if (path.startsWith("/api/admin/")) {
     const admin = await adminFromReq(req);
     if (!admin) return bad("unauthorized", 401);
-    const need = NEEDS[`${path}:${req.method}`] || (req.method === "POST" ? NEEDS[path] : (path === "/api/admin/backup" || path === "/api/admin/admins" ? "admins" : null));
+    const need = NEEDS[`${path}:${req.method}`] || (req.method === "POST" ? NEEDS[path] : (path === "/api/admin/backup" ? "admins" : path === "/api/admin/admins" ? "accounts" : null));
     if (need && !admin.perms.includes(need)) return bad("you don't have permission for this", 403);
     const can = (p) => admin.perms.includes(p);
     const s = store();

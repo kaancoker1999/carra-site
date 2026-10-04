@@ -280,7 +280,7 @@
           <div><label>Name</label><input id="a-name" type="text" style="min-width:200px" placeholder="e.g. Nesrin"></div>
           <div><label>Role</label>
             <select id="a-role">
-              <option value="owner">Owner — everything</option>
+              <option value="owner">Full access — everything except admin accounts</option>
               <option value="orders">Orders — review, production, shipping</option>
               <option value="payments">Payments — confirm payments, customer accounts</option>
               <option value="support" selected>Support — customer messages</option>
@@ -589,9 +589,9 @@
   function me(){ return ME.name || ''; }
   function can(p){ return ME.perms.indexOf(p) !== -1; }
   function applyPerms(){
-    ['orders', 'payments', 'dealers', 'messages', 'admins'].forEach(function(p){ document.body.classList.toggle('no-' + p, !can(p)); });
+    ['orders', 'payments', 'dealers', 'messages', 'admins', 'accounts'].forEach(function(p){ document.body.classList.toggle('no-' + p, !can(p)); });
     $('whoami').textContent = 'Signed in as ' + ME.name;
-    $('adminstab').hidden = !can('admins');
+    $('adminstab').hidden = !can('accounts');
   }
   function msgWhen(x){
     var d = new Date(x);
@@ -877,9 +877,9 @@
   }, 60000);
 
   /* ── admin accounts (owner) ── */
-  var ROLE_LABEL = { owner: 'Owner', orders: 'Orders', payments: 'Payments', support: 'Support' };
+  var ROLE_LABEL = { owner: 'Full access', orders: 'Orders', payments: 'Payments', support: 'Support' };
   function loadAdmins(){
-    if(!can('admins')) return;
+    if(!can('accounts')) return;
     api('/api/admin/admins').then(function(d){
       var perms = d.perms || {};
       $('adminlist').innerHTML = (d.admins || []).length ? d.admins.map(function(a){
