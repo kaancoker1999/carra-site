@@ -232,3 +232,19 @@
   .lastmore{margin:12px 2px 0;text-align:right}
   .lastmore a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.8);text-decoration:none}
   .lastmore a:hover{color:#fff}
+
+  /* ── order chat (inside an order's details) ── */
+  .ochat{margin:14px 0 4px;border:1px solid var(--line2);border-radius:12px;background:#FBF9F4;padding:14px 16px;max-width:760px}
+  .ochat .chead{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze);margin-bottom:10px}
+  .ochat .cnone{font-size:13.5px;color:#5A5E62;margin:0 0 10px}
+  .bubbles{display:flex;flex-direction:column;gap:10px;margin:0 0 12px}
+  .bub{max-width:78%;border-radius:14px;padding:10px 14px;font-size:14.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+  .bub .who{display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+  .bub.me{align-self:flex-end;background:#1B1D1F;color:#fff;border-bottom-right-radius:4px}
+  .bub.them{align-self:flex-start;background:#fff;border:1px solid var(--line2);border-bottom-left-radius:4px}
+  .treply textarea{display:block;width:100%;box-sizing:border-box;font-family:'IBM Plex Sans',sans-serif;font-size:14.5px;color:var(--ink);background:var(--white);border:1px solid var(--line2);border-radius:9px;padding:10px 12px;resize:vertical;line-height:1.45}
+  .treply textarea:focus{outline:none;border-color:var(--ink)}
+  .mfoot{display:flex;align-items:center;justify-content:flex-end;gap:14px;margin-top:8px}
+  .merr{font-size:13px;color:#8A2620;margin-right:auto}
+  .status.newmsg{background:#1B1D1F;border-color:#1B1D1F;color:#fff}
+  @media(max-width:640px){ .bub{max-width:92%} }

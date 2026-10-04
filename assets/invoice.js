@@ -75,6 +75,7 @@
       '<div><h2>PO DETAILS:</h2>' +
       '<p>PO # ' + esc(o.ref) + '</p>' +
       '<p>PO Date ' + dts + '</p>' +
+      (o.productNo ? '<p>Product No. ' + esc(o.productNo) + '</p>' : '') +
       '<p>Sidemark <span contenteditable>' + esc(o.customer || '') + '</span></p>' +
       '<p>Ship Ref. ' + (o.tracking ? 'FedEx <a href="' + fedexUrl(o.tracking) + '" target="_blank" rel="noopener">' + esc(o.tracking) + '</a>' : '<span contenteditable>&nbsp;</span>') + '</p>' +
       '<p>Ship Date ' + (o.shippedAt ? mdy(o.shippedAt) : '<span contenteditable>&nbsp;</span>') + '</p></div></div>' +

@@ -6,20 +6,30 @@
 //   POST /api/order            {ref,kind,customer,notes,lines,total}
 //   POST /api/order/cancel     {ref}                  (only while "Pending review")
 //   POST /api/order/received   {ref}                  (dealer confirms the goods arrived)
+//   GET  /api/threads                                 -> dealer's own message threads
+//   POST /api/thread           {orderRef,text} (chat about an order) or {kind,subject,text}
+//   POST /api/thread/reply     {id,text}  ·  POST /api/thread/seen {id}
 //
-// Admin endpoints (header authorization: Bearer <ADMIN_KEY>):
+// Admin endpoints (header authorization: Bearer <key> — the owner's ADMIN_KEY, or a
+// named admin's own key; see PERMS/NEEDS for who may do what):
 //   GET  /api/admin/dealers                           -> list with order counts
 //   POST /api/admin/dealers    {name, mult}           -> {code}
 //   POST /api/admin/dealer-active {code, active}
 //   GET  /api/admin/orders                            -> all orders
-//   POST /api/admin/status     {ref, status, locked, note}
+//   GET  /api/admin/me                                -> {name, perms, owner}
+//   GET/POST /api/admin/admins · POST /admin-update {id,perms,active} · /admin-rekey {id} · /admin-delete {id}
+//   POST /api/admin/status     {ref, status, locked, note, tracking, productNo}
 //   POST /api/admin/paid       {ref, paid}            (mark order paid / unpaid)
 //   POST /api/admin/received   {ref, received}        (LUMIA confirms delivery; together with
 //                                                      the dealer's own confirmation this
 //                                                      closes the order — both sides agree)
 //   POST /api/admin/prices     {currency, products, notes}   (seed/update base prices)
+//   GET  /api/admin/threads                           -> every message thread
+//   POST /api/admin/thread/reply {id|orderRef,text,by} (id "TEAM" = admins' own chat)
+//        · /status {id,status} · /seen {id} · /delete {id}
 
 import { getStore } from "@netlify/blobs";
+import { createHash, randomBytes } from "node:crypto";
 
 export const config = { path: "/api/*" };
 
@@ -34,10 +44,60 @@ const json = (data, status = 200) =>
 
 const bad = (msg, status = 400) => json({ error: msg }, status);
 
-function isAdmin(req) {
-  const key = process.env.ADMIN_KEY;
-  return !!key && req.headers.get("authorization") === `Bearer ${key}`;
+// ── admins ──
+// The ADMIN_KEY env var is the owner's master key (full access; it also
+// creates the named admin accounts). Each named admin logs in with their own
+// key — only its SHA-256 is stored, in the "admins" blob — and can do what
+// their permissions allow. Every admin can SEE customers, orders, payments
+// and messages; the permissions below gate what they can CHANGE.
+const PERMS = {
+  orders:   "Review orders, move them to production, ship, add FedEx / product no.",
+  payments: "Confirm payments received",
+  dealers:  "Create customer accounts and set their price level",
+  messages: "Answer customer messages",
+  admins:   "Manage admin accounts, base prices and backups (owner)",
+};
+const ROLE_PRESETS = {
+  owner:    ["orders", "payments", "dealers", "messages", "admins"],
+  orders:   ["orders"],
+  payments: ["payments", "dealers"],
+  support:  ["messages"],
+};
+const hashKey = (k) => createHash("sha256").update(String(k)).digest("hex");
+function newAdminKey() {
+  const a = randomBytes(9).toString("base64url").replace(/[-_]/g, "x").toUpperCase();
+  return `LMA-ADM-${a.slice(0, 4)}-${a.slice(4, 8)}-${a.slice(8, 12)}`;
 }
+async function getAdmins() {
+  return (await store().get("admins", { type: "json" })) || {};
+}
+// -> { id, name, perms: [...], owner } or null
+async function adminFromReq(req) {
+  const h = req.headers.get("authorization") || "";
+  if (!h.startsWith("Bearer ")) return null;
+  const token = h.slice(7);
+  if (!token) return null;
+  const master = process.env.ADMIN_KEY;
+  if (master && token === master) {
+    return { id: "owner", name: process.env.ADMIN_NAME || "LUMIA", perms: Object.keys(PERMS), owner: true };
+  }
+  const admins = await getAdmins();
+  const hk = hashKey(token);
+  for (const [id, a] of Object.entries(admins)) {
+    if (a.keyHash === hk && a.active !== false) return { id, name: a.name, perms: a.perms || [], owner: false };
+  }
+  return null;
+}
+// what each changing endpoint needs; anything not listed is open to every admin
+const NEEDS = {
+  "/api/admin/status": "orders", "/api/admin/received": "orders", "/api/admin/order-delete": "orders",
+  "/api/admin/paid": "payments",
+  "/api/admin/dealers:POST": "dealers", "/api/admin/dealer-contact": "dealers", "/api/admin/dealer-mult": "dealers",
+  "/api/admin/dealer-promo": "dealers", "/api/admin/dealer-active": "dealers", "/api/admin/dealer-test": "dealers",
+  "/api/admin/dealer-delete": "admins", "/api/admin/dealer-recode": "dealers",
+  "/api/admin/prices": "admins", "/api/admin/backup": "admins",
+  "/api/admin/admins": "admins", "/api/admin/admin-update": "admins", "/api/admin/admin-delete": "admins", "/api/admin/admin-rekey": "admins",
+};
 
 async function getDealers() {
   return (await store().get("dealers", { type: "json" })) || {};
@@ -115,6 +175,34 @@ async function listOrders(filterCode) {
   orders.sort((a, b) => (a.at < b.at ? 1 : -1));
   return orders;
 }
+
+// ── messages ──
+// One blob per thread ("thread:<id>") holding its messages:
+//   · an order chat  — id "ORD-<order ref>", one per order, either side can start it
+//   · a request / question from a dealer — id "MSG-…"
+//   · the admins' own team chat — id "TEAM" (never visible to dealers)
+// "Unread" is derived: the other side wrote after this side last opened the thread.
+const THREAD_KINDS = ["Request", "Question"];
+const TEAM_ID = "TEAM";
+const MSG_MAX = 2000, THREAD_MAX_MSGS = 300;
+
+async function listThreads(filterCode) {
+  const s = store();
+  const { blobs } = await s.list({ prefix: "thread:" });
+  const out = [];
+  for (const b of blobs) {
+    const t = await s.get(b.key, { type: "json" });
+    if (!t) continue;
+    if (filterCode ? (t.code === filterCode && t.id !== TEAM_ID) : true) out.push(t);
+  }
+  out.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+  return out;
+}
+function newThreadId() {
+  const d = new Date(), p = (n) => String(n).padStart(2, "0");
+  return `MSG-${String(d.getUTCFullYear()).slice(2)}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}-${Math.floor(1000 + Math.random() * 9000)}`;
+}
+const cleanText = (v, max) => String(v || "").replace(/\r/g, "").trim().slice(0, max);
 
 // e-mail the owner when an order arrives, via Resend. Fully env-driven so no
 // address lives in this public repo, and a no-op until the key is set:
@@ -275,10 +363,188 @@ export default async (req) => {
     return json({ ok: true, payment: o.payment });
   }
 
+  // ── dealer: messages ───────────────────────────────────────────
+  if (path === "/api/threads" && req.method === "GET") {
+    const d = await dealerFromReq(req);
+    if (!d) return bad("unauthorized", 401);
+    return json({ threads: await listThreads(d.code) });
+  }
+
+  // start a conversation: about one of the dealer's orders ({orderRef, text} —
+  // one chat per order, so a second message just continues it), or a general
+  // request / question ({kind, subject, text})
+  if (path === "/api/thread" && req.method === "POST") {
+    const d = await dealerFromReq(req);
+    if (!d) return bad("unauthorized", 401);
+    const text = cleanText(body.text, MSG_MAX);
+    if (!text) return bad("message required");
+    const s = store();
+    const now = new Date().toISOString();
+    const msg = { from: "dealer", by: d.name, text, at: now };
+    const orderRef = cleanText(body.orderRef, 40);
+    if (orderRef) {
+      const o = await s.get(`order:${orderRef}`, { type: "json" });
+      if (!o || o.code !== d.code) return bad("no such order", 404);
+      const key = `thread:ORD-${orderRef}`;
+      let t = await s.get(key, { type: "json" });
+      if (t) {
+        if (t.messages.length >= THREAD_MAX_MSGS) return bad("this conversation is full", 409);
+        t.messages.push(msg); t.status = "open";
+      } else {
+        t = { id: `ORD-${orderRef}`, code: d.code, dealer: d.name, test: !!d.test, kind: "Order",
+              subject: `Order ${orderRef}`, orderRef, status: "open", createdAt: now,
+              adminSeenAt: null, messages: [msg] };
+      }
+      t.updatedAt = now; t.dealerSeenAt = now;
+      await s.setJSON(key, t);
+      return json({ ok: true, thread: t });
+    }
+    const subject = cleanText(body.subject, 120);
+    if (!subject) return bad("subject required");
+    let id = newThreadId();
+    while (await s.get(`thread:${id}`, { type: "json" })) id = newThreadId();
+    const t = {
+      id, code: d.code, dealer: d.name, test: !!d.test,
+      subject, kind: THREAD_KINDS.includes(body.kind) ? body.kind : "Request", orderRef: "",
+      status: "open", createdAt: now, updatedAt: now,
+      dealerSeenAt: now, adminSeenAt: null, messages: [msg],
+    };
+    await s.setJSON(`thread:${id}`, t);
+    return json({ ok: true, thread: t });
+  }
+
+  if ((path === "/api/thread/reply" || path === "/api/thread/seen") && req.method === "POST") {
+    const d = await dealerFromReq(req);
+    if (!d) return bad("unauthorized", 401);
+    const s = store();
+    const key = `thread:${String(body.id || "").slice(0, 40)}`;
+    const t = await s.get(key, { type: "json" });
+    if (!t || t.code !== d.code) return bad("no such conversation", 404);
+    const now = new Date().toISOString();
+    if (path.endsWith("/reply")) {
+      const text = cleanText(body.text, MSG_MAX);
+      if (!text) return bad("message required");
+      if (t.messages.length >= THREAD_MAX_MSGS) return bad("this conversation is full — please start a new one", 409);
+      t.messages.push({ from: "dealer", by: d.name, text, at: now });
+      t.updatedAt = now;
+      t.status = "open";              // a new customer message reopens a closed thread
+    }
+    t.dealerSeenAt = now;
+    await s.setJSON(key, t);
+    return json({ ok: true, thread: t });
+  }
+
   // ── admin ──────────────────────────────────────────────────────
   if (path.startsWith("/api/admin/")) {
-    if (!isAdmin(req)) return bad("unauthorized", 401);
+    const admin = await adminFromReq(req);
+    if (!admin) return bad("unauthorized", 401);
+    const need = NEEDS[`${path}:${req.method}`] || (req.method === "POST" ? NEEDS[path] : (path === "/api/admin/backup" || path === "/api/admin/admins" ? "admins" : null));
+    if (need && !admin.perms.includes(need)) return bad("you don't have permission for this", 403);
+    const can = (p) => admin.perms.includes(p);
     const s = store();
+
+    // who am I — the panel shows and hides its controls from this
+    if (path === "/api/admin/me" && req.method === "GET") {
+      return json({ id: admin.id, name: admin.name, perms: admin.perms, owner: admin.owner, allPerms: PERMS });
+    }
+
+    // ── admin accounts (owner) ──
+    if (path === "/api/admin/admins" && req.method === "GET") {
+      const admins = await getAdmins();
+      return json({ admins: Object.entries(admins).map(([id, a]) => ({
+        id, name: a.name, role: a.role, perms: a.perms || [], active: a.active !== false,
+        created: a.created, keyed: !!a.keyHash, rekeyedAt: a.rekeyedAt || null })),
+        perms: PERMS, presets: ROLE_PRESETS });
+    }
+    if (path === "/api/admin/admins" && req.method === "POST") {
+      const name = cleanText(body.name, 40);
+      if (!name) return bad("name required");
+      const admins = await getAdmins();
+      if (Object.values(admins).some((a) => a.name.toLowerCase() === name.toLowerCase())) return bad("an admin with this name already exists", 409);
+      const role = ROLE_PRESETS[body.role] ? body.role : "support";
+      const id = `adm_${randomBytes(5).toString("hex")}`;
+      const key = newAdminKey();
+      admins[id] = { name, role, perms: ROLE_PRESETS[role].slice(), keyHash: hashKey(key), active: true, created: new Date().toISOString() };
+      await s.setJSON("admins", admins);
+      return json({ ok: true, id, key });      // the key is shown once; only its hash is kept
+    }
+    if (path === "/api/admin/admin-update" && req.method === "POST") {
+      const admins = await getAdmins();
+      const a = admins[String(body.id || "")];
+      if (!a) return bad("no such admin", 404);
+      if (Array.isArray(body.perms)) a.perms = body.perms.filter((x) => PERMS[x]);
+      if (typeof body.active === "boolean") a.active = body.active;
+      if (body.name) a.name = cleanText(body.name, 40) || a.name;
+      await s.setJSON("admins", admins);
+      return json({ ok: true });
+    }
+    if (path === "/api/admin/admin-rekey" && req.method === "POST") {
+      const admins = await getAdmins();
+      const a = admins[String(body.id || "")];
+      if (!a) return bad("no such admin", 404);
+      const key = newAdminKey();
+      a.keyHash = hashKey(key); a.rekeyedAt = new Date().toISOString();
+      await s.setJSON("admins", admins);
+      return json({ ok: true, key });
+    }
+    if (path === "/api/admin/admin-delete" && req.method === "POST") {
+      const admins = await getAdmins();
+      if (!admins[String(body.id || "")]) return bad("no such admin", 404);
+      delete admins[String(body.id)];
+      await s.setJSON("admins", admins);
+      return json({ ok: true });
+    }
+
+    if (path === "/api/admin/threads" && req.method === "GET") {
+      return json({ threads: await listThreads() });
+    }
+
+    if (path.startsWith("/api/admin/thread/") && req.method === "POST") {
+      const act = path.slice("/api/admin/thread/".length);
+      const now = new Date().toISOString();
+      const by = admin.name;                      // the logged-in admin, never client-supplied
+      let id = String(body.id || "").slice(0, 60);
+      // the team chat is open to every admin; writing to customers needs "messages"
+      if (id !== TEAM_ID && act !== "seen" && !can("messages")) return bad("you don't have permission for this", 403);
+      // LUMIA writing first about an order: {orderRef} opens that order's chat
+      const orderRef = cleanText(body.orderRef, 40);
+      if (!id && orderRef) id = `ORD-${orderRef}`;
+      const key = `thread:${id}`;
+      let t = await s.get(key, { type: "json" });
+      if (!t && act === "reply") {
+        if (id === TEAM_ID) {
+          t = { id: TEAM_ID, code: "", dealer: "", kind: "Team", subject: "Team chat", orderRef: "",
+                status: "open", createdAt: now, messages: [] };
+        } else if (orderRef) {
+          const o = await s.get(`order:${orderRef}`, { type: "json" });
+          if (!o) return bad("no such order", 404);
+          t = { id, code: o.code, dealer: o.dealer || "", test: !!o.test, kind: "Order",
+                subject: `Order ${orderRef}`, orderRef, status: "open", createdAt: now,
+                dealerSeenAt: null, messages: [] };
+        }
+      }
+      if (!t) return bad("no such conversation", 404);
+      if (act === "delete") { await s.delete(key); return json({ ok: true }); }
+      if (act === "reply") {
+        const text = cleanText(body.text, MSG_MAX);
+        if (!text) return bad("message required");
+        if (t.messages.length >= THREAD_MAX_MSGS) {
+          if (id !== TEAM_ID) return bad("conversation is full", 409);
+          t.messages = t.messages.slice(-(THREAD_MAX_MSGS - 1));   // team chat keeps rolling
+        }
+        t.messages.push({ from: id === TEAM_ID ? "admin" : "lumia", by, text, at: now });
+        t.updatedAt = now;
+        t.adminSeenAt = now;
+      } else if (act === "status") {
+        t.status = body.status === "closed" ? "closed" : "open";
+        t.closedAt = t.status === "closed" ? now : null;
+        t.adminSeenAt = now;
+      } else if (act === "seen") {
+        t.adminSeenAt = now;
+      } else return bad("not found", 404);
+      await s.setJSON(key, t);
+      return json({ ok: true, thread: t });
+    }
 
     if (path === "/api/admin/dealers" && req.method === "GET") {
       const dealers = await getDealers();
@@ -322,7 +588,8 @@ export default async (req) => {
       const dealers = await getDealers();
       const prices = await s.get("prices", { type: "json" });
       const orders = await listOrders();
-      return json({ exportedAt: new Date().toISOString(), dealers, prices, orders });
+      const threads = await listThreads();
+      return json({ exportedAt: new Date().toISOString(), dealers, prices, orders, threads });
     }
 
     if (path === "/api/admin/dealer-mult" && req.method === "POST") {
@@ -442,6 +709,8 @@ export default async (req) => {
         updatedAt: new Date().toISOString(),
       };
       // FedEx tracking number, entered when the order ships — shown to the customer
+      // LUMIA's own product / production number for the order
+      if (body.productNo !== undefined) o.productNo = cleanText(body.productNo, 60);
       const prevTracking = o.tracking || "";
       o.tracking = String(body.tracking || "").trim().slice(0, 80);
       // when the tracking number was entered — the invoice is dated the Friday of that week
@@ -483,6 +752,7 @@ export default async (req) => {
       const ref = String(body.ref || "");
       if (!ref) return bad("ref required");
       await s.delete(`order:${ref}`);
+      await s.delete(`thread:ORD-${ref}`);      // its chat goes with it
       return json({ ok: true });
     }
 

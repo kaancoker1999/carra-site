@@ -88,7 +88,50 @@
   .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
   .msg{font-size:13.5px;margin-top:10px}
   .msg.err{color:#8A2620}.msg.ok{color:#2F5D25}
-  .tabs{display:flex;gap:10px;margin:22px 0 16px}
+  .tabs{display:flex;gap:10px;margin:22px 0 16px;flex-wrap:wrap}
+  /* what an admin can't change is simply not offered (the server refuses it too) */
+  body.no-orders .octl, body.no-orders .trackwrap, body.no-orders .st-save, body.no-orders .o-del, body.no-orders #cancelbar{display:none!important}
+  body.no-payments .pay-mark, body.no-payments .pay-all, body.no-payments #payall{display:none!important}
+  body.no-dealers #dcreate, body.no-dealers [class*=" e-"], body.no-dealers [data-act="newcustomer"]{display:none!important}
+  body.no-messages #msgcust .treply, body.no-messages .o-msg{display:none!important}
+  body.no-admins #backupbtn, body.no-admins [data-act="backup"], body.no-admins .e-delete{display:none!important}
+  .ronly{display:none;font-size:12.5px;color:var(--muted);margin-top:10px}
+  body.no-orders .ronly.r-orders, body.no-messages .ronly.r-messages{display:block}
+  .arow{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid var(--line)}
+  .arow .an{min-width:150px}.arow .an b{font-size:15px}
+  .arow .ap{display:flex;flex-direction:column;gap:5px;flex:1;min-width:280px}
+  .arow .ap label{display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-family:inherit;font-size:13px;color:var(--ink);margin:0;cursor:pointer}
+  .arow .ap input{width:auto;min-width:0;padding:0;margin:0}
+  .arow .ab{display:flex;gap:8px;flex-wrap:wrap}
+  /* notifications bell + messages */
+  .bellwrap{position:relative}
+  #bellbtn{position:relative;padding-left:14px;padding-right:14px}
+  #bellbtn .ti{font-size:17px;vertical-align:-2px}
+  .ncount{display:inline-block;min-width:17px;height:17px;line-height:17px;border-radius:999px;background:#C8502F;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:9.5px;text-align:center;padding:0 4px;margin-left:6px;vertical-align:1px}
+  .bellmenu{position:absolute;right:0;top:calc(100% + 8px);z-index:60;width:380px;max-width:calc(100vw - 32px);max-height:70vh;overflow:auto;background:var(--white);border:1px solid var(--line2);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.35);padding:8px;color:var(--ink)}
+  .bellmenu .bh{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:8px 10px 6px}
+  .nitem{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:10px;cursor:pointer}
+  .nitem:hover{background:var(--paper)}
+  .nitem .ni{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none;font-size:16px}
+  .nitem .ni.o{background:#EEE9FA;color:#5B3FA0}.nitem .ni.p{background:#EFF6EC;color:#2F5D25}.nitem .ni.m{background:#FBF3E4;color:#8A6220}.nitem .ni.t{background:#E9EEF7;color:#274690}
+  .nitem b{display:block;font-size:13.5px}.nitem small{display:block;font-size:12px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:290px}
+  .nempty{padding:18px 10px;color:var(--muted);font-size:13.5px;text-align:center}
+  .mthread{border:1px solid var(--line2);border-radius:12px;margin:0 0 10px;overflow:hidden;background:var(--white)}
+  .mthread.closed{background:#F3F1EC}
+  .mhead{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;flex-wrap:wrap}
+  .mhead:hover{background:var(--paper)}
+  .mhead .who{font-weight:600}.mhead .sub{color:#4A4E52;margin-right:auto}
+  .mhead .when{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)}
+  .mbody{border-top:1px solid var(--line);padding:14px 16px 16px;background:#FBF9F4}
+  .bubbles{display:flex;flex-direction:column;gap:10px;margin:0 0 12px}
+  .bub{max-width:76%;border-radius:14px;padding:9px 13px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+  .bub .bwho{display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:3px}
+  .bub.me{align-self:flex-end;background:#1B1D1F;color:#fff;border-bottom-right-radius:4px}
+  .bub.them{align-self:flex-start;background:#fff;border:1px solid var(--line2);border-bottom-left-radius:4px}
+  .treply textarea{display:block;width:100%;box-sizing:border-box;font:inherit;font-size:14px;border:1px solid var(--line2);border-radius:9px;padding:10px 12px;resize:vertical;line-height:1.45;background:var(--white)}
+  .merr{font-size:12.5px;color:#8A2620;margin-right:auto}
+  .teambox{border:1px solid var(--line2);border-radius:12px;background:#FBF9F4;padding:14px 16px;max-height:52vh;overflow:auto;margin:0 0 12px}
+  .st-new{background:#1B1D1F;border:1px solid #1B1D1F;color:#fff}
   .tab{font:inherit;font-size:14px;border:1px solid var(--line2);background:var(--white);border-radius:9px;padding:9px 18px;cursor:pointer}
   .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
   table{border-collapse:collapse;width:100%;font-size:13.5px}
@@ -183,7 +226,7 @@
   <div class="card" id="keycard">
     <label for="key">Admin key</label>
     <div class="row">
-      <input id="key" type="password" style="min-width:320px" placeholder="LMA-ADMIN-…" autocomplete="off">
+      <input id="key" type="password" style="min-width:320px" placeholder="Your admin key" autocomplete="off">
       <button class="btn" id="keybtn" type="button">Log in</button>
     </div>
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px;text-transform:none;letter-spacing:0;font-family:inherit;font-size:13.5px;color:var(--ink);cursor:pointer">
@@ -193,6 +236,11 @@
   </div>
 
   <div id="logoutbar" style="display:none;justify-content:flex-end;gap:10px;margin:0 0 14px">
+    <span class="mono" id="whoami" style="margin-right:auto;align-self:center;color:rgba(255,255,255,.7)"></span>
+    <div class="bellwrap">
+      <button class="btn ghost" id="bellbtn" type="button" title="Notifications" aria-label="Notifications"><i class="ti ti-bell"></i><span id="bellcount"></span></button>
+      <div class="bellmenu" id="bellmenu" hidden></div>
+    </div>
     <button class="btn ghost" id="backupbtn" type="button">Download backup</button>
     <button class="btn ghost" id="logoutbtn" type="button">Log out</button>
   </div>
@@ -203,6 +251,49 @@
       <button class="tab" data-tab="dealers" type="button">Customers</button>
       <button class="tab" data-tab="orders" type="button">Orders</button>
       <button class="tab" data-tab="payments" type="button">Payments</button>
+      <button class="tab" data-tab="messages" type="button">Messages<span id="msgcount"></span></button>
+      <button class="tab" data-tab="admins" type="button" id="adminstab" hidden>Admins</button>
+    </div>
+
+    <!-- ── admin accounts (owner only) ── -->
+    <div id="tab-admins" hidden>
+      <div class="card">
+        <h2 style="font-size:18px;margin-bottom:6px">Admin accounts</h2>
+        <p style="color:var(--muted);font-size:13px;margin:0 0 16px;max-width:86ch">Each admin signs in with their own key and can only change what is ticked for them. Everyone can <b>see</b> customers, orders, payments and messages. A key is shown once, when it is created &mdash; use <b>New key</b> to issue another (the old one stops working).</p>
+        <div id="adminlist"></div>
+        <div class="row" style="margin-top:18px;align-items:flex-end">
+          <div><label>Name</label><input id="a-name" type="text" style="min-width:200px" placeholder="e.g. Nesrin"></div>
+          <div><label>Role</label>
+            <select id="a-role">
+              <option value="owner">Owner — everything</option>
+              <option value="orders">Orders — review, production, shipping</option>
+              <option value="payments">Payments — confirm payments, customer accounts</option>
+              <option value="support" selected>Support — customer messages</option>
+            </select></div>
+          <button class="btn" id="a-create" type="button">Add admin</button>
+        </div>
+        <div class="newcode" id="akey"></div>
+        <div class="msg" id="amsg"></div>
+      </div>
+    </div>
+
+    <!-- ── messages: with customers / between admins ── -->
+    <div id="tab-messages" hidden>
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;flex-wrap:wrap">
+          <div class="pvtabs" id="msgtabs" style="margin:0"></div>
+        </div>
+        <div id="msgcust">
+          <div class="pvtabs" id="msgfilter" style="margin-bottom:14px"></div>
+          <div id="msglist"></div>
+        </div>
+        <div id="msgteam" hidden>
+          <p style="color:var(--muted);font-size:13px;margin:0 0 14px;max-width:82ch">A private chat between the LUMIA admins. Customers never see it.</p>
+          <div class="teambox" id="teambox"></div>
+          <div class="treply"><textarea id="teamtext" rows="2" maxlength="2000" placeholder="Write to the team…"></textarea>
+            <div class="row" style="justify-content:flex-end;gap:10px;margin-top:8px;align-items:center"><span class="merr" id="teamerr"></span><button class="btn" id="teamsend" type="button" style="padding:8px 18px">Send</button></div></div>
+        </div>
+      </div>
     </div>
 
     <!-- ── payments due ── -->
@@ -307,7 +398,7 @@
   </div>
 </div>
 
-<script src="assets/invoice.js?v=1"></script>
+<script src="assets/invoice.js?v=2"></script>
 <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
@@ -363,12 +454,15 @@
 
   /* ── login ── */
   function unlock(){
-    api('/api/admin/dealers').then(function(){
+    api('/api/admin/me').then(function(m){
+      if(!m || !m.name) throw new Error('unauthorized');
+      ME = m; applyPerms();
       $('panel').hidden = false;
       $('keycard').hidden = true;
       $('logoutbar').style.display = 'flex';
       /* dealers render per-account summaries from the order list — load orders first */
       loadOrders().then(loadDealers);
+      loadThreads();
     }).catch(function(){
       forgetKey();
       $('panel').hidden = true;
@@ -402,6 +496,10 @@
       $('tab-orders').hidden = t.dataset.tab !== 'orders';
       $('tab-dealers').hidden = t.dataset.tab !== 'dealers';
       $('tab-payments').hidden = t.dataset.tab !== 'payments';
+      $('tab-messages').hidden = t.dataset.tab !== 'messages';
+      $('tab-admins').hidden = t.dataset.tab !== 'admins';
+      if(t.dataset.tab === 'messages') renderMessages();
+      if(t.dataset.tab === 'admins') loadAdmins();
     });
   });
 
@@ -448,6 +546,7 @@
       }
       renderCalendar();
       renderPayments();
+      renderBell();
     }).catch(function(e){ $('orderrows').innerHTML = '<tr><td colspan="7">' + esc(e.message) + '</td></tr>'; });
   }
 
@@ -460,6 +559,288 @@
     var b = rc.dealerAt ? Date.parse(rc.dealerAt) : null;
     if(a == null) return b; if(b == null) return a; return Math.min(a, b);
   }
+
+  /* ── messages + notifications ──
+     Threads: an order's chat ("ORD-<ref>"), a dealer's request/question
+     ("MSG-…"), and the admins' own team chat ("TEAM"). */
+  var allThreads = [], msgView = 'cust', msgFilter = 'open', msgOpen = null;
+  /* the signed-in admin (GET /api/admin/me): name + what they may change */
+  var ME = { name: '', perms: [], owner: false };
+  function me(){ return ME.name || ''; }
+  function can(p){ return ME.perms.indexOf(p) !== -1; }
+  function applyPerms(){
+    ['orders', 'payments', 'dealers', 'messages', 'admins'].forEach(function(p){ document.body.classList.toggle('no-' + p, !can(p)); });
+    $('whoami').textContent = 'Signed in as ' + ME.name;
+    $('adminstab').hidden = !can('admins');
+  }
+
+  /* ── admin accounts (owner) ── */
+  var ROLE_LABEL = { owner: 'Owner', orders: 'Orders', payments: 'Payments', support: 'Support' };
+  function loadAdmins(){
+    if(!can('admins')) return;
+    api('/api/admin/admins').then(function(d){
+      var perms = d.perms || {};
+      $('adminlist').innerHTML = (d.admins || []).length ? d.admins.map(function(a){
+        return '<div class="arow" data-id="' + esc(a.id) + '"><div class="an"><b>' + esc(a.name) + '</b>' +
+          (a.active ? '' : ' <span class="status st-canc">Suspended</span>') +
+          '<div class="mono" style="margin-top:4px">' + esc(ROLE_LABEL[a.role] || a.role || '') + '</div></div>' +
+          '<div class="ap">' + Object.keys(perms).map(function(k){
+            return '<label><input type="checkbox" class="a-perm" value="' + k + '"' + (a.perms.indexOf(k) !== -1 ? ' checked' : '') + '> ' + esc(perms[k]) + '</label>';
+          }).join('') + '</div>' +
+          '<div class="ab"><button class="btn ghost a-rekey" type="button" style="padding:8px 14px">New key</button>' +
+          '<button class="btn ghost a-active" data-to="' + (a.active ? '0' : '1') + '" type="button" style="padding:8px 14px">' + (a.active ? 'Suspend' : 'Reactivate') + '</button>' +
+          '<button class="btn ghost a-del" type="button" style="padding:8px 14px;color:#8A2620">Delete</button></div></div>';
+      }).join('') : '<div class="ovempty">No admin accounts yet — add the first one below.</div>';
+    }).catch(function(){ $('adminlist').innerHTML = '<div class="ovempty">Could not load the admin accounts.</div>'; });
+  }
+  function showKey(name, key){
+    $('akey').className = 'newcode on';
+    $('akey').innerHTML = 'Key for <b>' + esc(name) + '</b> — copy it now, it is not shown again:<br><code style="font-size:15px;user-select:all">' + esc(key) + '</code>';
+  }
+  $('a-create').addEventListener('click', function(){
+    var name = $('a-name').value.trim();
+    $('amsg').textContent = '';
+    if(!name){ $('amsg').className = 'msg err'; $('amsg').textContent = 'Enter a name.'; return; }
+    api('/api/admin/admins', 'POST', { name: name, role: $('a-role').value }).then(function(d){
+      if(d.error){ $('amsg').className = 'msg err'; $('amsg').textContent = d.error; return; }
+      $('a-name').value = ''; showKey(name, d.key); loadAdmins();
+    });
+  });
+  $('adminlist').addEventListener('change', function(e){
+    var c = e.target.closest('.a-perm'); if(!c) return;
+    var row = c.closest('.arow');
+    var perms = [].filter.call(row.querySelectorAll('.a-perm'), function(x){ return x.checked; }).map(function(x){ return x.value; });
+    api('/api/admin/admin-update', 'POST', { id: row.dataset.id, perms: perms });
+  });
+  $('adminlist').addEventListener('click', function(e){
+    var row = e.target.closest('.arow'); if(!row) return;
+    var id = row.dataset.id, name = row.querySelector('.an b').textContent;
+    var b = e.target.closest('button'); if(!b) return;
+    if(b.classList.contains('a-active')){
+      api('/api/admin/admin-update', 'POST', { id: id, active: b.dataset.to === '1' }).then(loadAdmins);
+      return;
+    }
+    /* New key / Delete: inline two-step confirmation */
+    if(b.dataset.armed !== '1'){
+      var label = b.textContent;
+      b.dataset.armed = '1'; b.textContent = 'Click again to confirm';
+      setTimeout(function(){ if(b.dataset.armed === '1'){ b.dataset.armed = ''; b.textContent = label; } }, 5000);
+      return;
+    }
+    if(b.classList.contains('a-rekey')){
+      api('/api/admin/admin-rekey', 'POST', { id: id }).then(function(d){ if(d.key) showKey(name, d.key); loadAdmins(); });
+    } else if(b.classList.contains('a-del')){
+      api('/api/admin/admin-delete', 'POST', { id: id }).then(loadAdmins);
+    }
+  });
+  function teamSeen(){ try{ return localStorage.getItem('lumia_team_seen') || ''; }catch(e){ return ''; } }
+  function msgWhen(x){
+    var d = new Date(x);
+    return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' · ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+  }
+  function lastMsg(t){ return t.messages[t.messages.length - 1] || null; }
+  function custThreads(){ return allThreads.filter(function(t){ return t.id !== 'TEAM'; }); }
+  function teamThread(){ return allThreads.filter(function(t){ return t.id === 'TEAM'; })[0] || { id: 'TEAM', messages: [] }; }
+  /* a customer wrote and no admin has opened the thread since */
+  function threadUnread(t){
+    var l = lastMsg(t);
+    return !!l && l.from === 'dealer' && (!t.adminSeenAt || l.at > t.adminSeenAt);
+  }
+  function teamUnread(){
+    var seen = teamSeen(), mine = me();
+    return teamThread().messages.filter(function(m){ return m.at > seen && m.by !== mine; });
+  }
+  function orderThread(ref){ return allThreads.filter(function(t){ return t.orderRef === ref; })[0] || null; }
+
+  function loadThreads(){
+    return api('/api/admin/threads').then(function(d){
+      allThreads = d.threads || [];
+      renderBell();
+      if(!$('tab-messages').hidden) renderMessages();
+    }).catch(function(){});
+  }
+
+  /* ── bell: everything waiting for an admin, newest first ── */
+  function notifications(){
+    var n = [];
+    allOrders.forEach(function(o){
+      if(o.test) return;
+      if(statusOf(o) === 'Pending review'){
+        n.push({ cls: 'o', icon: 'inbox', at: o.updatedAt || o.at, title: 'New order — ' + (o.dealer || ''), sub: o.ref + ' · $' + orderTotals(o.lines).total.toFixed(2), go: 'orders' });
+      }
+      if(o.payment && o.payment.customerPaidAt && !o.payment.paid && statusOf(o) !== 'Cancelled'){
+        n.push({ cls: 'p', icon: 'cash', at: o.payment.customerPaidAt, title: 'Payment reported — ' + (o.dealer || ''), sub: o.ref + ' · $' + orderTotals(o.lines).total.toFixed(2) + ' · confirm it arrived', go: 'payments' });
+      }
+    });
+    custThreads().forEach(function(t){
+      if(!threadUnread(t)) return;
+      var l = lastMsg(t);
+      n.push({ cls: 'm', icon: 'message', at: l.at, title: 'Message — ' + (t.dealer || ''), sub: t.subject + ': ' + l.text, go: 'messages', thread: t.id });
+    });
+    var tu = teamUnread();
+    if(tu.length){
+      var l = tu[tu.length - 1];
+      n.push({ cls: 't', icon: 'users', at: l.at, title: 'Team chat — ' + l.by + (tu.length > 1 ? ' (+' + (tu.length - 1) + ')' : ''), sub: l.text, go: 'messages', team: true });
+    }
+    return n.sort(function(a, b){ return a.at < b.at ? 1 : -1; });
+  }
+  var bellItems = [];
+  function renderBell(){
+    bellItems = notifications();
+    $('bellcount').innerHTML = bellItems.length ? '<span class="ncount">' + bellItems.length + '</span>' : '';
+    var unreadMsgs = custThreads().filter(threadUnread).length + (teamUnread().length ? 1 : 0);
+    $('msgcount').innerHTML = unreadMsgs ? '<span class="ncount">' + unreadMsgs + '</span>' : '';
+    $('bellmenu').innerHTML = '<div class="bh">Notifications</div>' + (bellItems.length
+      ? bellItems.map(function(x, i){
+          return '<div class="nitem" data-n="' + i + '"><div class="ni ' + x.cls + '"><i class="ti ti-' + x.icon + '"></i></div>' +
+            '<div><b>' + esc(x.title) + '</b><small>' + esc(x.sub) + '</small><small>' + msgWhen(x.at) + '</small></div></div>';
+        }).join('')
+      : '<div class="nempty"><i class="ti ti-check"></i> Nothing new.</div>');
+  }
+  $('bellbtn').addEventListener('click', function(e){ e.stopPropagation(); renderBell(); $('bellmenu').hidden = !$('bellmenu').hidden; });
+  document.addEventListener('click', function(e){
+    var it = e.target.closest('.nitem');
+    if(it){
+      var x = bellItems[+it.dataset.n];
+      $('bellmenu').hidden = true;
+      if(x){
+        if(x.thread){ msgView = 'cust'; msgOpen = x.thread; msgFilter = 'all'; }
+        if(x.team) msgView = 'team';
+        gotoTab(x.go);
+      }
+      return;
+    }
+    if(!e.target.closest('.bellwrap')) $('bellmenu').hidden = true;
+  });
+
+  /* ── Messages tab ── */
+  function bubblesHTML(t, mineFn){
+    return t.messages.map(function(m){
+      var mine = mineFn(m);
+      return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="bwho">' + esc(m.by || (m.from === 'dealer' ? t.dealer : 'LUMIA')) + ' · ' + msgWhen(m.at) + '</span>' + esc(m.text) + '</div>';
+    }).join('');
+  }
+  function threadHTML(t){
+    var l = lastMsg(t), open = t.id === msgOpen, closed = t.status === 'closed';
+    var head = '<div class="mhead" data-mopen="' + esc(t.id) + '"><span class="who">' + esc(t.dealer || '—') + '</span>' +
+      (t.test ? '<span class="status" style="background:#EEE9FA;border:1px solid #C9BCEC;color:#5B3FA0">TEST</span>' : '') +
+      '<span class="sub">' + esc(t.subject) + '</span>' +
+      (threadUnread(t) ? '<span class="status st-new">New</span>' : '') +
+      '<span class="status ' + (t.kind === 'Order' ? 'st-acc' : 'pay-un') + '">' + esc(t.kind) + '</span>' +
+      (closed ? '<span class="status st-canc">Closed</span>' : '') +
+      '<span class="when">' + (l ? msgWhen(l.at) : 'new') + '</span></div>';
+    if(!open) return '<div class="mthread' + (closed ? ' closed' : '') + '">' + head + '</div>';
+    return '<div class="mthread' + (closed ? ' closed' : '') + '">' + head + '<div class="mbody">' +
+      (t.messages.length ? '<div class="bubbles">' + bubblesHTML(t, function(m){ return m.from !== 'dealer'; }) + '</div>'
+                         : '<p style="font-size:13.5px;color:var(--muted);margin:0 0 12px">No messages yet — write the first one to the customer.</p>') +
+      '<div class="ronly r-messages">You can read this conversation; answering customers is not part of your account.</div>' +
+      '<div class="treply"><textarea rows="3" maxlength="2000" class="m-text" placeholder="Reply to ' + esc(t.dealer || 'the customer') + '…"></textarea>' +
+      '<div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px;align-items:center"><span class="merr"></span>' +
+        (t.orderRef ? '<button class="btn ghost m-order" data-ref="' + esc(t.orderRef) + '" type="button" style="padding:8px 14px">Open order</button>' : '') +
+        (t.virtual ? '' : '<button class="btn ghost m-status" data-id="' + esc(t.id) + '" data-to="' + (closed ? 'open' : 'closed') + '" type="button" style="padding:8px 14px">' + (closed ? 'Reopen' : 'Close conversation') + '</button>') +
+        '<button class="btn m-send" data-id="' + esc(t.id) + '" data-ref="' + esc(t.orderRef || '') + '" type="button" style="padding:8px 18px">Send</button>' +
+      '</div></div></div></div>';
+  }
+  function renderMessages(){
+    var cu = custThreads(), nCust = cu.filter(threadUnread).length, nTeam = teamUnread().length;
+    $('msgtabs').innerHTML =
+      '<button type="button" class="pvtab' + (msgView === 'cust' ? ' on' : '') + '" data-mview="cust">Customers' + (nCust ? '<span class="n">' + nCust + '</span>' : '') + '</button>' +
+      '<button type="button" class="pvtab' + (msgView === 'team' ? ' on' : '') + '" data-mview="team">Team' + (nTeam ? '<span class="n">' + nTeam + '</span>' : '') + '</button>';
+    $('msgcust').hidden = msgView !== 'cust';
+    $('msgteam').hidden = msgView !== 'team';
+    if(msgView === 'cust'){
+      /* a thread opened from the bell or an order counts as read, like one clicked open */
+      var ot = msgOpen && cu.filter(function(x){ return x.id === msgOpen; })[0];
+      if(ot && threadUnread(ot)){
+        ot.adminSeenAt = new Date().toISOString();
+        api('/api/admin/thread/seen', 'POST', { id: ot.id }).catch(function(){});
+        renderBellSoon();
+      }
+      var counts = { open: cu.filter(function(t){ return t.status !== 'closed'; }).length, closed: cu.filter(function(t){ return t.status === 'closed'; }).length, all: cu.length };
+      $('msgfilter').innerHTML = [['open','Open'],['closed','Closed'],['all','All']].map(function(f){
+        return '<button type="button" class="pvtab' + (msgFilter === f[0] ? ' on' : '') + '" data-mfilter="' + f[0] + '" style="font-size:12.5px;padding:6px 12px">' + f[1] + '<span class="n">' + counts[f[0]] + '</span></button>';
+      }).join('');
+      var list = cu.filter(function(t){ return msgFilter === 'all' || (msgFilter === 'closed') === (t.status === 'closed'); });
+      /* "Message customer" on an order that has no chat yet: a blank thread to write into */
+      if(msgOpen && /^ORD-/.test(msgOpen) && !orderThread(msgOpen.slice(4))){
+        var o = allOrders.filter(function(x){ return x.ref === msgOpen.slice(4); })[0];
+        if(o) list.unshift({ id: msgOpen, virtual: true, dealer: o.dealer, test: o.test, kind: 'Order', subject: 'Order ' + o.ref, orderRef: o.ref, status: 'open', messages: [] });
+      }
+      list.sort(function(a, b){ return (threadUnread(b) ? 1 : 0) - (threadUnread(a) ? 1 : 0); });
+      $('msglist').innerHTML = list.length ? list.map(threadHTML).join('')
+        : '<div class="ovempty">' + (msgFilter === 'closed' ? 'No closed conversations.' : 'No conversations here yet — customers write from an order or from “Request or question” in the portal.') + '</div>';
+    } else {
+      var t = teamThread(), mine = me();
+      $('teambox').innerHTML = t.messages.length
+        ? '<div class="bubbles" style="margin:0">' + bubblesHTML(t, function(m){ return m.by === mine; }) + '</div>'
+        : '<div class="ovempty">No team messages yet.</div>';
+      $('teambox').scrollTop = $('teambox').scrollHeight;
+      if(t.messages.length){ try{ localStorage.setItem('lumia_team_seen', t.messages[t.messages.length - 1].at); }catch(e){} renderBellSoon(); }
+    }
+  }
+  var bellTimer = null;
+  function renderBellSoon(){ clearTimeout(bellTimer); bellTimer = setTimeout(renderBell, 50); }
+
+  $('tab-messages').addEventListener('click', function(e){
+    var v = e.target.closest('[data-mview]');
+    if(v){ msgView = v.dataset.mview; renderMessages(); return; }
+    var f = e.target.closest('[data-mfilter]');
+    if(f){ msgFilter = f.dataset.mfilter; renderMessages(); return; }
+    var ob = e.target.closest('.m-order');
+    if(ob){ gotoTab('orders'); return; }
+    var sb = e.target.closest('.m-status');
+    if(sb){
+      sb.disabled = true;
+      api('/api/admin/thread/status', 'POST', { id: sb.dataset.id, status: sb.dataset.to }).then(loadThreads);
+      return;
+    }
+    var send = e.target.closest('.m-send');
+    if(send){
+      var box = send.closest('.mbody'), ta = box.querySelector('.m-text'), err = box.querySelector('.merr'), text = ta.value.trim();
+      if(!text){ err.textContent = 'Write a message first.'; return; }
+      send.disabled = true; send.textContent = 'Sending…';
+      var real = allThreads.some(function(t){ return t.id === send.dataset.id; });
+      api('/api/admin/thread/reply', 'POST', real ? { id: send.dataset.id, text: text } : { orderRef: send.dataset.ref, text: text })
+        .then(function(d){ if(d.error) throw new Error(d.error); return loadThreads(); })
+        .catch(function(){ err.textContent = 'Could not send — try again.'; send.disabled = false; send.textContent = 'Send'; });
+      return;
+    }
+    var h = e.target.closest('[data-mopen]');
+    if(h){
+      var id = h.dataset.mopen;
+      msgOpen = msgOpen === id ? null : id;
+      var t = allThreads.filter(function(x){ return x.id === id; })[0];
+      if(msgOpen && t && threadUnread(t)){
+        t.adminSeenAt = new Date().toISOString();
+        api('/api/admin/thread/seen', 'POST', { id: id }).catch(function(){});
+        renderBell();
+      }
+      renderMessages();
+    }
+  });
+  $('teamsend').addEventListener('click', function(){
+    var b = this, text = $('teamtext').value.trim();
+    $('teamerr').textContent = '';
+    if(!text) return;
+    b.disabled = true;
+    api('/api/admin/thread/reply', 'POST', { id: 'TEAM', text: text })
+      .then(function(d){ if(d.error) throw new Error(d.error); $('teamtext').value = ''; return loadThreads(); })
+      .catch(function(){ $('teamerr').textContent = 'Could not send — try again.'; })
+      .then(function(){ b.disabled = false; });
+  });
+  /* keep the bell and the conversations fresh without disturbing the order
+     list: threads reload; orders are re-read, and only swapped into the page
+     when no order is open for editing */
+  setInterval(function(){
+    if(document.hidden || $('panel').hidden) return;
+    var typing = [].some.call(document.querySelectorAll('#tab-messages textarea'), function(x){ return x.value.trim(); });
+    if(!typing) loadThreads();
+    api('/api/admin/orders').then(function(d){
+      var fresh = d.orders || [];
+      if($('tab-orders').hidden && $('tab-dealers').hidden){ allOrders = fresh; renderCalendar(); renderPayments(); renderOverview(); renderBell(); }
+      else { var keep = allOrders; allOrders = fresh; renderBell(); allOrders = keep; }
+    }).catch(function(){});
+  }, 60000);
 
   /* ── overview dashboard ── */
   /* a TDBU that wasn't chosen is left out — only "Top-down bottom-up: Yes" is written */
@@ -884,6 +1265,7 @@
       var badges = '<span class="status ' + stCls + '">' + (st.locked ? '🔒 ' : '') + esc(st.status) + '</span>' +
         (done ? ' <span class="status st-acc">Completed</span>' : '') +
         (o.test ? '' : ' <span class="status ' + (paid ? 'pay-paid' : 'pay-un') + '">' + (paid ? 'Paid' : 'Unpaid') + '</span>') +
+        (orderThread(o.ref) && threadUnread(orderThread(o.ref)) ? ' <span class="status st-new">New message</span>' : '') +
         (o.tracking ? '<br><a class="mono" href="' + fedexUrl(o.tracking) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Track on FedEx" style="font-size:9px;color:#274690">📦 ' + esc(o.tracking) + '</a>' : '') +
         (st.note ? '<br><span style="font-size:11px;color:#2F5D25">“' + esc(st.note) + '”</span>' : '');
 
@@ -907,6 +1289,8 @@
           '<label class="fld"><span>Status</span>' + sel + '</label>' +
           '<label class="fld" style="flex:1;min-width:220px"><span>Note to customer</span><input type="text" class="st-note" data-ref="' + esc(o.ref) + '" value="' + esc(st.note || '') + '" placeholder="optional" style="width:100%"></label>' +
         '</div>' +
+        '<div class="octl" style="margin-top:12px"><label class="fld"><span>Product no.</span><input type="text" class="st-pno" data-ref="' + esc(o.ref) + '" value="' + esc(o.productNo || '') + '" placeholder="LUMIA production / product number" style="width:260px"></label></div>' +
+        '<div class="ronly r-orders">' + (o.productNo ? 'Product no. ' + esc(o.productNo) + ' · ' : '') + 'Changing the status, tracking or product no. is not part of your account.</div>' +
         '<div class="trackwrap' + (st.status === 'Shipped' ? ' on' : '') + '" data-ref="' + esc(o.ref) + '" style="margin-top:12px">' +
           '<label class="fld"><span>FedEx tracking number</span><input type="text" class="st-track" data-ref="' + esc(o.ref) + '" value="' + esc(o.tracking || '') + '" placeholder="e.g. 771234567890" style="width:260px"></label>' +
           (o.tracking ? ' <a href="' + fedexUrl(o.tracking) + '" target="_blank" rel="noopener" style="font-size:12.5px;margin-left:10px">Track ' + esc(o.tracking) + ' on FedEx →</a>' : '') +
@@ -916,6 +1300,7 @@
           '<button class="btn st-save" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 16px">Save</button>' +
           /* invoice only once the FedEx tracking number is saved on the order */
           (o.tracking ? '<button class="btn ghost o-inv" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px">Invoice</button>' : '') +
+          '<button class="btn ghost o-msg" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px">' + (orderThread(o.ref) ? 'Messages (' + orderThread(o.ref).messages.length + ')' : 'Message customer') + '</button>' +
           ((o.test || st.status === 'Cancelled') ? '<button class="btn ghost o-del" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px;color:#8A2620">Delete</button>' : '') +
           '<span style="font-size:11px;color:var(--muted)">Any status other than “Pending review” locks the order automatically.</span>' +
         '</div>';
@@ -959,7 +1344,8 @@
       ref: ref,
       status: find('.st-sel') ? find('.st-sel').value : 'Pending review',
       note: find('.st-note') ? find('.st-note').value : '',
-      tracking: find('.st-track') ? find('.st-track').value : ''
+      tracking: find('.st-track') ? find('.st-track').value : '',
+      productNo: find('.st-pno') ? find('.st-pno').value : undefined
     }).then(function(){ loadOrders().then(loadDealers); })
       .catch(function(){ b.disabled = false; b.textContent = 'Save'; note(b, 'Save failed — try again.'); });
   });
@@ -1083,6 +1469,8 @@
     LUMIA_INVOICE.open(o, dl, o.dealer || '', function(m){ alert(m); });
   }
   $('orderrows').addEventListener('click', function(e){
+    var mb = e.target.closest('.o-msg');
+    if(mb){ msgView = 'cust'; msgFilter = 'all'; msgOpen = 'ORD-' + mb.dataset.ref; gotoTab('messages'); return; }
     var b = e.target.closest('.o-inv');
     if(b){
       var o = allOrders.filter(function(x){ return x.ref === b.dataset.ref; })[0];

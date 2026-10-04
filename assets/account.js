@@ -76,6 +76,48 @@
       return !/^(top-down bottom-up|tdbu): no$/i.test(part.trim());
     }).join(' · ');
   }
+  /* ── the chat about one order (one per order, started by either side) ── */
+  var CHATS = {};                                   /* order ref -> thread */
+  function chatUnread(ref){
+    var t = CHATS[ref], last = t && t.messages[t.messages.length - 1];
+    return !!last && last.from === 'lumia' && (!t.dealerSeenAt || last.at > t.dealerSeenAt);
+  }
+  function chatWhen(x){
+    var d = new Date(x);
+    return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' · ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+  }
+  function chatInner(ref){
+    var t = CHATS[ref];
+    var bubbles = t ? t.messages.map(function(m){
+      var mine = m.from === 'dealer';
+      return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="who">' + (mine ? 'You' : 'LUMIA') + ' · ' + chatWhen(m.at) + '</span>' + esc(m.text) + '</div>';
+    }).join('') : '';
+    return '<div class="chead">Messages about this order</div>' +
+      (bubbles ? '<div class="bubbles">' + bubbles + '</div>'
+               : '<p class="cnone">No messages yet. Write to LUMIA about this order here &mdash; a question, a change, or a problem with a product.</p>') +
+      '<div class="treply"><textarea rows="2" maxlength="2000" placeholder="Write a message about this order…"></textarea>' +
+      '<div class="mfoot"><span class="merr"></span><button class="paybtn" type="button" data-chatsend="' + esc(ref) + '" style="padding:10px 16px">Send</button></div></div>';
+  }
+  function chatHTML(o){ return '<div class="ochat" data-chat="' + esc(o.ref) + '">' + chatInner(o.ref) + '</div>'; }
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-chatsend]'); if(!b) return;
+    var ref = b.getAttribute('data-chatsend'), box = b.closest('.ochat');
+    var ta = box.querySelector('textarea'), err = box.querySelector('.merr'), text = ta.value.trim();
+    if(!text){ err.textContent = 'Write a message first.'; return; }
+    b.disabled = true; b.textContent = '…';
+    fetch('/api/thread', {
+      method: 'POST',
+      headers: { 'x-dealer-code': SESSION.code || '', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderRef: ref, text: text })
+    }).then(function(r){ if(!r.ok) throw new Error('failed'); return r.json(); })
+      .then(function(d){
+        CHATS[ref] = d.thread;
+        /* refresh every open copy of this chat without closing the order */
+        [].forEach.call(document.querySelectorAll('.ochat'), function(x){ if(x.getAttribute('data-chat') === ref) x.innerHTML = chatInner(ref); });
+      })
+      .catch(function(){ b.disabled = false; b.textContent = 'Send'; err.textContent = 'Could not send — please try again.'; });
+  });
+
   function detailHTML(o){
     var rows = (o.lines || []).map(function(l, i){
       var size = l.w == null ? '—' : fmtIn(l.w) + ' × ' + fmtIn(l.h);
@@ -86,6 +128,7 @@
         '<td>' + size + '</td><td>' + l.qty + '</td><td class="num">' + amt + '</td></tr>';
     }).join('');
     var rc = o.receipt || {}, d = deliveredAt(o), bits = ['Sent ' + fdate(o.at)];
+    if(o.productNo) bits.push('product no. ' + esc(o.productNo));
     if(o.shippedAt) bits.push('shipped ' + fdate(o.shippedAt));
     if(d){
       var who = rc.dealerAt && rc.adminAt ? 'confirmed by both sides'
@@ -106,7 +149,7 @@
     return '<div class="dwrap"><table>' +
       '<thead><tr><th>#</th><th>Item</th><th>Size</th><th>Qty</th><th>Price</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>' + track +
-      (o.notes ? '<div class="dnotes"><b>Notes:</b> ' + esc(o.notes) + '</div>' : '') + inv +
+      (o.notes ? '<div class="dnotes"><b>Notes:</b> ' + esc(o.notes) + '</div>' : '') + inv + chatHTML(o) +
       '<div class="dmeta">' + bits.join(' · ') +
       ' · <a href="order.html">' + (o.tracking ? 'edit, reorder or print the invoice →' : 'edit or reorder →') + '</a></div>';
   }
@@ -336,7 +379,7 @@
       : (!pendSt && st.status !== 'Cancelled' ? '<span class="status unpaid">Unpaid</span>' : '&mdash;');
     /* a shipped order that is paid is finished — shown dimmed */
     var finished = st.status === 'Shipped' && isPaid(o);
-    return '<tr class="ord' + (finished ? ' done' : '') + '" title="Click for line items">' +
+    return '<tr class="ord' + (finished ? ' done' : '') + '" data-ref="' + esc(o.ref) + '" title="Click for line items">' +
       '<td>' + when.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) + '</td>' +
       '<td>' + esc(o.customer || '—') + '</td>' +
       '<td><span class="ref">' + esc(o.ref) + '</span></td>' +
@@ -344,6 +387,7 @@
       '<td class="num">$' + t.total.toFixed(2) + (t.unknown ? ' <span class="mono" style="font-size:9px">+' + t.unknown + ' TBD</span>' : '') + '</td>' +
       '<td><span class="status ' + stCls + (st.locked ? ' lock' : '') + '">' + esc(st.status) + '</span>' +
         (done ? ' <span class="status acc">Completed</span>' : '') +
+        (chatUnread(o.ref) ? ' <span class="status newmsg">New message</span>' : '') +
         (st.note ? '<div class="lnote">LUMIA: ' + esc(st.note) + '</div>' : '') + '</td>' +
       '<td>' + payBadge + '</td>' +
       '<td>' + (pendSt
@@ -390,6 +434,16 @@
     var tr = e.target.closest('tr.ord'); if(!tr) return;
     var det = tr.nextElementSibling;
     if(det && det.classList.contains('det')) det.hidden = !det.hidden;
+    var ref = tr.getAttribute('data-ref');
+    if(det && !det.hidden && ref && chatUnread(ref)){
+      CHATS[ref].dealerSeenAt = new Date().toISOString();
+      var tag = tr.querySelector('.newmsg'); if(tag) tag.remove();
+      fetch('/api/thread/seen', {
+        method: 'POST',
+        headers: { 'x-dealer-code': SESSION.code || '', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: CHATS[ref].id })
+      }).catch(function(){});
+    }
   });
 
   /* "Order completed" — the customer confirms the goods arrived; the order
@@ -490,7 +544,17 @@
       if(r.status === 401){ LUMIA_TRADE.clearSession(); location.href = 'trade.html'; throw new Error('logged out'); }
       return r.json();
     })
-    .then(function(d){ PAYINFO = d.payInfo || null; render(d.orders || []); })
+    .then(function(d){
+      PAYINFO = d.payInfo || null;
+      /* the order chats come along, so each order can show its messages */
+      return fetch('/api/threads', { headers: { 'x-dealer-code': SESSION.code || '' } })
+        .then(function(r){ return r.ok ? r.json() : { threads: [] }; }).catch(function(){ return { threads: [] }; })
+        .then(function(t){
+          CHATS = {};
+          (t.threads || []).forEach(function(x){ if(x.orderRef) CHATS[x.orderRef] = x; });
+          render(d.orders || []);
+        });
+    })
     .catch(function(){ render([]); });
   }
   load();
