@@ -494,6 +494,12 @@ export default async (req) => {
       if (!admins[String(body.id || "")]) return bad("no such admin", 404);
       delete admins[String(body.id)];
       await s.setJSON("admins", admins);
+      // their direct chats go with the account
+      const { blobs } = await s.list({ prefix: "thread:DM-" });
+      for (const b of blobs) {
+        const t = await s.get(b.key, { type: "json" });
+        if (t && (t.members || []).includes(String(body.id))) await s.delete(b.key);
+      }
       return json({ ok: true });
     }
 
@@ -516,6 +522,7 @@ export default async (req) => {
       const admins = await getAdmins();
       const other = to === "owner" ? { name: process.env.ADMIN_NAME || "LUMIA" } : admins[to];
       if (!other || to === admin.id) return bad("no such admin", 404);
+      if (other.active === false) return bad("this admin account is suspended", 409);
       const key = `thread:${dmId(admin.id, to)}`;
       const now = new Date().toISOString();
       let t = await s.get(key, { type: "json" });
