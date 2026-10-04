@@ -89,6 +89,8 @@
   .msg{font-size:13.5px;margin-top:10px}
   .msg.err{color:#8A2620}.msg.ok{color:#2F5D25}
   .tabs{display:flex;gap:10px;margin:22px 0 16px;flex-wrap:wrap}
+  #viewbar{position:sticky;top:0;z-index:70;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:#F2C14E;color:#2A1E00;border-radius:12px;padding:10px 16px;margin:0 0 14px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+  #viewbar[hidden]{display:none}
   /* what an admin can't change is simply not offered (the server refuses it too) */
   body.no-orders .octl, body.no-orders .trackwrap, body.no-orders .st-save, body.no-orders .o-del, body.no-orders #cancelbar{display:none!important}
   body.no-payments .pay-mark, body.no-payments .pay-all, body.no-payments #payall{display:none!important}
@@ -264,6 +266,12 @@
       <button class="btn ghost" id="npcancel" type="button">Log out</button>
     </div>
     <div class="msg" id="npmsg"></div>
+  </div>
+
+  <!-- "View as": the manager looks at the panel the way another admin sees it -->
+  <div id="viewbar" hidden>
+    <span id="viewtxt"></span>
+    <button class="btn" id="viewexit" type="button" style="padding:7px 16px">Back to my view</button>
   </div>
 
   <div id="logoutbar" style="display:none;justify-content:flex-end;gap:10px;margin:0 0 14px">
@@ -515,6 +523,7 @@
     });
   }
   function logout(){
+    REAL = null; $('viewbar').hidden = true;
     forgetKey();
     $('panel').hidden = true;
     $('keycard').hidden = false;
@@ -644,9 +653,31 @@
   function can(p){ return ME.perms.indexOf(p) !== -1; }
   function applyPerms(){
     ['orders', 'payments', 'dealers', 'messages', 'admins', 'accounts'].forEach(function(p){ document.body.classList.toggle('no-' + p, !can(p)); });
-    $('whoami').textContent = 'Signed in as ' + ME.name;
+    $('whoami').textContent = (REAL ? 'Viewing as ' : 'Signed in as ') + ME.name;
     $('adminstab').hidden = !can('accounts');
   }
+  /* "View as" — the panel exactly as that admin gets it: their tabs and controls.
+     It only changes what is shown here; nothing is done in their name. */
+  var REAL = null;
+  function viewAs(name, perms){
+    if(!REAL) REAL = ME;
+    ME = { id: REAL.id, name: name, perms: perms.slice(), owner: false };
+    applyPerms();
+    $('viewtxt').innerHTML = 'You are looking at the panel as <b>' + esc(name) + '</b> sees it. Anything you do here is still done as ' + esc(REAL.name) + '.';
+    $('viewbar').hidden = false;
+    gotoTab('overview');
+    if(typeof renderCalendar === 'function'){ renderCalendar(); renderPayments(); renderOverview(); }
+    window.scrollTo(0, 0);
+  }
+  function viewExit(){
+    if(!REAL) return;
+    ME = REAL; REAL = null;
+    applyPerms();
+    $('viewbar').hidden = true;
+    renderCalendar(); renderPayments(); renderOverview();
+    gotoTab('admins');
+  }
+  $('viewexit').addEventListener('click', viewExit);
   function msgWhen(x){
     var d = new Date(x);
     return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' · ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
@@ -946,6 +977,7 @@
           '<div class="ab"><div class="apw"><input type="text" class="a-newpass" placeholder="' + (a.hasPassword ? 'New password' : 'Set a password') + '" autocomplete="off">' +
             '<button class="btn ghost a-setpass" type="button" style="padding:8px 14px">' + (a.hasPassword ? 'Reset password' : 'Set password') + '</button>' +
             '<small class="apst">' + (!a.hasPassword ? 'No password yet — can\'t sign in' : a.mustChange ? 'Starting password set — they choose their own at first sign-in' : 'Has chosen their own password' + (a.passwordSetAt ? ' · ' + new Date(a.passwordSetAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '')) + '</small></div>' +
+          '<button class="btn ghost a-view" type="button" style="padding:8px 14px">View as</button>' +
           '<button class="btn ghost a-active" data-to="' + (a.active ? '0' : '1') + '" type="button" style="padding:8px 14px">' + (a.active ? 'Suspend' : 'Reactivate') + '</button>' +
           '<button class="btn ghost a-del" type="button" style="padding:8px 14px;color:#8A2620">Delete</button></div></div>';
       }).join('') : '<div class="ovempty">No admin accounts yet — add the first one below.</div>';
@@ -976,6 +1008,10 @@
     var row = e.target.closest('.arow'); if(!row) return;
     var id = row.dataset.id, name = row.querySelector('.an b').textContent;
     var b = e.target.closest('button'); if(!b) return;
+    if(b.classList.contains('a-view')){
+      viewAs(name, [].filter.call(row.querySelectorAll('.a-perm'), function(x){ return x.checked; }).map(function(x){ return x.value; }));
+      return;
+    }
     if(b.classList.contains('a-active')){
       api('/api/admin/admin-update', 'POST', { id: id, active: b.dataset.to === '1' }).then(loadAdmins);
       return;
