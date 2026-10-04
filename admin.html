@@ -243,7 +243,7 @@
 
   <div class="card" id="keycard">
     <div class="row" style="align-items:flex-end">
-      <div><label for="keyname">Name</label><input id="keyname" type="text" style="min-width:200px" placeholder="e.g. Nesrin" autocomplete="username"></div>
+      <div><label for="keyname">Name</label><input id="keyname" type="text" style="min-width:200px" autocomplete="username"></div>
       <div><label for="key">Password</label><input id="key" type="password" style="min-width:260px" placeholder="Your password" autocomplete="current-password"></div>
       <button class="btn" id="keybtn" type="button">Log in</button>
     </div>
@@ -280,7 +280,7 @@
         <p style="color:var(--muted);font-size:13px;margin:0 0 16px;max-width:86ch">Each admin signs in with their <b>name</b> and the <b>password you set here</b>, and can only change what is ticked for them. Everyone can <b>see</b> customers, orders, payments and messages. Passwords are not stored in readable form, so they can't be shown again &mdash; set a new one if someone forgets theirs.</p>
         <div id="adminlist"></div>
         <div class="row" style="margin-top:18px;align-items:flex-end">
-          <div><label>Name</label><input id="a-name" type="text" style="min-width:200px" placeholder="e.g. Nesrin"></div>
+          <div><label>Name</label><input id="a-name" type="text" style="min-width:200px"></div>
           <div><label>Role</label>
             <select id="a-role">
               <option value="owner">Full access — everything except admin accounts</option>
