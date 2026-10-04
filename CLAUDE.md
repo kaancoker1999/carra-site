@@ -24,8 +24,20 @@ Excels (`tools/*.local.*` are gitignored for exactly that reason).
 
 ## Auth
 - Dealers log in with access codes (`LUMIA-XXXX-XXXX`) created in the admin panel.
-- Admin panel auth = `ADMIN_KEY` env var on Netlify (the owner has the value; also in the
-  owner's local Claude memory). Never hardcode it.
+- Admin panel: `ADMIN_KEY` env var on Netlify is the owner's master key (the owner has the value;
+  also in the owner's local Claude memory — never hardcode it). Named admins each have their own
+  key (`LMA-ADM-…`, only its SHA-256 is stored in the "admins" blob) and permissions
+  (`orders` / `payments` / `dealers` / `messages` / `admins`), enforced in api.mjs via `NEEDS`;
+  the panel only hides what an account can't change. Every admin can view everything.
+  Owners manage accounts in the admin panel's Admins tab ("New key" shows a key once).
+
+## Messages
+- Threads live in Blobs as `thread:<id>`: an order's chat (`ORD-<ref>`, one per order), a dealer's
+  request/question (`MSG-…`), and the admins' private team chat (`TEAM`).
+- Dealer side: chat inside each order's details (assets/account.js) and the "Request or question"
+  panel injected at the bottom of every portal page (assets/support.js).
+- Admin side: notifications bell (derived: pending orders, reported payments, unread messages),
+  Messages tab (Customers / Team), "Message customer" on an order.
 
 ## Pricing
 - Base (group-1) prices parsed from gitignored local Excels by `tools/make_trade_data.py`
