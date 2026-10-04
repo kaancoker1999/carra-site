@@ -416,9 +416,11 @@
     { key: 'orders',    label: 'Orders' },
     { key: 'past',      label: 'Past orders' },
     { key: 'cancelled', label: 'Cancelled' },
+    { key: 'test',      label: 'Test' },
   ];
   function mainGroupOf(o){
     var st = (o.status && o.status.status) || 'Pending review';
+    if(o.test) return 'test';                   /* test accounts never mix with real orders */
     if(st === 'Cancelled') return 'cancelled';
     if(o.payment && o.payment.paid) return 'past';
     return 'orders';
@@ -482,7 +484,7 @@
 
   function renderOverview(){
     if(!$('tab-overview')) return;
-    var os = allOrders;
+    var os = allOrders.filter(function(o){ return !o.test; });   /* test accounts stay out of every total */
     var pending  = os.filter(function(o){ return statusOf(o) === 'Pending review'; });
     var inflight = os.filter(function(o){ var s = statusOf(o); return s === 'In production' || s === 'Shipped'; });
     var unpaid = 0, payable = 0;
@@ -577,7 +579,7 @@
         '<div class="ct" style="font-size:13.5px">$' + orderTotals(o.lines).total.toFixed(2) + '</div></div>';
     }).join('') : '<div class="ovempty">No orders yet.</div>';
 
-    var byCust = dealersCache.map(function(d){ var st = dealerStats(d.code); return { name: d.name, purch: st.purch, due: st.due }; })
+    var byCust = dealersCache.filter(function(d){ return !d.test; }).map(function(d){ var st = dealerStats(d.code); return { name: d.name, purch: st.purch, due: st.due }; })
       .filter(function(c){ return c.purch > 0; }).sort(function(a, b){ return b.purch - a.purch; }).slice(0, 5);
     $('ovtop').innerHTML = byCust.length ? byCust.map(function(c){
       return '<div class="ovitem"><div class="tx">' + esc(c.name) +
@@ -754,7 +756,7 @@
 
   function renderCalendar(){
     var counts = {};
-    allOrders.forEach(function(o){ var k = ymd(o.at); counts[k] = (counts[k] || 0) + 1; });
+    allOrders.forEach(function(o){ if(o.test) return; var k = ymd(o.at); counts[k] = (counts[k] || 0) + 1; });
 
     var first = calMonth, todayKey = ymd(new Date());
     var head = '<div class="calhead">' +
@@ -772,7 +774,7 @@
     var last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
     while(cur <= last){
       var mondayKey = ymd(cur);
-      var wkN = ordersInWeek(mondayKey).length;
+      var wkN = ordersInWeek(mondayKey).filter(function(o){ return !o.test; }).length;
       grid += '<button class="calwk' + (calSel.mode === 'week' && calSel.key === mondayKey ? ' on' : '') +
         '" data-week="' + mondayKey + '" type="button" title="Whole week">' +
         cur.toLocaleDateString('en-US', {month:'short', day:'numeric'}) +
@@ -793,7 +795,7 @@
     $('cal').innerHTML = head + grid + '</div>';
 
     var list = selectedOrders();
-    var byGroup = { orders: [], past: [], cancelled: [] };
+    var byGroup = { orders: [], past: [], cancelled: [], test: [] };
     list.forEach(function(o){ byGroup[mainGroupOf(o)].push(o); });
     if(!byGroup[stageSel]) stageSel = 'orders';
     $('stagetabs').innerHTML =
@@ -881,7 +883,7 @@
       var stCls = st.status === 'Pending review' ? 'st-pend' : (st.status === 'Cancelled' ? 'st-canc' : 'st-acc');
       var badges = '<span class="status ' + stCls + '">' + (st.locked ? '🔒 ' : '') + esc(st.status) + '</span>' +
         (done ? ' <span class="status st-acc">Completed</span>' : '') +
-        ' <span class="status ' + (paid ? 'pay-paid' : 'pay-un') + '">' + (paid ? 'Paid' : 'Unpaid') + '</span>' +
+        (o.test ? '' : ' <span class="status ' + (paid ? 'pay-paid' : 'pay-un') + '">' + (paid ? 'Paid' : 'Unpaid') + '</span>') +
         (o.tracking ? '<br><a class="mono" href="' + fedexUrl(o.tracking) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Track on FedEx" style="font-size:9px;color:#274690">📦 ' + esc(o.tracking) + '</a>' : '') +
         (st.note ? '<br><span style="font-size:11px;color:#2F5D25">“' + esc(st.note) + '”</span>' : '');
 
@@ -1018,7 +1020,7 @@
         return '<tr class="' + (x.active === false ? 'inactive' : '') + '">' +
           '<td><b>' + esc(x.name) + '</b>' + testTag + suspTag + '</td>' +
           '<td>' + (st.open ? st.open + (st.open === 1 ? ' order' : ' orders') : '—') + '</td>' +
-          '<td>' + (st.due > 0 ? '<span style="color:#8A2620">$' + st.due.toFixed(2) + '</span>' : '$0.00') + '</td>' +
+          '<td>' + (x.test ? '<span style="color:var(--muted)">test</span>' : (st.due > 0 ? '<span style="color:#8A2620">$' + st.due.toFixed(2) + '</span>' : '$0.00')) + '</td>' +
           '<td>' + (x.lastLogin
             ? new Date(x.lastLogin).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) +
               '<br><span style="color:var(--muted);font-size:11.5px">' +
