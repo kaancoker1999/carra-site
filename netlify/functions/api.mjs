@@ -7,7 +7,7 @@
 //   POST /api/order/cancel     {ref}                  (only while "Pending review")
 //   POST /api/order/received   {ref}                  (dealer confirms the goods arrived)
 //   GET  /api/threads                                 -> dealer's own message threads
-//   POST /api/thread           {orderRef,text} (chat about an order) or {kind,subject,text}
+//   POST /api/thread           {orderRef,kind,text} (contact request about an order) or {kind,subject,text}
 //   POST /api/thread/reply     {id,text}  ·  POST /api/thread/seen {id}
 //
 // Admin endpoints (header authorization: Bearer <ADMIN_KEY> for the owner's master key, or
@@ -203,12 +203,15 @@ async function listOrders(filterCode) {
 
 // ── messages ──
 // One blob per thread ("thread:<id>") holding its messages:
-//   · an order chat  — id "ORD-<order ref>", one per order, either side can start it
-//   · a request / question from a dealer — id "MSG-…"
+//   · a contact request about an order — id "MSG-…" with orderRef and an after-sale
+//     kind (question, damaged product, …); an order can have several
+//   · a general request / question from a dealer — id "MSG-…"
 //   · a direct chat between two admins — id "DM-<idA>-<idB>" (kind "DM"; only its
 //     two members can read or write it, and dealers never see it)
 // "Unread" is derived: the other side wrote after this side last opened the thread.
-const THREAD_KINDS = ["Request", "Question"];
+const THREAD_KINDS = ["Request", "Question"];                         // general
+const ORDER_KINDS = ["Question", "Damaged product", "Wrong size or product",   // about an order (after-sale)
+                     "Missing part", "Installation help", "Other"];
 const dmId = (a, b) => `DM-${[a, b].sort().join("-")}`;
 const MSG_MAX = 2000, THREAD_MAX_MSGS = 300;
 
@@ -396,9 +399,8 @@ export default async (req) => {
     return json({ threads: await listThreads(d.code) });
   }
 
-  // start a conversation: about one of the dealer's orders ({orderRef, text} —
-  // one chat per order, so a second message just continues it), or a general
-  // request / question ({kind, subject, text})
+  // start a conversation: a contact request about one of the dealer's orders
+  // ({orderRef, kind, text}) or a general request / question ({kind, subject, text})
   if (path === "/api/thread" && req.method === "POST") {
     const d = await dealerFromReq(req);
     if (!d) return bad("unauthorized", 401);
@@ -406,34 +408,25 @@ export default async (req) => {
     if (!text) return bad("message required");
     const s = store();
     const now = new Date().toISOString();
-    const msg = { from: "dealer", by: d.name, text, at: now };
     const orderRef = cleanText(body.orderRef, 40);
+    let kind, subject;
     if (orderRef) {
       const o = await s.get(`order:${orderRef}`, { type: "json" });
       if (!o || o.code !== d.code) return bad("no such order", 404);
-      const key = `thread:ORD-${orderRef}`;
-      let t = await s.get(key, { type: "json" });
-      if (t) {
-        if (t.messages.length >= THREAD_MAX_MSGS) return bad("this conversation is full", 409);
-        t.messages.push(msg); t.status = "open";
-      } else {
-        t = { id: `ORD-${orderRef}`, code: d.code, dealer: d.name, test: !!d.test, kind: "Order",
-              subject: `Order ${orderRef}`, orderRef, status: "open", createdAt: now,
-              adminSeenAt: null, messages: [msg] };
-      }
-      t.updatedAt = now; t.dealerSeenAt = now;
-      await s.setJSON(key, t);
-      return json({ ok: true, thread: t });
+      kind = ORDER_KINDS.includes(body.kind) ? body.kind : "Question";
+      subject = `${kind} — order ${orderRef}`;
+    } else {
+      kind = THREAD_KINDS.includes(body.kind) ? body.kind : "Request";
+      subject = cleanText(body.subject, 120);
+      if (!subject) return bad("subject required");
     }
-    const subject = cleanText(body.subject, 120);
-    if (!subject) return bad("subject required");
     let id = newThreadId();
     while (await s.get(`thread:${id}`, { type: "json" })) id = newThreadId();
     const t = {
-      id, code: d.code, dealer: d.name, test: !!d.test,
-      subject, kind: THREAD_KINDS.includes(body.kind) ? body.kind : "Request", orderRef: "",
+      id, code: d.code, dealer: d.name, test: !!d.test, subject, kind, orderRef,
       status: "open", createdAt: now, updatedAt: now,
-      dealerSeenAt: now, adminSeenAt: null, messages: [msg],
+      dealerSeenAt: now, adminSeenAt: null,
+      messages: [{ from: "dealer", by: d.name, text, at: now }],
     };
     await s.setJSON(`thread:${id}`, t);
     return json({ ok: true, thread: t });
@@ -615,17 +608,20 @@ export default async (req) => {
       let id = String(body.id || "").slice(0, 60);
       // writing to customers needs "messages" (opening one to read it does not)
       if (act !== "seen" && !can("messages")) return bad("you don't have permission for this", 403);
-      // LUMIA writing first about an order: {orderRef} opens that order's chat
+      // LUMIA writing first about an order: {orderRef} (no id) opens a new conversation
       const orderRef = cleanText(body.orderRef, 40);
-      if (!id && orderRef) id = `ORD-${orderRef}`;
+      if (!id && orderRef && act === "reply") {
+        id = newThreadId();
+        while (await s.get(`thread:${id}`, { type: "json" })) id = newThreadId();
+      }
       const key = `thread:${id}`;
       let t = await s.get(key, { type: "json" });
       if (t && t.kind === "DM") return bad("no such conversation", 404);   // admins' chats go through /api/admin/dm
       if (!t && act === "reply" && orderRef) {
         const o = await s.get(`order:${orderRef}`, { type: "json" });
         if (!o) return bad("no such order", 404);
-        t = { id, code: o.code, dealer: o.dealer || "", test: !!o.test, kind: "Order",
-              subject: `Order ${orderRef}`, orderRef, status: "open", createdAt: now,
+        t = { id, code: o.code, dealer: o.dealer || "", test: !!o.test, kind: "From LUMIA",
+              subject: `About order ${orderRef}`, orderRef, status: "open", createdAt: now,
               dealerSeenAt: null, messages: [] };
       }
       if (!t) return bad("no such conversation", 404);
@@ -854,7 +850,12 @@ export default async (req) => {
       const ref = String(body.ref || "");
       if (!ref) return bad("ref required");
       await s.delete(`order:${ref}`);
-      await s.delete(`thread:ORD-${ref}`);      // its chat goes with it
+      // its conversations go with it
+      const { blobs: tb } = await s.list({ prefix: "thread:MSG-" });
+      for (const b of tb) {
+        const t = await s.get(b.key, { type: "json" });
+        if (t && t.orderRef === ref) await s.delete(b.key);
+      }
       return json({ ok: true });
     }
 

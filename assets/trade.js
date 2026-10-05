@@ -63,6 +63,32 @@
     });
   }
 
+  /* how many messages from LUMIA the dealer hasn't opened yet → a count on "Messages" */
+  function navUnread() {
+    var s = getSession(), a = document.getElementById('navmsg');
+    if (!s || !a) return;
+    fetch('/api/threads', { headers: { 'x-dealer-code': s.code || '' } })
+      .then(function (r) { return r.ok ? r.json() : { threads: [] }; })
+      .then(function (d) {
+        var n = 0;
+        (d.threads || []).forEach(function (t) {
+          var seen = t.dealerSeenAt || '';
+          for (var i = t.messages.length - 1; i >= 0; i--) {
+            var m = t.messages[i];
+            if (m.from !== 'lumia' || m.at <= seen) break;
+            n++;
+          }
+        });
+        var old = a.querySelector('span'); if (old) old.remove();
+        if (n) {
+          var b = document.createElement('span');
+          b.textContent = n;
+          b.style.cssText = 'display:inline-block;min-width:16px;height:16px;line-height:16px;border-radius:999px;background:#C8502F;color:#fff;font-size:9px;letter-spacing:0;text-align:center;padding:0 4px;margin-left:6px;vertical-align:1px';
+          a.appendChild(b);
+        }
+      }).catch(function () {});
+  }
+
   /* ── nav injection ── */
   function injectNav() {
     injectMobileNav();
@@ -76,12 +102,14 @@
         var mark = function (href) { return href === here ? ' style="color:var(--ink)"' : ''; };
         var frag = document.createElement('span');
         /* inside the portal: its own pages; on the public site: one "Portal" link */
-        var inPortal = ['account.html', 'orders.html', 'order.html', 'price-list.html'].indexOf(here) !== -1;
+        var inPortal = ['account.html', 'orders.html', 'order.html', 'price-list.html', 'messages.html'].indexOf(here) !== -1;
         frag.innerHTML = inPortal
           ? '<a href="account.html"' + cls + mark('account.html') + '>My account</a> ' +
             '<a href="orders.html"' + cls + (here === 'order.html' ? ' style="color:var(--ink)"' : mark('orders.html')) + '>Orders</a> ' +
+            '<a href="messages.html" id="navmsg"' + cls + mark('messages.html') + '>Messages</a> ' +
             '<a href="price-list.html"' + cls + mark('price-list.html') + '>Price list</a>'
           : '<a href="account.html"' + cls + '>Portal</a>';
+        if (inPortal) setTimeout(navUnread, 0);
         var anchor = partner || null;
         while (frag.firstChild) nav.insertBefore(frag.firstChild, anchor);
       }

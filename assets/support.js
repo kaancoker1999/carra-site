@@ -1,7 +1,7 @@
 /* LUMIA trade portal — "Request or question" at the bottom of every portal page.
-   Closed until its button is clicked; then: a short form (request / question)
-   and the dealer's earlier requests with LUMIA's replies. Messages about a
-   specific order live in that order's own chat (Orders page), not here. */
+   Closed until its button is clicked; then a short form (request / question).
+   The conversation itself continues in Messages (messages.html). Something
+   about a specific order is sent from that order, on the Orders page. */
 (function(){
   if(!window.LUMIA_TRADE) return;
   var SESSION = LUMIA_TRADE.getSession();
@@ -64,65 +64,23 @@
     '@media(max-width:640px){.sp-row{grid-template-columns:1fr}.sp-bub{max-width:92%}}';
   document.head.appendChild(css);
 
-  var threads = [], openId = null, expanded = false;
+  var expanded = false;
   var box = document.createElement('div');
   box.className = 'sp';
   box.innerHTML = '<div class="wrap"><div class="sp-bar">' +
-    '<button class="sp-btn" id="sp-toggle" type="button">Request or question<span id="sp-dot"></span></button>' +
-    '<p>Need something from LUMIA? Send us a request or a question &mdash; we answer right here.</p></div>' +
+    '<button class="sp-btn" id="sp-toggle" type="button">Request or question</button>' +
+    '<p>Need something from LUMIA? Send us a request or a question &mdash; we answer in <a href="messages.html" style="color:#D9AE5A">Messages</a>.</p></div>' +
     '<div class="sp-panel" id="sp-panel" hidden></div></div>';
 
-  function unread(t){
-    var last = t.messages[t.messages.length - 1];
-    return !!last && last.from === 'lumia' && (!t.dealerSeenAt || last.at > t.dealerSeenAt);
-  }
-  function dot(){
-    var n = threads.filter(unread).length;
-    document.getElementById('sp-dot').innerHTML = n ? '<span class="sp-dot">' + n + '</span>' : '';
-  }
-
-  function threadHTML(t){
-    var last = t.messages[t.messages.length - 1], open = t.id === openId, closed = t.status === 'closed';
-    var head = '<div class="sp-head" data-open="' + esc(t.id) + '"><span class="sp-sub">' + esc(t.subject) + '</span>' +
-      (unread(t) ? '<span class="sp-tag new">New reply</span>' : '') +
-      '<span class="sp-tag">' + esc(t.kind) + '</span>' +
-      (closed ? '<span class="sp-tag closed">Closed</span>' : '') +
-      '<span class="sp-meta">' + when(last.at) + '</span></div>';
-    if(!open) return '<div class="sp-thread' + (closed ? ' closed' : '') + '">' + head + '</div>';
-    return '<div class="sp-thread' + (closed ? ' closed' : '') + '">' + head + '<div class="sp-body"><div class="sp-bubs">' +
-      t.messages.map(function(m){
-        var mine = m.from === 'dealer';
-        return '<div class="sp-bub ' + (mine ? 'me' : 'them') + '"><span class="who">' + (mine ? 'You' : 'LUMIA') + ' · ' + when(m.at) + '</span>' + esc(m.text) + '</div>';
-      }).join('') + '</div>' +
-      (closed ? '<p class="sp-closed">LUMIA closed this conversation. Writing again reopens it.</p>' : '') +
-      '<div class="sp-reply"><label>Reply<textarea rows="3" maxlength="2000" data-reply="' + esc(t.id) + '" placeholder="Write a reply…"></textarea></label>' +
-      '<div class="sp-foot"><span class="sp-err"></span><button class="sp-send" type="button" data-send="' + esc(t.id) + '">Send reply</button></div></div></div></div>';
-  }
-
-  function renderList(){
-    var list = document.getElementById('sp-list'); if(!list) return;
-    list.innerHTML = threads.length
-      ? '<div class="sp-title">Your requests</div>' + threads.map(threadHTML).join('')
-      : '';
-    dot();
-  }
-  function renderPanel(){
-    document.getElementById('sp-panel').innerHTML =
-      '<div class="sp-form"><div class="sp-row">' +
-        '<label>Type<select id="sp-kind"><option>Request</option><option>Question</option></select></label>' +
-        '<label>Subject<input id="sp-subject" type="text" maxlength="120" placeholder="e.g. Fabric samples for Outlander" autocomplete="off"></label></div>' +
-        '<label>Message<textarea id="sp-text" rows="4" maxlength="2000" placeholder="Tell us what you need."></textarea></label>' +
-        '<div class="sp-foot"><span class="sp-err" id="sp-err"></span><button class="sp-send" id="sp-sendnew" type="button">Send</button></div></div>' +
-      '<p class="sp-note">About a specific order? Open it on the <a href="orders.html">Orders</a> page and write in its own chat.</p>' +
-      '<div id="sp-list"></div>';
-    renderList();
-  }
-
-  function load(){
-    return call('/api/threads').then(function(d){
-      threads = (d.threads || []).filter(function(t){ return !t.orderRef; });   /* order chats live with their order */
-      if(expanded) renderList(); else dot();
-    });
+  function renderPanel(sentId){
+    document.getElementById('sp-panel').innerHTML = sentId
+      ? '<div class="sp-form"><p style="margin:0;font-size:14.5px">✓ Sent. We will answer in <a href="messages.html?open=' + encodeURIComponent(sentId) + '" style="color:#8A6A3E;font-weight:600">Messages</a>.</p></div>'
+      : '<div class="sp-form"><div class="sp-row">' +
+          '<label>Type<select id="sp-kind"><option>Request</option><option>Question</option></select></label>' +
+          '<label>Subject<input id="sp-subject" type="text" maxlength="120" placeholder="e.g. Fabric samples for Outlander" autocomplete="off"></label></div>' +
+          '<label>Message<textarea id="sp-text" rows="4" maxlength="2000" placeholder="Tell us what you need."></textarea></label>' +
+          '<div class="sp-foot"><span class="sp-err" id="sp-err"></span><button class="sp-send" id="sp-sendnew" type="button">Send</button></div></div>' +
+        '<p class="sp-note">About a specific order? Open it on the <a href="orders.html">Orders</a> page and use “Contact us about this order”.</p>';
   }
 
   box.addEventListener('click', function(e){
@@ -140,42 +98,15 @@
       if(!subject || !text){ err.textContent = 'Please add a subject and a message.'; return; }
       b.disabled = true; b.textContent = 'Sending…';
       call('/api/thread', { kind: document.getElementById('sp-kind').value, subject: subject, text: text })
-        .then(function(d){ openId = d.thread.id; return load(); })
-        .then(function(){ renderPanel(); })
+        .then(function(d){ renderPanel(d.thread.id); })
         .catch(function(){ err.textContent = 'Could not send — please try again.'; b.disabled = false; b.textContent = 'Send'; });
-      return;
     }
-    var send = e.target.closest('[data-send]');
-    if(send){
-      var id = send.getAttribute('data-send');
-      var ta = box.querySelector('[data-reply="' + id + '"]'), er = send.parentNode.querySelector('.sp-err'), txt = ta.value.trim();
-      if(!txt){ er.textContent = 'Write a reply first.'; return; }
-      send.disabled = true; send.textContent = 'Sending…';
-      call('/api/thread/reply', { id: id, text: txt }).then(load)
-        .catch(function(){ er.textContent = 'Could not send — please try again.'; send.disabled = false; send.textContent = 'Send reply'; });
-      return;
-    }
-    var head = e.target.closest('[data-open]'); if(!head) return;
-    var tid = head.getAttribute('data-open');
-    openId = openId === tid ? null : tid;
-    var t = threads.filter(function(x){ return x.id === tid; })[0];
-    if(openId && t && unread(t)){
-      t.dealerSeenAt = new Date().toISOString();
-      call('/api/thread/seen', { id: tid }).catch(function(){});
-    }
-    renderList();
   });
 
   function mount(){
     var footer = document.querySelector('footer');
     if(!footer || document.querySelector('.sp')) return;
     footer.parentNode.insertBefore(box, footer);
-    load().catch(function(){});
-    /* pick up new replies while the page is open (not while something is being typed) */
-    setInterval(function(){
-      var typing = [].some.call(box.querySelectorAll('textarea,input'), function(x){ return x.value.trim(); });
-      if(!document.hidden && !typing) load().catch(function(){});
-    }, 60000);
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
 })();

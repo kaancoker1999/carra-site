@@ -76,30 +76,48 @@
       return !/^(top-down bottom-up|tdbu): no$/i.test(part.trim());
     }).join(' · ');
   }
-  /* ── the chat about one order (one per order, started by either side) ── */
-  var CHATS = {};                                   /* order ref -> thread */
-  function chatUnread(ref){
-    var t = CHATS[ref], last = t && t.messages[t.messages.length - 1];
-    return !!last && last.from === 'lumia' && (!t.dealerSeenAt || last.at > t.dealerSeenAt);
+  /* ── contact requests about an order ──
+     The dealer picks what it is about (a question, a damaged product, …) and
+     writes a message; the conversation then continues in Messages (messages.html). */
+  var THREADS = [];                                   /* every conversation of this dealer */
+  var ORDER_KINDS = ['Question', 'Damaged product', 'Wrong size or product', 'Missing part', 'Installation help', 'Other'];
+  function orderReqs(ref){ return THREADS.filter(function(t){ return t.orderRef === ref; }); }
+  function reqUnread(t){
+    var seen = t.dealerSeenAt || '', n = 0;
+    for(var i = t.messages.length - 1; i >= 0; i--){ var m = t.messages[i]; if(m.from !== 'lumia' || m.at <= seen) break; n++; }
+    return n;
   }
-  function chatWhen(x){
-    var d = new Date(x);
-    return d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' · ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
-  }
-  function chatInner(ref){
-    var t = CHATS[ref];
-    var bubbles = t ? t.messages.map(function(m){
-      var mine = m.from === 'dealer';
-      return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="who">' + (mine ? 'You' : 'LUMIA') + ' · ' + chatWhen(m.at) + '</span>' + esc(m.text) + '</div>';
-    }).join('') : '';
-    return '<div class="chead">Messages about this order</div>' +
-      (bubbles ? '<div class="bubbles">' + bubbles + '</div>'
-               : '<p class="cnone">No messages yet. Write to LUMIA about this order here &mdash; a question, a change, or a problem with a product.</p>') +
-      '<div class="treply"><textarea rows="2" maxlength="2000" placeholder="Write a message about this order…"></textarea>' +
-      '<div class="mfoot"><span class="merr"></span><button class="paybtn" type="button" data-chatsend="' + esc(ref) + '" style="padding:10px 16px">Send</button></div></div>';
+  function chatUnread(ref){ var n = 0; orderReqs(ref).forEach(function(t){ n += reqUnread(t); }); return n; }
+  function chatWhen(x){ return new Date(x).toLocaleDateString('en-US', {month:'short', day:'numeric'}); }
+  function chatInner(ref, sent){
+    var reqs = orderReqs(ref);
+    var list = reqs.map(function(t){
+      var last = t.messages[t.messages.length - 1], n = reqUnread(t);
+      return '<a class="creq" href="messages.html?open=' + encodeURIComponent(t.id) + '">' +
+        '<span class="ckind' + (/Damaged|Wrong|Missing/.test(t.kind) ? ' urgent' : '') + '">' + esc(t.kind) + '</span>' +
+        '<span class="clast">' + (last.from === 'dealer' ? 'You: ' : 'LUMIA: ') + esc(last.text) + '</span>' +
+        (n ? '<span class="cnew">' + n + ' new</span>' : '') +
+        (t.status === 'closed' ? '<span class="cclosed">Closed</span>' : '') +
+        '<span class="cdate">' + chatWhen(last.at) + '</span><span class="cgo">Open →</span></a>';
+    }).join('');
+    return '<div class="chead">Need help with this order?</div>' +
+      (sent ? '<p class="csent">✓ Sent. We will answer in <a href="messages.html?open=' + encodeURIComponent(sent) + '">Messages</a>.</p>' : '') +
+      (list ? '<div class="creqs">' + list + '</div>' : '') +
+      '<button class="paybtn" type="button" data-contactopen="1" style="padding:10px 16px">Contact us about this order</button>' +
+      '<div class="cform" hidden>' +
+        '<label>What is it about?<select class="ckindsel">' + ORDER_KINDS.map(function(k){ return '<option>' + k + '</option>'; }).join('') + '</select></label>' +
+        '<label>Message<textarea rows="3" maxlength="2000" placeholder="Tell us what happened or what you need. For a damaged or wrong product, say which room / label it is."></textarea></label>' +
+        '<div class="mfoot"><span class="merr"></span>' +
+          '<button class="paybtn ghost" type="button" data-contactcancel="1" style="padding:10px 16px">Cancel</button>' +
+          '<button class="paybtn" type="button" data-chatsend="' + esc(ref) + '" style="padding:10px 16px">Send</button></div>' +
+      '</div>';
   }
   function chatHTML(o){ return '<div class="ochat" data-chat="' + esc(o.ref) + '">' + chatInner(o.ref) + '</div>'; }
   document.addEventListener('click', function(e){
+    var op = e.target.closest('[data-contactopen]');
+    if(op){ var bx = op.closest('.ochat'); op.hidden = true; bx.querySelector('.cform').hidden = false; bx.querySelector('textarea').focus(); return; }
+    var ca = e.target.closest('[data-contactcancel]');
+    if(ca){ var bc = ca.closest('.ochat'); bc.querySelector('.cform').hidden = true; bc.querySelector('[data-contactopen]').hidden = false; return; }
     var b = e.target.closest('[data-chatsend]'); if(!b) return;
     var ref = b.getAttribute('data-chatsend'), box = b.closest('.ochat');
     var ta = box.querySelector('textarea'), err = box.querySelector('.merr'), text = ta.value.trim();
@@ -108,12 +126,12 @@
     fetch('/api/thread', {
       method: 'POST',
       headers: { 'x-dealer-code': SESSION.code || '', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderRef: ref, text: text })
+      body: JSON.stringify({ orderRef: ref, kind: box.querySelector('.ckindsel').value, text: text })
     }).then(function(r){ if(!r.ok) throw new Error('failed'); return r.json(); })
       .then(function(d){
-        CHATS[ref] = d.thread;
-        /* refresh every open copy of this chat without closing the order */
-        [].forEach.call(document.querySelectorAll('.ochat'), function(x){ if(x.getAttribute('data-chat') === ref) x.innerHTML = chatInner(ref); });
+        THREADS.unshift(d.thread);
+        /* refresh every open copy of this block without closing the order */
+        [].forEach.call(document.querySelectorAll('.ochat'), function(x){ if(x.getAttribute('data-chat') === ref) x.innerHTML = chatInner(ref, d.thread.id); });
       })
       .catch(function(){ b.disabled = false; b.textContent = 'Send'; err.textContent = 'Could not send — please try again.'; });
   });
@@ -387,7 +405,7 @@
       '<td class="num">$' + t.total.toFixed(2) + (t.unknown ? ' <span class="mono" style="font-size:9px">+' + t.unknown + ' TBD</span>' : '') + '</td>' +
       '<td><span class="status ' + stCls + (st.locked ? ' lock' : '') + '">' + esc(st.status) + '</span>' +
         (done ? ' <span class="status acc">Completed</span>' : '') +
-        (chatUnread(o.ref) ? ' <span class="status newmsg">New message</span>' : '') +
+        (chatUnread(o.ref) ? ' <span class="status newmsg">' + chatUnread(o.ref) + ' new message' + (chatUnread(o.ref) === 1 ? '' : 's') + '</span>' : '') +
         (st.note ? '<div class="lnote">LUMIA: ' + esc(st.note) + '</div>' : '') + '</td>' +
       '<td>' + payBadge + '</td>' +
       '<td>' + (pendSt
@@ -434,16 +452,6 @@
     var tr = e.target.closest('tr.ord'); if(!tr) return;
     var det = tr.nextElementSibling;
     if(det && det.classList.contains('det')) det.hidden = !det.hidden;
-    var ref = tr.getAttribute('data-ref');
-    if(det && !det.hidden && ref && chatUnread(ref)){
-      CHATS[ref].dealerSeenAt = new Date().toISOString();
-      var tag = tr.querySelector('.newmsg'); if(tag) tag.remove();
-      fetch('/api/thread/seen', {
-        method: 'POST',
-        headers: { 'x-dealer-code': SESSION.code || '', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: CHATS[ref].id })
-      }).catch(function(){});
-    }
   });
 
   /* "Order completed" — the customer confirms the goods arrived; the order
@@ -546,12 +554,11 @@
     })
     .then(function(d){
       PAYINFO = d.payInfo || null;
-      /* the order chats come along, so each order can show its messages */
+      /* the conversations come along, so each order can show its contact requests */
       return fetch('/api/threads', { headers: { 'x-dealer-code': SESSION.code || '' } })
         .then(function(r){ return r.ok ? r.json() : { threads: [] }; }).catch(function(){ return { threads: [] }; })
         .then(function(t){
-          CHATS = {};
-          (t.threads || []).forEach(function(x){ if(x.orderRef) CHATS[x.orderRef] = x; });
+          THREADS = t.threads || [];
           render(d.orders || []);
         });
     })

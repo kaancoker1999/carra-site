@@ -643,7 +643,7 @@
   }
 
   /* ── messages + notifications ──
-     Customer threads: an order's chat ("ORD-<ref>") or a dealer's
+     Customer threads: a contact request about an order (orderRef set) or a dealer's
      request/question ("MSG-…"). Team: a direct chat between two admins
      ("DM-…", kind "DM" — the API only returns the ones this admin is in). */
   var allThreads = [], team = [], msgView = 'cust', msgFilter = 'open', msgOpen = null, msgCust = '', dmWith = null;
@@ -684,7 +684,10 @@
   }
   function lastMsg(t){ return t.messages[t.messages.length - 1] || null; }
   function custThreads(){ return allThreads.filter(function(t){ return t.kind !== 'DM'; }); }
-  function orderThread(ref){ return allThreads.filter(function(t){ return t.orderRef === ref; })[0] || null; }
+  /* an order can have several conversations (one per contact request) */
+  function orderThreads(ref){ return allThreads.filter(function(t){ return t.kind !== 'DM' && t.orderRef === ref; }); }
+  function orderUnread(ref){ var n = 0; orderThreads(ref).forEach(function(t){ n += unreadCount(t); }); return n; }
+  var URGENT_KINDS = ['Damaged product', 'Wrong size or product', 'Missing part'];
   /* how many messages the customer has sent since an admin last opened the thread */
   function unreadCount(t){
     var seen = t.adminSeenAt || '', n = 0;
@@ -800,7 +803,8 @@
       (t.test ? '<span class="status" style="background:#EEE9FA;border:1px solid #C9BCEC;color:#5B3FA0">TEST</span>' : '') +
       '<span class="sub">' + esc(t.subject) + '</span>' +
       (c ? '<span class="ncount" title="' + c + ' new message' + (c === 1 ? '' : 's') + '">' + c + '</span>' : '') +
-      '<span class="status ' + (t.kind === 'Order' ? 'st-acc' : 'pay-un') + '">' + esc(t.kind) + '</span>' +
+      '<span class="status ' + (URGENT_KINDS.indexOf(t.kind) !== -1 ? 'st-canc' : (t.orderRef ? 'st-acc' : 'pay-un')) + '">' + esc(t.kind) + '</span>' +
+      (t.orderRef ? '<span class="status" style="background:var(--paper);border:1px solid var(--line2)">' + esc(t.orderRef) + '</span>' : '') +
       (closed ? '<span class="status st-canc">Closed</span>' : '') +
       '<span class="when">' + (l ? msgWhen(l.at) : 'new') + '</span></div>';
     if(!open) return '<div class="mthread' + (closed ? ' closed' : '') + '">' + head + '</div>';
@@ -847,10 +851,10 @@
       return '<button type="button" class="pvtab' + (msgFilter === f[0] ? ' on' : '') + '" data-mfilter="' + f[0] + '" style="font-size:12.5px;padding:6px 12px">' + f[1] + '<span class="n">' + counts[f[0]] + '</span></button>';
     }).join('');
     var list = mine.filter(function(t){ return msgFilter === 'all' || (msgFilter === 'closed') === (t.status === 'closed'); });
-    /* "Message customer" on an order that has no chat yet: a blank thread to write into */
-    if(msgOpen && /^ORD-/.test(msgOpen) && !orderThread(msgOpen.slice(4))){
+    /* "Message customer" on an order: a blank conversation to write into */
+    if(msgOpen && /^NEW-/.test(msgOpen)){
       var o = allOrders.filter(function(x){ return x.ref === msgOpen.slice(4); })[0];
-      if(o) list.unshift({ id: msgOpen, virtual: true, dealer: o.dealer, test: o.test, kind: 'Order', subject: 'Order ' + o.ref, orderRef: o.ref, status: 'open', messages: [] });
+      if(o) list.unshift({ id: msgOpen, virtual: true, dealer: o.dealer, test: o.test, kind: 'From LUMIA', subject: 'About order ' + o.ref, orderRef: o.ref, status: 'open', messages: [] });
     }
     list.sort(function(a, b){ return (threadUnread(b) ? 1 : 0) - (threadUnread(a) ? 1 : 0); });
     $('msglist').innerHTML = list.length ? list.map(threadHTML).join('')
@@ -940,7 +944,7 @@
       send.disabled = true; send.textContent = 'Sending…';
       var real = allThreads.some(function(t){ return t.id === send.dataset.id; });
       api('/api/admin/thread/reply', 'POST', real ? { id: send.dataset.id, text: txt } : { orderRef: send.dataset.ref, text: txt })
-        .then(function(d){ if(d.error) throw new Error(d.error); return loadThreads(); })
+        .then(function(d){ if(d.error) throw new Error(d.error); if(!real && d.thread) msgOpen = d.thread.id; return loadThreads(); })
         .catch(function(){ err.textContent = 'Could not send — try again.'; send.disabled = false; send.textContent = 'Send'; });
       return;
     }
@@ -1462,7 +1466,7 @@
       var badges = '<span class="status ' + stCls + '">' + (st.locked ? '🔒 ' : '') + esc(st.status) + '</span>' +
         (done ? ' <span class="status st-acc">Completed</span>' : '') +
         (o.test ? '' : ' <span class="status ' + (paid ? 'pay-paid' : 'pay-un') + '">' + (paid ? 'Paid' : 'Unpaid') + '</span>') +
-        (orderThread(o.ref) && threadUnread(orderThread(o.ref)) ? ' <span class="status st-new">' + unreadCount(orderThread(o.ref)) + ' new message' + (unreadCount(orderThread(o.ref)) === 1 ? '' : 's') + '</span>' : '') +
+        (orderUnread(o.ref) ? ' <span class="status st-new">' + orderUnread(o.ref) + ' new message' + (orderUnread(o.ref) === 1 ? '' : 's') + '</span>' : '') +
         (o.tracking ? '<br><a class="mono" href="' + fedexUrl(o.tracking) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Track on FedEx" style="font-size:9px;color:#274690">📦 ' + esc(o.tracking) + '</a>' : '') +
         (st.note ? '<br><span style="font-size:11px;color:#2F5D25">“' + esc(st.note) + '”</span>' : '');
 
@@ -1497,7 +1501,7 @@
           '<button class="btn st-save" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 16px">Save</button>' +
           /* invoice only once the FedEx tracking number is saved on the order */
           (o.tracking ? '<button class="btn ghost o-inv" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px">Invoice</button>' : '') +
-          '<button class="btn ghost o-msg" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px">' + (orderThread(o.ref) ? 'Messages (' + orderThread(o.ref).messages.length + ')' : 'Message customer') + '</button>' +
+          '<button class="btn ghost o-msg" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px">' + 'Message customer' + (orderThreads(o.ref).length ? ' (' + orderThreads(o.ref).length + ')' : '') + '</button>' +
           ((o.test || st.status === 'Cancelled') ? '<button class="btn ghost o-del" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px;color:#8A2620">Delete</button>' : '') +
           '<span style="font-size:11px;color:var(--muted)">Any status other than “Pending review” locks the order automatically.</span>' +
         '</div>';
@@ -1667,7 +1671,12 @@
   }
   $('orderrows').addEventListener('click', function(e){
     var mb = e.target.closest('.o-msg');
-    if(mb){ msgView = 'cust'; msgFilter = 'all'; msgOpen = 'ORD-' + mb.dataset.ref; gotoTab('messages'); return; }
+    if(mb){
+      /* that customer's conversations, with a blank one for this order on top */
+      var mo = allOrders.filter(function(x){ return x.ref === mb.dataset.ref; })[0];
+      msgView = 'cust'; msgFilter = 'all'; msgCust = mo && orderThreads(mo.ref).length ? mo.code : ''; msgOpen = 'NEW-' + mb.dataset.ref;
+      gotoTab('messages'); return;
+    }
     var b = e.target.closest('.o-inv');
     if(b){
       var o = allOrders.filter(function(x){ return x.ref === b.dataset.ref; })[0];

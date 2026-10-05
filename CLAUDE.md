@@ -13,7 +13,8 @@ Excels (`tools/*.local.*` are gitignored for exactly that reason).
   generator, not the generated files.
 - Order form config: `python3 tools/gen_order.py` → assets/order-config.json (run after gen_pages changes).
 - Trade area: trade.html (dealer login), account.html (overview + payments), orders.html
-  (Awaiting review / In production / Shipped), price-list.html, order.html, admin.html (owner panel).
+  (Awaiting review / In production / Shipped), messages.html (mailbox), price-list.html, order.html,
+  admin.html (admin panel).
   account.html and orders.html share `assets/portal.css` + `assets/account.js` (each block renders
   only if its container exists); the invoice is `assets/invoice.js`, the guided tour `assets/tour.js`.
   All are version-stamped (`?v=N`) — bump when editing.
@@ -25,19 +26,23 @@ Excels (`tools/*.local.*` are gitignored for exactly that reason).
 ## Auth
 - Dealers log in with access codes (`LUMIA-XXXX-XXXX`) created in the admin panel.
 - Admin panel: `ADMIN_KEY` env var on Netlify is the owner's master key (the owner has the value;
-  also in the owner's local Claude memory — never hardcode it). Named admins each have their own
-  key (`LMA-ADM-…`, only its SHA-256 is stored in the "admins" blob) and permissions
-  (`orders` / `payments` / `dealers` / `messages` / `admins`), enforced in api.mjs via `NEEDS`;
-  the panel only hides what an account can't change. Every admin can view everything.
-  Owners manage accounts in the admin panel's Admins tab ("New key" shows a key once).
+  also in the owner's local Claude memory — never hardcode it; log in with the Name field empty).
+  Named admins sign in with name + password. The account manager sets a starting password in the
+  Admins tab; at first sign-in the admin must choose their own (only a salted PBKDF2 hash is kept in
+  the "admins" blob; 8 wrong tries lock the account for 15 min). Permissions (`orders` / `payments` /
+  `dealers` / `messages` / `admins` / `accounts`) are enforced in api.mjs via `NEEDS`; the panel only
+  hides what an account can't change. Every admin can view everything. `accounts` (managing admin
+  accounts) is separate from full access. "View as" in the Admins tab previews another admin's panel.
 
 ## Messages
-- Threads live in Blobs as `thread:<id>`: an order's chat (`ORD-<ref>`, one per order), a dealer's
-  request/question (`MSG-…`), and the admins' private team chat (`TEAM`).
-- Dealer side: chat inside each order's details (assets/account.js) and the "Request or question"
-  panel injected at the bottom of every portal page (assets/support.js).
+- Threads live in Blobs as `thread:<id>`: dealer ↔ LUMIA conversations (`MSG-…`: a contact request
+  about an order — `orderRef` + an after-sale kind such as "Damaged product" — or a general
+  request/question) and direct chats between two admins (`DM-<idA>-<idB>`, only its members read it).
+- Dealer side: "Contact us about this order" in each order's details (assets/account.js), the
+  mailbox page messages.html (assets/messages.js, nav link with unread count from trade.js), and
+  the "Request or question" form at the bottom of the other portal pages (assets/support.js).
 - Admin side: notifications bell (derived: pending orders, reported payments, unread messages),
-  Messages tab (Customers / Team), "Message customer" on an order.
+  Messages tab (Customers with a customer picker / Team = direct chats), "Message customer" on an order.
 
 ## Pricing
 - Base (group-1) prices parsed from gitignored local Excels by `tools/make_trade_data.py`
