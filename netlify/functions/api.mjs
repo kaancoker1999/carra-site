@@ -298,7 +298,7 @@ async function notifyMessage(thread, text, isNew) {
 // The browser shrinks each picture and sends it as a data URL with the
 // message; it is stored as its own blob ("photo:<threadId>_<rand>") and the
 // message keeps only the ids. Photos are read back through /api/photo/<id>
-// by the thread's dealer or by an admin.
+// by the thread's dealer or by an admin (a direct chat's photos: its two admins only).
 const PHOTO_MAX = 4, PHOTO_BYTES = 1500000;
 async function savePhotos(s, threadId, list) {
   const ids = [];
@@ -445,12 +445,18 @@ export default async (req) => {
   if (path.startsWith("/api/photo/") && req.method === "GET") {
     const id = path.slice("/api/photo/".length);
     const threadId = id.slice(0, id.lastIndexOf("_"));
-    if (!/^MSG-[0-9]+-[0-9]+_[0-9a-f]{12}$/.test(id)) return bad("not found", 404);
+    if (!/^(MSG-[0-9]+-[0-9]+|DM-[A-Za-z0-9_]+-[A-Za-z0-9_]+)_[0-9a-f]{12}$/.test(id)) return bad("not found", 404);
     const s = store();
     const t = await s.get(`thread:${threadId}`, { type: "json" });
     if (!t) return bad("not found", 404);
-    const d = await dealerFromReq(req);
-    const allowed = (d && d.code === t.code) || !!(await adminFromReq(req));
+    let allowed = false;
+    if (t.kind === "DM") {
+      const a = await adminFromReq(req);
+      allowed = !!a && (t.members || []).includes(a.id);
+    } else {
+      const d = await dealerFromReq(req);
+      allowed = (d && d.code === t.code) || !!(await adminFromReq(req));
+    }
     if (!allowed) return bad("unauthorized", 401);
     const got = await s.getWithMetadata(`photo:${id}`, { type: "arrayBuffer" });
     if (!got || !got.data) return bad("not found", 404);
@@ -634,7 +640,7 @@ export default async (req) => {
       const { blobs } = await s.list({ prefix: "thread:DM-" });
       for (const b of blobs) {
         const t = await s.get(b.key, { type: "json" });
-        if (t && (t.members || []).includes(String(body.id))) await s.delete(b.key);
+        if (t && (t.members || []).includes(String(body.id))) { await s.delete(b.key); await deletePhotos(s, t.id); }
       }
       return json({ ok: true });
     }
@@ -668,13 +674,17 @@ export default async (req) => {
         await s.setJSON(key, t);
         return json({ ok: true, thread: t });
       }
-      const text = cleanText(body.text, MSG_MAX);
+      const hasPhotos = Array.isArray(body.photos) && body.photos.length > 0;
+      const text = cleanText(body.text, MSG_MAX) || (hasPhotos ? "(photo)" : "");
       if (!text) return bad("message required");
       if (!t) t = { id: dmId(admin.id, to), kind: "DM", code: "", members: [admin.id, to].sort(),
                     names: {}, seen: {}, createdAt: now, messages: [] };
       t.names = { ...(t.names || {}), [admin.id]: admin.name, [to]: other.name };
       if (t.messages.length >= THREAD_MAX_MSGS) t.messages = t.messages.slice(-(THREAD_MAX_MSGS - 1));   // keeps rolling
-      t.messages.push({ fromId: admin.id, by: admin.name, text, at: now });
+      const dmMsg = { fromId: admin.id, by: admin.name, text, at: now };
+      const dmPhotos = await savePhotos(s, t.id, body.photos);
+      if (dmPhotos.length) dmMsg.photos = dmPhotos;
+      t.messages.push(dmMsg);
       t.updatedAt = now;
       t.seen = { ...(t.seen || {}), [admin.id]: now };
       await s.setJSON(key, t);
@@ -707,10 +717,14 @@ export default async (req) => {
       if (!t) return bad("no such conversation", 404);
       if (act === "delete") { await s.delete(key); await deletePhotos(s, t.id); return json({ ok: true }); }
       if (act === "reply") {
-        const text = cleanText(body.text, MSG_MAX);
+        const hasPhotos = Array.isArray(body.photos) && body.photos.length > 0;
+        const text = cleanText(body.text, MSG_MAX) || (hasPhotos ? "(photo)" : "");
         if (!text) return bad("message required");
         if (t.messages.length >= THREAD_MAX_MSGS) return bad("conversation is full", 409);
-        t.messages.push({ from: "lumia", by, text, at: now });
+        const msg = { from: "lumia", by, text, at: now };
+        const photos = await savePhotos(s, t.id, body.photos);
+        if (photos.length) msg.photos = photos;
+        t.messages.push(msg);
         t.updatedAt = now;
         t.adminSeenAt = now;
       } else if (act === "status") {

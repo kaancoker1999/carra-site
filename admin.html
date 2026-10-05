@@ -648,6 +648,10 @@
      request/question ("MSG-…"). Team: a direct chat between two admins
      ("DM-…", kind "DM" — the API only returns the ones this admin is in). */
   var allThreads = [], team = [], msgView = 'cust', msgFilter = 'open', msgOpen = null, msgCust = '', dmWith = null;
+  /* the "Add photos" controls of the open customer reply / direct chat */
+  var custPick = null, dmPick = null;
+  function picked(p){ return p ? p.get() : []; }
+  function photoAuth(){ return { 'Authorization': 'Bearer ' + key() }; }
   /* the signed-in admin (GET /api/admin/me): name + what they may change */
   var ME = { id: '', name: '', perms: [], owner: false };
   function me(){ return ME.name || ''; }
@@ -821,6 +825,7 @@
                : '<p style="font-size:13.5px;color:var(--muted);margin:0 0 12px">No messages yet — write the first one to the customer.</p>') +
       '<div class="ronly r-messages">You can read this conversation; answering customers is not part of your account.</div>' +
       '<div class="treply"><textarea rows="3" maxlength="2000" class="m-text" placeholder="Reply to ' + esc(t.dealer || 'the customer') + '…"></textarea>' +
+      '<div class="m-photos"></div>' +
       '<div class="row" style="justify-content:flex-end;gap:8px;margin-top:8px;align-items:center"><span class="merr"></span>' +
         (t.orderRef ? '<button class="btn ghost m-order" data-ref="' + esc(t.orderRef) + '" type="button" style="padding:8px 14px">Open order</button>' : '') +
         (t.virtual ? '' : '<button class="btn ghost m-status" data-id="' + esc(t.id) + '" data-to="' + (closed ? 'open' : 'closed') + '" type="button" style="padding:8px 14px">' + (closed ? 'Reopen' : 'Close conversation') + '</button>') +
@@ -863,7 +868,12 @@
     list.sort(function(a, b){ return (threadUnread(b) ? 1 : 0) - (threadUnread(a) ? 1 : 0); });
     $('msglist').innerHTML = list.length ? list.map(threadHTML).join('')
       : '<div class="ovempty">' + (msgFilter === 'closed' ? 'No closed conversations.' : 'No conversations here yet — customers write from an order or from “Request or question” in the portal.') + '</div>';
-    if(window.LUMIA_PHOTOS) LUMIA_PHOTOS.hydrate($('msglist'), { 'Authorization': 'Bearer ' + key() });
+    custPick = null;
+    if(window.LUMIA_PHOTOS){
+      LUMIA_PHOTOS.hydrate($('msglist'), photoAuth());
+      var slot = $('msglist').querySelector('.m-photos');
+      if(slot) custPick = LUMIA_PHOTOS.picker(slot);
+    }
   }
   function renderTeam(){
     var ppl = people();
@@ -892,13 +902,17 @@
       '<div class="dmbox" id="dmbox">' + (cur && cur.messages.length
         ? '<div class="bubbles" style="margin:0">' + cur.messages.map(function(m){
             var mine = m.fromId === ME.id;
-            return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="bwho">' + (mine ? 'You' : esc(m.by)) + ' · ' + msgWhen(m.at) + '</span>' + esc(m.text) + '</div>';
+            return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="bwho">' + (mine ? 'You' : esc(m.by)) + ' · ' + msgWhen(m.at) + '</span>' + esc(m.text) +
+              (window.LUMIA_PHOTOS ? LUMIA_PHOTOS.html(m.photos) : '') + '</div>';
           }).join('') + '</div>'
         : '<div class="ovempty">No messages with ' + esc(who.name) + ' yet.</div>') + '</div>' +
       '<div class="treply"><textarea id="dmtext" data-to="' + esc(dmWith) + '" rows="2" maxlength="2000" placeholder="Write to ' + esc(who.name) + '…"></textarea>' +
+      '<div id="dmphotos"></div>' +
       '<div class="row" style="justify-content:flex-end;gap:10px;margin-top:8px;align-items:center"><span class="merr" id="dmerr"></span>' +
       '<button class="btn" id="dmsend" type="button" style="padding:8px 18px">Send</button></div></div>';
     $('dmtext').value = keep;
+    dmPick = null;
+    if(window.LUMIA_PHOTOS){ LUMIA_PHOTOS.hydrate($('dmpane'), photoAuth()); dmPick = LUMIA_PHOTOS.picker($('dmphotos')); }
     $('dmbox').scrollTop = $('dmbox').scrollHeight;
   }
   function renderMessages(){
@@ -927,9 +941,10 @@
     if(e.target.closest('#dmsend')){
       var b = e.target.closest('#dmsend'), text = $('dmtext').value.trim();
       $('dmerr').textContent = '';
-      if(!text) return;
+      var dpics = picked(dmPick);
+      if(!text && !dpics.length) return;
       b.disabled = true;
-      api('/api/admin/dm', 'POST', { to: dmWith, text: text })
+      api('/api/admin/dm', 'POST', { to: dmWith, text: text, photos: dpics })
         .then(function(d){ if(d.error) throw new Error(d.error); $('dmtext').value = ''; return loadThreads(); })
         .catch(function(){ $('dmerr').textContent = 'Could not send — try again.'; b.disabled = false; });
       return;
@@ -945,10 +960,11 @@
     var send = e.target.closest('.m-send');
     if(send){
       var box = send.closest('.mbody'), ta = box.querySelector('.m-text'), err = box.querySelector('.merr'), txt = ta.value.trim();
-      if(!txt){ err.textContent = 'Write a message first.'; return; }
+      var pics = picked(custPick);
+      if(!txt && !pics.length){ err.textContent = 'Write a message or add a photo first.'; return; }
       send.disabled = true; send.textContent = 'Sending…';
       var real = allThreads.some(function(t){ return t.id === send.dataset.id; });
-      api('/api/admin/thread/reply', 'POST', real ? { id: send.dataset.id, text: txt } : { orderRef: send.dataset.ref, text: txt })
+      api('/api/admin/thread/reply', 'POST', real ? { id: send.dataset.id, text: txt, photos: pics } : { orderRef: send.dataset.ref, text: txt, photos: pics })
         .then(function(d){ if(d.error) throw new Error(d.error); if(!real && d.thread) msgOpen = d.thread.id; return loadThreads(); })
         .catch(function(){ err.textContent = 'Could not send — try again.'; send.disabled = false; send.textContent = 'Send'; });
       return;
@@ -962,7 +978,7 @@
   setInterval(function(){
     if(document.hidden || $('panel').hidden) return;
     var typing = [].some.call(document.querySelectorAll('#tab-messages textarea'), function(x){ return x.value.trim(); });
-    if(!typing) loadThreads();
+    if(!typing && !picked(custPick).length && !picked(dmPick).length) loadThreads();
     api('/api/admin/orders').then(function(d){
       var fresh = d.orders || [];
       if($('tab-orders').hidden && $('tab-dealers').hidden){ allOrders = fresh; renderCalendar(); renderPayments(); renderOverview(); renderBell(); }
