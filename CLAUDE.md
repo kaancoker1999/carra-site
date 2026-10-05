@@ -41,6 +41,11 @@ Excels (`tools/*.local.*` are gitignored for exactly that reason).
 - Dealer side: "Contact us about this order" in each order's details (assets/account.js), the
   mailbox page messages.html (assets/messages.js, nav link with unread count from trade.js), and
   the "Request or question" form at the bottom of the other portal pages (assets/support.js).
+- Photos: dealers attach up to 4 per message (assets/photos.js shrinks them in the browser to
+  ≤1600 px JPEG); stored as blobs `photo:<threadId>_<rand>`, served by GET /api/photo/<id> only to
+  the thread's dealer or an admin, deleted with the thread/order.
+- E-mail on a customer message: `notifyMessage` (Resend; needs RESEND_API_KEY + ORDER_NOTIFY_EMAIL or
+  MESSAGE_NOTIFY_EMAIL on Netlify — not configured yet, so nothing is sent).
 - Admin side: notifications bell (derived: pending orders, reported payments, unread messages),
   Messages tab (Customers with a customer picker / Team = direct chats), "Message customer" on an order.
 
