@@ -107,6 +107,7 @@
       '<div class="cform" hidden>' +
         '<label>What is it about?<select class="ckindsel">' + ORDER_KINDS.map(function(k){ return '<option>' + k + '</option>'; }).join('') + '</select></label>' +
         '<label>Message<textarea rows="3" maxlength="2000" placeholder="Tell us what happened or what you need. For a damaged or wrong product, say which room / label it is."></textarea></label>' +
+        '<div class="cphotos"></div>' +
         '<div class="mfoot"><span class="merr"></span>' +
           '<button class="paybtn ghost" type="button" data-contactcancel="1" style="padding:10px 16px">Cancel</button>' +
           '<button class="paybtn" type="button" data-chatsend="' + esc(ref) + '" style="padding:10px 16px">Send</button></div>' +
@@ -115,18 +116,25 @@
   function chatHTML(o){ return '<div class="ochat" data-chat="' + esc(o.ref) + '">' + chatInner(o.ref) + '</div>'; }
   document.addEventListener('click', function(e){
     var op = e.target.closest('[data-contactopen]');
-    if(op){ var bx = op.closest('.ochat'); op.hidden = true; bx.querySelector('.cform').hidden = false; bx.querySelector('textarea').focus(); return; }
+    if(op){
+      var bx = op.closest('.ochat'); op.hidden = true; bx.querySelector('.cform').hidden = false;
+      /* photos help most with a damaged or wrong product */
+      var ph = bx.querySelector('.cphotos');
+      if(ph && !ph._picker && window.LUMIA_PHOTOS) ph._picker = LUMIA_PHOTOS.picker(ph);
+      bx.querySelector('textarea').focus(); return;
+    }
     var ca = e.target.closest('[data-contactcancel]');
     if(ca){ var bc = ca.closest('.ochat'); bc.querySelector('.cform').hidden = true; bc.querySelector('[data-contactopen]').hidden = false; return; }
     var b = e.target.closest('[data-chatsend]'); if(!b) return;
     var ref = b.getAttribute('data-chatsend'), box = b.closest('.ochat');
     var ta = box.querySelector('textarea'), err = box.querySelector('.merr'), text = ta.value.trim();
-    if(!text){ err.textContent = 'Write a message first.'; return; }
+    var ph = box.querySelector('.cphotos'), pics = ph && ph._picker ? ph._picker.get() : [];
+    if(!text && !pics.length){ err.textContent = 'Write a message first.'; return; }
     b.disabled = true; b.textContent = '…';
     fetch('/api/thread', {
       method: 'POST',
       headers: { 'x-dealer-code': SESSION.code || '', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderRef: ref, kind: box.querySelector('.ckindsel').value, text: text })
+      body: JSON.stringify({ orderRef: ref, kind: box.querySelector('.ckindsel').value, text: text, photos: pics })
     }).then(function(r){ if(!r.ok) throw new Error('failed'); return r.json(); })
       .then(function(d){
         THREADS.unshift(d.thread);

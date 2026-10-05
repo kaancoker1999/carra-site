@@ -8,7 +8,9 @@
 //   POST /api/order/received   {ref}                  (dealer confirms the goods arrived)
 //   GET  /api/threads                                 -> dealer's own message threads
 //   POST /api/thread           {orderRef,kind,text} (contact request about an order) or {kind,subject,text}
-//   POST /api/thread/reply     {id,text}  ·  POST /api/thread/seen {id}
+//   POST /api/thread/reply     {id,text,photos}  ·  POST /api/thread/seen {id}
+//        (photos: up to 4 image data URLs, shrunk in the browser)
+//   GET  /api/photo/<id>                              -> a photo from one of the dealer's conversations (admins too)
 //
 // Admin endpoints (header authorization: Bearer <ADMIN_KEY> for the owner's master key, or
 // Bearer <name>:<password> for a named admin; see PERMS/NEEDS for who may do what):
@@ -269,6 +271,53 @@ async function notifyOrder(order) {
   }
 }
 
+// e-mail LUMIA when a customer writes (new request or reply). Same Resend
+// setup as notifyOrder; MESSAGE_NOTIFY_EMAIL overrides where it goes.
+async function notifyMessage(thread, text, isNew) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const to = process.env.MESSAGE_NOTIFY_EMAIL || process.env.ORDER_NOTIFY_EMAIL;
+  if (!apiKey || !to || thread.test) return;
+  const from = process.env.ORDER_FROM || "LUMIA orders <onboarding@resend.dev>";
+  const subject = `${isNew ? "New message" : "Reply"} — ${thread.dealer}: ${thread.subject}`;
+  const body =
+    `${thread.dealer} wrote${isNew ? "" : " again"}:\n\n${text}\n\n` +
+    `Type: ${thread.kind}\n` + (thread.orderRef ? `Order: ${thread.orderRef}\n` : "") +
+    `\nAnswer in the admin panel (Messages): https://lumiashades.com/admin.html`;
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+      body: JSON.stringify({ from, to: to.split(",").map((x) => x.trim()).filter(Boolean), subject, text: body }),
+    });
+  } catch (e) {
+    /* best effort — a mail hiccup must never block the message */
+  }
+}
+
+// ── photos attached to a message ──
+// The browser shrinks each picture and sends it as a data URL with the
+// message; it is stored as its own blob ("photo:<threadId>_<rand>") and the
+// message keeps only the ids. Photos are read back through /api/photo/<id>
+// by the thread's dealer or by an admin.
+const PHOTO_MAX = 4, PHOTO_BYTES = 1500000;
+async function savePhotos(s, threadId, list) {
+  const ids = [];
+  for (const dataUrl of (Array.isArray(list) ? list : []).slice(0, PHOTO_MAX)) {
+    const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ""));
+    if (!m) continue;
+    const buf = Buffer.from(m[2], "base64");
+    if (!buf.length || buf.length > PHOTO_BYTES) continue;
+    const id = `${threadId}_${randomBytes(6).toString("hex")}`;
+    await s.set(`photo:${id}`, buf, { metadata: { type: m[1] } });
+    ids.push(id);
+  }
+  return ids;
+}
+async function deletePhotos(s, threadId) {
+  const { blobs } = await s.list({ prefix: `photo:${threadId}_` });
+  for (const b of blobs) await s.delete(b.key);
+}
+
 export default async (req) => {
   const path = new URL(req.url).pathname.replace(/\/$/, "");
   const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
@@ -392,6 +441,24 @@ export default async (req) => {
     return json({ ok: true, payment: o.payment });
   }
 
+  // ── a photo from a conversation: its dealer, or any admin ─────────
+  if (path.startsWith("/api/photo/") && req.method === "GET") {
+    const id = path.slice("/api/photo/".length);
+    const threadId = id.slice(0, id.lastIndexOf("_"));
+    if (!/^MSG-[0-9]+-[0-9]+_[0-9a-f]{12}$/.test(id)) return bad("not found", 404);
+    const s = store();
+    const t = await s.get(`thread:${threadId}`, { type: "json" });
+    if (!t) return bad("not found", 404);
+    const d = await dealerFromReq(req);
+    const allowed = (d && d.code === t.code) || !!(await adminFromReq(req));
+    if (!allowed) return bad("unauthorized", 401);
+    const got = await s.getWithMetadata(`photo:${id}`, { type: "arrayBuffer" });
+    if (!got || !got.data) return bad("not found", 404);
+    return new Response(got.data, { status: 200, headers: {
+      "content-type": (got.metadata && got.metadata.type) || "image/jpeg",
+      "cache-control": "private, max-age=86400" } });
+  }
+
   // ── dealer: messages ───────────────────────────────────────────
   if (path === "/api/threads" && req.method === "GET") {
     const d = await dealerFromReq(req);
@@ -404,7 +471,9 @@ export default async (req) => {
   if (path === "/api/thread" && req.method === "POST") {
     const d = await dealerFromReq(req);
     if (!d) return bad("unauthorized", 401);
-    const text = cleanText(body.text, MSG_MAX);
+    // a message may be just photos, but not empty
+    const hasPhotos = Array.isArray(body.photos) && body.photos.length > 0;
+    const text = cleanText(body.text, MSG_MAX) || (hasPhotos ? "(photo)" : "");
     if (!text) return bad("message required");
     const s = store();
     const now = new Date().toISOString();
@@ -422,13 +491,17 @@ export default async (req) => {
     }
     let id = newThreadId();
     while (await s.get(`thread:${id}`, { type: "json" })) id = newThreadId();
+    const photos = await savePhotos(s, id, body.photos);
+    const first = { from: "dealer", by: d.name, text, at: now };
+    if (photos.length) first.photos = photos;
     const t = {
       id, code: d.code, dealer: d.name, test: !!d.test, subject, kind, orderRef,
       status: "open", createdAt: now, updatedAt: now,
       dealerSeenAt: now, adminSeenAt: null,
-      messages: [{ from: "dealer", by: d.name, text, at: now }],
+      messages: [first],
     };
     await s.setJSON(`thread:${id}`, t);
+    await notifyMessage(t, text, true);
     return json({ ok: true, thread: t });
   }
 
@@ -440,16 +513,23 @@ export default async (req) => {
     const t = await s.get(key, { type: "json" });
     if (!t || t.code !== d.code) return bad("no such conversation", 404);
     const now = new Date().toISOString();
+    let wrote = "";
     if (path.endsWith("/reply")) {
-      const text = cleanText(body.text, MSG_MAX);
+      const hasPhotos = Array.isArray(body.photos) && body.photos.length > 0;
+      const text = cleanText(body.text, MSG_MAX) || (hasPhotos ? "(photo)" : "");
       if (!text) return bad("message required");
       if (t.messages.length >= THREAD_MAX_MSGS) return bad("this conversation is full — please start a new one", 409);
-      t.messages.push({ from: "dealer", by: d.name, text, at: now });
+      const msg = { from: "dealer", by: d.name, text, at: now };
+      const photos = await savePhotos(s, t.id, body.photos);
+      if (photos.length) msg.photos = photos;
+      t.messages.push(msg);
       t.updatedAt = now;
       t.status = "open";              // a new customer message reopens a closed thread
+      wrote = text;
     }
     t.dealerSeenAt = now;
     await s.setJSON(key, t);
+    if (wrote) await notifyMessage(t, wrote, false);
     return json({ ok: true, thread: t });
   }
 
@@ -625,7 +705,7 @@ export default async (req) => {
               dealerSeenAt: null, messages: [] };
       }
       if (!t) return bad("no such conversation", 404);
-      if (act === "delete") { await s.delete(key); return json({ ok: true }); }
+      if (act === "delete") { await s.delete(key); await deletePhotos(s, t.id); return json({ ok: true }); }
       if (act === "reply") {
         const text = cleanText(body.text, MSG_MAX);
         if (!text) return bad("message required");
@@ -854,7 +934,7 @@ export default async (req) => {
       const { blobs: tb } = await s.list({ prefix: "thread:MSG-" });
       for (const b of tb) {
         const t = await s.get(b.key, { type: "json" });
-        if (t && t.orderRef === ref) await s.delete(b.key);
+        if (t && t.orderRef === ref) { await s.delete(b.key); await deletePhotos(s, t.id); }
       }
       return json({ ok: true });
     }

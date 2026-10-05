@@ -10,12 +10,12 @@
   var page = file.replace(/^_|_test/g, '');
   var DONE = 'lumia_tour_done_all', CHAIN = 'lumia_tour_chain';
   /* the order the tutorial visits the pages in */
-  var SEQ = ['account.html', 'orders.html', 'order.html', 'price-list.html'];
-  var PART = { 'account.html': 'My account', 'orders.html': 'Orders', 'order.html': 'Place an order', 'price-list.html': 'Price list' };
+  var SEQ = ['account.html', 'orders.html', 'messages.html', 'order.html', 'price-list.html'];
+  var PART = { 'account.html': 'My account', 'orders.html': 'Orders', 'messages.html': 'Messages', 'order.html': 'Place an order', 'price-list.html': 'Price list' };
   /* local previews (_account_test.html …) keep the walk inside the preview pages */
   var demo = /^_.+_test\.html$/.test(file);
   function urlOf(name) {
-    return (demo || /_test\.html/.test(document.referrer)) && (name === 'account.html' || name === 'orders.html')
+    return (demo || /_test\.html/.test(document.referrer)) && (name === 'account.html' || name === 'orders.html' || name === 'messages.html')
       ? '_' + name.replace('.html', '_test.html') : name;
   }
   function flag(k, v) { try { if (v == null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} }
@@ -50,7 +50,7 @@
   var TOURS = {
     'account.html': [
       { title: 'Welcome to your LUMIA trade portal',
-        text: 'This tutorial walks you through the whole portal: your account, your orders, placing an order and your price list. You can skip it and replay it any time.' },
+        text: 'This tutorial walks you through the whole portal: your account, your orders, messages, placing an order and your price list. You can skip it and replay it any time.' },
       { el: '#sum-orders', title: 'Your orders at a glance',
         text: 'How many orders you have placed, and how many are awaiting review, in production or shipped. Click a tile to open them on the Orders page.' },
       { el: '#sum-balance', title: 'Your balance',
@@ -84,7 +84,19 @@
       { el: function () { var d = shippedDetail(); return d ? d.querySelector('.track') : null; }, title: 'FedEx tracking number',
         text: 'When an order ships, its FedEx tracking number appears here. Click the number — or “Track it” — to open FedEx and follow the shipment.' },
       { el: function () { var d = shippedDetail(); return d ? d.querySelector('[data-invoice]') : null; }, title: 'Invoice',
-        text: 'The Invoice button appears as soon as the FedEx number has been entered for the order — not before. Click it to open the invoice, then print it or save it as a PDF.' }
+        text: 'The Invoice button appears as soon as the FedEx number has been entered for the order — not before. Click it to open the invoice, then print it or save it as a PDF.' },
+      { el: function () { var d = shippedDetail() || document.querySelector('.osec tr.det'); if (d) d.hidden = false; return d ? d.querySelector('.ochat') : null; }, title: 'Need help with an order?',
+        text: 'Every order has “Contact us about this order”. Choose what it is about — a question, a damaged product, a wrong size, a missing part, installation help — write your message and add photos if they help. We answer in Messages.' }
+    ],
+    'messages.html': [
+      { title: 'Messages',
+        text: 'Your mailbox: every conversation with LUMIA in one place. The number next to “Messages” in the menu shows how many new replies are waiting.' },
+      { el: '#mblist', title: 'Your conversations',
+        text: 'Contact requests about your orders and any other request or question. Each one shows what it is about, the order it belongs to and the latest message; a red number means new replies.' },
+      { el: '.mbnew', title: 'New message',
+        text: 'For a request or a question that is not about a specific order. For an order, use “Contact us about this order” on the Orders page.' },
+      { el: function () { var p = document.getElementById('mbpane'); return p && p.offsetParent ? p : null; }, title: 'The conversation',
+        text: 'Click a conversation to open it here. Read LUMIA’s answer, write a reply and add photos if you need to. A closed conversation reopens when you write again.' }
     ],
     'price-list.html': [
       { title: 'Your price list',
@@ -173,14 +185,15 @@
       '.tour-shade{position:fixed;z-index:2000;border-radius:12px;box-shadow:0 0 0 9999px rgba(8,6,20,.72);pointer-events:none;transition:all .25s ease}' +
       '.tour-shade.none{left:50%;top:50%;width:0;height:0}' +
       '.tour-block{position:fixed;inset:0;z-index:1999}' +
-      '.tour-card{position:fixed;z-index:2001;width:400px;max-width:calc(100vw - 24px);background:#FBF8F2;color:#1B1D1F;border-radius:16px;padding:18px 20px 14px;box-shadow:0 24px 70px rgba(0,0,0,.5);font-family:inherit}' +
+      '.tour-card{position:fixed;z-index:2001;width:470px;max-width:calc(100vw - 24px);background:#FBF8F2;color:#1B1D1F;border-radius:16px;padding:18px 20px 14px;box-shadow:0 24px 70px rgba(0,0,0,.5);font-family:inherit}' +
       '.tour-card h4{margin:0 0 6px;font-size:16px;font-weight:600;color:#1B1D1F}' +
       '.tour-card p{margin:0 0 14px;font-size:14px;line-height:1.5;color:#3E4246}' +
       '.tour-foot{display:flex;align-items:center;gap:8px}' +
       '.tour-bar{height:4px;border-radius:99px;background:#E6E0D5;overflow:hidden;margin:0 0 12px}' +
       '.tour-bar i{display:block;height:100%;background:#B8934A;border-radius:99px;transition:width .3s ease}' +
       '.tour-tabs{display:flex;gap:4px;margin:0 0 12px;padding:3px;background:#EDE8DE;border-radius:999px}' +
-      '.tour-card .tour-tabs button{flex:1 1 auto;border:0;background:none;color:#5A5E62;font-size:9px;letter-spacing:.08em;padding:7px 6px;white-space:nowrap}' +
+      '.tour-card .tour-tabs button{flex:1 1 auto;border:0;background:none;color:#5A5E62;font-size:8.5px;letter-spacing:.06em;padding:7px 4px;white-space:nowrap}' +
+      '@media(max-width:500px){.tour-tabs{flex-wrap:wrap;border-radius:14px}}' +
       '.tour-card .tour-tabs button:hover{color:#1B1D1F}' +
       '.tour-card .tour-tabs button.on{background:#1B1D1F;color:#fff}' +
       '.tour-part{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A6A3E;margin:0 0 6px}' +

@@ -42,6 +42,13 @@
   .hleft{display:flex;align-items:center;gap:28px}
   .homelnk{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.62);text-decoration:none;transition:color .2s}
   .homelnk:hover{color:#fff}
+  /* phone menu on the dark portal header */
+  header #navtoggle{color:#F6F3EC;border-color:rgba(255,255,255,.45)}
+  @media(max-width:760px){
+    header nav{background:rgba(22,19,42,.98)!important;border-bottom-color:rgba(255,255,255,.12)!important}
+    header nav a{color:rgba(255,255,255,.85)!important}
+    header nav a.partner{color:#F6F3EC!important}
+  }
   nav a[style]{color:#fff!important;font-weight:500}
   .partner{border:1px solid rgba(255,255,255,.25);padding:8px 15px;color:var(--bronze-lt)!important;border-radius:8px}
   .partner:hover{border-color:var(--bronze-lt)}
@@ -284,7 +291,7 @@
 </form>
 
 <script src="assets/trade.js?v=10"></script>
-<script src="assets/tour.js?v=14"></script>
+<script src="assets/tour.js?v=15"></script>
 <script src="assets/support.js?v=2"></script>
 <script src="assets/invoice.js?v=2"></script>
 <script>

@@ -442,6 +442,7 @@
 </div>
 
 <script src="assets/invoice.js?v=2"></script>
+<script src="assets/photos.js?v=1"></script>
 <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
@@ -734,6 +735,8 @@
       team = r[1].team || [];
       renderBell();
       if(!$('tab-messages').hidden) renderMessages();
+      /* the order list shows message counts — refresh it unless an order is open for editing */
+      if(allOrders.length && !document.querySelector('#orderrows tr.detrow:not([hidden])')) renderCalendar();
     }).catch(function(){});
   }
 
@@ -810,7 +813,8 @@
     if(!open) return '<div class="mthread' + (closed ? ' closed' : '') + '">' + head + '</div>';
     var bubbles = t.messages.map(function(m){
       var mine = m.from !== 'dealer';
-      return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="bwho">' + esc(m.by || (mine ? 'LUMIA' : t.dealer)) + ' · ' + msgWhen(m.at) + '</span>' + esc(m.text) + '</div>';
+      return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="bwho">' + esc(m.by || (mine ? 'LUMIA' : t.dealer)) + ' · ' + msgWhen(m.at) + '</span>' + esc(m.text) +
+        (window.LUMIA_PHOTOS ? LUMIA_PHOTOS.html(m.photos) : '') + '</div>';
     }).join('');
     return '<div class="mthread' + (closed ? ' closed' : '') + '">' + head + '<div class="mbody">' +
       (bubbles ? '<div class="bubbles">' + bubbles + '</div>'
@@ -859,6 +863,7 @@
     list.sort(function(a, b){ return (threadUnread(b) ? 1 : 0) - (threadUnread(a) ? 1 : 0); });
     $('msglist').innerHTML = list.length ? list.map(threadHTML).join('')
       : '<div class="ovempty">' + (msgFilter === 'closed' ? 'No closed conversations.' : 'No conversations here yet — customers write from an order or from “Request or question” in the portal.') + '</div>';
+    if(window.LUMIA_PHOTOS) LUMIA_PHOTOS.hydrate($('msglist'), { 'Authorization': 'Bearer ' + key() });
   }
   function renderTeam(){
     var ppl = people();

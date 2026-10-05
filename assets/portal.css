@@ -297,3 +297,11 @@
     .mbform .mrow{grid-template-columns:1fr}
     .bub{max-width:92%}
   }
+
+  /* phone menu on the dark portal header */
+  header #navtoggle{color:#F6F3EC;border-color:rgba(255,255,255,.45)}
+  @media(max-width:760px){
+    header nav{background:rgba(22,19,42,.98)!important;border-bottom-color:rgba(255,255,255,.12)!important}
+    header nav a{color:rgba(255,255,255,.85)!important}
+    header nav a.partner{color:#F6F3EC!important}
+  }

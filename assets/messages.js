@@ -24,6 +24,10 @@
   }
 
   var threads = [], openId = null, composing = false;
+  var AUTH = { 'x-dealer-code': SESSION.code || '' };
+  var pick = null;                                   /* the "Add photos" control of the open form */
+  function mountPicker(id){ var el = $(id); pick = el && window.LUMIA_PHOTOS ? LUMIA_PHOTOS.picker(el) : null; }
+  function photos(){ return pick ? pick.get() : []; }
   var q = /[?&]open=([^&]+)/.exec(location.search);
   if(q) openId = decodeURIComponent(q[1]);
   if(/[?&]new=1/.test(location.search)) composing = true;
@@ -62,12 +66,15 @@
           '<div class="mrow"><label>Type<select id="n-kind"><option>Request</option><option>Question</option></select></label>' +
           '<label>Subject<input id="n-subject" type="text" maxlength="120" placeholder="e.g. Fabric samples for Outlander" autocomplete="off"></label></div>' +
           '<label>Message<textarea id="n-text" rows="5" maxlength="2000" placeholder="Tell us what you need."></textarea></label>' +
+          '<div id="n-photos"></div>' +
           '<p class="mbnote">About a specific order? Open it on the <a href="orders.html">Orders</a> page and use “Contact us about this order”.</p>' +
           '<div class="mfoot"><span class="merr" id="n-err"></span><button class="btn solid" id="n-send" type="button">Send</button></div></div>';
+      mountPicker('n-photos');
       return;
     }
     var t = threads.filter(function(x){ return x.id === openId; })[0];
     if(!t){
+      pick = null;
       pane.innerHTML = '<div class="mbblank">' + (threads.length ? 'Choose a conversation on the left.' : 'Your conversations with LUMIA appear here. Use “New message” to write to us.') + '</div>';
       return;
     }
@@ -77,12 +84,16 @@
         (t.orderRef ? '<a class="mbord" href="orders.html">View order →</a>' : '') + '</div></div>' +
       '<div class="mbbox" id="mbbox"><div class="bubbles" style="margin:0">' + t.messages.map(function(m){
         var mine = m.from === 'dealer';
-        return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="who">' + (mine ? 'You' : 'LUMIA') + ' · ' + when(m.at) + '</span>' + esc(m.text) + '</div>';
+        return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="who">' + (mine ? 'You' : 'LUMIA') + ' · ' + when(m.at) + '</span>' + esc(m.text) +
+          (window.LUMIA_PHOTOS ? LUMIA_PHOTOS.html(m.photos) : '') + '</div>';
       }).join('') + '</div></div>' +
       (t.status === 'closed' ? '<p class="mbnote">LUMIA closed this conversation. Writing again reopens it.</p>' : '') +
       '<div class="treply"><textarea id="r-text" data-id="' + esc(t.id) + '" rows="3" maxlength="2000" placeholder="Write a reply…"></textarea>' +
+      '<div id="r-photos"></div>' +
       '<div class="mfoot"><span class="merr" id="r-err"></span><button class="btn solid" id="r-send" type="button">Send reply</button></div></div>';
     $('r-text').value = keep;
+    mountPicker('r-photos');
+    if(window.LUMIA_PHOTOS) LUMIA_PHOTOS.hydrate(pane, AUTH);
     $('mbbox').scrollTop = $('mbbox').scrollHeight;
   }
 
@@ -107,9 +118,9 @@
     if(e.target.closest('#n-send')){
       var b = e.target.closest('#n-send'), subject = $('n-subject').value.trim(), text = $('n-text').value.trim();
       $('n-err').textContent = '';
-      if(!subject || !text){ $('n-err').textContent = 'Please add a subject and a message.'; return; }
+      if(!subject || (!text && !photos().length)){ $('n-err').textContent = 'Please add a subject and a message.'; return; }
       b.disabled = true; b.textContent = 'Sending…';
-      call('/api/thread', { kind: $('n-kind').value, subject: subject, text: text })
+      call('/api/thread', { kind: $('n-kind').value, subject: subject, text: text, photos: photos() })
         .then(function(d){ composing = false; openId = d.thread.id; return load(); })
         .catch(function(){ $('n-err').textContent = 'Could not send — please try again.'; b.disabled = false; b.textContent = 'Send'; });
       return;
@@ -117,9 +128,9 @@
     if(e.target.closest('#r-send')){
       var rb = e.target.closest('#r-send'), txt = $('r-text').value.trim();
       $('r-err').textContent = '';
-      if(!txt){ $('r-err').textContent = 'Write a reply first.'; return; }
+      if(!txt && !photos().length){ $('r-err').textContent = 'Write a reply or add a photo first.'; return; }
       rb.disabled = true; rb.textContent = 'Sending…';
-      call('/api/thread/reply', { id: openId, text: txt })
+      call('/api/thread/reply', { id: openId, text: txt, photos: photos() })
         .then(function(){ $('r-text').value = ''; return load(); })
         .catch(function(){ $('r-err').textContent = 'Could not send — please try again.'; rb.disabled = false; rb.textContent = 'Send reply'; });
     }
@@ -129,6 +140,6 @@
   /* pick up new replies while the page is open (not while something is being typed) */
   setInterval(function(){
     var typing = [].some.call(document.querySelectorAll('#mbpane textarea, #mbpane input'), function(x){ return x.value.trim(); });
-    if(!document.hidden && !typing) load().catch(function(){});
+    if(!document.hidden && !typing && !photos().length) load().catch(function(){});
   }, 45000);
 })();
