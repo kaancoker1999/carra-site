@@ -136,6 +136,27 @@
   .treply textarea{display:block;width:100%;box-sizing:border-box;font:inherit;font-size:14px;border:1px solid var(--line2);border-radius:9px;padding:10px 12px;resize:vertical;line-height:1.45;background:var(--white)}
   .merr{font-size:12.5px;color:#8A2620;margin-right:auto}
   .mhead .ncount,.dmside .ncount{margin-left:0}
+  .bubwrap{display:flex;flex-direction:column;gap:6px;max-width:86%}
+  .bubwrap.me{align-self:flex-end;align-items:flex-end}.bubwrap.them{align-self:flex-start;align-items:flex-start}
+  .bubwrap .bub{max-width:100%;align-self:auto}
+  .mchip{font-family:'IBM Plex Mono',monospace;font-size:.86em;background:rgba(184,147,74,.28);border-radius:6px;padding:1px 6px;white-space:nowrap}
+  .mcard{background:var(--white);border:1px solid var(--line2);border-left:3px solid var(--bronze);border-radius:10px;padding:10px 12px;color:var(--ink);font-size:13px;width:100%;min-width:260px;max-width:520px;box-sizing:border-box;text-align:left}
+  .mcard.none{border-left-color:#C8502F;color:var(--muted)}
+  .mcardtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .mcardtop .ti{font-size:16px;color:var(--bronze)}
+  .mcardtop b{font-size:14px}
+  .mcardamt{margin-left:auto;font-family:'Archivo',sans-serif;font-weight:600}
+  .mcardsub{color:var(--muted);font-size:12.5px;margin-top:4px}
+  .mcardlines{margin:8px 0 8px;padding-left:20px}
+  .mcardlines li{margin:2px 0}
+  .mcardlines li span{display:block;color:var(--muted);font-size:11.5px}
+  .mcard .mgo{margin-top:6px}
+  .mpick{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 0;font-size:12px;color:var(--muted)}
+  .mpick span{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase}
+  .mpick select{font-size:12.5px;padding:6px 8px;max-width:230px}
+  .mpick code{font-size:11.5px}
+  #dmpreview{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+  #dmpreview:empty{display:none}
   .dmgrid{display:grid;grid-template-columns:270px 1fr;gap:16px;align-items:start}
   .dmlist{border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--white)}
   .dmitem{display:flex;gap:11px;align-items:center;padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--line)}
@@ -803,6 +824,91 @@
     if(!e.target.closest('.bellwrap')) $('bellmenu').hidden = true;
   });
 
+  /* ── mentions in admin chats ──
+     "ref:LMA-260923-831" shows that order, "customer:demo" (or customer:"Brooklyn Shades")
+     shows that customer account, right under the message — so two admins can talk
+     about a specific order or customer and open it in one click. */
+  var MENTION = /\b(ref|order|customer)\s*:\s*("[^"]{1,60}"|[^\s,;<>]{1,60})/gi;
+  function findOrder(ref){
+    var r = String(ref || '').toLowerCase();
+    return allOrders.filter(function(o){ return o.ref.toLowerCase() === r; })[0] ||
+           allOrders.filter(function(o){ return o.ref.toLowerCase().indexOf(r) !== -1; })[0] || null;
+  }
+  function findDealer(name){
+    var n = String(name || '').replace(/^"|"$/g, '').trim().toLowerCase();
+    if(!n) return null;
+    var eq = dealersCache.filter(function(d){ return (d.name || '').toLowerCase() === n; })[0];
+    if(eq) return eq;
+    var starts = dealersCache.filter(function(d){ return (d.name || '').toLowerCase().replace(/^[^a-z0-9]+/, '').indexOf(n) === 0; })[0];
+    return starts || dealersCache.filter(function(d){ return (d.name || '').toLowerCase().indexOf(n) !== -1 || (d.company || '').toLowerCase().indexOf(n) !== -1; })[0] || null;
+  }
+  /* the escaped message text with its mentions turned into chips */
+  function mentionText(text){
+    return esc(text).replace(MENTION, function(m, kind, val){
+      return '<span class="mchip">' + m + '</span>';
+    });
+  }
+  function orderCardHTML(o){
+    var st = statusOf(o), paid = isPaid(o), t = orderTotals(o.lines);
+    return '<div class="mcard"><div class="mcardtop"><i class="ti ti-file-invoice"></i><b>' + esc(o.ref) + '</b>' +
+      '<span class="status ' + (st === 'Pending review' ? 'st-pend' : (st === 'Cancelled' ? 'st-canc' : 'st-acc')) + '">' + esc(st) + '</span>' +
+      (o.test ? '' : '<span class="status ' + (paid ? 'pay-paid' : 'pay-un') + '">' + (paid ? 'Paid' : 'Unpaid') + '</span>') +
+      '<span class="mcardamt">$' + t.total.toFixed(2) + '</span></div>' +
+      '<div class="mcardsub">' + esc(o.dealer || '') + (o.customer ? ' · ' + esc(o.customer) : '') + ' · ' +
+        new Date(o.at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) +
+        (o.productNo ? ' · product no. ' + esc(o.productNo) : '') + (o.tracking ? ' · FedEx ' + esc(o.tracking) : '') + '</div>' +
+      '<ol class="mcardlines">' + (o.lines || []).slice(0, 6).map(function(l){
+        return '<li>' + (l.label ? '<b>' + esc(l.label) + '</b> · ' : '') + esc(l.product) +
+          (l.w == null ? '' : ' · ' + fmtIn(l.w) + '″ × ' + fmtIn(l.h) + '″') + ' · qty ' + esc(l.qty) +
+          '<span>' + esc(cleanSpec(l.spec || '')) + '</span></li>';
+      }).join('') + ((o.lines || []).length > 6 ? '<li>… ' + ((o.lines || []).length - 6) + ' more</li>' : '') + '</ol>' +
+      '<button class="btn ghost mgo" data-goorder="' + esc(o.ref) + '" type="button" style="padding:6px 12px">Open order</button></div>';
+  }
+  function dealerCardHTML(d){
+    var st = dealerStats(d.code);
+    return '<div class="mcard"><div class="mcardtop"><i class="ti ti-user"></i><b>' + esc(d.name) + '</b>' +
+      (d.test ? '<span class="status" style="background:#EEE9FA;border:1px solid #C9BCEC;color:#5B3FA0">TEST</span>' : '') +
+      (d.active === false ? '<span class="status st-canc">Suspended</span>' : '') +
+      '<span class="mcardamt">×' + (+d.mult || 1).toFixed(2) + '</span></div>' +
+      '<div class="mcardsub">' + [d.company, d.email, d.phone, d.address].filter(Boolean).map(esc).join(' · ') + '</div>' +
+      '<div class="mcardsub">' + st.n + ' order' + (st.n === 1 ? '' : 's') + ' · $' + st.purch.toFixed(2) + ' purchased' +
+        (st.due > 0 && !d.test ? ' · <span style="color:#8A2620">$' + st.due.toFixed(2) + ' unpaid</span>' : '') +
+        ' · ' + st.pend + ' awaiting review · ' + st.prod + ' in production · ' + st.shipped + ' shipped</div>' +
+      '<button class="btn ghost mgo" data-godealer="' + esc(d.code) + '" type="button" style="padding:6px 12px">Open customer</button></div>';
+  }
+  /* cards for every order / customer a message mentions (each once) */
+  function mentionCards(text){
+    var out = [], seen = {}, m;
+    MENTION.lastIndex = 0;
+    while((m = MENTION.exec(String(text || '')))){
+      var kind = m[1].toLowerCase(), val = m[2].replace(/^"|"$/g, '');
+      if(kind === 'customer'){
+        var d = findDealer(val);
+        if(d && !seen['c' + d.code]){ seen['c' + d.code] = 1; out.push(dealerCardHTML(d)); }
+        else if(!d) out.push('<div class="mcard none">No customer found for “' + esc(val) + '”.</div>');
+      } else {
+        var o = findOrder(val);
+        if(o && !seen['o' + o.ref]){ seen['o' + o.ref] = 1; out.push(orderCardHTML(o)); }
+        else if(!o) out.push('<div class="mcard none">No order found for “' + esc(val) + '”.</div>');
+      }
+    }
+    return out.join('');
+  }
+  /* open an order (Orders tab, right group, expanded) or a customer account */
+  function openOrder(ref){
+    var o = findOrder(ref); if(!o) return;
+    calSel = { mode: 'all', key: '' }; stageSel = mainGroupOf(o);
+    gotoTab('orders'); renderCalendar();
+    var row = [].filter.call(document.querySelectorAll('#orderrows tr.ordrow'), function(r){ return r.dataset.ref === o.ref; })[0];
+    if(row){ if(row.nextElementSibling && row.nextElementSibling.hidden) row.click(); row.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  }
+  document.addEventListener('click', function(e){
+    var go = e.target.closest('[data-goorder]');
+    if(go){ openOrder(go.dataset.goorder); return; }
+    var gd = e.target.closest('[data-godealer]');
+    if(gd){ gotoTab('dealers'); openPreview(gd.dataset.godealer); }
+  });
+
   /* ── Messages tab ── */
   function threadHTML(t){
     var l = lastMsg(t), open = t.id === msgOpen, closed = t.status === 'closed', c = unreadCount(t);
@@ -902,15 +1008,21 @@
       '<div class="dmbox" id="dmbox">' + (cur && cur.messages.length
         ? '<div class="bubbles" style="margin:0">' + cur.messages.map(function(m){
             var mine = m.fromId === ME.id;
-            return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="bwho">' + (mine ? 'You' : esc(m.by)) + ' · ' + msgWhen(m.at) + '</span>' + esc(m.text) +
-              (window.LUMIA_PHOTOS ? LUMIA_PHOTOS.html(m.photos) : '') + '</div>';
+            return '<div class="bubwrap ' + (mine ? 'me' : 'them') + '"><div class="bub ' + (mine ? 'me' : 'them') + '"><span class="bwho">' + (mine ? 'You' : esc(m.by)) + ' · ' + msgWhen(m.at) + '</span>' + mentionText(m.text) +
+              (window.LUMIA_PHOTOS ? LUMIA_PHOTOS.html(m.photos) : '') + '</div>' + mentionCards(m.text) + '</div>';
           }).join('') + '</div>'
         : '<div class="ovempty">No messages with ' + esc(who.name) + ' yet.</div>') + '</div>' +
       '<div class="treply"><textarea id="dmtext" data-to="' + esc(dmWith) + '" rows="2" maxlength="2000" placeholder="Write to ' + esc(who.name) + '…"></textarea>' +
+      '<div class="mpick"><span>Mention</span>' +
+        '<select id="dmrefsel"><option value="">an order…</option>' + allOrders.slice(0, 60).map(function(o){ return '<option value="' + esc(o.ref) + '">' + esc(o.ref) + ' — ' + esc(o.dealer || '') + '</option>'; }).join('') + '</select>' +
+        '<select id="dmcustsel"><option value="">a customer…</option>' + dealersCache.map(function(d){ return '<option value="' + esc(d.name) + '">' + esc(d.name) + '</option>'; }).join('') + '</select>' +
+        '<small>or type <code>ref:LMA-…</code> / <code>customer:name</code></small></div>' +
+      '<div id="dmpreview"></div>' +
       '<div id="dmphotos"></div>' +
       '<div class="row" style="justify-content:flex-end;gap:10px;margin-top:8px;align-items:center"><span class="merr" id="dmerr"></span>' +
       '<button class="btn" id="dmsend" type="button" style="padding:8px 18px">Send</button></div></div>';
     $('dmtext').value = keep;
+    dmPreview();
     dmPick = null;
     if(window.LUMIA_PHOTOS){ LUMIA_PHOTOS.hydrate($('dmpane'), photoAuth()); dmPick = LUMIA_PHOTOS.picker($('dmphotos')); }
     $('dmbox').scrollTop = $('dmbox').scrollHeight;
@@ -927,6 +1039,24 @@
     $('msgteam').hidden = msgView !== 'team';
     if(msgView === 'cust') renderCustomers(); else renderTeam();
   }
+  /* what the message being typed will show: the cards of its mentions */
+  function dmPreview(){
+    var ta = $('dmtext'), box = $('dmpreview'); if(!ta || !box) return;
+    box.innerHTML = mentionCards(ta.value);
+  }
+  function dmInsert(token){
+    var ta = $('dmtext'); if(!ta) return;
+    var a = ta.selectionStart, b = ta.selectionEnd, v = ta.value;
+    var pre = v.slice(0, a), add = (pre && !/\s$/.test(pre) ? ' ' : '') + token + ' ';
+    ta.value = pre + add + v.slice(b);
+    ta.focus(); ta.selectionStart = ta.selectionEnd = (pre + add).length;
+    dmPreview();
+  }
+  $('tab-messages').addEventListener('input', function(e){ if(e.target.id === 'dmtext') dmPreview(); });
+  $('tab-messages').addEventListener('change', function(e){
+    if(e.target.id === 'dmrefsel' && e.target.value){ dmInsert('ref:' + e.target.value); e.target.value = ''; }
+    if(e.target.id === 'dmcustsel' && e.target.value){ dmInsert('customer:' + (/\s/.test(e.target.value) ? '"' + e.target.value + '"' : e.target.value)); e.target.value = ''; }
+  });
   var bellTimer = null;
   function renderBellSoon(){ clearTimeout(bellTimer); bellTimer = setTimeout(renderBell, 50); }
 
