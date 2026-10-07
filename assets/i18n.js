@@ -20,7 +20,9 @@
   try { lang = localStorage.getItem('lumia_lang') || 'en'; } catch (e) {}
   if (!LANGS[lang]) lang = 'en';
   var collect = /[?&]i18n=collect/.test(location.search);
-  var missing = {};
+  /* once switched on, collect mode follows you from page to page in this tab */
+  try { if (collect) sessionStorage.setItem('lumia_i18n_collect', '1'); else collect = sessionStorage.getItem('lumia_i18n_collect') === '1'; } catch (e) {}
+  var missing = {}, made = {};
 
   document.documentElement.lang = lang;
 
@@ -63,7 +65,7 @@
   if (lang !== 'en') {
     document.documentElement.classList.add('i18n-wait');
     document.write('<style>html.i18n-wait body{visibility:hidden}</style>');
-    document.write('<script src="assets/i18n/' + lang + '.js?v=1"><\/script>');
+    document.write('<script src="assets/i18n/' + lang + '.js?v=2"><\/script>');
     /* never leave the page hidden if something goes wrong */
     setTimeout(function () { document.documentElement.classList.remove('i18n-wait'); }, 2500);
   }
@@ -109,7 +111,12 @@
     var s = norm(raw);
     if (!s || !/[A-Za-z]/.test(s)) return null;
     var t = piece(s);
-    if (t == null) { if (collect && s.length < 400 && /[A-Za-z]{2}/.test(s)) missing[s] = 1; return null; }
+    if (t == null) {
+      /* (text this layer produced itself is not "missing" when it is seen again) */
+      if (collect && s.length < 400 && /[A-Za-z]{2}/.test(s) && !made[s]) missing[s] = 1;
+      return null;
+    }
+    made[norm(t)] = 1;
     /* keep the original outer whitespace (text nodes sit between tags) */
     var lead = /^\s*/.exec(raw)[0], trail = /\s*$/.exec(raw)[0];
     return (lead ? ' ' : '') + t + (trail ? ' ' : '');
@@ -218,4 +225,30 @@
     }).observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+
+  /* ?i18n=collect in Spanish/French: a small panel listing the text on this
+     page that still has no translation, to copy and send to whoever maintains
+     tools/i18n.json. It stays on while you move around the portal (per tab). */
+  if (collect && lang !== 'en') whenBody(function () {
+    var box = document.createElement('div');
+    box.setAttribute('data-noi18n', '1');
+    box.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:3000;width:330px;max-width:calc(100vw - 24px);background:#fff;color:#111;border:2px solid #C8502F;border-radius:12px;padding:10px;font:12px/1.4 ui-monospace,monospace;box-shadow:0 10px 30px rgba(0,0,0,.4)';
+    box.innerHTML = '<b id="i18n-n"></b> <button type="button" id="i18n-copy" style="float:right;font:inherit;cursor:pointer">Copy</button> <button type="button" id="i18n-off" style="float:right;font:inherit;cursor:pointer;margin-right:6px">Close</button><textarea id="i18n-list" readonly style="display:block;width:100%;height:130px;margin-top:8px;font:inherit;box-sizing:border-box"></textarea>';
+    document.body.appendChild(box);
+    function refresh(){
+      var list = Object.keys(missing).filter(function (x) { return x.charAt(0) !== '§'; }).sort();
+      box.querySelector('#i18n-n').textContent = list.length + ' untranslated on ' + (location.pathname.split('/').pop() || 'index.html') + ' [' + lang + ']';
+      box.querySelector('#i18n-list').value = list.join('\n');
+    }
+    setInterval(refresh, 1500); refresh();
+    box.querySelector('#i18n-copy').addEventListener('click', function () {
+      var ta = box.querySelector('#i18n-list'); ta.select();
+      try { navigator.clipboard.writeText('[' + lang + '] ' + location.pathname + '\n' + ta.value); } catch (e) { document.execCommand('copy'); }
+      this.textContent = 'Copied';
+    });
+    box.querySelector('#i18n-off').addEventListener('click', function () {
+      try { sessionStorage.removeItem('lumia_i18n_collect'); } catch (e) {}
+      box.remove();
+    });
+  });
 })();

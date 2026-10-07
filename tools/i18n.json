@@ -951,6 +951,10 @@
   "es": "Fundada",
   "fr": "Fondée"
  },
+ "From LUMIA": {
+  "es": "De LUMIA",
+  "fr": "De LUMIA"
+ },
  "Front rods": {
   "es": "Varillas frontales",
   "fr": "Baguettes avant"
@@ -1743,6 +1747,10 @@
   "es": "Lista de precios",
   "fr": "Liste de prix"
  },
+ "Prices per unit in USD. Volume pricing available — contact us.": {
+  "es": "Precios por unidad en USD. Precios por volumen disponibles — contáctenos.",
+  "fr": "Prix unitaires en USD. Tarifs dégressifs disponibles — contactez-nous."
+ },
  "Privacy": {
   "es": "Privacidad",
   "fr": "Confidentialité"
@@ -2138,6 +2146,10 @@
  "Sunset": {
   "es": "Atardecer",
   "fr": "Coucher du soleil"
+ },
+ "TBD": {
+  "es": "Por definir",
+  "fr": "À définir"
  },
  "TD": {
   "es": "TD",
@@ -2946,6 +2958,10 @@
  "— Prices per panel. Pair (centre split): each panel is half the entered width — the order form prices it as 2 × the half-width panel.": {
   "es": "— Precios por panel. Par (apertura central): cada panel mide la mitad del ancho indicado — el formulario de pedido lo calcula como 2 × el panel de medio ancho.",
   "fr": "— Prix par panneau. Paire (ouverture centrale) : chaque panneau fait la moitié de la largeur saisie — le formulaire de commande le calcule comme 2 × le panneau de demi-largeur."
+ },
+ "— Prices per unit in USD. Volume pricing available — contact us.": {
+  "es": "— Precios por unidad en USD. Precios por volumen disponibles — contáctenos.",
+  "fr": "— Prix unitaires en USD. Tarifs dégressifs disponibles — contactez-nous."
  },
  "— Scan, connect, go": {
   "es": "— Escanear, conectar y listo",
