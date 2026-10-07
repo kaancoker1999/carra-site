@@ -199,7 +199,8 @@
       '.tour-part{font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A6A3E;margin:0 0 6px}' +
       '.tour-card button{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;border-radius:999px;padding:8px 14px;cursor:pointer;border:1px solid #CFC8BC;background:#fff;color:#1B1D1F}' +
       '.tour-card button.pri{background:#1B1D1F;border-color:#1B1D1F;color:#fff}' +
-      '.tour-card button.skip{border-color:transparent;background:none;color:#7A7E82;padding:8px 6px}';
+      '.tour-card button.skip{border:1px solid #9A9488;background:#fff;color:#3E4246;padding:8px 14px}' +
+      '.tour-card button.skip:hover{border-color:#1B1D1F;color:#1B1D1F}';
     document.head.appendChild(s);
   }
 
