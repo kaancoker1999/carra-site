@@ -49,6 +49,21 @@ Excels (`tools/*.local.*` are gitignored for exactly that reason).
 - Admin side: notifications bell (derived: pending orders, reported payments, unread messages),
   Messages tab (Customers with a customer picker / Team = direct chats), "Message customer" on an order.
 
+## Languages (English / Spanish / French)
+- Pages are written in English. `assets/i18n.js` (loaded in the <head> of every page EXCEPT
+  admin.html) translates what is on screen — text nodes, placeholders, titles, including content
+  built later — from `assets/i18n/es.js` / `fr.js`. Language = localStorage `lumia_lang`; the
+  EN/ES/FR switcher is injected bottom-right; switching reloads.
+- Nothing stored or sent is translated: order specs, option values (an `<option>` without a value
+  attribute gets its English text pinned as value) and messages stay English, so the admin panel is
+  unchanged. Dates formatted as 'en-US' follow the language. Text typed by people is wrapped in
+  `data-noi18n`. Colour/collection names, brands and codes are deliberately not translated.
+- Dictionaries are GENERATED: edit `tools/i18n.json` ({"English": {"es","fr"}}) or the PATTERNS in
+  `tools/make_i18n.py` (sentences with changing parts), then `python3 tools/make_i18n.py`.
+  New UI text needs an entry there or it simply shows in English; `?i18n=collect` +
+  `LUMIA_I18N.missing()` in the console lists what a page still lacks.
+- Never make page logic depend on visible text (it changes with the language) — use ids/classes/values.
+
 ## Pricing
 - Base (group-1) prices parsed from gitignored local Excels by `tools/make_trade_data.py`
   (roman/cellular/pleated/arches from pricing.local.xlsx, drapery from drapery-pricing.local.xlsx).

@@ -31,6 +31,7 @@ TEMPLATE = r"""<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="assets/i18n.js?v=1"></script>
 <title>LUMIA — @@NAME@@</title>
 <meta name="description" content="LUMIA @@NAME@@ — @@DESC@@ Configure options and fabrics, request a trade quotation.">
 <link rel="canonical" href="https://lumiashades.com/@@FNAME@@">

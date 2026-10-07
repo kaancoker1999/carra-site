@@ -95,7 +95,7 @@
       var last = t.messages[t.messages.length - 1], n = reqUnread(t);
       return '<a class="creq" href="messages.html?open=' + encodeURIComponent(t.id) + '">' +
         '<span class="ckind' + (/Damaged|Wrong|Missing/.test(t.kind) ? ' urgent' : '') + '">' + esc(t.kind) + '</span>' +
-        '<span class="clast">' + (last.from === 'dealer' ? 'You: ' : 'LUMIA: ') + esc(last.text) + '</span>' +
+        '<span class="clast">' + (last.from === 'dealer' ? 'You' : 'LUMIA') + ': <span data-noi18n="1">' + esc(last.text) + '</span></span>' +
         (n ? '<span class="cnew">' + n + ' new</span>' : '') +
         (t.status === 'closed' ? '<span class="cclosed">Closed</span>' : '') +
         '<span class="cdate">' + chatWhen(last.at) + '</span><span class="cgo">Open →</span></a>';

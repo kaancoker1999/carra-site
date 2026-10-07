@@ -55,7 +55,7 @@
         text: 'How many orders you have placed, and how many are awaiting review, in production or shipped. Click a tile to open them on the Orders page.' },
       { el: '#sum-balance', title: 'Your balance',
         text: 'What you have purchased in total, what is still unpaid, and what is payable right now.' },
-      { el: function () { return byText('#summary .sum', /Payable/); }, title: 'Payable — pay from here',
+      { el: '#sum-balance .sum:last-child', title: 'Payable — pay from here',
         text: 'As soon as an order goes into production it becomes payable, and payment is due within 20 days. Click this tile for the amounts due and our bank details.' },
       { el: '.actions a[href="order.html"]', title: 'Place an order',
         text: 'Start a new order here. You build it line by line — product, fabric, options and size — see your price for each line, and send it to us for review.' },

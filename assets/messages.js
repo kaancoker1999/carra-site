@@ -51,7 +51,7 @@
         var last = t.messages[t.messages.length - 1], n = unread(t);
         return '<div class="mbitem' + (t.id === openId && !composing ? ' on' : '') + (t.status === 'closed' ? ' closed' : '') + '" data-open="' + esc(t.id) + '">' +
           '<div class="mbtop"><b>' + esc(t.subject) + '</b>' + (n ? '<span class="mbn">' + n + '</span>' : '') + '</div>' +
-          '<div class="mbsnip">' + (last.from === 'dealer' ? 'You: ' : 'LUMIA: ') + esc(last.text) + '</div>' +
+          '<div class="mbsnip">' + (last.from === 'dealer' ? 'You' : 'LUMIA') + ': <span data-noi18n="1">' + esc(last.text) + '</span></div>' +
           '<div class="mbmeta">' + tags(t) + '<span class="mbdate">' + day(last.at) + '</span></div></div>';
       }).join('') : '<div class="mbempty">No messages yet.</div>');
   }
@@ -84,7 +84,7 @@
         (t.orderRef ? '<a class="mbord" href="orders.html">View order →</a>' : '') + '</div></div>' +
       '<div class="mbbox" id="mbbox"><div class="bubbles" style="margin:0">' + t.messages.map(function(m){
         var mine = m.from === 'dealer';
-        return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="who">' + (mine ? 'You' : 'LUMIA') + ' · ' + when(m.at) + '</span>' + esc(m.text) +
+        return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="who">' + (mine ? 'You' : 'LUMIA') + ' · ' + when(m.at) + '</span><span data-noi18n="1">' + esc(m.text) + '</span>' +
           (window.LUMIA_PHOTOS ? LUMIA_PHOTOS.html(m.photos) : '') + '</div>';
       }).join('') + '</div></div>' +
       (t.status === 'closed' ? '<p class="mbnote">LUMIA closed this conversation. Writing again reopens it.</p>' : '') +
