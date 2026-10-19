@@ -1,7 +1,19 @@
 {
+ "%100 Linen": {
+  "es": "100% lino",
+  "fr": "100 % lin"
+ },
  "%100 Polyester": {
   "es": "100% poliéster",
   "fr": "100 % polyester"
+ },
+ "%80 Acrylic, %20 Wool": {
+  "es": "80% acrílico, 20% lana",
+  "fr": "80 % acrylique, 20 % laine"
+ },
+ "%93 Polyester, %7 Linen": {
+  "es": "93% poliéster, 7% lino",
+  "fr": "93 % polyester, 7 % lin"
  },
  ") with each payment.": {
   "es": ") en cada pago.",
@@ -103,9 +115,9 @@
   "es": "<b>Seguridad infantil.</b> Cada cortina LUMIA se fabrica conforme a las normas de seguridad infantil EN 13120 y ANSI/WCMA A100.1. Nuestros accionamientos sin cordón — incluida la apertura superior e inferior sin cordón — no tienen ningún cordón accesible en la unidad, y las cadenas continuas se envían con un tensor de pared que debe instalarse. Para hogares con niños pequeños recomendamos el accionamiento sin cordón o motorizado en todas las ventanas.",
   "fr": "<b>Sécurité des enfants.</b> Chaque store LUMIA est fabriqué conformément aux normes de sécurité enfants EN 13120 et ANSI/WCMA A100.1. Nos manœuvres sans cordon — y compris l’ouverture haut-bas sans cordon — ne présentent aucun cordon accessible sur le store, et les chaînettes continues sont livrées avec un tendeur mural qui doit impérativement être installé. Pour les foyers avec de jeunes enfants, nous recommandons une manœuvre sans cordon ou motorisée à chaque fenêtre."
  },
- "<b>Contact form.</b> When you send the enquiry form we receive the details you type — name, company, e-mail, country and your message — by e-mail at hello@lumiashades.com. We use them only to answer you.": {
-  "es": "<b>Formulario de contacto.</b> Cuando envía el formulario de consulta, recibimos los datos que usted escribe — nombre, empresa, correo electrónico, país y su mensaje — por correo electrónico en hello@lumiashades.com. Los usamos únicamente para responderle.",
-  "fr": "<b>Formulaire de contact.</b> Lorsque vous envoyez le formulaire de demande, nous recevons les informations que vous saisissez — nom, société, e-mail, pays et votre message — par e-mail à hello@lumiashades.com. Nous les utilisons uniquement pour vous répondre."
+ "<b>Contact form.</b> When you send the enquiry form we receive the details you type — name, company, e-mail, country and your message — by e-mail at lumiashades@gmail.com. We use them only to answer you.": {
+  "es": "<b>Formulario de contacto.</b> Cuando envía el formulario de consulta, recibimos los datos que usted escribe — nombre, empresa, correo electrónico, país y su mensaje — por correo electrónico en lumiashades@gmail.com. Los usamos únicamente para responderle.",
+  "fr": "<b>Formulaire de contact.</b> Lorsque vous envoyez le formulaire de demande, nous recevons les informations que vous saisissez — nom, société, e-mail, pays et votre message — par e-mail à lumiashades@gmail.com. Nous les utilisons uniquement pour vous répondre."
  },
  "<b>Home offices</b> — cut screen glare at the bottom, keep sky light at the top.": {
   "es": "<b>Oficinas en casa</b> — reduzca el reflejo en la pantalla por abajo, conserve la luz del cielo por arriba.",
@@ -491,6 +503,10 @@
   "es": "Elija primero el producto y luego la tela y el color. En cortinas romanas y cortinajes, el grupo de color es solo un filtro — déjelo en “Todos los grupos” para ver todas las telas.",
   "fr": "Choisissez d’abord le produit, puis le tissu et la couleur. Pour les stores romains et les rideaux, le groupe de couleur n’est qu’un filtre — laissez-le sur « Tous les groupes » pour voir tous les tissus."
  },
+ "Classic": {
+  "es": "Clásico",
+  "fr": "Classique"
+ },
  "Classic colours": {
   "es": "Colores clásicos",
   "fr": "Couleurs classiques"
@@ -615,6 +631,10 @@
   "es": "Cookies y almacenamiento local",
   "fr": "Cookies et stockage local"
  },
+ "Copied": {
+  "es": "Copiado",
+  "fr": "Copié"
+ },
  "Copies the whole order as plain text, handy for an e-mail or a message to your customer.": {
   "es": "Copia todo el pedido como texto sin formato, práctico para un correo electrónico o un mensaje a su cliente.",
   "fr": "Copie toute la commande en texte brut, pratique pour un e-mail ou un message à votre client."
@@ -651,13 +671,13 @@
   "es": "Mezcla de algodón",
   "fr": "Mélange de coton"
  },
- "Could not cancel — LUMIA may have accepted it already. Reload the page, or e-mail hello@lumiashades.com.": {
-  "es": "No se pudo cancelar — es posible que LUMIA ya lo haya aceptado. Recargue la página o escriba a hello@lumiashades.com.",
-  "fr": "Annulation impossible — LUMIA l’a peut-être déjà acceptée. Rechargez la page ou écrivez à hello@lumiashades.com."
+ "Could not cancel — LUMIA may have accepted it already. Reload the page, or e-mail lumiashades@gmail.com.": {
+  "es": "No se pudo cancelar — es posible que LUMIA ya lo haya aceptado. Recargue la página o escriba a lumiashades@gmail.com.",
+  "fr": "Annulation impossible — LUMIA l’a peut-être déjà acceptée. Rechargez la page ou écrivez à lumiashades@gmail.com."
  },
- "Could not cancel — it may already be in production. Try again or e-mail hello@lumiashades.com.": {
-  "es": "No se pudo cancelar — es posible que ya esté en producción. Inténtelo de nuevo o escriba a hello@lumiashades.com.",
-  "fr": "Annulation impossible — la commande est peut-être déjà en production. Réessayez ou écrivez à hello@lumiashades.com."
+ "Could not cancel — it may already be in production. Try again or e-mail lumiashades@gmail.com.": {
+  "es": "No se pudo cancelar — es posible que ya esté en producción. Inténtelo de nuevo o escriba a lumiashades@gmail.com.",
+  "fr": "Annulation impossible — la commande est peut-être déjà en production. Réessayez ou écrivez à lumiashades@gmail.com."
  },
  "Could not load your messages — please refresh the page.": {
   "es": "No se pudieron cargar sus mensajes; actualice la página.",
@@ -671,9 +691,9 @@
   "es": "No se pudo guardar — inténtelo de nuevo",
   "fr": "Échec de l’enregistrement — réessayez"
  },
- "Could not send the confirmation — try again, or e-mail hello@lumiashades.com.": {
-  "es": "No se pudo enviar la confirmación — inténtelo de nuevo o escriba a hello@lumiashades.com.",
-  "fr": "Impossible d’envoyer la confirmation — réessayez ou écrivez à hello@lumiashades.com."
+ "Could not send the confirmation — try again, or e-mail lumiashades@gmail.com.": {
+  "es": "No se pudo enviar la confirmación — inténtelo de nuevo o escriba a lumiashades@gmail.com.",
+  "fr": "Impossible d’envoyer la confirmation — réessayez ou écrivez à lumiashades@gmail.com."
  },
  "Could not send — please try again.": {
   "es": "No se pudo enviar — inténtelo de nuevo.",
@@ -751,9 +771,17 @@
   "es": "Designer Prints",
   "fr": "Designer Prints"
  },
+ "Designer colours": {
+  "es": "Colores de diseñador",
+  "fr": "Couleurs designer"
+ },
  "Distributor": {
   "es": "Mayorista",
   "fr": "Distributeur"
+ },
+ "Done": {
+  "es": "Listo",
+  "fr": "Terminé"
  },
  "Double": {
   "es": "Doble",
@@ -1127,9 +1155,9 @@
   "es": "LUMIA Blinds & Shades",
   "fr": "LUMIA Blinds & Shades"
  },
- "LUMIA Blinds &amp; Shades<br> Houston, Texas, United States<br> hello@lumiashades.com<br> Mon–Fri, 9:00 AM – 5:00 PM": {
-  "es": "LUMIA Blinds &amp; Shades<br> Houston, Texas, Estados Unidos<br> hello@lumiashades.com<br> Lun–Vie, 9:00 AM – 5:00 PM",
-  "fr": "LUMIA Blinds &amp; Shades<br> Houston, Texas, États-Unis<br> hello@lumiashades.com<br> Lun–Ven, 9:00 AM – 5:00 PM"
+ "LUMIA Blinds &amp; Shades<br> Houston, Texas, United States<br> lumiashades@gmail.com<br> Mon–Fri, 9:00 AM – 5:00 PM": {
+  "es": "LUMIA Blinds &amp; Shades<br> Houston, Texas, Estados Unidos<br> lumiashades@gmail.com<br> Lun–Vie, 9:00 AM – 5:00 PM",
+  "fr": "LUMIA Blinds &amp; Shades<br> Houston, Texas, États-Unis<br> lumiashades@gmail.com<br> Lun–Ven, 9:00 AM – 5:00 PM"
  },
  "LUMIA closed this conversation. Writing again reopens it.": {
   "es": "LUMIA cerró esta conversación. Si escribe de nuevo, se reabrirá.",
@@ -1139,9 +1167,9 @@
   "es": "LUMIA fabrica decoración de ventanas a medida desde 1999. No la ensambla: la fabrica, mecanismo incluido.",
   "fr": "LUMIA fabrique de l’habillage de fenêtres sur mesure depuis 1999. Il ne s’agit pas d’assemblage, mais bien de fabrication, mécanisme compris."
  },
- "LUMIA has locked this order, so it can no longer be changed — write to hello@lumiashades.com and we will update it for you.": {
-  "es": "LUMIA ha bloqueado este pedido, por lo que ya no se puede modificar — escriba a hello@lumiashades.com y lo actualizaremos por usted.",
-  "fr": "LUMIA a verrouillé cette commande ; elle ne peut donc plus être modifiée — écrivez à hello@lumiashades.com et nous la mettrons à jour pour vous."
+ "LUMIA has locked this order, so it can no longer be changed — write to lumiashades@gmail.com and we will update it for you.": {
+  "es": "LUMIA ha bloqueado este pedido, por lo que ya no se puede modificar — escriba a lumiashades@gmail.com y lo actualizaremos por usted.",
+  "fr": "LUMIA a verrouillé cette commande ; elle ne peut donc plus être modifiée — écrivez à lumiashades@gmail.com et nous la mettrons à jour pour vous."
  },
  "LUMIA respects the privacy of everyone who visits this site. This page explains, in plain language, what information we handle and where it goes.": {
   "es": "LUMIA respeta la privacidad de todas las personas que visitan este sitio. Esta página explica, en lenguaje sencillo, qué información manejamos y adónde va.",
@@ -1206,6 +1234,10 @@
  "Line on request": {
   "es": "Línea a solicitud",
   "fr": "Ligne sur demande"
+ },
+ "Linen": {
+  "es": "Lino",
+  "fr": "Lin"
  },
  "Liner": {
   "es": "Forro",
@@ -1450,6 +1482,14 @@
  "No messages yet.": {
   "es": "Aún no hay mensajes.",
   "fr": "Aucun message pour l’instant."
+ },
+ "No orders sent yet —": {
+  "es": "Aún no se han enviado pedidos —",
+  "fr": "Aucune commande envoyée pour le moment —"
+ },
+ "No orders sent yet — <a href=\"order.html\" style=\"color:#fff\">place your first order</a>.": {
+  "es": "Aún no se han enviado pedidos — <a href=\"order.html\" style=\"color:#fff\">haga su primer pedido</a>.",
+  "fr": "Aucune commande envoyée pour le moment — <a href=\"order.html\" style=\"color:#fff\">passez votre première commande</a>."
  },
  "No orders sent yet.": {
   "es": "Aún no se han enviado pedidos.",
@@ -1803,9 +1843,9 @@
   "es": "Preguntas sobre estos términos:",
   "fr": "Des questions sur ces conditions :"
  },
- "Questions about these terms: <a href=\"mailto:hello@lumiashades.com\">hello@lumiashades.com</a>.": {
-  "es": "Preguntas sobre estos términos: <a href=\"mailto:hello@lumiashades.com\">hello@lumiashades.com</a>.",
-  "fr": "Questions concernant ces conditions : <a href=\"mailto:hello@lumiashades.com\">hello@lumiashades.com</a>."
+ "Questions about these terms: <a href=\"mailto:lumiashades@gmail.com\">lumiashades@gmail.com</a>.": {
+  "es": "Preguntas sobre estos términos: <a href=\"mailto:lumiashades@gmail.com\">lumiashades@gmail.com</a>.",
+  "fr": "Questions concernant ces conditions : <a href=\"mailto:lumiashades@gmail.com\">lumiashades@gmail.com</a>."
  },
  "Receipt sent to LUMIA": {
   "es": "Comprobante enviado a LUMIA",
@@ -1963,6 +2003,10 @@
   "es": "¿Vende TDBU?",
   "fr": "Vous vendez du TDBU ?"
  },
+ "Semi-transparent": {
+  "es": "Semitransparente",
+  "fr": "Semi-transparent"
+ },
  "Send": {
   "es": "Enviar",
   "fr": "Envoyer"
@@ -2006,6 +2050,10 @@
  "Sheer Woven": {
   "es": "Tejido traslúcido",
   "fr": "Voilage tissé"
+ },
+ "Sheer colours": {
+  "es": "Colores traslúcidos",
+  "fr": "Couleurs voilage"
  },
  "Ship": {
   "es": "Envío",
@@ -2555,9 +2603,9 @@
   "es": "Cuando un pedido se envía, su número de rastreo de FedEx aparece aquí. Haga clic en el número — o en “Rastrear” — para abrir FedEx y seguir el envío.",
   "fr": "Lorsqu’une commande est expédiée, son numéro de suivi FedEx apparaît ici. Cliquez sur le numéro — ou sur “Suivre” — pour ouvrir FedEx et suivre l’envoi."
  },
- "When you send the enquiry form we receive the details you type — name, company, e-mail, country and your message — by e-mail at hello@lumiashades.com. We use them only to answer you.": {
-  "es": "Cuando envía el formulario de consulta, recibimos los datos que usted escribe (nombre, empresa, correo electrónico, país y su mensaje) por correo electrónico en hello@lumiashades.com. Los usamos únicamente para responderle.",
-  "fr": "Lorsque vous envoyez le formulaire de demande, nous recevons les informations que vous saisissez — nom, société, e-mail, pays et votre message — par e-mail à hello@lumiashades.com. Nous ne les utilisons que pour vous répondre."
+ "When you send the enquiry form we receive the details you type — name, company, e-mail, country and your message — by e-mail at lumiashades@gmail.com. We use them only to answer you.": {
+  "es": "Cuando envía el formulario de consulta, recibimos los datos que usted escribe (nombre, empresa, correo electrónico, país y su mensaje) por correo electrónico en lumiashades@gmail.com. Los usamos únicamente para responderle.",
+  "fr": "Lorsque vous envoyez le formulaire de demande, nous recevons les informations que vous saisissez — nom, société, e-mail, pays et votre message — par e-mail à lumiashades@gmail.com. Nous ne les utilisons que pour vous répondre."
  },
  "Which LUMIA products offer top-down bottom-up?": {
   "es": "¿Qué productos LUMIA ofrecen apertura superior e inferior?",
@@ -2607,9 +2655,9 @@
   "es": "Escriba a",
   "fr": "Écrivez à"
  },
- "Write to <a href=\"mailto:hello@lumiashades.com\">hello@lumiashades.com</a> to ask what we hold about you or to have it deleted. E-mail history aside, there is usually nothing to delete — the trade area lives in your browser, not on our servers.": {
-  "es": "Escriba a <a href=\"mailto:hello@lumiashades.com\">hello@lumiashades.com</a> para preguntar qué datos conservamos sobre usted o para solicitar su eliminación. Aparte del historial de correos electrónicos, normalmente no hay nada que eliminar — el área profesional reside en su navegador, no en nuestros servidores.",
-  "fr": "Écrivez à <a href=\"mailto:hello@lumiashades.com\">hello@lumiashades.com</a> pour savoir quelles données nous détenons à votre sujet ou pour les faire supprimer. Hormis l’historique des e-mails, il n’y a généralement rien à supprimer — l’espace professionnel réside dans votre navigateur, pas sur nos serveurs."
+ "Write to <a href=\"mailto:lumiashades@gmail.com\">lumiashades@gmail.com</a> to ask what we hold about you or to have it deleted. E-mail history aside, there is usually nothing to delete — the trade area lives in your browser, not on our servers.": {
+  "es": "Escriba a <a href=\"mailto:lumiashades@gmail.com\">lumiashades@gmail.com</a> para preguntar qué datos conservamos sobre usted o para solicitar su eliminación. Aparte del historial de correos electrónicos, normalmente no hay nada que eliminar — el área profesional reside en su navegador, no en nuestros servidores.",
+  "fr": "Écrivez à <a href=\"mailto:lumiashades@gmail.com\">lumiashades@gmail.com</a> pour savoir quelles données nous détenons à votre sujet ou pour les faire supprimer. Hormis l’historique des e-mails, il n’y a généralement rien à supprimer — l’espace professionnel réside dans votre navigateur, pas sur nos serveurs."
  },
  "Wrong size or product": {
   "es": "Medida o producto incorrecto",
@@ -2858,6 +2906,10 @@
  "pay from here →": {
   "es": "pagar desde aquí →",
   "fr": "payer ici →"
+ },
+ "place your first order": {
+  "es": "haga su primer pedido",
+  "fr": "passez votre première commande"
  },
  "price on request": {
   "es": "precio a solicitud",

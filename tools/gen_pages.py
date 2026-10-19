@@ -31,7 +31,7 @@ TEMPLATE = r"""<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="assets/i18n.js?v=2"></script>
+<script src="assets/i18n.js?v=4"></script>
 <title>LUMIA — @@NAME@@</title>
 <meta name="description" content="LUMIA @@NAME@@ — @@DESC@@ Configure options and fabrics, request a trade quotation.">
 <link rel="canonical" href="https://lumiashades.com/@@FNAME@@">
@@ -224,7 +224,7 @@ TEMPLATE = r"""<!doctype html>
 <footer>
   <div class="wrap">
     <span class="mono">&copy; 2026 LUMIA &middot; All rights reserved</span>
-    <span class="mono">hello@lumiashades.com</span>
+    <span class="mono">lumiashades@gmail.com</span>
   </div>
 </footer>
 
@@ -442,7 +442,7 @@ var CONFIG = @@CONFIG@@;
     }).join('');
 
     var body = rows().map(function(r){ return r[0] + ': ' + r[1]; }).join('\n');
-    mailbtn.href = 'mailto:hello@lumiashades.com?subject=' +
+    mailbtn.href = 'mailto:lumiashades@gmail.com?subject=' +
       encodeURIComponent('Quotation request — ' + CONFIG.name) +
       '&body=' + encodeURIComponent(body + '\n\n—\nSent from the LUMIA product configurator');
   }

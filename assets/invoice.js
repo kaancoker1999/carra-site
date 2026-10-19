@@ -61,7 +61,7 @@
       '<button class="printbtn" onclick="print()">Print / save PDF</button>' +
       '<div class="top"><div><h1>TDC PRODUCTS LLC</h1>' +
       '<p style="margin:2px 0"><b>7907 Candle Lane, Houston, TX 77071 U.S.A.</b></p>' +
-      '<p style="margin:2px 0"><b>hello@lumiashades.com</b></p></div>' +
+      '<p style="margin:2px 0"><b>lumiashades@gmail.com</b></p></div>' +
       '<div class="right"><div class="inv">INVOICE</div>' +
       '<p style="margin:2px 0">No.: <span contenteditable>' + esc(o.ref.replace(/\D/g,'').slice(-6)) + '</span></p>' +
       '<p style="margin:2px 0">Date: ' + ids + '</p>' +
@@ -83,7 +83,7 @@
       '<tbody>' + rows + '</tbody></table>' +
       '<p class="total">TOTAL&nbsp;&nbsp;$ ' + t.total.toFixed(2) + (t.unknown ? ' + ' + t.unknown + ' line(s) TBD' : '') + '</p>' +
       (o.notes ? '<p style="font-size:11px"><b>Notes:</b> ' + esc(o.notes) + '</p>' : '') +
-      '<div class="foot">DIRECT ALL INQUIRIES TO hello@lumiashades.com<br><b>THANK YOU FOR YOUR COOPERATION</b></div>' +
+      '<div class="foot">DIRECT ALL INQUIRIES TO lumiashades@gmail.com<br><b>THANK YOU FOR YOUR COOPERATION</b></div>' +
       '</body></html>';
     var win = window.open('', '_blank');
     if(!win){ if(onBlocked) onBlocked('Allow pop-ups for this site to open the invoice.'); return; }

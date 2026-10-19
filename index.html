@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="assets/i18n.js?v=2"></script>
+<script src="assets/i18n.js?v=4"></script>
 <title>LUMIA — Motorized made-to-measure window treatments</title>
 <meta name="description" content="LUMIA Blinds & Shades — made-to-measure Roman, cellular and pleated shades and drapery, motorized with Motionblinds. Trade and home-automation partners welcome.">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -468,7 +468,7 @@
         <div class="addr">
           LUMIA Blinds &amp; Shades<br>
           Houston, Texas, United States<br>
-          hello@lumiashades.com<br>
+          lumiashades@gmail.com<br>
           Mon&ndash;Fri, 9:00 AM &ndash; 5:00 PM
         </div>
       </div>
@@ -531,7 +531,7 @@
         <a href="about.html">About LUMIA</a>
         <a href="about.html">Quality &amp; testing</a>
         <a href="about.html#safety">Child safety</a>
-        <a href="mailto:hello@lumiashades.com?subject=Careers">Careers</a>
+        <a href="mailto:lumiashades@gmail.com?subject=Careers">Careers</a>
       </div>
     </div>
 
@@ -654,7 +654,7 @@
     draw(TOP0,BOT0);requestAnimationFrame(frame);
   })();
 
-  /* ── form: posts to hello@lumiashades.com via FormSubmit ── */
+  /* ── form: posts to lumiashades@gmail.com via FormSubmit ── */
   var send=document.getElementById('send');
   if(send)send.addEventListener('click',function(){
     var box=document.getElementById('form');
@@ -679,7 +679,7 @@
       send.textContent='Sent';
     }).catch(function(){
       /* network fallback: open the mail client instead */
-      location.href='mailto:hello@lumiashades.com?subject='+encodeURIComponent('Website enquiry — '+(fields.company||fields.name))+
+      location.href='mailto:lumiashades@gmail.com?subject='+encodeURIComponent('Website enquiry — '+(fields.company||fields.name))+
         '&body='+encodeURIComponent(Object.keys(fields).filter(function(k){return k[0]!=='_';})
         .map(function(k){return k+': '+fields[k];}).join('\n'));
       send.disabled=false;send.textContent='Send message';

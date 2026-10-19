@@ -487,7 +487,7 @@
       return load();
     }).catch(function(){
       b.disabled = false; b.textContent = 'Order completed';
-      note(b, 'Could not send the confirmation — try again, or e-mail hello@lumiashades.com.');
+      note(b, 'Could not send the confirmation — try again, or e-mail lumiashades@gmail.com.');
     });
   });
 
@@ -520,7 +520,7 @@
       return load();
     }).catch(function(){
       b.disabled = false; b.textContent = 'Cancel order';
-      note(b, 'Could not cancel — it may already be in production. Try again or e-mail hello@lumiashades.com.');
+      note(b, 'Could not cancel — it may already be in production. Try again or e-mail lumiashades@gmail.com.');
     });
   });
 
