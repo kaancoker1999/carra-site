@@ -26,7 +26,7 @@
   }
 
   /* ── drawer menu (all pages load this file) ──
-     Below 1200px the header links give way to a hamburger that slides a
+     Below 1500px the header links give way to a hamburger that slides a
      full-height white panel in from the right over a dimmed page:
      plain links, a "Products" group that expands with +, and the
      partner link as a solid button pinned to the bottom. */
@@ -68,8 +68,8 @@
       'border-radius:10px;padding:16px;font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.16em;' +
       'text-transform:uppercase;text-decoration:none}' +
       '#navdrawer .dcta:hover{background:#8A6220}' +
-      '@media(max-width:1200px){#navtoggle{display:block}header nav{display:none!important}header{position:sticky}}' +
-      '@media(min-width:1201px){#navdrawer,#navveil{display:none}}';
+      '@media(max-width:1500px){#navtoggle{display:block}header nav{display:none!important}header{position:sticky}}' +
+      '@media(min-width:1501px){#navdrawer,#navveil{display:none}}';
     document.head.appendChild(css);
 
     var btn = document.createElement('button');
