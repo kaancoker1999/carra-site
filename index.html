@@ -289,16 +289,18 @@
   .sent.on{display:block}
 
   /* 10 ── footer ─────────────────────────────────────── */
-  footer{background:#EADFC6;border-top:1px solid var(--line2);padding:90px 0 40px}
+  footer{background:var(--ink);border-top:0;padding:90px 0 40px}
+  footer .logo{color:#fff}
+  footer .fbrand p{color:rgba(255,255,255,.58)}
   .fgrid{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:40px}
   .fbrand .logo{margin-bottom:16px}
   .fbrand p{font-size:14px;color:var(--muted);max-width:34ch;margin:0 0 20px}
-  .fcol h5{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);margin:0 0 14px;font-weight:500}
-  .fcol a{display:block;font-size:14px;color:var(--muted);text-decoration:none;padding:5px 0;transition:color .2s}
-  .fcol a:hover{color:var(--ink)}
-  .certs{display:flex;flex-wrap:wrap;gap:8px;margin-top:52px;padding-top:30px;border-top:1px solid var(--line2)}
-  .certs span{border:1px solid var(--line2);padding:7px 13px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-  .fbot{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:30px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:#8E9296}
+  .fcol h5{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#fff;margin:0 0 14px;font-weight:500}
+  .fcol a{display:block;font-size:14px;color:rgba(255,255,255,.62);text-decoration:none;padding:5px 0;transition:color .2s}
+  .fcol a:hover{color:#fff}
+  .certs{display:flex;flex-wrap:wrap;gap:8px;margin-top:52px;padding-top:30px;border-top:1px solid rgba(255,255,255,.16)}
+  .certs span{border:1px solid rgba(255,255,255,.24);padding:7px 13px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+  .fbot{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:30px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;color:rgba(255,255,255,.45)}
   .fbot a{text-decoration:none}
 
   @media(max-width:960px){

@@ -145,7 +145,8 @@ TEMPLATE = r"""<!doctype html>
   .btn.ghost{background:transparent;color:var(--ink)}
   .btn:hover{opacity:.85}
 
-  footer{border-top:1px solid var(--line2);background:#EADFC6}
+  footer{border-top:0;background:var(--ink)}
+  footer .mono{color:rgba(255,255,255,.55)}
   footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
 
   @media(max-width:980px){
