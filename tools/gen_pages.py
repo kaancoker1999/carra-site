@@ -69,10 +69,6 @@ TEMPLATE = r"""<!doctype html>
   .partner{border:1px solid var(--line2);padding:8px 15px;color:var(--bronze)!important}
   .partner:hover{border-color:var(--bronze)}
 
-  .crumbs{border-bottom:1px solid var(--line);background:var(--paper)}
-  .crumbs .wrap{display:flex;align-items:center;gap:16px;height:52px}
-  .crumbs a{text-decoration:none}
-  .crumbs a:hover{color:var(--ink)}
 
   .phero{position:relative;height:56vh;min-height:400px;overflow:hidden;background:var(--paper2)}
   .phero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
@@ -176,13 +172,6 @@ TEMPLATE = r"""<!doctype html>
     </nav>
   </div>
 </header>
-
-<div class="crumbs">
-  <div class="wrap">
-    <a class="mono" href="index.html#products">&larr; All products</a>
-    <span class="mono" style="color:var(--ink)">@@CODE@@ &middot; @@NAME@@</span>
-  </div>
-</div>
 
 <section class="phero">
   <img src="@@IMG@@" alt="@@NAME@@ room scene">
