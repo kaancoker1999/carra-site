@@ -26,7 +26,7 @@
   }
 
   /* ── drawer menu (all pages load this file) ──
-     Below 1500px the header links give way to a hamburger that slides a
+     At every width the header links give way to a hamburger that slides a
      full-height white panel in from the right over a dimmed page:
      plain links, a "Products" group that expands with +, and the
      partner link as a solid button pinned to the bottom. */
@@ -41,7 +41,7 @@
     if (!nav || document.getElementById('navtoggle')) return;
     var css = document.createElement('style');
     css.textContent =
-      '#navtoggle{display:none;font-size:20px;line-height:1;background:none;border:1px solid #D3D2CC;' +
+      '#navtoggle{display:block;font-size:20px;line-height:1;background:none;border:1px solid #D3D2CC;' +
       'border-radius:8px;padding:7px 12px;cursor:pointer;color:#14171A}' +
       '#navveil{position:fixed;inset:0;background:rgba(16,14,10,.5);opacity:0;pointer-events:none;' +
       'transition:opacity .4s ease;z-index:998}' +
@@ -68,8 +68,7 @@
       'border-radius:10px;padding:16px;font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.16em;' +
       'text-transform:uppercase;text-decoration:none}' +
       '#navdrawer .dcta:hover{background:#8A6220}' +
-      '@media(max-width:1500px){#navtoggle{display:block}header nav{display:none!important}header{position:sticky}}' +
-      '@media(min-width:1501px){#navdrawer,#navveil{display:none}}';
+      'header nav{display:none!important}header{position:sticky}';
     document.head.appendChild(css);
 
     var btn = document.createElement('button');
