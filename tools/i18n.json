@@ -867,9 +867,9 @@
     "es": "Cada unidad motorizada LUMIA funciona con",
     "fr": "Chaque unité motorisée LUMIA est entraînée par"
   },
-  "Every LUMIA motorized unit is driven by <b>Motionblinds</b> — the smart motor technology by Coulisse — matched to our own mechanisms and assembled in our plant. Rechargeable lithium or hardwired, built on Matter over Thread, with app, remote and hub control — and both rails addressable independently on top-down bottom-up units. For Apple Home over Thread, we also build with <b>Eve MotionBlinds</b> drives.": {
-    "es": "Cada unidad motorizada LUMIA funciona con <b>Motionblinds</b> — la tecnología de motores inteligentes de Coulisse — adaptada a nuestros propios mecanismos y ensamblada en nuestra planta. De litio recargable o cableada, basada en Matter sobre Thread, con control por app, control remoto y hub — y con ambos rieles controlables de forma independiente en las unidades de apertura superior e inferior. Para Apple Home sobre Thread, también fabricamos con accionamientos <b>Eve MotionBlinds</b>.",
-    "fr": "Chaque unité motorisée LUMIA est entraînée par <b>Motionblinds</b> — la technologie de moteurs intelligents de Coulisse — associée à nos propres mécanismes et assemblée dans notre usine. Lithium rechargeable ou alimentation filaire, conçue sur Matter via Thread, avec commande par application, télécommande et passerelle — et les deux rails pilotables indépendamment sur les unités à ouverture haut-bas. Pour Apple Home via Thread, nous fabriquons aussi avec des motorisations <b>Eve MotionBlinds</b>."
+  "Every LUMIA motorized unit is driven by <b>Motionblinds</b> — the smart motor technology by Coulisse — matched to our own mechanisms and assembled in our plant. Rechargeable lithium, built on Matter over Thread, with app, remote and hub control — and both rails addressable independently on top-down bottom-up units. For Apple Home over Thread, we also build with <b>Eve MotionBlinds</b> drives.": {
+    "es": "Cada unidad motorizada LUMIA funciona con <b>Motionblinds</b> — la tecnología de motores inteligentes de Coulisse — adaptada a nuestros propios mecanismos y ensamblada en nuestra planta. De litio recargable, basada en Matter sobre Thread, con control por app, control remoto y hub — y con ambos rieles controlables de forma independiente en las unidades de apertura superior e inferior. Para Apple Home sobre Thread, también fabricamos con accionamientos <b>Eve MotionBlinds</b>.",
+    "fr": "Chaque unité motorisée LUMIA est entraînée par <b>Motionblinds</b> — la technologie de moteurs intelligents de Coulisse — associée à nos propres mécanismes et assemblée dans notre usine. Lithium rechargeable, conçue sur Matter via Thread, avec commande par application, télécommande et passerelle — et les deux rails pilotables indépendamment sur les unités à ouverture haut-bas. Pour Apple Home via Thread, nous fabriquons aussi avec des motorisations <b>Eve MotionBlinds</b>."
   },
   "Every LUMIA shade is built to the EN 13120 and ANSI/WCMA A100.1 child-safety standards. Our cordless drives — including cordless top-down bottom-up — have no accessible cord anywhere on the unit, and continuous cord loops ship with a wall tension anchor that must be installed. For homes with young children we recommend cordless or motorized operation on every window.": {
     "es": "Todas las cortinas LUMIA se fabrican conforme a las normas de seguridad infantil EN 13120 y ANSI/WCMA A100.1. Nuestros accionamientos sin cordón, incluida la apertura superior e inferior (TDBU) sin cordón, no tienen ningún cordón accesible en la unidad, y las cadenas continuas se envían con un tensor de pared que debe instalarse. Para hogares con niños pequeños recomendamos el accionamiento sin cordón o motorizado en todas las ventanas.",
@@ -1030,14 +1030,6 @@
   "Hardware": {
     "es": "Herrajes",
     "fr": "Quincaillerie"
-  },
-  "Hardwired": {
-    "es": "Cableado",
-    "fr": "Filaire"
-  },
-  "Hardwired systems": {
-    "es": "Sistemas cableados",
-    "fr": "Systèmes filaires"
   },
   "Heading": {
     "es": "Cabecera",
@@ -1294,10 +1286,6 @@
   "Logging in with an access code decrypts your price list": {
     "es": "Al iniciar sesión con un código de acceso, su lista de precios se descifra",
     "fr": "La connexion avec un code d’accès déchiffre votre liste de prix"
-  },
-  "Low-voltage for new build and specification work, with a common bracket set.": {
-    "es": "Baja tensión para obra nueva y proyectos de especificación, con un juego de soportes común.",
-    "fr": "Basse tension pour la construction neuve et la prescription, avec un jeu de supports commun."
   },
   "Made to measure": {
     "es": "A medida",
@@ -2523,10 +2511,6 @@
     "es": "An. × Al.",
     "fr": "L × H"
   },
-  "WIRED": {
-    "es": "CABLEADO",
-    "fr": "FILAIRE"
-  },
   "Wall": {
     "es": "Pared",
     "fr": "Mur"
@@ -3083,9 +3067,9 @@
     "es": "— luz de la mañana sin quedar a la vista.",
     "fr": "— la lumière du matin sans être exposé aux regards."
   },
-  "— the smart motor technology by Coulisse — matched to our own mechanisms and assembled in our plant. Rechargeable lithium or hardwired, built on Matter over Thread, with app, remote and hub control — and both rails addressable independently on top-down bottom-up units. For Apple Home over Thread, we also build with": {
-    "es": "— la tecnología de motores inteligentes de Coulisse — adaptada a nuestros propios mecanismos y ensamblada en nuestra planta. De litio recargable o cableada, basada en Matter sobre Thread, con control por aplicación, control remoto y hub, y con ambos rieles controlables de forma independiente en las unidades con apertura superior e inferior (TDBU). Para Apple Home sobre Thread, también fabricamos con",
-    "fr": "— la technologie de moteurs intelligents de Coulisse — adaptée à nos propres mécanismes et assemblée dans notre usine. Lithium rechargeable ou filaire, reposant sur Matter sur Thread, avec commande par application, télécommande et passerelle — et les deux rails pilotables indépendamment sur les unités à ouverture haut-bas (TDBU). Pour Apple Home sur Thread, nous fabriquons aussi avec"
+  "— the smart motor technology by Coulisse — matched to our own mechanisms and assembled in our plant. Rechargeable lithium, built on Matter over Thread, with app, remote and hub control — and both rails addressable independently on top-down bottom-up units. For Apple Home over Thread, we also build with": {
+    "es": "— la tecnología de motores inteligentes de Coulisse — adaptada a nuestros propios mecanismos y ensamblada en nuestra planta. De litio recargable, basada en Matter sobre Thread, con control por aplicación, control remoto y hub, y con ambos rieles controlables de forma independiente en las unidades con apertura superior e inferior (TDBU). Para Apple Home sobre Thread, también fabricamos con",
+    "fr": "— la technologie de moteurs intelligents de Coulisse — adaptée à nos propres mécanismes et assemblée dans notre usine. Lithium rechargeable, reposant sur Matter sur Thread, avec commande par application, télécommande et passerelle — et les deux rails pilotables indépendamment sur les unités à ouverture haut-bas (TDBU). Pour Apple Home sur Thread, nous fabriquons aussi avec"
   },
   "← All messages": {
     "es": "← Todos los mensajes",
