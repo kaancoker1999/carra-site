@@ -25,7 +25,16 @@
     });
   }
 
-  /* ── mobile hamburger (all pages load this file) ── */
+  /* ── drawer menu (all pages load this file) ──
+     Below 980px the header links give way to a hamburger that slides a
+     full-height white panel in from the right over a dimmed page:
+     plain links, a "Products" group that expands with +, and the
+     partner link as a solid button pinned to the bottom. */
+  var PRODUCT_LINKS = [
+    ['roman.html', 'Roman shades'], ['cellular.html', 'Cellular shades'],
+    ['pleated.html', 'Pleated shades'], ['drapery.html', 'Drapery'],
+    ['tdbu.html', 'Top-down bottom-up']
+  ];
   function injectMobileNav() {
     var header = document.querySelector('header');
     var nav = header && header.querySelector('nav');
@@ -34,18 +43,35 @@
     css.textContent =
       '#navtoggle{display:none;font-size:20px;line-height:1;background:none;border:1px solid #D3D2CC;' +
       'border-radius:8px;padding:7px 12px;cursor:pointer;color:#14171A}' +
-      '@media(max-width:760px){' +
-      '#navtoggle{display:block}' +
-      'header nav{display:none;position:absolute;top:100%;left:0;right:0;background:rgba(255,255,255,.98);' +
-      'backdrop-filter:blur(12px);border-bottom:1px solid #E4E3DE;flex-direction:column;' +
-      'align-items:stretch;gap:0;padding:6px 22px 18px}' +
-      'header nav.open{display:flex}' +
-      'header nav a{display:block!important;padding:13px 0;font-size:13px;border-bottom:1px solid #F1F1EE}' +
-      'header nav a:last-child{border-bottom:0}' +
-      'header nav a.partner{margin-top:10px;text-align:center;border:1px solid #D3D2CC;padding:12px}' +
-      'header{position:sticky}' +
-      '}';
+      '#navveil{position:fixed;inset:0;background:rgba(16,14,10,.5);opacity:0;pointer-events:none;' +
+      'transition:opacity .4s ease;z-index:998}' +
+      '#navveil.on{opacity:1;pointer-events:auto}' +
+      '#navdrawer{position:fixed;top:0;right:0;bottom:0;width:min(372px,90vw);background:#fff;z-index:999;' +
+      'transform:translateX(104%);transition:transform .5s cubic-bezier(.3,.7,.25,1);display:flex;' +
+      'flex-direction:column;padding:64px 30px 26px;overflow:auto;box-shadow:-16px 0 50px rgba(20,23,26,.22)}' +
+      '#navdrawer.open{transform:none}' +
+      '#navclose{position:absolute;top:12px;right:14px;font-size:30px;line-height:1;background:none;border:0;' +
+      'cursor:pointer;color:#14171A;padding:8px 10px}' +
+      '#navdrawer .dlinks{margin-bottom:28px}' +
+      '#navdrawer .dlink,#navdrawer .dghead{display:block;width:100%;text-align:left;background:none;border:0;' +
+      'border-bottom:1px solid #EFEDE8;cursor:pointer;font-family:\'IBM Plex Sans\',sans-serif;font-size:17px;' +
+      'font-weight:400;color:#44484C;text-decoration:none;padding:15px 2px;letter-spacing:0;text-transform:none}' +
+      '#navdrawer .dlink.on{color:#14171A;font-weight:600}' +
+      '#navdrawer .dghead{font-weight:600;color:#14171A;display:flex;justify-content:space-between;align-items:center}' +
+      '#navdrawer .dghead span{font-size:21px;font-weight:400;color:#8A8E92;transition:transform .3s}' +
+      '#navdrawer .dgroup.open .dghead span{transform:rotate(45deg)}' +
+      '#navdrawer .dsub{display:none;border-bottom:1px solid #EFEDE8;padding:4px 0 12px}' +
+      '#navdrawer .dgroup.open .dsub{display:block}' +
+      '#navdrawer .dsub a{display:block;font-family:\'IBM Plex Sans\',sans-serif;font-size:14.5px;color:#64686C;' +
+      'text-decoration:none;padding:9px 0 9px 14px;text-transform:none;letter-spacing:0}' +
+      '#navdrawer .dcta{margin-top:auto;display:block;text-align:center;background:#14171A;color:#fff!important;' +
+      'border-radius:10px;padding:16px;font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.16em;' +
+      'text-transform:uppercase;text-decoration:none}' +
+      '#navdrawer .dcta:hover{background:#8A6220}' +
+      '@media(max-width:980px){#navtoggle{display:block}header nav{display:none!important}header{position:sticky}}' +
+      '@media(min-width:981px){#navdrawer,#navveil{display:none}}';
     document.head.appendChild(css);
+
     var btn = document.createElement('button');
     btn.id = 'navtoggle';
     btn.setAttribute('aria-label', 'Menu');
@@ -53,13 +79,59 @@
     btn.innerHTML = '&#9776;';
     nav.parentNode.appendChild(btn);
     if (getComputedStyle(header).position === 'static') header.style.position = 'sticky';
-    btn.addEventListener('click', function () {
-      var open = nav.classList.toggle('open');
-      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      btn.innerHTML = open ? '&times;' : '&#9776;';
-    });
-    nav.addEventListener('click', function (e) {
-      if (e.target.closest('a')) { nav.classList.remove('open'); btn.innerHTML = '&#9776;'; }
+
+    var veil = document.createElement('div'); veil.id = 'navveil';
+    var dr = document.createElement('aside'); dr.id = 'navdrawer';
+    dr.setAttribute('aria-label', 'Menu');
+    document.body.appendChild(veil);
+    document.body.appendChild(dr);
+
+    /* rebuilt on every open, so links injected after login are included */
+    function build() {
+      var links = [].slice.call(nav.querySelectorAll('a'));
+      var isPublic = links.some(function (a) { return /#products$/.test(a.getAttribute('href') || ''); });
+      var html = '<button id="navclose" aria-label="Close menu">&times;</button><div class="dlinks">';
+      var cta = '';
+      links.forEach(function (a) {
+        var href = a.getAttribute('href') || '#', label = a.innerHTML;
+        if (a.classList.contains('partner')) {
+          cta = '<a class="dcta" href="' + href + '">' + label + '</a>';
+          return;
+        }
+        if (isPublic && /#products$/.test(href)) {
+          html += '<div class="dgroup"><button class="dghead" type="button">' + label + '<span>+</span></button>' +
+            '<div class="dsub">' + PRODUCT_LINKS.map(function (p) {
+              return '<a href="' + p[0] + '">' + p[1] + '</a>';
+            }).join('') + '</div></div>';
+          return;
+        }
+        if (isPublic && /tdbu\.html$/.test(href)) return; /* lives inside the Products group */
+        html += '<a class="dlink' + (a.hasAttribute('style') ? ' on' : '') + '" href="' + href + '">' + label + '</a>';
+      });
+      dr.innerHTML = html + '</div>' + cta;
+    }
+
+    function setOpen(o) {
+      if (o) build();
+      dr.classList.toggle('open', o);
+      veil.classList.toggle('on', o);
+      btn.setAttribute('aria-expanded', o ? 'true' : 'false');
+      document.body.style.overflow = o ? 'hidden' : '';
+    }
+    btn.addEventListener('click', function () { setOpen(!dr.classList.contains('open')); });
+    veil.addEventListener('click', function () { setOpen(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+    dr.addEventListener('click', function (e) {
+      if (e.target.closest('#navclose')) { setOpen(false); return; }
+      var gh = e.target.closest('.dghead');
+      if (gh) { gh.parentNode.classList.toggle('open'); return; }
+      var cta = e.target.closest('.dcta');
+      if (cta) {
+        /* the portal's "Log out" link works by handler, not href — forward the click */
+        var orig = nav.querySelector('a.partner');
+        if (orig) { e.preventDefault(); setOpen(false); orig.click(); return; }
+      }
+      if (e.target.closest('a')) setOpen(false);
     });
   }
 
