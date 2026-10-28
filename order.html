@@ -34,25 +34,25 @@
   .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .wrap{max-width:1180px;padding:0 44px;margin:0 auto}
 
-  header{position:sticky;top:0;z-index:50;background:rgba(14,12,27,.72);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.1)}
+  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
   header .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;gap:24px}
-  .logo{font-family:'Archivo',sans-serif;font-weight:700;font-size:19px;letter-spacing:.30em;text-decoration:none;color:#F6F3EC}
+  .logo{font-family:'Archivo',sans-serif;font-weight:700;font-size:19px;letter-spacing:.30em;text-decoration:none;color:var(--ink)}
   nav{display:flex;gap:30px;align-items:center}
-  nav a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.62);text-decoration:none;transition:color .2s}
-  nav a:hover{color:#fff}
+  nav a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s}
+  nav a:hover{color:var(--ink)}
   .hleft{display:flex;align-items:center;gap:28px}
-  .homelnk{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.62);text-decoration:none;transition:color .2s}
-  .homelnk:hover{color:#fff}
-  /* phone menu on the dark portal header */
-  header #navtoggle{color:#F6F3EC;border-color:rgba(255,255,255,.45)}
+  .homelnk{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s}
+  .homelnk:hover{color:var(--ink)}
+  /* phone menu on the white portal header */
+  header #navtoggle{color:var(--ink);border-color:var(--line2)}
   @media(max-width:760px){
-    header nav{background:rgba(22,19,42,.98)!important;border-bottom-color:rgba(255,255,255,.12)!important}
-    header nav a{color:rgba(255,255,255,.85)!important}
-    header nav a.partner{color:#F6F3EC!important}
+    header nav{background:rgba(255,255,255,.98)!important;border-bottom-color:var(--line)!important}
+    header nav a{color:var(--ink)!important}
+    header nav a.partner{color:var(--bronze)!important}
   }
-  nav a[style]{color:#fff!important;font-weight:500}
-  .partner{border:1px solid rgba(255,255,255,.25);padding:8px 15px;color:var(--bronze-lt)!important;border-radius:8px}
-  .partner:hover{border-color:var(--bronze-lt)}
+  nav a[style]{color:var(--ink)!important;font-weight:500}
+  .partner{border:1px solid var(--line2);padding:8px 15px;color:var(--bronze)!important;border-radius:8px}
+  .partner:hover{border-color:var(--bronze)}
 
   .crumbs{border-bottom:1px solid rgba(255,255,255,.08)}
   .crumbs .wrap{display:flex;align-items:center;gap:16px;height:52px}
