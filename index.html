@@ -77,8 +77,12 @@
     text-shadow:0 1px 22px rgba(250,248,243,.95),0 1px 3px rgba(250,248,243,.9)}
   .hero .sub{margin:26px 0 0;font-size:18px;color:#33383C;max-width:44ch;
     text-shadow:0 1px 16px rgba(250,248,243,.95)}
-  .hero .ctas{display:flex;gap:12px;margin:32px 0 0;flex-wrap:wrap;pointer-events:auto}
-  .hero .ctas .ghost{background:rgba(255,255,255,.72)}
+  /* quiet scroll cue in place of the old hero buttons */
+  .scrollcue{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);z-index:7;
+    width:1px;height:58px;background:rgba(255,255,255,.38);pointer-events:auto}
+  .scrollcue::after{content:"";position:absolute;left:-1px;top:0;width:3px;height:14px;border-radius:2px;
+    background:#fff;box-shadow:0 1px 6px rgba(20,23,26,.35);animation:scue 2.1s cubic-bezier(.4,0,.4,1) infinite}
+  @keyframes scue{0%{top:-8%;opacity:0}15%{opacity:1}70%{opacity:1}100%{top:84%;opacity:0}}
 
   .warnbox{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;display:none;
     max-width:520px;background:rgba(255,255,255,.96);border:1px solid var(--line2);padding:24px 26px;
@@ -331,11 +335,8 @@
     <div class="eyebrow">Made-to-measure &middot; Since 1999</div>
     <h1>Custom shades and drapery, straight from the factory.</h1>
     <p class="sub">Roman, cellular and pleated shades and drapery. Cordless or motorized. Cut, sewn and tested in our own plant, shipped ready to hang.</p>
-    <div class="ctas">
-      <a class="btn solid" href="#products">See the products</a>
-      <a class="btn ghost" href="trade.html">Trade login</a>
-    </div>
   </div>
+  <a class="scrollcue" href="#products" aria-label="Scroll to products"></a>
   <div class="ladder" id="ladder"></div>
   <div class="track" id="track">Honeycomb TDBU &mdash; <b>move your cursor to move the sun</b></div>
 </div>
