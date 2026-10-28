@@ -3174,5 +3174,13 @@
   "Shades": {
     "es": "Cortinas",
     "fr": "Stores"
+  },
+  "Custom shades and drapery": {
+    "es": "Cortinas y cortinajes a medida",
+    "fr": "Stores et rideaux sur mesure"
+  },
+  "Straight from the factory": {
+    "es": "Directo de fábrica",
+    "fr": "Directement de l'usine"
   }
 }
