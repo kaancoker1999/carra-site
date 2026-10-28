@@ -108,8 +108,10 @@
                 '<div class="dsub g2">' + SHADE_LINKS.map(function (p) {
                   return '<a href="' + p[0] + '">' + p[1] + '</a>';
                 }).join('') + '</div></div>' +
-              '<a class="dmain g2" href="drapery.html">Drapery</a>' +
-              '<a class="dmain g2" href="tdbu.html">Top-down bottom-up</a>' +
+              '<div class="dgroup g2"><button class="dghead g2" type="button">Drapery<span>+</span></button>' +
+                '<div class="dsub g2"><a href="drapery.html">Drapery</a></div></div>' +
+              '<div class="dgroup g2"><button class="dghead g2" type="button">Top-down bottom-up<span>+</span></button>' +
+                '<div class="dsub g2"><a href="tdbu.html">Top-down bottom-up</a></div></div>' +
             '</div></div>';
           return;
         }
