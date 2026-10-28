@@ -30,10 +30,9 @@
      full-height white panel in from the right over a dimmed page:
      plain links, a "Products" group that expands with +, and the
      partner link as a solid button pinned to the bottom. */
-  var PRODUCT_LINKS = [
+  var SHADE_LINKS = [
     ['roman.html', 'Roman shades'], ['cellular.html', 'Cellular shades'],
-    ['pleated.html', 'Pleated shades'], ['drapery.html', 'Drapery'],
-    ['tdbu.html', 'Top-down bottom-up']
+    ['pleated.html', 'Pleated shades']
   ];
   function injectMobileNav() {
     var header = document.querySelector('header');
@@ -58,6 +57,7 @@
       'font-weight:400;color:#44484C;text-decoration:none;padding:15px 2px;letter-spacing:0;text-transform:none}' +
       '#navdrawer .dlink.on{color:#14171A;font-weight:600}' +
       '#navdrawer .dghead{font-weight:600;color:#14171A;display:flex;justify-content:space-between;align-items:center}' +
+      '#navdrawer .dmain{display:block;border-bottom:1px solid #EFEDE8;font-family:\'IBM Plex Sans\',sans-serif;font-size:17px;font-weight:600;color:#14171A;text-decoration:none;padding:15px 2px;text-transform:none;letter-spacing:0}' +
       '#navdrawer .dghead span{font-size:21px;font-weight:400;color:#8A8E92;transition:transform .3s}' +
       '#navdrawer .dgroup.open .dghead span{transform:rotate(45deg)}' +
       '#navdrawer .dsub{display:none;border-bottom:1px solid #EFEDE8;padding:4px 0 12px}' +
@@ -98,10 +98,13 @@
           return;
         }
         if (isPublic && /#products$/.test(href)) {
-          html += '<div class="dgroup"><button class="dghead" type="button">' + label + '<span>+</span></button>' +
-            '<div class="dsub">' + PRODUCT_LINKS.map(function (p) {
+          /* the Products entry splits into Shades / Drapery / TDBU headings */
+          html += '<div class="dgroup"><button class="dghead" type="button">Shades<span>+</span></button>' +
+            '<div class="dsub">' + SHADE_LINKS.map(function (p) {
               return '<a href="' + p[0] + '">' + p[1] + '</a>';
-            }).join('') + '</div></div>';
+            }).join('') + '</div></div>' +
+            '<a class="dmain" href="drapery.html">Drapery</a>' +
+            '<a class="dmain" href="tdbu.html">Top-down bottom-up</a>';
           return;
         }
         if (isPublic && /(?:^|\/)tdbu(?:\.html)?$/.test(href)) return; /* lives inside the Products group */

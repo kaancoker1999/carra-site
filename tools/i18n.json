@@ -3170,5 +3170,9 @@
   "Fabric book (Roman & drapery) is a pre-order — ships from mid-December.": {
     "es": "El libro de telas (romanas y cortinajes) es una preventa: se envía desde mediados de diciembre.",
     "fr": "Le livre de tissus (stores romains et rideaux) est une précommande — expédié à partir de mi-décembre."
+  },
+  "Shades": {
+    "es": "Cortinas",
+    "fr": "Stores"
   }
 }

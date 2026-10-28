@@ -524,6 +524,7 @@ LUMIA_I18N_DATA({
 "Sends the order to LUMIA for review. Until it goes into production you can still edit or cancel it.":"Envía el pedido a LUMIA para su revisión. Hasta que entre en producción, todavía puede editarlo o cancelarlo.",
 "Sent the payment?":"¿Envió el pago?",
 "Sent. We will answer in":"Enviado. Le responderemos en",
+"Shades":"Cortinas",
 "Sharing":"Compartir datos",
 "Sheer":"Traslúcido",
 "Sheer Woven":"Tejido traslúcido",

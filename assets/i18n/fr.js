@@ -524,6 +524,7 @@ LUMIA_I18N_DATA({
 "Sends the order to LUMIA for review. Until it goes into production you can still edit or cancel it.":"Envoie la commande à LUMIA pour validation. Tant qu’elle n’est pas entrée en production, vous pouvez encore la modifier ou l’annuler.",
 "Sent the payment?":"Paiement envoyé ?",
 "Sent. We will answer in":"Envoyé. Nous vous répondrons dans",
+"Shades":"Stores",
 "Sharing":"Partage des données",
 "Sheer":"Voilage",
 "Sheer Woven":"Voilage tissé",
