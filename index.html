@@ -81,9 +81,18 @@
   /* quiet scroll cue in place of the old hero buttons */
   .scrollcue{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);z-index:7;
     width:1px;height:58px;background:rgba(255,255,255,.38);pointer-events:auto}
-  .herolabel{position:absolute;left:0;right:0;bottom:96px;z-index:7;text-align:center;pointer-events:none;
-    font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;
-    color:#33383C;text-shadow:0 1px 14px rgba(250,248,243,.95);transition:opacity .35s ease}
+  /* rotating name wheel: previous · CURRENT · next, turning with the photos */
+  .heronames{position:absolute;left:0;right:0;bottom:92px;z-index:7;display:flex;align-items:baseline;
+    justify-content:center;gap:clamp(26px,6vw,74px);pointer-events:none}
+  .heronames span{font-family:'Fraunces',serif;font-weight:560;letter-spacing:-.015em;white-space:nowrap;
+    text-shadow:0 1px 18px rgba(250,248,243,.95),0 1px 3px rgba(250,248,243,.85);
+    transition:transform .34s ease, opacity .34s ease}
+  .hn-cur{font-size:clamp(22px,3.2vw,38px);color:var(--ink)}
+  .hn-prev,.hn-next{font-size:clamp(14px,1.8vw,20px);color:#3D4246;opacity:.52;cursor:pointer;pointer-events:auto}
+  .hn-prev:hover,.hn-next:hover{opacity:.85}
+  .heronames.out span{transform:translateX(-52px);opacity:0}
+  .heronames.jump span{transition:none;transform:translateX(52px);opacity:0}
+  @media(max-width:560px){.hn-prev,.hn-next{display:none}}
   .scrollcue::after{content:"";position:absolute;left:-1px;top:0;width:3px;height:14px;border-radius:2px;
     background:#fff;box-shadow:0 1px 6px rgba(20,23,26,.35);animation:scue 2.1s cubic-bezier(.4,0,.4,1) infinite}
   @keyframes scue{0%{top:-8%;opacity:0}15%{opacity:1}70%{opacity:1}100%{top:84%;opacity:0}}
@@ -339,7 +348,11 @@
     <h1>Custom shades and drapery</h1>
     <p class="sub">Straight from the factory</p>
   </div>
-  <div class="herolabel" id="herolabel"></div>
+  <div class="heronames" id="heronames">
+    <span class="hn-prev" id="hnprev" role="button" tabindex="0"></span>
+    <span class="hn-cur" id="hncur"></span>
+    <span class="hn-next" id="hnnext" role="button" tabindex="0"></span>
+  </div>
   <a class="scrollcue" href="#products" aria-label="Scroll to products"></a>
   <div class="ladder" id="ladder"></div>
 </div>
@@ -575,21 +588,35 @@
     });
     FRAMES.forEach(function(){var i=document.createElement('i');ladder.appendChild(i);});
     var pips=[].slice.call(ladder.children);
-    var hl=document.getElementById('herolabel');
-    function show(i){
+    var names=document.getElementById('heronames'),
+        hp=document.getElementById('hnprev'),hc=document.getElementById('hncur'),hn=document.getElementById('hnnext');
+    function setNames(i){
+      hp.textContent=FRAMES[(i+FRAMES.length-1)%FRAMES.length].label;
+      hc.textContent=FRAMES[i].label;
+      hn.textContent=FRAMES[(i+1)%FRAMES.length].label;
+    }
+    function show(i,animate){
       imgs.forEach(function(im,k){im.style.opacity=k===i?1:0;});
       pips.forEach(function(pp,k){pp.classList.toggle('on',k===i);});
-      if(hl){
-        hl.style.opacity=0;
-        setTimeout(function(){ hl.textContent=FRAMES[i].label; hl.style.opacity=1; },350);
-      }
+      if(!animate){ setNames(i); return; }
+      /* wheel turn: slide out left, jump to the right, slide back in */
+      names.classList.add('out');
+      setTimeout(function(){
+        setNames(i);
+        names.classList.remove('out'); names.classList.add('jump');
+        void names.offsetWidth;            /* reflow so the jump is instant */
+        names.classList.remove('jump');
+      },340);
     }
     show(0);
     if(wash) wash.style.opacity=.3;
-    var cur=0;
-    if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
-      setInterval(function(){cur=(cur+1)%FRAMES.length;show(cur);},5000);
-    }
+    var cur=0,reduce2=matchMedia('(prefers-reduced-motion: reduce)').matches,timer=null;
+    function step(d){cur=(cur+d+FRAMES.length)%FRAMES.length;show(cur,!reduce2);}
+    function arm(){ if(reduce2)return; if(timer)clearInterval(timer);
+      timer=setInterval(function(){step(1);},5000); }
+    hp.addEventListener('click',function(){step(-1);arm();});
+    hn.addEventListener('click',function(){step(1);arm();});
+    arm();
   })();
 
   /* ── before / after slider ── */
