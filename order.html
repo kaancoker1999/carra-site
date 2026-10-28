@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="assets/i18n.js?v=4"></script>
+<script src="assets/i18n.js?v=5"></script>
 <title>LUMIA — Place an order</title>
 <meta name="robots" content="noindex">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -368,7 +368,7 @@
         '<select id="c-hf" style="min-width:74px" title="Eighths">' + FRACS + '</select></div></div>';
     }
     row3 += '<div class="cell"><label>' + (p.qtyLabel || 'Qty') + '</label>' +
-      (p.noSize
+      (p.noSize && !p.intQty
         ? '<input id="c-qty" type="number" min="0.1" step="0.1" value="1">'
         : '<input id="c-qty" type="number" min="1" step="1" value="1">') + '</div>';
     row3 += '<div class="cell"><label>&nbsp;</label><button class="addbtn" id="addbtn" type="button">Add to order &darr;</button></div>';
@@ -610,6 +610,11 @@
       var frow = fg && fg.rows[(sel.group || 1) - 1];
       return frow ? frow.vals[0] : null; /* per yard; qty = yards */
     }
+    if(pid === 'samplebooks'){
+      pp = prodPrices('samplebooks'); if(!pp) return null;
+      var sg = pp.grids[0];
+      return sg && sg.rows[0] ? sg.rows[0].vals[0] : null; /* per book; retier() applies the quantity discount */
+    }
     return null; /* drapery etc: price on request */
   }
   function fmt$(v){ return v == null ? '&mdash;' : '$' + v.toFixed(2); }
@@ -618,7 +623,20 @@
   var linesBox = document.getElementById('lines'),
       empty = document.getElementById('empty'), count = document.getElementById('count');
 
-  function saveLines(){ sessionStorage.setItem('lumia_order', JSON.stringify(lines)); }
+  /* sample books: every book in the order counts toward one combined
+     quantity discount, so their unit price is recomputed whenever the
+     line list changes (tiers and prices come from the server) */
+  function retier(){
+    var pp = prodPrices('samplebooks'); if(!pp || !pp.grids[0]) return;
+    var n = 0;
+    lines.forEach(function(l){ if(l.pid === 'samplebooks') n += (l.qty || 0); });
+    if(!n) return;
+    var rows = pp.grids[0].rows, t = pp.tiers || { t25: 5, t35: 21 };
+    var unit = n >= t.t35 ? rows[2].vals[0] : n >= t.t25 ? rows[1].vals[0] : rows[0].vals[0];
+    lines.forEach(function(l){ if(l.pid === 'samplebooks') l.price = unit; });
+  }
+
+  function saveLines(){ retier(); sessionStorage.setItem('lumia_order', JSON.stringify(lines)); }
 
   /* 22.75 -> "22 3/4" — sizes read the way the factory writes them */
   var FRAC_NAMES = {0:'0/8',1:'1/8',2:'1/4',3:'3/8',4:'1/2',5:'5/8',6:'3/4',7:'7/8'};
@@ -741,7 +759,7 @@
       w = parseFloat(document.getElementById('c-w').value) + parseFloat(document.getElementById('c-wf').value || 0);
       h = parseFloat(document.getElementById('c-h').value) + parseFloat(document.getElementById('c-hf').value || 0);
     }
-    var qty = p.noSize
+    var qty = p.noSize && !p.intQty
       ? Math.round((parseFloat(document.getElementById('c-qty').value) || 1) * 100) / 100
       : (parseInt(document.getElementById('c-qty').value, 10) || 1);
     if(qty <= 0) qty = 1;
@@ -788,7 +806,7 @@
         return;
       }
       sel[st.key] = document.getElementById('c-' + st.key).value;
-      if(!main && /fabric|cell|style/i.test(st.label)) main = sel[st.key];
+      if(!main && /fabric|cell|style|book/i.test(st.label)) main = sel[st.key];
       parts.push(st.label + ': ' + sel[st.key]);
       pairs.push({ k: st.label, v: sel[st.key] });
     });
@@ -800,7 +818,7 @@
     });
     var colourEl = document.getElementById('c-colour');
     if(colourEl) pick.colour = colourEl.value;
-    var line = { label: label, product: p.name, spec: parts.join(' · '), specs: pairs,
+    var line = { label: label, product: p.name, pid: p.id, spec: parts.join(' · '), specs: pairs,
                  desc: (main || '').trim(), pick: pick,
                  w: w, h: h, qty: qty, price: priceLine(p.id, sel, w, h) };
     if(editIdx == null){
@@ -886,7 +904,7 @@
       (notes ? '\nNotes: ' + notes : '') + '\n\n' +
       ls.map(function(l,i){
         return (i+1) + '. ' + (l.label ? '[' + l.label + '] ' : '') + l.product + ' — ' + textSpec(l) +
-          ' — ' + (l.w == null ? 'by the yard' : fmtIn(l.w) + '" x ' + fmtIn(l.h) + '"') + ' — qty ' + l.qty +
+          ' — ' + (l.w == null ? (l.pid === 'samplebooks' ? 'per book' : 'by the yard') : fmtIn(l.w) + '" x ' + fmtIn(l.h) + '"') + ' — qty ' + l.qty +
           ' — ' + (l.price == null ? 'price on request' : '$' + l.price.toFixed(2) + ' ea = $' + (l.price*l.qty).toFixed(2));
       }).join('\n') +
       '\n\nTotal: ' + ls.length + ' lines, ' + t.units + ' units, $' + t.total.toFixed(2) +

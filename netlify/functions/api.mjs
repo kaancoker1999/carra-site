@@ -156,7 +156,9 @@ async function dealerFromReq(req) {
 function scaled(base, multOf) {
   const out = JSON.parse(JSON.stringify(base));
   for (const p of out.products || []) {
-    const mult = multOf(p.id);
+    // fixed-price products (sample books) are the same for every account:
+    // no price level, no per-product override, no promo
+    const mult = p.fixed ? 1 : multOf(p.id);
     for (const g of p.grids || []) {
       for (const r of g.rows || []) {
         r.vals = r.vals.map((v) => Math.round(v * mult * 100) / 100);

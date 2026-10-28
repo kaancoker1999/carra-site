@@ -65,7 +65,7 @@
   if (lang !== 'en') {
     document.documentElement.classList.add('i18n-wait');
     document.write('<style>html.i18n-wait body{visibility:hidden}</style>');
-    document.write('<script src="assets/i18n/' + lang + '.js?v=4"><\/script>');
+    document.write('<script src="assets/i18n/' + lang + '.js?v=5"><\/script>');
     /* never leave the page hidden if something goes wrong */
     setTimeout(function () { document.documentElement.classList.remove('i18n-wait'); }, 2500);
   }

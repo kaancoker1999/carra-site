@@ -133,6 +133,21 @@ def fabric_product():
     }
 
 
+def samplebooks_product():
+    """Sample books — flat per-book price with a combined-quantity discount
+    (handled in order.html retier()); no dealer multiplier applies."""
+    return {
+        "id": "samplebooks", "name": "Sample Books",
+        "noSize": True, "qtyLabel": "Books", "intQty": True,
+        "width": [0, 0], "height": [0, 0], "hLabel": "Height",
+        "steps": [
+            {"key": "book", "label": "Book",
+             "options": [SELECT, "Honeycomb book",
+                         "Fabric book — Roman & drapery (pre-order, ships from mid-December)"]},
+        ],
+    }
+
+
 def build():
     products = []
     for fname, cfg in gp.PRODUCTS.items():
@@ -197,6 +212,7 @@ def build():
 
     products.append(arches_product())
     products.append(fabric_product())
+    products.append(samplebooks_product())
     OUT.write_text(json.dumps({"products": products}, separators=(",", ":")))
     print(f"wrote {OUT} ({OUT.stat().st_size // 1024} KB)")
 

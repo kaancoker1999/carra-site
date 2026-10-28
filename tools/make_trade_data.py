@@ -206,6 +206,7 @@ def parse_workbook():
          "notes": ["Arch heights up to 50″."]},
         parse_drapery(),
         fabric_only(),
+        sample_books(),
     ]
     return products
 
@@ -228,6 +229,37 @@ def fabric_only():
         "notes": ["Fabric sold by the yard, uncut roll goods. Same collections and colour groups as Roman shades and drapery."],
     }
 
+
+
+# ── Sample books: flat price, combined-quantity discount, no dealer mult ────
+# "fixed": True → api.mjs serves these prices unscaled (no level, no promo);
+# "tiers" are the combined-book-count thresholds order.html retier() uses.
+SAMPLE_BOOK_PRICE = 100
+SAMPLE_BOOK_TIERS = {"t25": 5, "t35": 21}   # 5+ books 25% off, 21+ books 35% off
+
+
+def sample_books():
+    p = SAMPLE_BOOK_PRICE
+    return {
+        "id": "samplebooks", "name": "Sample Books", "fixed": True,
+        "tiers": SAMPLE_BOOK_TIERS,
+        "grids": [{
+            "name": "Per book",
+            "corner": "Books in the order",
+            "cols": ["Per book"],
+            "rows": [
+                {"label": "1–4 books", "vals": [float(p)]},
+                {"label": "5–20 books (25% off)", "vals": [round(p * 0.75, 2)]},
+                {"label": "21+ books (35% off)", "vals": [round(p * 0.65, 2)]},
+            ],
+        }],
+        "extras": [],
+        "notes": [
+            "Same price for every account — price levels and promotions do not apply.",
+            "All books in an order count together toward the quantity discount.",
+            "Fabric book (Roman & drapery) is a pre-order — ships from mid-December.",
+        ],
+    }
 
 
 # ── Drapery: 5 heading sheets x fabric groups A-D + liners + hardware ──────
