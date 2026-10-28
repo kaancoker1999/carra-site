@@ -73,7 +73,7 @@ TEMPLATE = r"""<!doctype html>
   .phero{position:relative;height:56vh;min-height:400px;overflow:hidden;background:var(--paper2)}
   .phero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
   .pveil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 38%,rgba(8,10,12,.66) 100%)}
-  .ptit{position:absolute;left:50%;transform:translateX(-50%);bottom:38px;width:100%;max-width:1180px;padding:0 44px}
+  .ptit{position:absolute;left:50%;transform:translateX(-50%);bottom:38px;width:100%;max-width:1180px;padding:0 44px;text-align:center}
   .ptit .mono{color:var(--bronze-lt)}
   .ptit h1{font-size:clamp(34px,5vw,60px);color:#fff;margin-top:10px}
   .pdesc{max-width:62ch;color:#3D4246;font-size:17px;margin:0;padding:44px 0 10px}
