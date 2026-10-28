@@ -289,8 +289,11 @@
   .sent.on{display:block}
 
   /* 10 ── footer ─────────────────────────────────────── */
-  footer{background:#591C00;border-top:0;padding:90px 0 40px}
+  footer{background:var(--ink);border-top:0;padding:90px 0 40px}
   footer .logo{color:#fff}
+  footer .logo img{mix-blend-mode:normal}
+  footer .btn.ghost{color:#fff;border-color:rgba(255,255,255,.45)}
+  footer .btn.ghost:hover{border-color:#fff}
   footer .fbrand p{color:rgba(255,255,255,.58)}
   .fgrid{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:40px}
   .fbrand .logo{margin-bottom:16px}
@@ -517,7 +520,7 @@
   <div class="wrap">
     <div class="fgrid">
       <div class="fbrand">
-        <div class="logo"><img src="assets/logo.jpg" alt="LUMIA"></div>
+        <div class="logo"><img src="assets/logo-white.png" alt="LUMIA"></div>
         <p>Made-to-measure shades, drapery and motorization. Built under one roof since 1999. LUMIA is a TDC company.</p>
         <a class="btn ghost" href="#contact" style="padding:12px 22px">Trade enquiries</a>
       </div>
