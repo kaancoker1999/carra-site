@@ -99,6 +99,7 @@
       if (!nav.querySelector('a[href="account.html"]')) {
         var cls = (nav.querySelector('a.lnk') ? ' class="lnk"' : '');
         var here = location.pathname.split('/').pop().replace(/^_|_test/g, '');   /* local previews: _orders_test.html */
+        if(here && here.indexOf('.html') === -1) here += '.html';   /* Netlify pretty URLs: /price-list */
         var mark = function (href) { return href === here ? ' style="color:var(--ink)"' : ''; };
         var frag = document.createElement('span');
         /* inside the portal: its own pages; on the public site: one "Portal" link */
