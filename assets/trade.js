@@ -59,11 +59,14 @@
       '#navdrawer .dghead{font-weight:600;color:#14171A;display:flex;justify-content:space-between;align-items:center}' +
       '#navdrawer .dmain{display:block;border-bottom:1px solid #EFEDE8;font-family:\'IBM Plex Sans\',sans-serif;font-size:17px;font-weight:600;color:#14171A;text-decoration:none;padding:15px 2px;text-transform:none;letter-spacing:0}' +
       '#navdrawer .dghead span{font-size:21px;font-weight:400;color:#8A8E92;transition:transform .3s}' +
-      '#navdrawer .dgroup.open .dghead span{transform:rotate(45deg)}' +
+      '#navdrawer .dgroup.open>.dghead span{transform:rotate(45deg)}' +
       '#navdrawer .dsub{display:none;border-bottom:1px solid #EFEDE8;padding:4px 0 12px}' +
-      '#navdrawer .dgroup.open .dsub{display:block}' +
+      '#navdrawer .dgroup.open>.dsub{display:block}' +
       '#navdrawer .dsub a{display:block;font-family:\'IBM Plex Sans\',sans-serif;font-size:14.5px;color:#64686C;' +
       'text-decoration:none;padding:9px 0 9px 14px;text-transform:none;letter-spacing:0}' +
+      '#navdrawer .dghead.g2,#navdrawer .dmain.g2{font-size:15px;padding:12px 2px 12px 14px;border-bottom:1px solid #F3F1EC}' +
+      '#navdrawer .dsub.g2{border-bottom:1px solid #F3F1EC;padding:2px 0 8px}' +
+      '#navdrawer .dsub.g2 a{padding-left:28px;font-size:14px}' +
       '#navdrawer .dcta{margin-top:auto;display:block;text-align:center;background:#14171A;color:#fff!important;' +
       'border-radius:10px;padding:16px;font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.16em;' +
       'text-transform:uppercase;text-decoration:none}' +
@@ -98,13 +101,16 @@
           return;
         }
         if (isPublic && /#products$/.test(href)) {
-          /* the Products entry splits into Shades / Drapery / TDBU headings */
-          html += '<div class="dgroup"><button class="dghead" type="button">Shades<span>+</span></button>' +
-            '<div class="dsub">' + SHADE_LINKS.map(function (p) {
-              return '<a href="' + p[0] + '">' + p[1] + '</a>';
-            }).join('') + '</div></div>' +
-            '<a class="dmain" href="drapery.html">Drapery</a>' +
-            '<a class="dmain" href="tdbu.html">Top-down bottom-up</a>';
+          /* Products opens to the Shades / Drapery / TDBU headings; Shades opens again */
+          html += '<div class="dgroup"><button class="dghead" type="button">' + label + '<span>+</span></button>' +
+            '<div class="dsub">' +
+              '<div class="dgroup g2"><button class="dghead g2" type="button">Shades<span>+</span></button>' +
+                '<div class="dsub g2">' + SHADE_LINKS.map(function (p) {
+                  return '<a href="' + p[0] + '">' + p[1] + '</a>';
+                }).join('') + '</div></div>' +
+              '<a class="dmain g2" href="drapery.html">Drapery</a>' +
+              '<a class="dmain g2" href="tdbu.html">Top-down bottom-up</a>' +
+            '</div></div>';
           return;
         }
         if (isPublic && /(?:^|\/)tdbu(?:\.html)?$/.test(href)) return; /* lives inside the Products group */
