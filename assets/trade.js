@@ -104,7 +104,7 @@
             }).join('') + '</div></div>';
           return;
         }
-        if (isPublic && /tdbu\.html$/.test(href)) return; /* lives inside the Products group */
+        if (isPublic && /(?:^|\/)tdbu(?:\.html)?$/.test(href)) return; /* lives inside the Products group */
         html += '<a class="dlink' + (a.hasAttribute('style') ? ' on' : '') + '" href="' + href + '">' + label + '</a>';
       });
       dr.innerHTML = html + '</div>' + cta;
