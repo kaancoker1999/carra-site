@@ -17,7 +17,7 @@
   function tile(v, k, cls, act, href){
     if(href) return '<a class="sum' + (cls ? ' ' + cls : '') + '" href="' + href + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></a>';
     return '<div class="sum' + (cls ? ' ' + cls : '') + (act ? ' act" data-act="' + act + '" role="button" tabindex="0"' : '"') +
-      '><div class="v">' + v + '</div><div class="k">' + k + (act ? ' <span class="go">pay from here →</span>' : '') + '</div></div>';
+      '><div class="v">' + v + '</div><div class="k">' + k + (act === 'paypop' ? ' <span class="go">pay from here →</span>' : '') + '</div></div>';
   }
   function fdate(x){
     return new Date(x).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'});
