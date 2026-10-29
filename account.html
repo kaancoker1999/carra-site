@@ -12,6 +12,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/portal.css?v=9">
+<style>
+  .actions.top{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:4px 0 40px}
+  .actions.top .btn{text-align:center;padding:20px 26px;font-size:12px;letter-spacing:.16em}
+  @media(max-width:640px){.actions.top{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 
@@ -32,13 +37,13 @@
 
 <section>
   <div class="wrap">
-    <div class="sumgrid" id="summary"></div>
-
-    <div class="actions">
+    <div class="actions top">
       <a class="btn solid" href="order.html">Place an order</a>
       <a class="btn ghost" href="orders.html">Orders</a>
       <a class="btn ghost" href="price-list.html">Price list</a>
     </div>
+
+    <div class="sumgrid" id="summary"></div>
 
     <div id="paysection" hidden>
       <div class="xtitle">Payments due</div>
@@ -62,7 +67,7 @@
   </div>
 </footer>
 
-<script src="assets/trade.js?v=20"></script>
+<script src="assets/trade.js?v=21"></script>
 <script src="assets/tour.js?v=17"></script>
 <script src="assets/photos.js?v=1"></script>
 <script src="assets/support.js?v=2"></script>

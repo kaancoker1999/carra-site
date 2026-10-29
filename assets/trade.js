@@ -185,7 +185,7 @@
         var mark = function (href) { return href === here ? ' style="color:var(--ink)"' : ''; };
         var frag = document.createElement('span');
         /* inside the portal: its own pages; on the public site: one "Portal" link */
-        var inPortal = ['portal.html', 'account.html', 'orders.html', 'order.html', 'price-list.html', 'messages.html'].indexOf(here) !== -1;
+        var inPortal = ['account.html', 'orders.html', 'order.html', 'price-list.html', 'messages.html'].indexOf(here) !== -1;
         frag.innerHTML = inPortal
           ? '<a href="account.html"' + cls + mark('account.html') + '>My account</a> ' +
             '<a href="orders.html"' + cls + (here === 'order.html' ? ' style="color:var(--ink)"' : mark('orders.html')) + '>Orders</a> ' +

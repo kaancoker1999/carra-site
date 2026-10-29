@@ -87,10 +87,10 @@
   </div>
 </footer>
 
-<script src="assets/trade.js?v=20"></script>
+<script src="assets/trade.js?v=21"></script>
 <script>
 (function(){
-  if(LUMIA_TRADE.getSession()){ location.href = 'portal.html'; return; }
+  if(LUMIA_TRADE.getSession()){ location.href = 'account.html'; return; }
   var form = document.getElementById('loginform'), btn = document.getElementById('loginbtn'),
       err = document.getElementById('err'), code = document.getElementById('code');
   form.addEventListener('submit', function(e){
@@ -99,7 +99,7 @@
     err.classList.remove('on');
     btn.disabled = true; btn.textContent = 'Checking…';
     LUMIA_TRADE.login(code.value).then(function(prices){
-      if(prices){ location.href = 'portal.html'; }
+      if(prices){ location.href = 'account.html'; }
       else{
         err.classList.add('on');
         btn.disabled = false; btn.textContent = 'Log in';
