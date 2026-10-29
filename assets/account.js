@@ -269,6 +269,10 @@
   }
   document.addEventListener('click', function(e){
     if(e.target.closest('[data-act="paypop"]')){ openPayPop(); return; }
+    if(e.target.closest('[data-act="notif"]')){
+      var nl = document.getElementById('ntlist'); if(nl) nl.hidden = !nl.hidden;
+      return;
+    }
     if(e.target.id === 'paypop' || e.target.closest('.popx')){ closePayPop(); return; }
   });
   /* invoice (shared assets/invoice.js) — billing details come from the session */
@@ -375,8 +379,32 @@
         '</div></div>';
     }
     renderPayDue(orders);
+    renderMsgNotif(orders, prod, shipped);
     renderSections(orders);
     renderLast(orders);
+  }
+
+  /* account page: Messages + Notifications options between the balance and the order lists */
+  function renderMsgNotif(orders, prod, shipped){
+    var box = document.getElementById('msgnotif'); if(!box) return;
+    var unread = 0; THREADS.forEach(function(t){ unread += reqUnread(t); });
+    var payN = orders.filter(payable).length;
+    var items = [];
+    if(payN) items.push({ n: payN, t: 'Payments due', href: '#paysection' });
+    if(prod) items.push({ n: prod, t: 'In production', href: 'orders.html#production' });
+    if(shipped) items.push({ n: shipped, t: 'Shipped', href: 'orders.html#shipped' });
+    if(unread) items.push({ n: unread, t: 'Unread messages', href: 'messages.html' });
+    var total = items.reduce(function(a, x){ return a + x.n; }, 0);
+    box.innerHTML =
+      '<div class="sumpanel"><div class="sumhead">Messages &amp; notifications</div><div class="sumrow">' +
+        tile(unread, 'Messages', unread ? 'due' : '', '', 'messages.html') +
+        tile(total, 'Notifications', '', 'notif') +
+      '</div></div>' +
+      '<div class="ntlist" id="ntlist" hidden>' +
+        (items.length
+          ? items.map(function(x){ return '<a class="ntrow" href="' + x.href + '"><span>' + x.t + '</span><b>' + x.n + '</b></a>'; }).join('')
+          : '<div class="ntrow none2">All caught up</div>') +
+      '</div>';
   }
 
   /* account page: the three most recent orders, with a link to the full list */

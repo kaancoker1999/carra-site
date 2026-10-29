@@ -3170,5 +3170,21 @@
   "My orders": {
     "es": "Mis pedidos",
     "fr": "Mes commandes"
+  },
+  "Notifications": {
+    "es": "Notificaciones",
+    "fr": "Notifications"
+  },
+  "Messages & notifications": {
+    "es": "Mensajes y notificaciones",
+    "fr": "Messages et notifications"
+  },
+  "Unread messages": {
+    "es": "Mensajes sin leer",
+    "fr": "Messages non lus"
+  },
+  "All caught up": {
+    "es": "Todo al día",
+    "fr": "Tout est à jour"
   }
 }
