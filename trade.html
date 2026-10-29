@@ -41,8 +41,7 @@
 
   main{flex:1;display:flex;align-items:center;justify-content:center;padding:20px 22px 60px}
   .card{background:var(--white);border:1px solid var(--line2);border-radius:16px;padding:44px 46px 40px;max-width:440px;width:100%}
-  .card h1{font-size:26px;margin:10px 0 8px}
-  .card .sub{color:var(--muted);font-size:14.5px;margin:0 0 28px}
+  .card h1{font-size:34px;margin:4px 0 26px;text-align:center}
   label{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
   input{font:inherit;font-size:16px;width:100%;padding:14px 16px;border:1px solid var(--line2);border-radius:10px;background:var(--white);letter-spacing:.04em}
   input:focus{outline:none;border-color:var(--ink)}
@@ -71,7 +70,6 @@
 <main>
   <div class="card">
     <h1>Trade login</h1>
-    <p class="sub">Enter your LUMIA access code to see your price list and place orders.</p>
     <form id="loginform">
       <label for="code">Access code</label>
       <input id="code" type="password" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="LUMIA-XXXX-XX">
