@@ -105,7 +105,7 @@ TEMPLATE = r"""<!doctype html>
   .optcard.on{border-color:var(--ink);box-shadow:0 0 0 1.5px var(--ink)}
   .optcard img{width:100%;aspect-ratio:3/4;object-fit:contain;display:block;background:#fff;border-radius:8px}
   .optcard .nm{font-size:13px;margin-top:8px;color:var(--ink)}
-  .optgrid.ph{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));max-width:960px}
+  .optgrid.ph{grid-template-columns:repeat(auto-fill,minmax(148px,1fr))}
   .optcard img.ph{aspect-ratio:4/3;object-fit:cover}
 
   .sumgrid{display:grid;grid-template-columns:1fr 300px;gap:40px;align-items:start}
