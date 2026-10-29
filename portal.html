@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="assets/i18n.js?v=7"></script>
+<title>LUMIA — Trade portal</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/portal.css?v=9">
+<style>
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:8px 0 48px}
+  .tile{display:block;background:#fff;border:1px solid var(--line2);border-radius:14px;padding:26px 26px 28px;
+    text-decoration:none;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+  .tile:hover{border-color:var(--ink);box-shadow:0 0 0 1.5px var(--ink)}
+  .tile h2{font-size:18px;margin:0}
+  .tile.big{grid-column:1/-1;padding:40px 34px 44px}
+  .tile.big h2{font-size:24px}
+  @media(max-width:860px){.tiles{grid-template-columns:1fr 1fr}}
+  @media(max-width:480px){.tiles{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="hleft">
+      <a class="logo" href="portal.html">LUMIA</a>
+    </div>
+    <nav>
+      <a class="partner" href="trade.html">Trade login</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap pagehead">
+  <h1 id="dealername" data-noi18n>Trade portal</h1>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="tiles">
+      <a class="tile big" href="account.html"><h2>My account</h2></a>
+      <a class="tile" href="orders.html"><h2>My orders</h2></a>
+      <a class="tile" href="messages.html"><h2>Messages</h2></a>
+      <a class="tile" href="price-list.html"><h2>Price list</h2></a>
+      <a class="tile" href="order.html"><h2>Place an order</h2></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="mono">&copy; 2026 LUMIA &middot; All rights reserved</span>
+    <span class="mono">lumiashades@gmail.com</span>
+  </div>
+</footer>
+
+<script src="assets/trade.js?v=20"></script>
+<script>
+(function(){
+  var s = LUMIA_TRADE.getSession();
+  if(!s){ location.href = 'trade.html'; return; }
+  if(s.name) document.getElementById('dealername').textContent = s.name;
+})();
+</script>
+
+</body>
+</html>

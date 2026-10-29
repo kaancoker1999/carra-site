@@ -3166,5 +3166,9 @@
   "Straight from the factory": {
     "es": "Directo de fábrica",
     "fr": "Directement de l'usine"
+  },
+  "My orders": {
+    "es": "Mis pedidos",
+    "fr": "Mes commandes"
   }
 }

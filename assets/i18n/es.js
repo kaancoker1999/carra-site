@@ -362,6 +362,7 @@ LUMIA_I18N_DATA({
 "Motorized made-to-measure window treatments":"Decoración de ventanas motorizada y a medida",
 "Mount":"Montaje",
 "My account":"Mi cuenta",
+"My orders":"Mis pedidos",
 "Name":"Nombre",
 "Name the job — it becomes the sidemark on the order and invoice. Use the notes field for anything else, such as a requested delivery date.":"Asigne un nombre al trabajo — se convierte en la referencia del trabajo en el pedido y la factura. Use el campo de notas para todo lo demás, como una fecha de entrega solicitada.",
 "Native — no bridge required":"Nativo — sin necesidad de puente",
