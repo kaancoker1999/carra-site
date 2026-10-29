@@ -11,26 +11,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/portal.css?v=9">
+<link rel="stylesheet" href="assets/portal.css?v=10">
 <style>
   .actions.top{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:4px 0 40px}
   .actions.top .btn{text-align:center;padding:20px 26px;font-size:12px;letter-spacing:.16em}
   @media(max-width:640px){.actions.top{grid-template-columns:1fr}}
-  #msgnotif{margin:0 0 34px}
-  #msgnotif .sumrow{grid-template-columns:1fr 1fr}
-  .mntile{display:flex;align-items:center;justify-content:center;min-height:68px}
-  .mntile .v{display:flex;align-items:center;justify-content:center}
-  .bellwrap{position:relative}
-  .bellwrap svg{width:27px;height:27px;display:block}
-  .ntbadge{position:absolute;top:-8px;right:-12px;font-style:normal;background:#C2403A;color:#fff;
-    font-family:'Archivo',sans-serif;font-weight:600;font-size:11.5px;line-height:19px;min-width:19px;
-    height:19px;border-radius:999px;text-align:center;padding:0 5px}
-  .ntlist{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.045);border-radius:14px;padding:8px 10px;margin:12px 0 0}
-  .ntrow{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:11px 12px;
-    color:#F6F3EC;text-decoration:none;border-radius:9px;font-size:14.5px}
-  .ntrow:hover{background:rgba(255,255,255,.07)}
-  .ntrow b{font-family:'Archivo',sans-serif;font-weight:600}
-  .ntrow.none2{color:rgba(255,255,255,.55);justify-content:flex-start}
 </style>
 </head>
 <body>
@@ -60,8 +45,6 @@
 
     <div class="sumgrid" id="summary"></div>
 
-    <div id="msgnotif"></div>
-
     <div id="paysection" hidden>
       <div class="xtitle">Payments due</div>
       <p class="xsub">You can pay as soon as an order goes <b>into production</b>; payment is due <b>within 20 days</b> of that. Late payments are marked in red.</p>
@@ -89,7 +72,7 @@
 <script src="assets/photos.js?v=1"></script>
 <script src="assets/support.js?v=2"></script>
 <script src="assets/invoice.js?v=3"></script>
-<script src="assets/account.js?v=10"></script>
+<script src="assets/account.js?v=11"></script>
 
 </body>
 </html>

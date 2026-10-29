@@ -305,3 +305,19 @@
     header nav a{color:var(--ink)!important}
     header nav a.partner{color:var(--bronze)!important}
   }
+
+  /* notification bell (injected by account.js, left of the menu button) */
+  #bellbtn{position:relative;margin-left:auto;background:none;border:1px solid var(--line2);border-radius:8px;
+    padding:7px 11px;cursor:pointer;color:var(--ink);line-height:1}
+  #bellbtn svg{width:18px;height:18px;display:block}
+  #bellbtn:hover{border-color:var(--ink)}
+  .ntbadge{position:absolute;top:-8px;right:-9px;font-style:normal;background:#C2403A;color:#fff;
+    font-family:'Archivo',sans-serif;font-weight:600;font-size:11px;line-height:18px;min-width:18px;
+    height:18px;border-radius:999px;text-align:center;padding:0 5px}
+  #ntdrop{position:fixed;top:78px;right:28px;z-index:1000;background:#fff;border:1px solid var(--line2);
+    border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.28);padding:8px;min-width:250px}
+  .ntrow{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:11px 13px;
+    color:var(--ink);text-decoration:none;border-radius:9px;font-size:14.5px}
+  .ntrow:hover{background:var(--paper)}
+  .ntrow b{font-family:'Archivo',sans-serif;font-weight:600}
+  .ntrow.none2{color:var(--muted);justify-content:flex-start}
