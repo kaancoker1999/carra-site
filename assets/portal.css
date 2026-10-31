@@ -5,14 +5,7 @@
   *{box-sizing:border-box}
   /* galaxy backdrop — matches the admin panel; content sits on light cards */
   body{margin:0;color:#F6F3EC;
-    background:
-      radial-gradient(rgba(255,255,255,.32) 1px, transparent 1.4px),
-      radial-gradient(rgba(255,255,255,.18) 1px, transparent 1.3px),
-      radial-gradient(1100px 700px at 82% -12%, rgba(124,82,186,.38), transparent 62%),
-      radial-gradient(1200px 800px at -12% 96%, rgba(46,66,150,.34), transparent 62%),
-      #0E0C1B;
-    background-size:310px 250px,210px 170px,auto,auto,auto;
-    background-position:0 0,105px 65px,0 0,0 0,0 0;background-attachment:fixed;
+    background:#591C00;
     font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.62;
     -webkit-font-smoothing:antialiased;min-height:100vh}
   h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.025em;margin:0;line-height:1.05}
