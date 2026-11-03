@@ -310,10 +310,8 @@
         '-day payment window — $' + lateT.toFixed(2) + ' (' + late.map(function(o){ return esc(o.ref); }).join(', ') + '). Please pay as soon as possible.</div>'
       : '';
     LASTORDERS = orders;
-    var howbtn = PAYINFO ? '<button class="paybtn wht" data-act="paypop" type="button" style="padding:9px 16px">Pay from here</button>' : '';
     var payableN = orders.filter(function(o){ return payable(o); }).length;
-    var payallbtn = payableN > 1 ? '<button class="paybtn" data-stripepayall="1" type="button" style="padding:9px 16px">Pay all</button>' : '';
-    var allbtn = (payallbtn || howbtn) ? '<div style="display:flex;justify-content:flex-end;gap:8px;margin:0 0 10px">' + payallbtn + howbtn + '</div>' : '';
+    var allbtn = payableN > 1 ? '<div style="display:flex;justify-content:flex-end;margin:0 0 10px"><button class="paybtn" data-stripepayall="1" type="button" style="padding:9px 16px">Pay all</button></div>' : '';
     document.getElementById('paydue').innerHTML = warn + allbtn + keys.map(function(k){
       var g = groups[k], over = g.due.getTime() < today && g.owed > 0;
       var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
@@ -366,7 +364,7 @@
         '<div class="sumpanel" id="sum-balance"><div class="sumhead">Balance</div><div class="sumrow">' +
           tile('$' + purch.toFixed(2), 'Total purchased') +
           tile('$' + due.toFixed(2), 'Balance due', due > 0 ? 'due' : '') +
-          tile('$' + pay.toFixed(2), 'Payable', pay > 0 ? 'due' : '', PAYINFO ? 'paypop' : '') +
+          tile('$' + pay.toFixed(2), 'Payable', pay > 0 ? 'due' : '') +
         '</div></div>';
     }
     renderPayDue(orders);
