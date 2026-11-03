@@ -501,6 +501,7 @@ export default async (req) => {
     const origin = new URL(req.url).origin;
     const form = new URLSearchParams({
       mode: "payment",
+      "adaptive_pricing[enabled]": "false",   // always charge and show USD, never a localized currency
       client_reference_id: ref,
       "metadata[ref]": ref,
       "metadata[code]": d.code,
