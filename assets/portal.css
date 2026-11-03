@@ -40,8 +40,8 @@
 
   /* light cards on the dark ground keep dark text inside */
   .sum,.paycard,.tablewrap,.paybucket,.paygrp,.paybox{color:var(--ink)}
-  .paybox{border:1px solid #B9D4B0;border-radius:12px;background:#E8F3E3;padding:16px 18px;margin:0 0 12px}
-  .paybox.over{background:#F9E2E0;border-color:#E0B7B3}
+  .paybox{border:1px solid var(--line2);border-radius:12px;background:var(--white);padding:16px 18px;margin:0 0 12px}
+  .paybox.over{border-color:#C86B60}
   .paytop{display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap}
   .payorows{margin-top:10px;border-top:1px solid rgba(0,0,0,.09);padding-top:6px}
   .payorow{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:8px 0}
