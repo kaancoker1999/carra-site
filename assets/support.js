@@ -25,14 +25,14 @@
 
   var css = document.createElement('style');
   css.textContent =
-    '.sp{border-top:1px solid rgba(255,255,255,.08);padding:26px 0 30px}' +
+    '.sp{background:#fff;padding:34px 0 40px}' +
     '.sp-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap}' +
-    '.sp-bar p{margin:0;font-size:14px;color:rgba(255,255,255,.62)}' +
-    '.sp-btn{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#F6F3EC;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:11px 20px;cursor:pointer;transition:background .2s,border-color .2s}' +
-    '.sp-btn:hover{background:rgba(255,255,255,.14);border-color:#fff}' +
+    '.sp-bar p{margin:0;font-size:14px;color:#767A7E}' +
+    '.sp-btn{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#14171A;background:#fff;border:1px solid #C9C2B4;border-radius:999px;padding:11px 20px;cursor:pointer;transition:background .2s,border-color .2s}' +
+    '.sp-btn:hover{background:#FBF8F2;border-color:#14171A}' +
     '.sp-dot{display:inline-block;min-width:16px;height:16px;line-height:16px;border-radius:999px;background:#C8502F;color:#fff;font-size:9px;letter-spacing:0;text-align:center;padding:0 4px;margin-left:8px}' +
     '.sp-panel{margin-top:18px;max-width:820px}' +
-    '.sp-form{background:#FBF8F2;border-radius:16px;padding:18px 20px;color:#1B1D1F}' +
+    '.sp-form{background:#FBF8F2;border:1px solid #E4E3DE;border-radius:16px;padding:18px 20px;color:#1B1D1F}' +
     '.sp-form label,.sp-reply label{display:block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#6B6F73;margin:0 0 12px}' +
     '.sp-form input,.sp-form select,.sp-form textarea,.sp-reply textarea{display:block;width:100%;box-sizing:border-box;margin-top:6px;font-family:"IBM Plex Sans",sans-serif;font-size:14.5px;letter-spacing:0;text-transform:none;color:#1B1D1F;background:#fff;border:1px solid #D9D2C5;border-radius:9px;padding:11px 12px}' +
     '.sp-form textarea,.sp-reply textarea{resize:vertical;line-height:1.45}' +
@@ -42,10 +42,10 @@
     '.sp-err{font-size:13px;color:#8A2620;margin-right:auto}' +
     '.sp-send{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;background:#1B1D1F;color:#fff;border:0;border-radius:999px;padding:11px 20px;cursor:pointer}' +
     '.sp-send:disabled{opacity:.6}' +
-    '.sp-note{font-size:13px;color:rgba(255,255,255,.6);margin:12px 2px 0}' +
-    '.sp-note a{color:#D9AE5A}' +
-    '.sp-title{font-family:"Archivo",sans-serif;font-weight:600;font-size:17px;color:#F6F3EC;margin:26px 0 10px}' +
-    '.sp-thread{background:#fff;border-radius:14px;margin:0 0 10px;color:#1B1D1F;overflow:hidden}' +
+    '.sp-note{font-size:13px;color:#767A7E;margin:12px 2px 0}' +
+    '.sp-note a{color:#8A6220}' +
+    '.sp-title{font-family:"Archivo",sans-serif;font-weight:600;font-size:17px;color:#14171A;margin:26px 0 10px}' +
+    '.sp-thread{background:#fff;border:1px solid #E4E3DE;border-radius:14px;margin:0 0 10px;color:#1B1D1F;overflow:hidden}' +
     '.sp-thread.closed{background:#EEECE7}' +
     '.sp-head{display:flex;align-items:center;gap:10px;padding:13px 18px;cursor:pointer;flex-wrap:wrap}' +
     '.sp-head:hover{background:#FCFAF3}' +
@@ -69,7 +69,7 @@
   box.className = 'sp';
   box.innerHTML = '<div class="wrap"><div class="sp-bar">' +
     '<button class="sp-btn" id="sp-toggle" type="button">Request or question</button>' +
-    '<p>Need something from LUMIA? Send us a request or a question &mdash; we answer in <a href="messages.html" style="color:#D9AE5A">Messages</a>.</p></div>' +
+    '<p>Need something from LUMIA? Send us a request or a question &mdash; we answer in <a href="messages.html" style="color:#8A6220">Messages</a>.</p></div>' +
     '<div class="sp-panel" id="sp-panel" hidden></div></div>';
 
   function renderPanel(sentId){

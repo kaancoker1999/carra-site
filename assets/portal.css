@@ -202,7 +202,7 @@
   .confnote{font-size:11.5px;color:#8A2620;margin-top:6px;max-width:230px;white-space:normal;line-height:1.45}
   .gbtn+.confnote,.confnote.ok{color:#2F5D25}
 
-  footer{border-top:1px solid rgba(255,255,255,.08)}
+  footer{background:#000;border-top:0}
   footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
   footer .mono{color:rgba(255,255,255,.45)}
 
