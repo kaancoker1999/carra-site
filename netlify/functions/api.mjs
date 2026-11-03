@@ -173,7 +173,9 @@ async function stripeWebhook(req) {
   try { ok = !!sig.v1 && timingSafeEqual(Buffer.from(expected), Buffer.from(sig.v1)); } catch {}
   if (!ok) return bad("bad signature", 400);
   const ev = JSON.parse(raw);
-  if (ev.type === "checkout.session.completed") {
+  // cards are paid at "completed"; ACH bank debits settle days later and
+  // arrive as "async_payment_succeeded" — both mark the order paid
+  if (ev.type === "checkout.session.completed" || ev.type === "checkout.session.async_payment_succeeded") {
     const sess = ev.data.object;
     if (sess.payment_status === "paid" && sess.metadata && sess.metadata.ref)
       await markStripePaid(sess.metadata.ref, sess.id);
