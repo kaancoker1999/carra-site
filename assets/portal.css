@@ -104,8 +104,14 @@
   .sumgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:0 0 34px}
   .sum{border:1px solid var(--line2);border-radius:14px;background:var(--paper);padding:18px 20px}
   #summary{grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
-  .sumpanel{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.045);border-radius:20px;padding:16px 16px 18px}
-  .sumhead{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.72);margin:2px 4px 12px}
+  .sumpanel{border:1px solid var(--line2);background:#fff;border-radius:20px;padding:16px 16px 18px}
+  .sumhead{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:2px 4px 12px}
+  /* a section as a white card — separates the page's blocks on the dark backdrop */
+  .xpanel{background:#fff;border:1px solid var(--line2);border-radius:20px;padding:24px 26px 26px;margin:0 0 24px;color:var(--ink)}
+  .xpanel .xtitle{color:var(--ink)}
+  .xpanel .xsub{color:var(--muted)}
+  .xpanel .xsub a{color:var(--bronze)}
+  .xpanel .paybox{background:var(--paper)}
   .sumrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
   #sum-balance .sumrow{grid-template-columns:repeat(3,minmax(0,1fr))}
   .sumrow .sum{padding:16px 14px}
