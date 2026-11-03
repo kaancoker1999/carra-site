@@ -3206,5 +3206,9 @@
   "Pay": {
     "es": "Pagar",
     "fr": "Payer"
+  },
+  "Pay all": {
+    "es": "Pagar todo",
+    "fr": "Tout payer"
   }
 }

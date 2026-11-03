@@ -177,8 +177,9 @@ async function stripeWebhook(req) {
   // arrive as "async_payment_succeeded" — both mark the order paid
   if (ev.type === "checkout.session.completed" || ev.type === "checkout.session.async_payment_succeeded") {
     const sess = ev.data.object;
-    if (sess.payment_status === "paid" && sess.metadata && sess.metadata.ref)
-      await markStripePaid(sess.metadata.ref, sess.id);
+    const refsStr = sess.metadata && (sess.metadata.refs || sess.metadata.ref);
+    if (sess.payment_status === "paid" && refsStr)
+      for (const r of refsStr.split(",")) await markStripePaid(r.trim(), sess.id);
   }
   return json({ received: true });
 }
@@ -492,27 +493,38 @@ export default async (req) => {
     if (!d) return bad("unauthorized", 401);
     const sk = process.env.STRIPE_SECRET_KEY;
     if (!sk) return bad("Card payments are not set up yet.", 503);
-    const ref = String(body.ref || "").slice(0, 40);
-    const o = await store().get(`order:${ref}`, { type: "json" });
-    if (!o || o.code !== d.code) return bad("no such order", 404);
-    if (o.payment && o.payment.paid) return bad("already paid", 409);
-    const st = (o.status && o.status.status) || "Pending review";
-    if (st === "Pending review" || st === "Cancelled") return bad("not payable yet", 409);
-    const cents = orderCents(o);
-    if (!(cents > 0)) return bad("nothing to pay", 409);
+    const payable = (o) => {
+      const st = (o.status && o.status.status) || "Pending review";
+      return !(o.payment && o.payment.paid) && st !== "Pending review" && st !== "Cancelled" && orderCents(o) > 0;
+    };
+    let targets;
+    if (body.all) {
+      // one session for every payable order (metadata holds the refs, so all are marked paid together)
+      targets = (await listOrders(d.code)).filter(payable).slice(0, 20);
+      if (!targets.length) return bad("nothing to pay", 409);
+    } else {
+      const ref = String(body.ref || "").slice(0, 40);
+      const o = await store().get(`order:${ref}`, { type: "json" });
+      if (!o || o.code !== d.code) return bad("no such order", 404);
+      if (o.payment && o.payment.paid) return bad("already paid", 409);
+      if (!payable(o)) return bad("not payable yet", 409);
+      targets = [o];
+    }
     const origin = new URL(req.url).origin;
     const form = new URLSearchParams({
       mode: "payment",
       "adaptive_pricing[enabled]": "false",   // always charge and show USD, never a localized currency
-      client_reference_id: ref,
-      "metadata[ref]": ref,
+      client_reference_id: targets[0].ref,
+      "metadata[refs]": targets.map((o) => o.ref).join(","),
       "metadata[code]": d.code,
       success_url: `${origin}/account.html?paysession={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/account.html`,
-      "line_items[0][quantity]": "1",
-      "line_items[0][price_data][currency]": "usd",
-      "line_items[0][price_data][unit_amount]": String(cents),
-      "line_items[0][price_data][product_data][name]": `LUMIA order ${ref}`,
+    });
+    targets.forEach((o, i) => {
+      form.set(`line_items[${i}][quantity]`, "1");
+      form.set(`line_items[${i}][price_data][currency]`, "usd");
+      form.set(`line_items[${i}][price_data][unit_amount]`, String(orderCents(o)));
+      form.set(`line_items[${i}][price_data][product_data][name]`, `LUMIA order ${o.ref}`);
     });
     const r = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
@@ -537,9 +549,11 @@ export default async (req) => {
       { headers: { Authorization: `Bearer ${sk}` } });
     const sess = await r.json().catch(() => null);
     if (!r.ok || !sess) return bad("Could not check the payment.", 502);
-    if (!sess.metadata || sess.metadata.code !== d.code || !sess.metadata.ref) return bad("no such payment", 404);
+    const refsStr = sess.metadata && (sess.metadata.refs || sess.metadata.ref);
+    if (!sess.metadata || sess.metadata.code !== d.code || !refsStr) return bad("no such payment", 404);
     if (sess.payment_status !== "paid") return json({ ok: false, status: sess.payment_status });
-    const payment = await markStripePaid(sess.metadata.ref, sess.id);
+    let payment = null;
+    for (const r of refsStr.split(",")) payment = await markStripePaid(r.trim(), sess.id);
     return json({ ok: true, payment });
   }
 

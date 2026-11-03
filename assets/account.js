@@ -311,7 +311,9 @@
       : '';
     LASTORDERS = orders;
     var howbtn = PAYINFO ? '<button class="paybtn wht" data-act="paypop" type="button" style="padding:9px 16px">Pay from here</button>' : '';
-    var allbtn = howbtn ? '<div style="display:flex;justify-content:flex-end;margin:0 0 10px">' + howbtn + '</div>' : '';
+    var payableN = orders.filter(function(o){ return payable(o); }).length;
+    var payallbtn = payableN > 1 ? '<button class="paybtn" data-stripepayall="1" type="button" style="padding:9px 16px">Pay all</button>' : '';
+    var allbtn = (payallbtn || howbtn) ? '<div style="display:flex;justify-content:flex-end;gap:8px;margin:0 0 10px">' + payallbtn + howbtn + '</div>' : '';
     document.getElementById('paydue').innerHTML = warn + allbtn + keys.map(function(k){
       var g = groups[k], over = g.due.getTime() < today && g.owed > 0;
       var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
@@ -558,19 +560,20 @@
   }
   /* customer claims (or takes back) a payment — LUMIA still confirms it */
   (document.getElementById('paydue') || document.createElement('div')).addEventListener('click', function(e){
-    var sp = e.target.closest('[data-stripepay]');
+    var sp = e.target.closest('[data-stripepay],[data-stripepayall]');
     if(sp){
+      var isAll = sp.hasAttribute('data-stripepayall'), lbl = sp.textContent;
       sp.disabled = true; sp.textContent = 'Opening…';
       fetch('/api/pay', { method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-dealer-code': SESSION.code || '' },
-        body: JSON.stringify({ ref: sp.getAttribute('data-stripepay') }) })
+        body: JSON.stringify(isAll ? { all: true } : { ref: sp.getAttribute('data-stripepay') }) })
         .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return { ok: r.ok, d: d }; }); })
         .then(function(x){
           if(x.ok && x.d.url){ location.href = x.d.url; return; }
-          sp.disabled = false; sp.textContent = 'Pay';
+          sp.disabled = false; sp.textContent = lbl;
           note(sp, (x.d && x.d.error) || 'Card payments are not available right now.');
         })
-        .catch(function(){ sp.disabled = false; sp.textContent = 'Pay'; });
+        .catch(function(){ sp.disabled = false; sp.textContent = lbl; });
       return;
     }
     var all = e.target.closest('[data-payallclaim]');

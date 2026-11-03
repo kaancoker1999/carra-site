@@ -432,6 +432,7 @@ LUMIA_I18N_DATA({
 "Panels":"Paneles",
 "Past orders":"Pedidos anteriores",
 "Pay":"Pagar",
+"Pay all":"Pagar todo",
 "Pay by card":"Pagar con tarjeta",
 "Pay from here":"Pagar desde aquí",
 "Payable":"Por pagar",
