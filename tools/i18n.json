@@ -3186,5 +3186,21 @@
   "All caught up": {
     "es": "Todo al día",
     "fr": "Tout est à jour"
+  },
+  "Pay by card": {
+    "es": "Pagar con tarjeta",
+    "fr": "Payer par carte"
+  },
+  "Opening…": {
+    "es": "Abriendo…",
+    "fr": "Ouverture…"
+  },
+  "Card payments are not available right now.": {
+    "es": "Los pagos con tarjeta no están disponibles en este momento.",
+    "fr": "Les paiements par carte ne sont pas disponibles pour le moment."
+  },
+  "Card payments are not set up yet.": {
+    "es": "Los pagos con tarjeta aún no están configurados.",
+    "fr": "Les paiements par carte ne sont pas encore configurés."
   }
 }

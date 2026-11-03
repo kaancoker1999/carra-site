@@ -33,7 +33,7 @@
 //   POST /api/admin/dm         {to,text} | {to,seen:true}    (direct chat between two admins)
 
 import { getStore } from "@netlify/blobs";
-import { pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 
 export const config = { path: "/api/*" };
 
@@ -140,6 +140,45 @@ function payInfo() {
     routing: e.PAY_ROUTING || "", account: e.PAY_ACCOUNT_NUMBER || "",
   };
   return info.routing && info.account ? info : null;
+}
+
+/* Stripe Checkout — the secret key lives only in Netlify env (STRIPE_SECRET_KEY;
+   webhook signing secret in STRIPE_WEBHOOK_SECRET). Amounts are always computed
+   here from the stored order, never taken from the client. */
+function orderCents(o) {
+  const total = (o.lines || []).reduce((a, l) => a + (l.price != null ? l.price * l.qty : 0), 0);
+  return Math.round(total * 100);
+}
+async function markStripePaid(ref, sessId) {
+  const s = store();
+  const key = `order:${String(ref).slice(0, 40)}`;
+  const o = await s.get(key, { type: "json" });
+  if (!o) return null;
+  if (!(o.payment && o.payment.paid)) {
+    o.payment = { ...(o.payment || {}), paid: true, via: "stripe", stripeSession: sessId,
+      customerPaidAt: (o.payment && o.payment.customerPaidAt) || new Date().toISOString(),
+      updatedAt: new Date().toISOString() };
+    await s.setJSON(key, o);
+  }
+  return o.payment;
+}
+async function stripeWebhook(req) {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) return bad("webhook not configured", 503);
+  const raw = await req.text();
+  const sig = Object.fromEntries((req.headers.get("stripe-signature") || "")
+    .split(",").map((p) => p.split("=")));
+  const expected = createHmac("sha256", secret).update(`${sig.t}.${raw}`).digest("hex");
+  let ok = false;
+  try { ok = !!sig.v1 && timingSafeEqual(Buffer.from(expected), Buffer.from(sig.v1)); } catch {}
+  if (!ok) return bad("bad signature", 400);
+  const ev = JSON.parse(raw);
+  if (ev.type === "checkout.session.completed") {
+    const sess = ev.data.object;
+    if (sess.payment_status === "paid" && sess.metadata && sess.metadata.ref)
+      await markStripePaid(sess.metadata.ref, sess.id);
+  }
+  return json({ received: true });
 }
 
 async function dealerFromReq(req) {
@@ -322,6 +361,8 @@ async function deletePhotos(s, threadId) {
 
 export default async (req) => {
   const path = new URL(req.url).pathname.replace(/\/$/, "");
+  // Stripe webhook needs the raw body for its signature — route it before the JSON parse
+  if (path === "/api/stripe-webhook" && req.method === "POST") return stripeWebhook(req);
   const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
 
   // ── dealer: login ─────────────────────────────────────────────
@@ -441,6 +482,62 @@ export default async (req) => {
       customerPaidAt: body.claim === false ? null : new Date().toISOString() };
     await s.setJSON(key, o);
     return json({ ok: true, payment: o.payment });
+  }
+
+  // ── dealer: pay an order by card (Stripe Checkout) ────────────
+  if (path === "/api/pay" && req.method === "POST") {
+    const d = await dealerFromReq(req);
+    if (!d) return bad("unauthorized", 401);
+    const sk = process.env.STRIPE_SECRET_KEY;
+    if (!sk) return bad("Card payments are not set up yet.", 503);
+    const ref = String(body.ref || "").slice(0, 40);
+    const o = await store().get(`order:${ref}`, { type: "json" });
+    if (!o || o.code !== d.code) return bad("no such order", 404);
+    if (o.payment && o.payment.paid) return bad("already paid", 409);
+    const st = (o.status && o.status.status) || "Pending review";
+    if (st === "Pending review" || st === "Cancelled") return bad("not payable yet", 409);
+    const cents = orderCents(o);
+    if (!(cents > 0)) return bad("nothing to pay", 409);
+    const origin = new URL(req.url).origin;
+    const form = new URLSearchParams({
+      mode: "payment",
+      client_reference_id: ref,
+      "metadata[ref]": ref,
+      "metadata[code]": d.code,
+      success_url: `${origin}/account.html?paysession={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/account.html`,
+      "line_items[0][quantity]": "1",
+      "line_items[0][price_data][currency]": "usd",
+      "line_items[0][price_data][unit_amount]": String(cents),
+      "line_items[0][price_data][product_data][name]": `LUMIA order ${ref}`,
+    });
+    const r = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${sk}`, "Content-Type": "application/x-www-form-urlencoded" },
+      body: form.toString(),
+    });
+    const sess = await r.json().catch(() => null);
+    if (!r.ok || !sess || !sess.url) return bad("Could not start the payment.", 502);
+    return json({ url: sess.url });
+  }
+
+  // ── dealer: back from Stripe — verify the session and mark paid ──
+  // (the webhook does this too; this covers the redirect before it lands)
+  if (path === "/api/pay/confirm" && req.method === "POST") {
+    const d = await dealerFromReq(req);
+    if (!d) return bad("unauthorized", 401);
+    const sk = process.env.STRIPE_SECRET_KEY;
+    if (!sk) return bad("Card payments are not set up yet.", 503);
+    const sid = String(body.session || "");
+    if (!/^cs_[A-Za-z0-9_]+$/.test(sid)) return bad("bad session", 400);
+    const r = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sid}`,
+      { headers: { Authorization: `Bearer ${sk}` } });
+    const sess = await r.json().catch(() => null);
+    if (!r.ok || !sess) return bad("Could not check the payment.", 502);
+    if (!sess.metadata || sess.metadata.code !== d.code || !sess.metadata.ref) return bad("no such payment", 404);
+    if (sess.payment_status !== "paid") return json({ ok: false, status: sess.payment_status });
+    const payment = await markStripePaid(sess.metadata.ref, sess.id);
+    return json({ ok: true, payment });
   }
 
   // ── a photo from a conversation: its dealer, or any admin ─────────

@@ -330,7 +330,8 @@
         if(!paid && !claimed && isLate(o)) badge += ' <span class="plate">' + lateTag(o) + '</span>';
         var action = paid ? ''
           : claimed ? '<button class="paybtn ghost" data-paidcancel="' + esc(o.ref) + '" type="button">Not yet</button>'
-          : '<button class="paybtn" data-paidclaim="' + esc(o.ref) + '" type="button">I&rsquo;ve paid</button>';
+          : '<button class="paybtn" data-stripepay="' + esc(o.ref) + '" type="button">Pay by card</button>' +
+            '<button class="paybtn ghost" data-paidclaim="' + esc(o.ref) + '" type="button">I&rsquo;ve paid</button>';
         return '<div class="payorow"><div class="pi">' +
           '<span class="pref">' + esc(o.ref) + '</span>' + (o.customer ? ' <span class="pcust">' + esc(o.customer) + '</span>' : '') + badge +
           '<div class="pitems">' + orderItems(o) + '</div></div>' +
@@ -565,6 +566,21 @@
   }
   /* customer claims (or takes back) a payment — LUMIA still confirms it */
   (document.getElementById('paydue') || document.createElement('div')).addEventListener('click', function(e){
+    var sp = e.target.closest('[data-stripepay]');
+    if(sp){
+      sp.disabled = true; sp.textContent = 'Opening…';
+      fetch('/api/pay', { method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-dealer-code': SESSION.code || '' },
+        body: JSON.stringify({ ref: sp.getAttribute('data-stripepay') }) })
+        .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return { ok: r.ok, d: d }; }); })
+        .then(function(x){
+          if(x.ok && x.d.url){ location.href = x.d.url; return; }
+          sp.disabled = false; sp.textContent = 'Pay by card';
+          note(sp, (x.d && x.d.error) || 'Card payments are not available right now.');
+        })
+        .catch(function(){ sp.disabled = false; sp.textContent = 'Pay by card'; });
+      return;
+    }
     var all = e.target.closest('[data-payallclaim]');
     if(all){
       if(all.dataset.armed !== '1'){
@@ -604,5 +620,16 @@
     })
     .catch(function(){ render([]); });
   }
-  load();
+  /* back from Stripe Checkout: verify the session server-side, then load */
+  var pays = /[?&]paysession=([^&]+)/.exec(location.search);
+  if(pays){
+    history.replaceState(null, '', location.pathname);
+    fetch('/api/pay/confirm', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-dealer-code': SESSION.code || '' },
+      body: JSON.stringify({ session: decodeURIComponent(pays[1]) }) })
+      .catch(function(){})
+      .then(function(){ load(); });
+  } else {
+    load();
+  }
 })();
