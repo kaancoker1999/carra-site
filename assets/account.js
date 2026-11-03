@@ -303,10 +303,6 @@
     document.getElementById('paysection').hidden = !keys.length;
     if(!keys.length) return;
     var today = startOfToday();
-    var claimable = orders.filter(function(o){ return payShow(o) && !isPaid(o) && !(o.payment && o.payment.customerPaidAt); }).length;
-    var allbtn = claimable > 1
-      ? '<div style="display:flex;justify-content:flex-end;margin:0 0 10px"><button class="paybtn wht" data-payallclaim="1" type="button" style="padding:9px 16px">I&rsquo;ve paid all (' + claimable + ')</button></div>'
-      : '';
     var late = orders.filter(isLate), lateT = 0;
     late.forEach(function(o){ lateT += orderTotals(o.lines).total; });
     var warn = late.length
@@ -315,10 +311,7 @@
       : '';
     LASTORDERS = orders;
     var howbtn = PAYINFO ? '<button class="paybtn wht" data-act="paypop" type="button" style="padding:9px 16px">Pay from here</button>' : '';
-    if(howbtn || allbtn){
-      allbtn = '<div style="display:flex;justify-content:flex-end;gap:8px;margin:0 0 10px">' + howbtn +
-        (claimable > 1 ? '<button class="paybtn wht" data-payallclaim="1" type="button" style="padding:9px 16px">I&rsquo;ve paid all (' + claimable + ')</button>' : '') + '</div>';
-    }
+    var allbtn = howbtn ? '<div style="display:flex;justify-content:flex-end;margin:0 0 10px">' + howbtn + '</div>' : '';
     document.getElementById('paydue').innerHTML = warn + allbtn + keys.map(function(k){
       var g = groups[k], over = g.due.getTime() < today && g.owed > 0;
       var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
@@ -330,8 +323,7 @@
         if(!paid && !claimed && isLate(o)) badge += ' <span class="plate">' + lateTag(o) + '</span>';
         var action = paid ? ''
           : claimed ? '<button class="paybtn ghost" data-paidcancel="' + esc(o.ref) + '" type="button">Not yet</button>'
-          : '<button class="paybtn" data-stripepay="' + esc(o.ref) + '" type="button">Pay by card</button>' +
-            '<button class="paybtn ghost" data-paidclaim="' + esc(o.ref) + '" type="button">I&rsquo;ve paid</button>';
+          : '<button class="paybtn" data-stripepay="' + esc(o.ref) + '" type="button">Pay</button>';
         return '<div class="payorow"><div class="pi">' +
           '<span class="pref">' + esc(o.ref) + '</span>' + (o.customer ? ' <span class="pcust">' + esc(o.customer) + '</span>' : '') + badge +
           '<div class="pitems">' + orderItems(o) + '</div></div>' +
@@ -575,10 +567,10 @@
         .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return { ok: r.ok, d: d }; }); })
         .then(function(x){
           if(x.ok && x.d.url){ location.href = x.d.url; return; }
-          sp.disabled = false; sp.textContent = 'Pay by card';
+          sp.disabled = false; sp.textContent = 'Pay';
           note(sp, (x.d && x.d.error) || 'Card payments are not available right now.');
         })
-        .catch(function(){ sp.disabled = false; sp.textContent = 'Pay by card'; });
+        .catch(function(){ sp.disabled = false; sp.textContent = 'Pay'; });
       return;
     }
     var all = e.target.closest('[data-payallclaim]');

@@ -431,6 +431,7 @@ LUMIA_I18N_DATA({
 "Pairing a LUMIA shade takes about a minute: scan the code on the motor, name the shade, and it is live in the app. Rooms, scenes, schedules and group control follow — this walkthrough shows a Bluetooth Roman shade being paired and driven from the app.":"Emparejar una cortina LUMIA toma alrededor de un minuto: escanee el código del motor, asigne un nombre a la cortina y ya está activa en la app. Después vienen las habitaciones, las escenas, las programaciones y el control por grupos — este recorrido muestra cómo se empareja una cortina romana Bluetooth y se maneja desde la app.",
 "Panels":"Paneles",
 "Past orders":"Pedidos anteriores",
+"Pay":"Pagar",
 "Pay by card":"Pagar con tarjeta",
 "Pay from here":"Pagar desde aquí",
 "Payable":"Por pagar",

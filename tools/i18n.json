@@ -3202,5 +3202,9 @@
   "Card payments are not set up yet.": {
     "es": "Los pagos con tarjeta aún no están configurados.",
     "fr": "Les paiements par carte ne sont pas encore configurés."
+  },
+  "Pay": {
+    "es": "Pagar",
+    "fr": "Payer"
   }
 }

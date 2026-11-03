@@ -431,6 +431,7 @@ LUMIA_I18N_DATA({
 "Pairing a LUMIA shade takes about a minute: scan the code on the motor, name the shade, and it is live in the app. Rooms, scenes, schedules and group control follow — this walkthrough shows a Bluetooth Roman shade being paired and driven from the app.":"Appairer un store LUMIA prend environ une minute : scannez le code sur le moteur, nommez le store, et il est actif dans l’appli. Pièces, scènes, programmations et commande groupée suivent — cette démonstration montre l’appairage d’un store romain Bluetooth et son pilotage depuis l’appli.",
 "Panels":"Panneaux",
 "Past orders":"Commandes précédentes",
+"Pay":"Payer",
 "Pay by card":"Payer par carte",
 "Pay from here":"Payer ici",
 "Payable":"À payer",
