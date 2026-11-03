@@ -82,8 +82,11 @@
   .scrollcue{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);z-index:7;
     width:1px;height:58px;background:rgba(255,255,255,.38);pointer-events:auto}
   /* rotating name wheel: previous · CURRENT · next, turning with the photos */
-  .heronames{position:absolute;left:0;right:0;bottom:92px;z-index:7;display:flex;align-items:baseline;
-    justify-content:center;gap:clamp(26px,6vw,74px);pointer-events:none}
+  .heronames{position:absolute;left:0;right:0;bottom:92px;z-index:7;display:grid;
+    grid-template-columns:1fr auto 1fr;align-items:baseline;
+    column-gap:clamp(26px,6vw,74px);pointer-events:none}
+  .hn-prev{justify-self:end}
+  .hn-next{justify-self:start}
   .heronames span{font-family:'Fraunces',serif;font-weight:560;letter-spacing:-.015em;white-space:nowrap;
     text-shadow:0 1px 18px rgba(250,248,243,.95),0 1px 3px rgba(250,248,243,.85);
     transition:transform .34s ease, opacity .34s ease}
