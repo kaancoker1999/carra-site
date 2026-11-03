@@ -25,11 +25,11 @@
 
   var css = document.createElement('style');
   css.textContent =
-    '.sp{background:#fff;padding:34px 0 40px}' +
-    '.sp-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap}' +
-    '.sp-bar p{margin:0;font-size:14px;color:#767A7E}' +
-    '.sp-btn{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#14171A;background:#fff;border:1px solid #C9C2B4;border-radius:999px;padding:11px 20px;cursor:pointer;transition:background .2s,border-color .2s}' +
-    '.sp-btn:hover{background:#FBF8F2;border-color:#14171A}' +
+    '.sp{background:#fff;padding:54px 0 58px}' +
+    '.sp-bar{display:flex;align-items:center;gap:28px;flex-wrap:wrap}.sp-lead h2{font-family:"Archivo",sans-serif;font-weight:600;font-size:23px;letter-spacing:-.02em;color:#14171A;margin:0}' +
+    '.sp-bar p{margin:7px 0 0;font-size:14.5px;color:#767A7E;max-width:52ch}' +
+    '.sp-btn{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#fff;background:#14171A;border:0;border-radius:999px;padding:16px 26px;cursor:pointer;transition:background .2s}' +
+    '.sp-btn:hover{background:#8A6220}@media(max-width:700px){.sp-btn{margin-left:0}}' +
     '.sp-dot{display:inline-block;min-width:16px;height:16px;line-height:16px;border-radius:999px;background:#C8502F;color:#fff;font-size:9px;letter-spacing:0;text-align:center;padding:0 4px;margin-left:8px}' +
     '.sp-panel{margin-top:18px;max-width:820px}' +
     '.sp-form{background:#FBF8F2;border:1px solid #E4E3DE;border-radius:16px;padding:18px 20px;color:#1B1D1F}' +
@@ -68,8 +68,9 @@
   var box = document.createElement('div');
   box.className = 'sp';
   box.innerHTML = '<div class="wrap"><div class="sp-bar">' +
-    '<button class="sp-btn" id="sp-toggle" type="button">Request or question</button>' +
-    '<p>Need something from LUMIA? Send us a request or a question &mdash; we answer in <a href="messages.html" style="color:#8A6220">Messages</a>.</p></div>' +
+    '<div class="sp-lead"><h2>Need something from LUMIA?</h2>' +
+    '<p>Send us a request or a question &mdash; we answer in <a href="messages.html" style="color:#8A6220">Messages</a>.</p></div>' +
+    '<button class="sp-btn" id="sp-toggle" type="button">Request or question</button></div>' +
     '<div class="sp-panel" id="sp-panel" hidden></div></div>';
 
   function renderPanel(sentId){

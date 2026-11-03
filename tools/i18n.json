@@ -3210,5 +3210,13 @@
   "Pay all": {
     "es": "Pagar todo",
     "fr": "Tout payer"
+  },
+  "Need something from LUMIA?": {
+    "es": "¿Necesitas algo de LUMIA?",
+    "fr": "Besoin de quelque chose de LUMIA ?"
+  },
+  "Send us a request or a question — we answer in": {
+    "es": "Envíanos una solicitud o una pregunta — respondemos en",
+    "fr": "Envoyez-nous une demande ou une question — nous répondons dans"
   }
 }
