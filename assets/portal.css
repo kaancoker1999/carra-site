@@ -51,7 +51,7 @@
   .payorow .ppaid{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
     background:#D8ECD2;border:1px solid #A9CB9F;color:#2F5D25;border-radius:999px;padding:2px 8px;margin-left:4px}
   .payorow .pitems{font-size:12.5px;color:#4A4E52;margin-top:3px}
-  .payorow .poamt{font-family:'IBM Plex Mono',monospace;font-size:13px;white-space:nowrap}
+  .payorow .poamt{font-family:'IBM Plex Mono',monospace;font-size:13px;white-space:nowrap;color:#8A2620}
   .payorow .poamt.done{text-decoration:line-through;color:var(--muted)}
   .payorow .pclaim{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
     background:#FBF3CF;border:1px solid #E2D27E;color:#8A6220;border-radius:999px;padding:2px 8px;margin-left:4px}
@@ -135,7 +135,7 @@
   .paygrp .top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
   .pdue{font-family:'Archivo',sans-serif;font-weight:600;font-size:17px}
   .ptag{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:3px}
-  .pamt{font-family:'Archivo',sans-serif;font-weight:600;font-size:24px}
+  .pamt{font-family:'Archivo',sans-serif;font-weight:600;font-size:24px;color:#8A2620}
   .prows{margin-top:10px}
   .payrow{display:flex;gap:14px;align-items:baseline;border-top:1px solid rgba(20,23,26,.08);padding:8px 0;font-size:13.5px;flex-wrap:wrap}
   .payrow .ref{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.06em;color:var(--bronze)}
