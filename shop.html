@@ -211,39 +211,33 @@
     #wiznext{padding:18px 18px}
   }
 
-  /* ── cart ── */
+  /* ── cart: thumbnail rows + a bold subtotal rule ── */
   section.cartsec{padding:10px 0 24px}
   .xcard{background:var(--white);border:1px solid var(--line2);border-radius:18px;padding:26px 28px 28px}
   .xcard .xtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:21px;letter-spacing:-.02em;margin:0 0 4px}
   .xcard .xsub{font-size:14px;color:var(--muted);margin:0 0 6px}
-  .lineswrap{border:1px solid var(--line2);border-radius:14px;overflow-x:auto;background:var(--white);padding-bottom:18px}
-  table{border-collapse:collapse;width:100%;min-width:680px;font-size:14px}
-  th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-  th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:500;background:var(--paper);text-transform:uppercase}
-  tr:last-child td{border-bottom:0}
-  .del{border:0;background:none;color:#8A2620;cursor:pointer;font-size:15px;padding:2px 6px}
-  .acts{display:flex;gap:6px;align-items:center}
-  .ed{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;
-    background:var(--white);border:1px solid var(--line2);border-radius:7px;padding:5px 10px;cursor:pointer;color:var(--ink)}
-  .ed:hover{border-color:var(--ink)}
-  .ltable tr.editing td{background:var(--paper2)}
-  .empty{padding:24px 20px;color:var(--muted);font-size:14.5px}
-  .lgroup{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
-    color:var(--bronze);padding:14px 14px 0;position:sticky;left:0;width:max-content}
-  .lgroup:first-child{padding-top:12px}
-  .ltable{width:max-content;min-width:100%}
-  .ltable th{font-size:9px;letter-spacing:.1em;padding:9px 12px}
-  .ltable td{font-size:13px;padding:9px 12px}
-  .ltable .sp{color:var(--muted)}
-  .ltable th,.ltable td{border-right:1px solid var(--line)}
-  .ltable th:last-child,.ltable td:last-child{border-right:0}
-  td.num{text-align:right;white-space:nowrap}
-
-  .totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:18px}
-  .tot{border:1px solid var(--line2);border-radius:14px;background:var(--white);padding:16px 20px}
-  .tot .v{font-family:'Archivo',sans-serif;font-weight:600;font-size:24px;line-height:1.1;letter-spacing:-.02em}
-  .tot .k{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-top:6px}
-  .tot.main .v{color:var(--bronze)}
+  .empty{border:1px dashed var(--line2);border-radius:14px;padding:24px 20px;color:var(--muted);font-size:14.5px}
+  .cline{display:flex;gap:18px;padding:20px 2px;border-bottom:1px solid var(--line);align-items:flex-start}
+  .cline:first-child{padding-top:6px}
+  .cline.editing{background:var(--paper2);border-radius:12px;padding-left:12px;padding-right:12px}
+  .cthumb{width:76px;height:76px;object-fit:cover;border-radius:10px;border:1px solid var(--line2);flex:none;background:var(--paper2)}
+  .cinfo{flex:1;min-width:0}
+  .cname{font-family:'Archivo',sans-serif;font-weight:600;font-size:16.5px;letter-spacing:-.015em}
+  .croom{color:var(--muted);font-weight:500;font-size:14px}
+  .cspec{font-size:13px;color:var(--muted);line-height:1.55;margin-top:2px}
+  .cspec.dim2{color:var(--ink);margin-top:5px;font-weight:500}
+  .cacts{display:flex;gap:10px;align-items:center;margin-top:9px;color:var(--line2)}
+  .clink{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    background:none;border:0;cursor:pointer;color:var(--bronze);padding:0}
+  .clink:hover{text-decoration:underline}
+  .clink.danger{color:#8A2620}
+  .cprice{font-family:'Archivo',sans-serif;font-weight:600;font-size:17.5px;white-space:nowrap;text-align:right;letter-spacing:-.02em}
+  .cunit{display:block;font-family:'IBM Plex Sans',system-ui,sans-serif;font-weight:400;font-size:12px;color:var(--muted);margin-top:2px}
+  .csubrow{display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+    border-top:2px solid var(--ink);margin-top:2px;padding:16px 2px 0}
+  .csubrow span{font-size:13.5px;color:var(--muted)}
+  .csubrow .cst{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:block}
+  .csubrow b{font-family:'Archivo',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.02em}
 
   /* ── checkout ── */
   section.checkout{padding:14px 0 150px}
@@ -1089,16 +1083,6 @@
     });
     return { units: units, total: Math.round(total * 100) / 100 };
   }
-  function totalsTiles(ls){
-    var t = orderTotals(ls);
-    var tile = function(v, k, cls){
-      return '<div class="tot' + (cls ? ' ' + cls : '') + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
-    };
-    return tile(ls.length, ls.length === 1 ? 'Line' : 'Lines') +
-      tile(t.units, t.units === 1 ? 'Unit' : 'Units') +
-      tile('$' + t.total.toFixed(2), 'Total', 'main');
-  }
-
   function specPairs(l){
     if(Array.isArray(l.specs) && l.specs.length) return l.specs;
     return String(l.spec || '').split(' · ').map(function(part){
@@ -1107,56 +1091,67 @@
     }).filter(function(p){ return p.v; });
   }
   function tdbuNo(p){ return /^(top-down bottom-up|tdbu)$/i.test(p.k || '') && /^no$/i.test(p.v || ''); }
-  function specMap(l){
-    var m = {};
-    specPairs(l).forEach(function(p){ if(p.k && !tdbuNo(p)) m[p.k] = p.v; });
-    return m;
+
+  /* the chosen colour's swatch makes the line's thumbnail */
+  function swatchOf(l){
+    try{
+      var p = CFG.products.filter(function(x){ return x.id === l.pid; })[0];
+      var st = (p.steps || []).filter(function(s){ return s.key === 'collection'; })[0];
+      var sel = l.pick && l.pick.sel;
+      if(st && sel && st.swatches && st.swatches[sel.collection]){
+        var s = st.swatches[sel.collection][sel.colour];
+        if(s && s.img) return s.img;
+      }
+    }catch(e){}
+    return 'assets/card-' + l.pid + '.jpg';
   }
-  function lineTables(items, del){
-    var groups = [], byProduct = {};
-    items.forEach(function(it){
-      var name = it.l.product || '—';
-      if(!byProduct[name]){ byProduct[name] = { name: name, items: [], keys: [] }; groups.push(byProduct[name]); }
-      var g = byProduct[name];
-      g.items.push(it);
-      specPairs(it.l).forEach(function(p){ if(p.k && !tdbuNo(p) && g.keys.indexOf(p.k) < 0) g.keys.push(p.k); });
-    });
-    return groups.map(function(g){
-      var head = '<tr><th>#</th><th>Room / label</th>' +
-        g.keys.map(function(k){ return '<th>' + k + '</th>'; }).join('') +
-        '<th>W &times; H</th><th>Qty</th><th>Unit</th><th>Total</th>' + (del ? '<th></th>' : '') + '</tr>';
-      var body = g.items.map(function(it, n){
-        var l = it.l, m = specMap(l);
-        return '<tr' + (del && it.i === editIdx ? ' class="editing"' : '') + '><td>' + (n + 1) + '</td><td>' + (l.label || '&mdash;') + '</td>' +
-          g.keys.map(function(k){ return '<td>' + (m[k] || '<span class="sp">&mdash;</span>') + '</td>'; }).join('') +
-          '<td>' + (l.w == null ? '&mdash;' : fmtIn8(l.w) + '&Prime; &times; ' + fmtIn8(l.h) + '&Prime;') + '</td>' +
-          '<td>' + l.qty + '</td>' +
-          '<td class="num">' + fmt$(l.price) + '</td>' +
-          '<td class="num">' + (l.price == null ? '&mdash;' : '$' + (l.price * l.qty).toFixed(2)) + '</td>' +
-          (del ? '<td class="acts"><button class="ed" data-i="' + it.i + '" type="button">Edit</button>' +
-                 '<button class="del" data-i="' + it.i + '" title="Remove">&times;</button></td>' : '') + '</tr>';
-      }).join('');
-      return '<div class="lgroup">' + g.name + '</div>' +
-        '<div class="ltwrap"><table class="ltable"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
-    }).join('');
+  function inTxt(v){ return fmtIn8(v).replace(' 0/8', ''); }
+
+  function cartRow(l, i){
+    var pairs = specPairs(l).filter(function(p){ return p.k && !tdbuNo(p); });
+    var fab = pairs.filter(function(p){ return /fabric|cell/i.test(p.k); })[0];
+    var rest = pairs.filter(function(p){
+      return p !== fab && !/^(no|none)$/i.test(p.v || '');
+    }).map(function(p){ return p.v; }).join(' · ');
+    return '<div class="cline' + (i === editIdx ? ' editing' : '') + '">' +
+      '<img class="cthumb" src="' + esc(swatchOf(l)) + '" alt="" loading="lazy">' +
+      '<div class="cinfo">' +
+        '<div class="cname">' + esc(l.product) +
+          (l.label ? ' <span class="croom">&mdash; ' + esc(l.label) + '</span>' : '') + '</div>' +
+        (fab ? '<div class="cspec">' + esc(fab.v) + '</div>' : '') +
+        (rest ? '<div class="cspec">' + esc(rest) + '</div>' : '') +
+        '<div class="cspec dim2">' +
+          (l.w != null ? inTxt(l.w) + '&Prime; &times; ' + inTxt(l.h) + '&Prime; &middot; ' : '') +
+          'Qty ' + l.qty + '</div>' +
+        '<div class="cacts">' +
+          '<button class="clink" type="button" data-i="' + i + '" data-act="edit">Edit</button><span>&middot;</span>' +
+          '<button class="clink danger" type="button" data-i="' + i + '" data-act="del">Remove</button></div>' +
+      '</div>' +
+      '<div class="cprice">' + (l.price == null ? '&mdash;' : '$' + (l.price * l.qty).toFixed(2)) +
+        (l.qty > 1 && l.price != null ? '<span class="cunit">$' + l.price.toFixed(2) + ' each</span>' : '') +
+      '</div></div>';
   }
-  function indexed(ls){ return (ls || []).map(function(l, i){ return { l: l, i: i }; }); }
+  function plural(n, w){ return n + ' ' + w + (n === 1 ? '' : 's'); }
 
   function renderLines(){
     linesBox.hidden = lines.length === 0;
     empty.style.display = lines.length ? 'none' : '';
-    linesBox.innerHTML = lineTables(indexed(lines), true);
+    linesBox.innerHTML = lines.map(cartRow).join('');
     count.hidden = lines.length === 0;
-    count.innerHTML = lines.length ? totalsTiles(lines) : '';
+    var t = orderTotals(lines);
+    count.innerHTML = lines.length
+      ? '<div class="csubrow"><span>' + plural(lines.length, 'line') + ' &middot; ' + plural(t.units, 'unit') +
+        '<span class="cst">Made to measure &middot; reviewed before production</span></span>' +
+        '<b>$' + t.total.toFixed(2) + '</b></div>'
+      : '';
     syncPay();
     syncSections();
   }
 
   linesBox.addEventListener('click', function(e){
-    var ed = e.target.closest('.ed');
-    if(ed){ editLine(+ed.dataset.i); return; }
-    var b = e.target.closest('.del'); if(!b) return;
+    var b = e.target.closest('.clink'); if(!b) return;
     var i = +b.dataset.i;
+    if(b.dataset.act === 'edit'){ editLine(i); return; }
     lines.splice(i, 1);
     if(editIdx != null){
       if(i === editIdx){ editIdx = null; }
