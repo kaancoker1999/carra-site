@@ -169,7 +169,7 @@ TEMPLATE = r"""<!doctype html>
       <a href="motorization.html">Motorization</a>
       <a href="about.html">About us</a>
       <a href="index.html#contact">Contact</a>
-      <a class="partner" href="trade.html">Trade login</a>
+      <a class="partner" href="trade.html">Log in</a>
     </nav>
   </div>
 </header>
