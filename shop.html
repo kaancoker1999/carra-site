@@ -224,8 +224,8 @@
     #wiznext{padding:18px 18px}
   }
 
-  /* ── cart: thumbnail rows + a bold subtotal rule ── */
-  section.cartsec{padding:10px 0 24px}
+  /* ── cart + checkout: their own band, split from the steps by a rule ── */
+  section.cartsec{padding:46px 0 24px;background:var(--paper2);border-top:1px solid #C8BEA6}
   .xcard{background:var(--white);border:1px solid var(--line2);border-radius:18px;padding:26px 28px 28px}
   .xcard .xtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:21px;letter-spacing:-.02em;margin:0 0 4px}
   .xcard .xsub{font-size:14px;color:var(--muted);margin:0 0 6px}
@@ -253,7 +253,7 @@
   .csubrow b{font-family:'Archivo',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.02em}
 
   /* ── checkout ── */
-  section.checkout{padding:14px 0 150px}
+  section.checkout{padding:14px 0 150px;background:var(--paper2)}
   .ckgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
   .ckgrid .cell{display:flex;flex-direction:column;gap:7px}
   .ckgrid .cell label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
