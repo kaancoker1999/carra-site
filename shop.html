@@ -69,9 +69,9 @@
     font:inherit;color:inherit;text-align:center;overflow:hidden;transition:border-color .2s,box-shadow .2s}
   .pt:hover{border-color:var(--bronze);box-shadow:0 10px 28px rgba(20,23,26,.07)}
   .pt .art{display:block;overflow:hidden}
-  /* the photos are native 4:3 — a matching box means zero crop at any width */
-  .pt .art img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;transition:transform .5s ease}
-  .pt:hover .art img{transform:scale(1.04)}
+  /* the photos are native 4:3 — a matching box means zero crop at any width;
+     no hover zoom: a mid-transition frame reads as a shifted photo */
+  .pt .art img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
   .pt .txt{display:block;padding:20px 18px 24px}
   .pt .pname{display:block;font-family:'Archivo',sans-serif;font-weight:600;font-size:18.5px;letter-spacing:-.02em;margin:0 0 5px;transition:color .2s}
   .pt:hover .pname{color:var(--bronze)}
@@ -333,10 +333,10 @@
       <p class="note">Made to measure, straight from the factory &mdash; pick a product to start.</p>
     </div>
     <div class="prodstrip" id="prods">
-      <button class="pt" type="button" data-pid="roman"><span class="art"><img src="assets/card-roman.jpg" alt="Roman shades in a living room"></span><span class="txt"><span class="pname">Roman Shades</span><span class="pdesc">Back-rod, front-rod, relaxed and hobbled folds in every fabric group.</span></span></button>
-      <button class="pt" type="button" data-pid="cellular"><span class="art"><img src="assets/card-cellular.jpg" alt="Cellular shades in a bedroom"></span><span class="txt"><span class="pname">Cellular Shades</span><span class="pdesc">Single, double and triple cell honeycomb, sheer to blackout.</span></span></button>
-      <button class="pt" type="button" data-pid="pleated"><span class="art"><img src="assets/card-pleated.jpg" alt="Pleated shades in a study"></span><span class="txt"><span class="pname">Pleated Shades</span><span class="pdesc">Crisp pleats in smooth and crushed fabrics.</span></span></button>
-      <button class="pt" type="button" data-pid="drapery"><span class="art"><img src="assets/card-drapery.jpg" alt="Wave-fold drapery in a dining room"></span><span class="txt"><span class="pname">Drapery</span><span class="pdesc">Wave fold, pinch pleat and euro pleat headings, made to the drop.</span></span></button>
+      <button class="pt" type="button" data-pid="roman"><span class="art"><img src="assets/card-roman.jpg" alt="Roman shades in a living room" width="1400" height="1050"></span><span class="txt"><span class="pname">Roman Shades</span><span class="pdesc">Back-rod, front-rod, relaxed and hobbled folds in every fabric group.</span></span></button>
+      <button class="pt" type="button" data-pid="cellular"><span class="art"><img src="assets/card-cellular.jpg" alt="Cellular shades in a bedroom" width="1400" height="1050"></span><span class="txt"><span class="pname">Cellular Shades</span><span class="pdesc">Single, double and triple cell honeycomb, sheer to blackout.</span></span></button>
+      <button class="pt" type="button" data-pid="pleated"><span class="art"><img src="assets/card-pleated.jpg" alt="Pleated shades in a study" width="1400" height="1050"></span><span class="txt"><span class="pname">Pleated Shades</span><span class="pdesc">Crisp pleats in smooth and crushed fabrics.</span></span></button>
+      <button class="pt" type="button" data-pid="drapery"><span class="art"><img src="assets/card-drapery.jpg" alt="Wave-fold drapery in a dining room" width="1400" height="1050"></span><span class="txt"><span class="pname">Drapery</span><span class="pdesc">Wave fold, pinch pleat and euro pleat headings, made to the drop.</span></span></button>
     </div>
   </div>
 
