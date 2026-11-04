@@ -186,7 +186,7 @@ async function stripeWebhook(req) {
 }
 
 async function dealerFromReq(req) {
-  const code = (req.headers.get("x-dealer-code") || "").trim();
+  const code = (req.headers.get("x-dealer-code") || "").trim().toUpperCase();
   if (!code) return null;
   const dealers = await getDealers();
   const d = dealers[code];

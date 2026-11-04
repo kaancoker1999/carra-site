@@ -447,8 +447,23 @@
       btn.disabled = false; btn.textContent = 'Enter';
       showShop();
     }).catch(function(){
-      err.classList.add('on');
-      btn.disabled = false; btn.textContent = 'Enter';
+      /* not the shop code — a dealer code typed here goes straight to the trade portal */
+      fetch('/api/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.toUpperCase() })
+      }).then(function(r){ if(!r.ok) throw new Error('no'); return r.json(); })
+      .then(function(d){
+        if(!d || !d.prices) throw new Error('no');
+        try{
+          localStorage.setItem('lumia_trade', JSON.stringify({
+            at: new Date().toISOString(), code: code.toUpperCase(), name: d.name,
+            prices: d.prices, promo: d.promo || null, contact: d.contact || null }));
+        }catch(_){}
+        location.href = 'account.html';
+      }).catch(function(){
+        err.classList.add('on');
+        btn.disabled = false; btn.textContent = 'Enter';
+      });
     });
   });
 
