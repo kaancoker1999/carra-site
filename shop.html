@@ -26,14 +26,14 @@
   .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .wrap{max-width:1180px;padding:0 44px;margin:0 auto;width:100%}
 
-  header{position:sticky;top:0;z-index:50;background:rgba(241,232,214,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  header{position:sticky;top:0;z-index:50;background:#591C00;border-bottom:1px solid #4A1700}
   header .wrap{display:flex;align-items:center;justify-content:space-between;height:76px;gap:24px}
   .logo{display:flex;align-items:center;text-decoration:none}
-  .logo img{height:30px;display:block;mix-blend-mode:multiply}
+  .logo img{height:30px;display:block}
   header nav{display:flex;gap:26px;align-items:center}
   header nav a,header nav button{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-    color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer;transition:color .2s;padding:0}
-  header nav a:hover,header nav button:hover{color:var(--ink)}
+    color:rgba(255,255,255,.72);text-decoration:none;background:none;border:0;cursor:pointer;transition:color .2s;padding:0}
+  header nav a:hover,header nav button:hover{color:#fff}
 
   main{flex:1}
 
@@ -60,8 +60,8 @@
 
   /* ── home view: just the four products, edge to edge ── */
   .pagehead{text-align:center}
-  .wrap.pagehead{padding-top:104px;padding-bottom:10px}
-  .pagehead h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(32px,4.4vw,52px)}
+  .wrap.pagehead{padding-top:54px;padding-bottom:10px}
+  .pagehead h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(40px,5.4vw,64px)}
   .pagehead .note{margin:14px auto 0;font-size:15px;color:var(--muted);max-width:62ch}
 
   .prodstrip{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;width:100%;margin:46px 0 110px;padding:0 24px}
@@ -295,7 +295,7 @@
 
 <header>
   <div class="wrap">
-    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="LUMIA"></a>
+    <a class="logo" href="index.html"><img src="assets/logo-white.png" alt="LUMIA"></a>
     <nav>
       <a href="track.html">Orders</a>
       <button id="signout" type="button" hidden>Sign out</button>
