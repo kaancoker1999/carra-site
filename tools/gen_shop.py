@@ -81,6 +81,12 @@ def build():
             imgs = option_imgs(cfg, step["key"])
             if imgs:
                 step["imgs"] = imgs
+            if step["key"] == "collection":
+                if p["id"] == "cellular":
+                    step["swatches"] = cell_swatches()
+                else:
+                    step["swatches"] = fabric_swatches(gp.FAB)
+                    step["meta"] = fabric_meta(gp.FAB)
         # the banding colour choice appears once edge banding is picked
         if p["id"] == "roman":
             for i, s in enumerate(p["steps"]):
@@ -91,12 +97,6 @@ def build():
                         "showIf": {"key": "banding", "value": "Yes"},
                     })
                     break
-            if step["key"] == "collection":
-                if p["id"] == "cellular":
-                    step["swatches"] = cell_swatches()
-                else:
-                    step["swatches"] = fabric_swatches(gp.FAB)
-                    step["meta"] = fabric_meta(gp.FAB)
     OUT.write_text(json.dumps({"products": products}, separators=(",", ":")))
     print(f"wrote {OUT} ({OUT.stat().st_size // 1024} KB)")
 
