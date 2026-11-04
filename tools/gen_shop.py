@@ -75,6 +75,9 @@ def build():
         cfg = gp.PRODUCTS[fname]
         p["img"] = cfg["img"]
         for step in p["steps"]:
+            # retail shoppers don't get the plain Flat fold — trade only
+            if p["id"] == "roman" and step["key"] == "fold":
+                step["options"] = [o for o in step["options"] if o != "Flat"]
             imgs = option_imgs(cfg, step["key"])
             if imgs:
                 step["imgs"] = imgs
