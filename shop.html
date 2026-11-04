@@ -711,19 +711,34 @@
   var ROOMS = ['Living Room','Bedroom','Kitchen','Dining Room','Bathroom','Home Office','Nursery','Other'];
 
   /* line-art illustrations for the option steps that have no photos */
-  function art(body){
-    return '<span class="bcart"><svg width="112" height="84" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + body + '</svg></span>';
+  function art(body, vb){
+    return '<span class="bcart"><svg viewBox="' + (vb || '0 0 120 90') + '" style="width:82%;height:auto;max-height:100%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + body + '</svg></span>';
   }
   var FAB = '#C9A87C';   /* the drawn shade fabric: soft coffee */
   var WIN = '<rect x="18" y="6" width="84" height="78" rx="3"/>';
   var SHADE_TOP = '<rect x="24" y="12" width="72" height="34" fill="' + FAB + '"/><path d="M24 23h72M24 34h72"/><path d="M22 46h76" stroke-width="3"/>';
-  var ART_CCL = art(WIN + SHADE_TOP + '<path d="M90 48v4"/><ellipse cx="90" cy="64" rx="5" ry="12"/>');
+  /* the mechanism scenes get a richer window: headrail, sill, deeper shade */
+  var VB2 = '0 0 160 120';
+  var WIN2 = '<rect x="18" y="8" width="124" height="94" rx="4"/><path d="M12 106h136" stroke-width="3"/>';
+  var RAIL2 = '<rect x="24" y="14" width="112" height="7" rx="2" fill="currentColor" stroke="none"/>';
+  var FAB2 = '<rect x="24" y="21" width="112" height="41" fill="' + FAB + '"/><path d="M24 35h112M24 49h112"/><path d="M22 62h116" stroke-width="3.5"/>';
+  var ART_CCL = art(WIN2 + RAIL2 + FAB2 +
+    '<path d="M128 24v62a6 6 0 0 0 12 0V24"/>' +
+    '<circle cx="128" cy="42" r="1.8" fill="currentColor" stroke="none"/><circle cx="128" cy="58" r="1.8" fill="currentColor" stroke="none"/><circle cx="128" cy="74" r="1.8" fill="currentColor" stroke="none"/>' +
+    '<circle cx="140" cy="42" r="1.8" fill="currentColor" stroke="none"/><circle cx="140" cy="58" r="1.8" fill="currentColor" stroke="none"/><circle cx="140" cy="74" r="1.8" fill="currentColor" stroke="none"/>', VB2);
   var OPT_ART = {
     drive: {
-      'Cordless': art(WIN + SHADE_TOP + '<path d="M60 56v20"/><path d="M55 61l5-5 5 5"/><path d="M55 71l5 5 5-5"/>'),
+      'Cordless': art(WIN2 + RAIL2 + FAB2 +
+        '<rect x="72" y="64" width="16" height="6" rx="3" fill="currentColor" stroke="none"/>' +
+        '<path d="M80 76v20" stroke="#8A6220"/><path d="M73 83l7-7 7 7" stroke="#8A6220"/><path d="M73 89l7 7 7-7" stroke="#8A6220"/>', VB2),
       'Continuous cord loop': ART_CCL,
       'Cord loop': ART_CCL,
-      'Motorized': art(WIN + SHADE_TOP + '<rect x="80" y="54" width="14" height="25" rx="3.5"/><circle cx="87" cy="61" r="1.8" fill="currentColor"/><circle cx="87" cy="68" r="1.8" fill="currentColor"/><path d="M72 58c3 3 3 9 0 12"/>')
+      'Motorized': art(WIN2 + RAIL2 + FAB2 +
+        '<rect x="24" y="14" width="30" height="7" rx="2" fill="#8A6220" stroke="none"/>' +
+        '<path d="M60 26c3 3 3 8 0 11" stroke="#8A6220"/><path d="M66 23c5 5 5 12 0 17" stroke="#8A6220"/>' +
+        '<rect x="112" y="64" width="24" height="38" rx="8" fill="#fff"/>' +
+        '<circle cx="124" cy="76" r="4.5"/>' +
+        '<circle cx="119" cy="90" r="1.8" fill="currentColor" stroke="none"/><circle cx="129" cy="90" r="1.8" fill="currentColor" stroke="none"/><circle cx="124" cy="96" r="1.8" fill="currentColor" stroke="none"/>', VB2)
     },
     tdbu: {
       'No': art(WIN + '<rect x="24" y="12" width="72" height="40" fill="' + FAB + '"/><path d="M24 24h72M24 36h72"/><path d="M22 52h76" stroke-width="3"/>'),
