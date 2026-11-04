@@ -148,7 +148,9 @@ def samplebooks_product():
     }
 
 
-def build():
+def core_products():
+    """The four made-to-measure products, order-form shaped (steps carry the
+    exact keys/values the pricing engine reads). Shared with gen_shop.py."""
     products = []
     for fname, cfg in gp.PRODUCTS.items():
         fab = cfg.get("fabrics", False)
@@ -209,7 +211,11 @@ def build():
         if cfg.get("sizeRules"):
             products[-1]["sizeRules"] = cfg["sizeRules"]
             products[-1]["cellClass"] = CELL_CLASS
+    return products
 
+
+def build():
+    products = core_products()
     products.append(arches_product())
     products.append(fabric_product())
     products.append(samplebooks_product())
