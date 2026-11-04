@@ -102,11 +102,11 @@
   .xcard .xtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:21px;letter-spacing:-.02em;margin:0 0 4px}
   .xcard .xsub{font-size:14px;color:var(--muted);margin:0 0 6px}
 
-  /* ── collapsible configurator steps ── */
-  .grp{border-top:1px solid var(--line)}
-  .grp:first-child{border-top:0}
+  /* ── collapsible configurator steps: each one its own framed card ── */
+  .grp{border:1px solid var(--line2);border-radius:16px;background:var(--white);margin:0 0 14px}
+  .grp:hover{border-color:#BFBBB0}
   .grphead{width:100%;display:flex;align-items:center;gap:16px;background:none;border:0;cursor:pointer;
-    font:inherit;padding:19px 2px;text-align:left}
+    font:inherit;padding:19px 22px;text-align:left}
   .grphead .code{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--bronze);
     text-transform:uppercase;white-space:nowrap;min-width:64px}
   .grphead .gtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:16.5px;letter-spacing:-.015em}
@@ -116,9 +116,9 @@
   .grphead .chev{flex:none;color:var(--muted);font-size:11px;transition:transform .2s}
   .grp.open .chev{transform:rotate(180deg)}
   .grp.open .grphead .cur{color:var(--bronze)}
-  .grpbody{display:none;padding:0 2px 26px}
+  .grpbody{display:none;padding:2px 22px 26px}
   .grp.open .grpbody{display:block}
-  .grp.static{padding:20px 2px 4px}
+  .grp.static{padding:22px 22px 10px}
 
   .chips{display:flex;flex-wrap:wrap;gap:10px}
   .chip{font:inherit;font-size:14.5px;border:1px solid var(--line2);background:var(--white);color:var(--ink);
@@ -282,7 +282,7 @@
 
     <section class="builder" id="build">
       <div class="wrap">
-        <div class="xcard" id="rowbar">
+        <div id="rowbar">
           <div id="steps"></div>
           <div class="grp" id="sizegrp">
             <button class="grphead" id="sizetoggle" type="button">
