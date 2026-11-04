@@ -63,11 +63,10 @@
   .pagehead h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(32px,4.4vw,52px)}
   .pagehead .note{margin:14px auto 0;font-size:15px;color:var(--muted);max-width:62ch}
 
-  .prodstrip{display:grid;grid-template-columns:repeat(4,1fr);width:100%;margin:46px 0 0;
-    border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--white)}
-  .pt{display:block;border:0;border-right:1px solid var(--line);background:var(--white);padding:0;cursor:pointer;
-    font:inherit;color:inherit;text-align:center;overflow:hidden}
-  .pt:last-child{border-right:0}
+  .prodstrip{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;width:100%;margin:46px 0 0;padding:0 24px}
+  .pt{display:block;border:1px solid var(--line2);border-radius:16px;background:var(--white);padding:0;cursor:pointer;
+    font:inherit;color:inherit;text-align:center;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+  .pt:hover{border-color:var(--bronze);box-shadow:0 10px 28px rgba(20,23,26,.07)}
   .pt .art{display:block;overflow:hidden}
   .pt .art img{width:100%;aspect-ratio:3/4;max-height:520px;object-fit:cover;display:block;transition:transform .5s ease}
   .pt:hover .art img{transform:scale(1.04)}
@@ -75,15 +74,8 @@
   .pt .pname{display:block;font-family:'Archivo',sans-serif;font-weight:600;font-size:18.5px;letter-spacing:-.02em;margin:0 0 5px;transition:color .2s}
   .pt:hover .pname{color:var(--bronze)}
   .pt .pdesc{display:block;font-size:13px;color:var(--muted);line-height:1.5;max-width:30ch;margin:0 auto}
-  @media(max-width:900px){
-    .prodstrip{grid-template-columns:repeat(2,1fr)}
-    .pt:nth-child(2n){border-right:0}
-    .pt{border-bottom:1px solid var(--line)}
-  }
-  @media(max-width:520px){
-    .prodstrip{grid-template-columns:1fr}
-    .pt{border-right:0}
-  }
+  @media(max-width:900px){ .prodstrip{grid-template-columns:repeat(2,1fr)} }
+  @media(max-width:520px){ .prodstrip{grid-template-columns:1fr} }
 
   /* ── product view: hero, then the options ── */
   .phero{position:relative;width:100%;height:min(54vh,480px);overflow:hidden;background:var(--paper2)}
