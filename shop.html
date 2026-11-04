@@ -92,11 +92,32 @@
 
   section.builder{padding:46px 0 150px}
 
-  /* step header: 01 ── FOLD STYLE */
-  .stephead{display:flex;align-items:center;gap:16px;margin:4px 0 26px}
-  .stephead .sno{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;letter-spacing:.1em}
-  .stephead .sdash{width:46px;height:1px;background:var(--line2)}
-  .stephead .slabel{font-family:'Archivo',sans-serif;font-weight:600;font-size:14.5px;letter-spacing:.15em;text-transform:uppercase}
+  /* collapsible steps: each one its own framed card, header = 01 ── FOLD STYLE */
+  .grp{border:1px solid var(--line2);border-radius:14px;background:var(--white);margin:0 0 14px;overflow:hidden}
+  .grp:hover{border-color:#BFBBB0}
+  .grphead{width:100%;display:flex;align-items:center;gap:15px;background:none;border:0;cursor:pointer;
+    font:inherit;color:inherit;padding:19px 22px;text-align:left}
+  .grphead .code{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;font-weight:500;white-space:nowrap}
+  .grphead .gdash{width:32px;height:1px;background:var(--line2);flex:none}
+  .grphead .gtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:13.5px;letter-spacing:.14em;text-transform:uppercase}
+  .grphead .cur{margin-left:auto;font-size:13px;color:var(--muted);text-align:right;max-width:42%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .grphead .cur.need{color:#8A2620}
+  .grp.open .grphead .cur{color:var(--bronze)}
+  .grphead .chev{flex:none;color:var(--muted);font-size:11px;transition:transform .2s}
+  .grp.open .chev{transform:rotate(180deg)}
+  .grpbody{display:none;padding:4px 22px 26px}
+  .grp.open .grpbody{display:block}
+
+  /* the room step: small cards with line icons */
+  .roomgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+  .roomcard{position:relative;border:1px solid var(--line2);background:var(--white);border-radius:8px;cursor:pointer;
+    font:inherit;color:inherit;text-align:center;padding:16px 8px 13px;transition:border-color .15s,background .15s}
+  .roomcard:hover{border-color:var(--ink)}
+  .roomcard.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);background:#F3F1EA}
+  .roomcard svg{display:block;margin:0 auto 8px;color:#6B5320}
+  .roomcard .rname{display:block;font-size:12.5px;font-weight:500;letter-spacing:-.01em}
+  .roomcard .bchk{top:6px;right:6px;width:18px;height:18px;font-size:10px}
 
   /* big option cards */
   .cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
@@ -306,14 +327,18 @@
       </div>
     </section>
 
-    <!-- fixed: BACK · STEP N OF M + price · NEXT -->
+    <!-- fixed: live price · quantity · add to cart -->
     <div id="wizbar">
-      <button id="wizback" type="button">&larr; Back</button>
-      <div class="wizmid">
-        <span class="wizstep" id="wizstep">Step 1 of 1</span>
+      <div class="wizmid" style="margin:0;text-align:left">
+        <span class="wizstep">Price</span>
         <span class="wizprice" id="wizprice">&mdash;</span>
       </div>
-      <button id="wiznext" type="button">Next &rarr;</button>
+      <div class="qtyrow" style="margin-left:auto">
+        <button class="qbtn" type="button" data-q="-1">&minus;</button>
+        <span class="qnum" id="qnum">1</span>
+        <button class="qbtn" type="button" data-q="1">+</button>
+      </div>
+      <button id="wiznext" type="button">Add to cart &rarr;</button>
     </div>
   </div>
 
@@ -423,8 +448,8 @@
 
   /* ════════ views: home (the four products) / one product's wizard ════════ */
   var SELECT = '— Select —';
-  var CFG = null, P = null, SEL = {}, lines = [], editIdx = null, booted = false;
-  var STEPIDX = 0, W = 36, H = 48, QTY = 1;
+  var CFG = null, P = null, SEL = {}, OPEN = {}, lines = [], editIdx = null, booted = false;
+  var W = 36, H = 48, QTY = 1;
   try{ lines = JSON.parse(sessionStorage.getItem('lumia_home_cart') || '[]'); }catch(e){}
 
   var home = document.getElementById('home'), pview = document.getElementById('pview'),
@@ -444,7 +469,7 @@
     if(!CFG) return;
     P = CFG.products.filter(function(p){ return p.id === pid; })[0];
     if(!P){ closeProduct(); return; }
-    SEL = {}; STEPIDX = 0; QTY = 1; editIdx = null;
+    SEL = {}; OPEN = { _room: true }; QTY = 1; editIdx = null;
     ensureDefaults();
     var lim = sizeLimits();
     W = clamp(36, lim.w[0], lim.w[1]);
@@ -452,7 +477,7 @@
     document.getElementById('pv-img').src = P.img || '';
     document.getElementById('pv-name').textContent = P.name;
     home.hidden = true; pview.hidden = false;
-    renderStep();
+    renderSteps();
     syncSections();
     if(!fromHash && location.hash !== '#p/' + pid){
       try{ history.pushState(null, '', '#p/' + pid); }catch(e){ location.hash = 'p/' + pid; }
@@ -664,40 +689,48 @@
   }
   function currentPrice(){ return priceLine(P.id, pricingSel(), W, H); }
 
-  /* ════════ the wizard: one step at a time ════════ */
+  /* ════════ the configurator: collapsible steps ════════ */
+  function icon(paths){
+    return '<svg width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + paths + '</svg>';
+  }
+  var ICONS = {
+    'Living Room': icon('<path d="M6 16v-5a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v5"/><rect x="3" y="16" width="26" height="7" rx="2"/><path d="M7 23v2.5M25 23v2.5"/>'),
+    'Bedroom': icon('<path d="M4 9v16"/><path d="M4 19h24v6"/><path d="M28 19v-5a3 3 0 0 0-3-3H12v8"/><circle cx="8" cy="14.5" r="2"/>'),
+    'Kitchen': icon('<path d="M7 13h18v6a7 7 0 0 1-7 7h-4a7 7 0 0 1-7-7z"/><path d="M4 13h24"/><path d="M13 9h6"/>'),
+    'Dining Room': icon('<circle cx="19" cy="18" r="8"/><circle cx="19" cy="18" r="3.5"/><path d="M6 8v7M9 8v7M7.5 15v9"/>'),
+    'Bathroom': icon('<path d="M4 17h24v2a7 7 0 0 1-7 7H11a7 7 0 0 1-7-7z"/><path d="M6 17V9a3 3 0 0 1 5.5-1.6"/><path d="M9 26l-1.5 3M23 26l1.5 3"/>'),
+    'Home Office': icon('<rect x="5" y="11" width="22" height="13" rx="2"/><path d="M12 11V9a3 3 0 0 1 3-3h2a3 3 0 0 1 3 3v2"/><path d="M5 17h22"/>'),
+    'Nursery': icon('<path d="M5 8v17M27 8v17"/><path d="M5 12h22M5 22h22"/><path d="M10 12v10M16 12v10M22 12v10"/>'),
+    'Other': icon('<path d="M16 9v14M9 16h14"/>')
+  };
   var ROOMS = ['Living Room','Bedroom','Kitchen','Dining Room','Bathroom','Home Office','Nursery','Other'];
 
-  function wizardSteps(){
-    var list = [{ kind: 'room', label: 'Room' }];
+  function stepList(){
+    var list = [{ kind: 'room', key: '_room', label: 'Room' }];
     (P.steps || []).forEach(function(st){
       if(st.key === 'cgroup') return;          /* it becomes the filter inside the fabric step */
       if(!stepVisible(st)) return;
       if(st.key === 'collection'){
-        list.push({ kind: 'fabric', st: st,
+        list.push({ kind: 'fabric', key: 'collection', st: st,
           label: P.id === 'cellular' ? 'Cell & color' : st.label + ' & color' });
       } else {
-        list.push({ kind: 'opt', st: st, label: st.label });
+        list.push({ kind: 'opt', key: st.key, st: st, label: st.label });
       }
     });
-    list.push({ kind: 'size', label: 'Width & height' });
-    list.push({ kind: 'review', label: 'Review & add' });
+    list.push({ kind: 'size', key: '_size', label: 'Width & height' });
     return list;
   }
 
   function pad2(n){ return n < 10 ? '0' + n : String(n); }
-  function stepHeadHTML(n, label){
-    return '<div class="stephead"><span class="sno">' + pad2(n) + '</span><span class="sdash"></span>' +
-      '<span class="slabel">' + esc(label) + '</span></div>';
-  }
   function chk(){ return '<span class="bchk">&check;</span>'; }
 
   function roomBody(){
     var cards = ROOMS.map(function(r){
       var on = SEL._room === r;
-      return '<button class="bigcard noimg' + (on ? ' on' : '') + '" type="button" data-room="' + esc(r) + '">' +
-        '<span class="bcname">' + esc(r) + '</span>' + chk() + '</button>';
+      return '<button class="roomcard' + (on ? ' on' : '') + '" type="button" data-room="' + esc(r) + '">' +
+        (ICONS[r] || '') + '<span class="rname">' + esc(r) + '</span>' + chk() + '</button>';
     }).join('');
-    return '<div class="cardgrid txt">' + cards + '</div>' +
+    return '<div class="roomgrid">' + cards + '</div>' +
       (SEL._room === 'Other'
         ? '<input id="roomtext" type="text" placeholder="e.g. Guest room — left window" value="' + esc(SEL._roomText || '') + '" autocomplete="off">'
         : '') +
@@ -787,121 +820,108 @@
     return f ? n + ' ' + FRAC_NAMES[f] : String(n);
   }
 
-  function reviewPairs(){
-    var pairs = [];
-    (P.steps || []).forEach(function(st){
-      if(!stepVisible(st)) return;
-      if(st.key === 'collection'){
-        var chosen = st.options.filter(function(o){ return o.id === SEL.collection; })[0] || {};
-        pairs.push({ k: st.label, v: chosen.label + ' ' + SEL.colour });
-        return;
-      }
-      if(st.key === 'cgroup' || st.key === 'colour') return;
-      pairs.push({ k: st.label, v: SEL[st.key] || '—' });
-    });
-    return pairs;
-  }
-  function defaultLabel(){
-    if(SEL._label != null) return SEL._label;
-    if(SEL._room === 'Other') return SEL._roomText || '';
-    return SEL._room || '';
-  }
-  function reviewBody(){
-    var price = currentPrice();
-    var kv = reviewPairs().map(function(p){
-      return '<div><span>' + esc(p.k) + '</span><b>' + esc(p.v) + '</b></div>';
-    }).join('');
-    kv += '<div><span>Size</span><b>' + fmtIn(W) + '&Prime; &times; ' + fmtIn(H) + '&Prime;</b></div>';
-    kv += '<div><span>Price each</span><b>' + (price == null ? '—' : '$' + price.toFixed(2)) + '</b></div>';
-    return '<div class="revwrap"><div class="revkv">' + kv + '</div>' +
-      '<div class="revrow">' +
-        '<div class="qtywrap"><label>Quantity</label><div class="qtyrow">' +
-          '<button class="qbtn" type="button" data-q="-1">&minus;</button>' +
-          '<span class="qnum">' + QTY + '</span>' +
-          '<button class="qbtn" type="button" data-q="1">+</button></div></div>' +
-        '<div class="lblwrap"><label>Room / label (optional)</label>' +
-          '<input id="rev-label" type="text" value="' + esc(defaultLabel()) + '" autocomplete="off" placeholder="e.g. Living room"></div>' +
-      '</div></div>';
+  /* what a collapsed step's header says it is set to */
+  function curOf(s){
+    if(s.kind === 'room'){
+      return SEL._room === 'Other' ? (SEL._roomText || 'Other') : (SEL._room || '—');
+    }
+    if(s.kind === 'fabric'){
+      var chosen = s.st.options.filter(function(o){ return o.id === SEL.collection; })[0] || {};
+      return (chosen.label || '') + ' · ' + (SEL.colour || '');
+    }
+    if(s.kind === 'size') return fmtIn(W) + '″ × ' + fmtIn(H) + '″';
+    return SEL[s.key] || '';
   }
 
-  function renderStep(){
+  function accHTML(s, n, body){
+    var open = !!OPEN[s.key];
+    var need = s.kind === 'opt' && isChoose(s.st) && !SEL[s.key];
+    return '<div class="grp' + (open ? ' open' : '') + '">' +
+      '<button class="grphead" type="button" data-acc="' + esc(s.key) + '">' +
+        '<span class="code">' + pad2(n) + '</span><span class="gdash"></span>' +
+        '<span class="gtitle">' + esc(s.label) + '</span>' +
+        '<span class="cur' + (need ? ' need' : '') + '">' + (need ? 'Choose' : esc(curOf(s))) + '</span>' +
+        '<span class="chev">&#9662;</span>' +
+      '</button><div class="grpbody">' + body + '</div></div>';
+  }
+
+  function renderSteps(){
     if(!P) return;
     ensureDefaults();
-    var steps = wizardSteps();
-    if(STEPIDX >= steps.length) STEPIDX = steps.length - 1;
-    if(STEPIDX < 0) STEPIDX = 0;
-    var cur = steps[STEPIDX];
-    var body =
-      cur.kind === 'room'   ? roomBody() :
-      cur.kind === 'fabric' ? fabricBody(cur.st) :
-      cur.kind === 'size'   ? sizeBody() :
-      cur.kind === 'review' ? reviewBody() : optBody(cur.st);
-    stepsBox.innerHTML = stepHeadHTML(STEPIDX + 1, cur.label) + body;
-    syncBar(steps, cur);
+    var html = '';
+    stepList().forEach(function(s, i){
+      var body =
+        s.kind === 'room'   ? roomBody() :
+        s.kind === 'fabric' ? fabricBody(s.st) :
+        s.kind === 'size'   ? sizeBody() : optBody(s.st);
+      html += accHTML(s, i + 1, body);
+    });
+    stepsBox.innerHTML = html;
+    syncBar();
   }
 
-  function syncBar(steps, cur){
-    document.getElementById('wizstep').textContent = 'Step ' + (STEPIDX + 1) + ' of ' + steps.length;
+  function syncBar(){
     var price = currentPrice();
     var el = document.getElementById('wizprice');
     if(price == null){ el.innerHTML = '&mdash;'; }
-    else if(cur.kind === 'review' && QTY > 1){ el.textContent = '$' + (price * QTY).toFixed(2); }
+    else if(QTY > 1){ el.textContent = QTY + ' × $' + price.toFixed(2) + ' = $' + (price * QTY).toFixed(2); }
     else { el.textContent = '$' + price.toFixed(2); }
-    document.getElementById('wizback').classList.toggle('off', STEPIDX === 0);
+    document.getElementById('qnum').textContent = QTY;
     document.getElementById('wiznext').innerHTML =
-      cur.kind === 'review' ? 'Add to cart &rarr;' : 'Next &rarr;';
+      editIdx == null ? 'Add to cart &rarr;' : 'Update line &rarr;';
   }
 
   /* step interactions */
   stepsBox.addEventListener('click', function(e){
     var b;
+    if((b = e.target.closest('[data-acc]'))){
+      OPEN[b.dataset.acc] = !OPEN[b.dataset.acc];
+      renderSteps();
+      return;
+    }
     if((b = e.target.closest('[data-room]'))){
       clearFail();
       SEL._room = b.dataset.room;
-      renderStep();
+      renderSteps();
       if(SEL._room === 'Other'){ var t = document.getElementById('roomtext'); if(t) t.focus(); }
       return;
     }
     if((b = e.target.closest('[data-cg]'))){
       clearFail();
       SEL.cgroup = b.dataset.cg;
-      renderStep();
+      renderSteps();
       return;
     }
     if((b = e.target.closest('[data-fab]'))){
       clearFail();
       var parts = b.dataset.fab.split('|');
       SEL.collection = parts[0]; SEL.colour = parts[1];
-      renderStep();
+      renderSteps();
       return;
     }
     if((b = e.target.closest('[data-step]')) && !b.disabled){
       clearFail();
       SEL[b.dataset.step] = b.dataset.val;
-      renderStep();
-      return;
-    }
-    if((b = e.target.closest('[data-q]'))){
-      QTY = clamp(QTY + (+b.dataset.q), 1, 50);
-      renderStep();
+      renderSteps();
       return;
     }
   });
   stepsBox.addEventListener('input', function(e){
     if(e.target.id === 'roomtext'){ SEL._roomText = e.target.value; return; }
-    if(e.target.id === 'rev-label'){ SEL._label = e.target.value; return; }
-    if(e.target.id === 'w-sl'){ W = (+e.target.value) + (W - Math.floor(W)); syncSizeFields('w', W); syncBarOnly(); return; }
-    if(e.target.id === 'h-sl'){ H = (+e.target.value) + (H - Math.floor(H)); syncSizeFields('h', H); syncBarOnly(); return; }
+    if(e.target.id === 'w-sl'){ W = (+e.target.value) + (W - Math.floor(W)); syncSizeFields('w', W); syncBar(); return; }
+    if(e.target.id === 'h-sl'){ H = (+e.target.value) + (H - Math.floor(H)); syncSizeFields('h', H); syncBar(); return; }
   });
   stepsBox.addEventListener('change', function(e){
+    if(e.target.id === 'roomtext'){ renderSteps(); return; }
     if(e.target.id === 'w-in' || e.target.id === 'w-fr'){
       W = (+document.getElementById('w-in').value) + (+document.getElementById('w-fr').value);
-      syncSizeFields('w', W); syncBarOnly(); return;
+      renderSteps(); return;
     }
     if(e.target.id === 'h-in' || e.target.id === 'h-fr'){
       H = (+document.getElementById('h-in').value) + (+document.getElementById('h-fr').value);
-      syncSizeFields('h', H); syncBarOnly(); return;
+      renderSteps(); return;
     }
+    if(e.target.id === 'w-sl' || e.target.id === 'h-sl'){ renderSteps(); return; }
   });
   function syncSizeFields(name, v){
     var whole = Math.floor(v);
@@ -909,29 +929,29 @@
     if(sl) sl.value = String(whole);
     if(si) si.value = String(whole);
   }
-  function syncBarOnly(){ syncBar(wizardSteps(), wizardSteps()[STEPIDX] || { kind: '' }); }
 
-  /* bar buttons */
-  document.getElementById('wizback').addEventListener('click', function(){
-    clearFail();
-    if(STEPIDX > 0){ STEPIDX -= 1; renderStep(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  /* the bar: quantity stepper + add to cart */
+  document.getElementById('wizbar').addEventListener('click', function(e){
+    var q = e.target.closest('[data-q]');
+    if(q){ QTY = clamp(QTY + (+q.dataset.q), 1, 50); syncBar(); }
   });
   document.getElementById('wiznext').addEventListener('click', function(){
     clearFail();
-    var steps = wizardSteps();
-    var cur = steps[STEPIDX];
-    if(cur.kind === 'opt' && isChoose(cur.st) && !SEL[cur.st.key]){
-      fail('Choose ' + cur.st.label.toLowerCase() + ' to continue.');
-      return;
-    }
-    if(cur.kind === 'review'){ addToCart(); return; }
-    STEPIDX += 1;
-    renderStep();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    addToCart();
   });
 
   /* ── add to cart ── */
   function addToCart(){
+    /* every choose-step needs an answer — open the ones still waiting */
+    var missing = (P.steps || []).filter(function(st){
+      return stepVisible(st) && isChoose(st) && !SEL[st.key];
+    });
+    if(missing.length){
+      missing.forEach(function(st){ OPEN[st.key] = true; });
+      renderSteps();
+      fail('Choose ' + missing.map(function(st){ return st.label.toLowerCase(); }).join(', ') + ' before adding this line.');
+      return;
+    }
     var price = currentPrice();
     if(price == null){
       fail('That combination is not available online — write to lumiashades@gmail.com and we will quote it for you.');
@@ -953,8 +973,7 @@
       parts.push(st.label + ': ' + SEL[st.key]);
       pairs.push({ k: st.label, v: SEL[st.key] });
     });
-    var labelEl = document.getElementById('rev-label');
-    var label = (labelEl ? labelEl.value : defaultLabel() || '').trim();
+    var label = (SEL._room === 'Other' ? (SEL._roomText || '') : (SEL._room || '')).trim();
     var pick = { product: P.id, sel: JSON.parse(JSON.stringify(SEL)) };
     var line = { label: label, product: P.name, pid: P.id, spec: parts.join(' · '), specs: pairs,
                  desc: (main || '').trim(), pick: pick,
@@ -968,7 +987,7 @@
     saveLines(); renderLines();
     var nx = document.getElementById('wiznext');
     nx.innerHTML = 'Added &check;';
-    setTimeout(function(){ syncBarOnly(); }, 1400);
+    setTimeout(function(){ syncBar(); }, 1400);
     document.getElementById('cartsec').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -1079,8 +1098,8 @@
     if(l.h != null) H = l.h;
     QTY = l.qty || 1;
     editIdx = i;
-    STEPIDX = wizardSteps().length - 1;   /* straight to review */
-    renderStep();
+    OPEN = {};                 /* all collapsed — the headers summarize the line */
+    renderSteps();
     renderLines();
     window.scrollTo(0, 0);
   }
