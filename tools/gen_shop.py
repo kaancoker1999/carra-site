@@ -36,7 +36,8 @@ def fabric_swatches(fabric_data):
         cols = {}
         for col in fabric_data["colors"][c["id"]]:
             val = col.get("code") or col["label"]
-            cols[val] = {"img": col["img"], "name": col.get("name") or col["label"]}
+            cols[val] = {"img": col["img"], "lg": col.get("lg") or col["img"],
+                         "name": col.get("name") or col["label"]}
         out[c["id"]] = cols
     return out
 
@@ -48,14 +49,15 @@ def cell_swatches():
     by_code = {}
     for cid in gp.FAB_CELL["colors"]:
         for col in gp.FAB_CELL["colors"][cid]:
-            by_code.setdefault(col["id"], col["img"])
+            by_code.setdefault(col["id"], col)
     out = {}
     for series, codes in go.SERIES_COLOURS.items():
         cols = {}
         for code in codes:
-            img = by_code.get(code)
-            if img:
-                cols[f"{series} {code}"] = {"img": img, "name": code}
+            col = by_code.get(code)
+            if col:
+                cols[f"{series} {code}"] = {"img": col["img"], "lg": col.get("lg") or col["img"],
+                                            "name": code}
         out[series] = cols
     return out
 
