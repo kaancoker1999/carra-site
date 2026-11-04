@@ -144,14 +144,16 @@
   .fsechead{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
     margin:0 0 12px;padding:0 0 9px;border-bottom:1px solid var(--line)}
   .fsechead b{color:var(--ink);font-weight:500}
-  .swgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .swgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:9px}
   .swtile{position:relative;border:1px solid var(--line2);background:var(--white);cursor:pointer;font:inherit;color:inherit;
     text-align:left;padding:0;border-radius:6px;overflow:hidden;transition:border-color .15s}
   .swtile:hover{border-color:var(--ink)}
   .swtile.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
   .swtile img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
-  .swtile .swname{display:block;padding:10px 12px 1px;font-size:13px;font-weight:500}
-  .swtile .swcode{display:block;padding:0 12px 10px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.08em;color:var(--muted)}
+  .swtile .swname{display:block;padding:7px 9px 1px;font-size:11.5px;font-weight:500;line-height:1.3;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .swtile .swcode{display:block;padding:0 9px 7px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.06em;color:var(--muted)}
+  .swtile .bchk{top:6px;right:6px;width:18px;height:18px;font-size:10px}
 
   /* size step: inches + fraction fields with a slider, like the reference */
   .sizeblock{margin:0 0 34px;max-width:760px}
