@@ -95,6 +95,20 @@
   tr:last-child td{border-bottom:0}
   td.num{text-align:right}
 
+  /* the other-orders list */
+  .orow{display:flex;align-items:center;gap:14px;padding:13px 2px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .orow:last-child{border-bottom:0}
+  .orow .oref{font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.06em;color:var(--bronze)}
+  .orow .owhen{font-size:13px;color:var(--muted)}
+  .orow .ost{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+    border:1px solid var(--line2);border-radius:999px;padding:3px 10px;color:var(--muted)}
+  .orow .ost.unpaid{color:#8A2620;border-color:#E5C9C6;background:#FBF1F0}
+  .orow .ost.paidok{color:#1F5B2D;border-color:#BFDCC2;background:#EFF7EF}
+  .orow .oamt{margin-left:auto;font-family:'Archivo',sans-serif;font-weight:600;font-size:15px}
+  .orow .oview{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    background:var(--ink);color:#fff;border:0;border-radius:8px;padding:9px 14px;cursor:pointer}
+  .orow .oview:hover{background:var(--bronze)}
+
   footer{background:#1D1C1A;margin-top:auto}
   footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap;max-width:1180px}
   footer .mono{color:rgba(255,255,255,.5)}
@@ -158,6 +172,13 @@
           <tbody id="r-lines"></tbody>
         </table>
       </div>
+    </div>
+
+    <!-- every other order on the same e-mail, saved drafts included -->
+    <div class="xcard" id="others" hidden>
+      <h2 style="font-size:19px;margin:0 0 4px">Your other orders</h2>
+      <p style="font-size:13.5px;color:var(--muted);margin:0 0 10px">Everything placed or saved with this e-mail.</p>
+      <div id="o-list"></div>
     </div>
   </div>
 </main>
@@ -261,6 +282,31 @@
     document.getElementById('warnbanner').classList.toggle('on', !cancelled && !o.paid);
   }
 
+  function renderOthers(list){
+    var card = document.getElementById('others');
+    card.hidden = !list.length;
+    if(!list.length) return;
+    document.getElementById('o-list').innerHTML = list.map(function(x){
+      var st, cls = '';
+      if(x.draft && !x.paid){ st = 'Saved — not paid'; cls = ' unpaid'; }
+      else if(!x.paid && x.status !== 'Cancelled'){ st = x.status + ' · unpaid'; cls = ' unpaid'; }
+      else if(x.paid){ st = x.status; cls = ' paidok'; }
+      else { st = x.status; }
+      return '<div class="orow">' +
+        '<span class="oref">' + esc(x.ref) + '</span>' +
+        '<span class="owhen">' + new Date(x.at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) + '</span>' +
+        '<span class="ost' + cls + '">' + esc(st) + '</span>' +
+        '<span class="oamt">' + esc(x.total || '') + '</span>' +
+        '<button class="oview" type="button" data-ref="' + esc(x.ref) + '">View</button></div>';
+    }).join('');
+  }
+  document.getElementById('o-list').addEventListener('click', function(e){
+    var b = e.target.closest('.oview'); if(!b) return;
+    refIn.value = b.dataset.ref;
+    lookup();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
   function lookup(){
     var ref = refIn.value.trim().toUpperCase(), email = emailIn.value.trim().toLowerCase();
     if(!ref || !email) return;
@@ -274,6 +320,7 @@
       btn.disabled = false; btn.textContent = 'Track';
       try{ localStorage.setItem('lumia_home_last', JSON.stringify({ ref: ref, email: email, at: Date.now() })); }catch(e){}
       render(d.order);
+      renderOthers(d.others || []);
     }).catch(function(){
       btn.disabled = false; btn.textContent = 'Track';
       document.getElementById('result').classList.remove('on');

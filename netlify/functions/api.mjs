@@ -156,10 +156,13 @@ async function markStripePaid(ref, sessId) {
   const o = await s.get(key, { type: "json" });
   if (!o) return null;
   if (!(o.payment && o.payment.paid)) {
+    const wasDraft = !!o.draft;
+    delete o.draft;   // a paid draft becomes a real order the admin sees
     o.payment = { ...(o.payment || {}), paid: true, via: "stripe", stripeSession: sessId,
       customerPaidAt: (o.payment && o.payment.customerPaidAt) || new Date().toISOString(),
       updatedAt: new Date().toISOString() };
     await s.setJSON(key, o);
+    if (wasDraft) await notifyOrder(o);
   }
   return o.payment;
 }
@@ -288,6 +291,14 @@ async function listOrders(filterCode) {
     if (st.status === "Cancelled") {
       const t = Date.parse(st.updatedAt || o.updatedAt || o.at);
       if (Number.isFinite(t) && Date.now() - t > CANCELLED_TTL_MS) {
+        await s.delete(b.key);
+        continue;
+      }
+    }
+    // saved-but-never-paid shop drafts quietly expire after 45 days
+    if (o.draft && !(o.payment && o.payment.paid)) {
+      const t = Date.parse(o.at);
+      if (Number.isFinite(t) && Date.now() - t > 45 * 86400000) {
         await s.delete(b.key);
         continue;
       }
@@ -657,12 +668,13 @@ export default async (req) => {
       home, total: "", lines,
       status: { status: "Pending review", locked: false, note: "" },
       payment: null, test: false,
+      draft: !!body.paylater,   // saved without paying: hidden from the admin until paid
     };
     const cents = orderCents(order);
     if (cents < 50) return bad("order total too small");
     order.total = "$" + (cents / 100).toFixed(2);
     await s.setJSON(`order:${ref}`, order);
-    await notifyOrder(order);
+    if (!body.paylater) await notifyOrder(order);
     if (body.paylater) return json({ ref });
     const sess = await homeCheckout(order, new URL(req.url).origin, sk);
     if (!sess) return bad("Could not start the payment.", 502);
@@ -711,6 +723,16 @@ export default async (req) => {
     if (!ref || !email) return bad("ref and e-mail required");
     const o = await store().get(`order:${ref}`, { type: "json" });
     if (!o || !o.consumer || !o.home || o.home.email !== email) return bad("no such order", 404);
+    // the ref+email pair proves ownership — list this e-mail's other
+    // orders too, saved-but-unpaid drafts included
+    const others = (await listOrders())
+      .filter((x) => x.consumer && x.home && x.home.email === email && x.ref !== o.ref)
+      .map((x) => ({
+        ref: x.ref, at: x.at,
+        status: (x.status && x.status.status) || "Pending review",
+        paid: !!(x.payment && x.payment.paid),
+        draft: !!x.draft, total: x.total,
+      }));
     return json({ order: {
       ref: o.ref, at: o.at,
       status: (o.status && o.status.status) || "Pending review",
@@ -718,7 +740,7 @@ export default async (req) => {
       paid: !!(o.payment && o.payment.paid),
       tracking: o.tracking || "",
       name: o.home.name, lines: o.lines, total: o.total,
-    } });
+    }, others });
   }
 
   // ── a photo from a conversation: its dealer, or any admin ─────────
@@ -1183,7 +1205,9 @@ export default async (req) => {
     }
 
     if (path === "/api/admin/orders" && req.method === "GET") {
-      return json({ orders: await listOrders() });
+      // saved-but-unpaid home orders are drafts: they only reach the admin
+      // once the customer actually pays
+      return json({ orders: (await listOrders()).filter((o) => !o.draft) });
     }
 
     if (path === "/api/admin/status" && req.method === "POST") {
