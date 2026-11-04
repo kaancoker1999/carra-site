@@ -78,6 +78,9 @@ def build():
             # retail shoppers don't get the plain Flat fold — trade only
             if p["id"] == "roman" and step["key"] == "fold":
                 step["options"] = [o for o in step["options"] if o != "Flat"]
+            # the lift is always called "Mechanism" in the shop, never "Drive"
+            if step["key"] == "drive":
+                step["label"] = "Mechanism"
             imgs = option_imgs(cfg, step["key"])
             if imgs:
                 step["imgs"] = imgs
@@ -92,6 +95,15 @@ def build():
             for s in p["steps"]:
                 if s["key"] == "banding":
                     s["options"] = ["None", "Beige", "Tan", "Red", "Grey", "Navy", "Moss", "Black"]
+                    break
+        # mount is the first choice after the room; roman gets one of its own
+        if p["id"] == "roman":
+            p["steps"].insert(0, {"key": "mount", "label": "Mount",
+                                  "options": ["Inside", "Outside"]})
+        else:
+            for i, s in enumerate(p["steps"]):
+                if s["key"] == "mount":
+                    p["steps"].insert(0, p["steps"].pop(i))
                     break
     OUT.write_text(json.dumps({"products": products}, separators=(",", ":")))
     print(f"wrote {OUT} ({OUT.stat().st_size // 1024} KB)")
