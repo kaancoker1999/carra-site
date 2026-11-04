@@ -71,6 +71,16 @@
       'border-radius:10px;padding:16px;font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.16em;' +
       'text-transform:uppercase;text-decoration:none}' +
       '#navdrawer .dcta:hover{background:#8A6220}' +
+      /* inline login inside the drawer — no page change */
+      '#dlogin{margin-top:auto;border:1px solid #E4E3DE;border-radius:12px;background:#FAF7F0;padding:14px 14px 12px}' +
+      '#dlogin[hidden]{display:none}' +
+      '#dlogin label{display:block;font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:.14em;' +
+      'text-transform:uppercase;color:#767A7E;margin:0 0 7px}' +
+      '#dlogin input{font:inherit;font-size:15px;width:100%;box-sizing:border-box;padding:11px 12px;' +
+      'border:1px solid #D3D2CC;border-radius:8px;background:#fff;letter-spacing:.04em}' +
+      '#dlogin input:focus{outline:none;border-color:#14171A}' +
+      '#dlogin-err{margin:9px 0 0;font-size:12.5px;color:#8A2620}' +
+      '#dlogin:not([hidden])+.dcta{margin-top:12px}' +
       'header nav{display:none!important}header{position:sticky}';
     document.head.appendChild(css);
 
@@ -118,7 +128,42 @@
         if (isPublic && /(?:^|\/)tdbu(?:\.html)?$/.test(href)) return; /* lives inside the Products group */
         html += '<a class="dlink' + (a.hasAttribute('style') ? ' on' : '') + '" href="' + href + '">' + label + '</a>';
       });
+      /* logged out: the Log in button opens a code box right here in the drawer */
+      if (cta && /trade\.html/.test(cta)) {
+        cta = '<div id="dlogin" hidden><label for="dlogin-code">Access code</label>' +
+          '<input id="dlogin-code" type="text" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Your LUMIA code">' +
+          '<div id="dlogin-err" hidden>That code was not recognized &mdash; check it and try again.</div></div>' + cta;
+      }
       dr.innerHTML = html + '</div>' + cta;
+    }
+
+    /* the drawer's own login: dealer codes open the portal, the shared
+       home code drops straight into the shop */
+    function submitInline() {
+      var box = dr.querySelector('#dlogin');
+      if (!box) return;
+      var inp = box.querySelector('#dlogin-code'), err = box.querySelector('#dlogin-err');
+      var code = (inp.value || '').trim().toUpperCase();
+      if (!code) { inp.focus(); return; }
+      err.hidden = true;
+      var cta = dr.querySelector('.dcta'), old = cta.textContent;
+      cta.textContent = 'Checking…';
+      login(code).then(function (prices) {
+        if (prices) { location.href = 'account.html'; return; }
+        return fetch('/api/home/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: code })
+        }).then(function (r) { if (!r.ok) throw new Error('no'); return r.json(); })
+          .then(function (d) {
+            try { localStorage.setItem('lumia_home', JSON.stringify({ code: code, prices: d.prices, at: Date.now() })); } catch (e) {}
+            location.href = 'shop.html';
+          });
+      }).catch(function () {
+        err.hidden = false;
+        cta.textContent = old;
+        inp.focus();
+      });
     }
 
     function setOpen(o) {
@@ -137,11 +182,26 @@
       if (gh) { gh.parentNode.classList.toggle('open'); return; }
       var cta = e.target.closest('.dcta');
       if (cta) {
-        /* the portal's "Log out" link works by handler, not href — forward the click */
         var orig = nav.querySelector('a.partner');
+        var loggedOut = orig && /trade\.html$/.test(orig.getAttribute('href') || '');
+        if (loggedOut) {
+          /* first click opens the code box, the next one submits it */
+          e.preventDefault();
+          var box = dr.querySelector('#dlogin');
+          if (box && box.hidden) { box.hidden = false; box.querySelector('input').focus(); return; }
+          submitInline();
+          return;
+        }
+        /* the portal's "Log out" link works by handler, not href — forward the click */
         if (orig) { e.preventDefault(); setOpen(false); orig.click(); return; }
       }
       if (e.target.closest('a')) setOpen(false);
+    });
+    dr.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && e.target && e.target.id === 'dlogin-code') {
+        e.preventDefault();
+        submitInline();
+      }
     });
   }
 
