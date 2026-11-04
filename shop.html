@@ -127,7 +127,7 @@
   .bigcard:hover{border-color:var(--ink)}
   .bigcard.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);background:#F3F1EA}
   .bigcard:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through}
-  .bigcard img{width:100%;aspect-ratio:4/3;object-fit:contain;display:block;background:#fff;padding:8px 8px 0}
+  .bigcard img{width:100%;aspect-ratio:1/1;object-fit:contain;display:block;background:#fff;padding:10px 10px 0}
   .bigcard .bcart{display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;padding:8px 8px 0;color:#3A3D40}
   .bigcard.on .bcart{color:var(--ink)}
   .bigcard .bcname{display:block;padding:15px 12px 16px;font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;letter-spacing:-.01em}
@@ -227,6 +227,7 @@
 
   /* ── cart + checkout: their own band, split from the steps by a rule ── */
   section.cartsec{padding:46px 0 24px;background:var(--paper2);border-top:1px solid #C8BEA6}
+  #cartsec .xcard{border:2px solid #14171A}
   .xcard{background:var(--white);border:1px solid var(--line2);border-radius:18px;padding:26px 28px 28px}
   .xcard .xtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:21px;letter-spacing:-.02em;margin:0 0 4px}
   .xcard .xsub{font-size:14px;color:var(--muted);margin:0 0 6px}
