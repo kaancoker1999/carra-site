@@ -152,6 +152,7 @@
   .swtile:hover{border-color:var(--ink)}
   .swtile.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
   .swtile img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+  .swtile .clr{display:block;width:100%;aspect-ratio:1}
   .swtile .swname{display:block;padding:7px 9px 1px;font-size:11.5px;font-weight:500;line-height:1.3;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .swtile .swcode{display:block;padding:0 9px 7px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.06em;color:var(--muted)}
@@ -770,9 +771,24 @@
       '<p class="stepnote">Names this window in your cart so you can tell them apart. Optional.</p>';
   }
 
+  /* solid-colour steps (edge banding colour) render as little colour tiles */
+  var OPT_COLORS = {
+    bandcolor: { 'Beige':'#E6DCC3', 'Tan':'#B08D4F', 'Red':'#C01F2F', 'Grey':'#63655C',
+                 'Navy':'#1C2340', 'Moss':'#3C4237', 'Black':'#141414' }
+  };
+
   function optBody(st){
     var dis = disabledOf(st);
     var opts = plainOpts(st);
+    var colors = OPT_COLORS[st.key] || null;
+    if(colors){
+      return '<div class="swgrid2">' + opts.map(function(o){
+        var on = SEL[st.key] === o;
+        return '<button class="swtile' + (on ? ' on' : '') + '" type="button" data-step="' + esc(st.key) + '" data-val="' + esc(o) + '">' +
+          '<span class="clr" style="background:' + (colors[o] || '#ccc') + '"></span>' +
+          '<span class="swname">' + esc(o) + '</span>' + chk() + '</button>';
+      }).join('') + '</div>';
+    }
     var artMap = OPT_ART[st.key] || null;
     var anyVisual = !!st.imgs || !!artMap;
     var cards = opts.map(function(o){

@@ -81,6 +81,16 @@ def build():
             imgs = option_imgs(cfg, step["key"])
             if imgs:
                 step["imgs"] = imgs
+        # the banding colour choice appears once edge banding is picked
+        if p["id"] == "roman":
+            for i, s in enumerate(p["steps"]):
+                if s["key"] == "banding":
+                    p["steps"].insert(i + 1, {
+                        "key": "bandcolor", "label": "Edge banding color",
+                        "options": ["Beige", "Tan", "Red", "Grey", "Navy", "Moss", "Black"],
+                        "showIf": {"key": "banding", "value": "Yes"},
+                    })
+                    break
             if step["key"] == "collection":
                 if p["id"] == "cellular":
                     step["swatches"] = cell_swatches()
