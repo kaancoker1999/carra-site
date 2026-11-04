@@ -421,7 +421,8 @@ export default async (req) => {
 
   // ── dealer: login ─────────────────────────────────────────────
   if (path === "/api/login" && req.method === "POST") {
-    const code = String(body.code || "").trim();
+    // codes are stored uppercase — a lowercase typed code must still work
+    const code = String(body.code || "").trim().toUpperCase();
     const dealers = await getDealers();
     const d = dealers[code];
     if (!d || d.active === false) return bad("invalid code", 401);
