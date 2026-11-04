@@ -146,6 +146,19 @@
   .fsechead{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
     margin:0 0 12px;padding:0 0 9px;border-bottom:1px solid var(--line)}
   .fsechead b{color:var(--ink);font-weight:500}
+  /* blackout families get a slightly darker band behind the heading */
+  .fsechead.dark{background:#E5E0D4;border-bottom:0;border-radius:7px;padding:9px 13px;color:#5C564C}
+  /* cell-size sub-sections inside the cellular fabric step */
+  .subacc{border:1px solid var(--line2);border-radius:12px;background:var(--white);margin:0 0 12px;overflow:hidden}
+  .subhead{width:100%;display:flex;align-items:center;gap:12px;font:inherit;color:inherit;background:var(--paper);
+    border:0;cursor:pointer;padding:15px 18px;text-align:left}
+  .subhead:hover{background:var(--paper2)}
+  .subhead .stitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;letter-spacing:-.01em}
+  .subhead .scount{font-size:12px;color:var(--muted)}
+  .subhead .chev{margin-left:auto;color:var(--muted);font-size:11px;transition:transform .2s}
+  .subacc.open .subhead .chev{transform:rotate(180deg)}
+  .subbody{display:none;padding:18px 18px 2px}
+  .subacc.open .subbody{display:block}
   .swgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:9px}
   .swtile{position:relative;border:1px solid var(--line2);background:var(--white);cursor:pointer;font:inherit;color:inherit;
     text-align:left;padding:0;border-radius:6px;overflow:hidden;transition:border-color .15s}
@@ -449,7 +462,7 @@
 
   /* ════════ views: home (the four products) / one product's wizard ════════ */
   var SELECT = '— Select —';
-  var CFG = null, P = null, SEL = {}, OPEN = {}, lines = [], editIdx = null, booted = false;
+  var CFG = null, P = null, SEL = {}, OPEN = {}, SUBOPEN = {}, lines = [], editIdx = null, booted = false;
   var W = 36, H = 48, QTY = 1;
   try{ lines = JSON.parse(sessionStorage.getItem('lumia_home_cart') || '[]'); }catch(e){}
 
@@ -470,7 +483,7 @@
     if(!CFG) return;
     P = CFG.products.filter(function(p){ return p.id === pid; })[0];
     if(!P){ closeProduct(); return; }
-    SEL = {}; OPEN = { _room: true }; QTY = 1; editIdx = null;
+    SEL = {}; OPEN = { _room: true }; SUBOPEN = {}; QTY = 1; editIdx = null;
     ensureDefaults();
     var lim = sizeLimits();
     W = clamp(36, lim.w[0], lim.w[1]);
@@ -831,6 +844,28 @@
     return '<div class="cardgrid' + (anyVisual ? '' : ' txt') + '">' + cards + '</div>';
   }
 
+  function fsecHTML(st, c){
+    var meta = st.meta && st.meta[c.id];
+    var metaLine = meta ? [meta.transparency, meta.material].filter(Boolean).join(' · ') : '';
+    var cols = st.colours[c.id] || [];
+    var sw = st.swatches && st.swatches[c.id] || {};
+    var tiles = cols.map(function(v){
+      var s = sw[v] || {};
+      var on = SEL.collection === c.id && SEL.colour === v;
+      var img = s.lg || s.img;
+      return '<button class="swtile' + (on ? ' on' : '') + '" type="button" data-fab="' + esc(c.id) + '|' + esc(v) + '">' +
+        (img ? '<img src="' + esc(img) + '" alt="" loading="lazy">' : '') +
+        '<span class="swname">' + esc(s.name || v) + '</span>' +
+        '<span class="swcode">' + (s.name && s.name !== v ? esc(v) : '&nbsp;') + '</span>' + chk() + '</button>';
+    }).join('');
+    var dark = /blackout/i.test(c.label) || /blackout/i.test(metaLine);
+    return '<div class="fsec"><div class="fsechead' + (dark ? ' dark' : '') + '"><b>' + esc(c.label) + '</b>' +
+      (metaLine ? ' &middot; ' + esc(metaLine) : '') + '</div>' +
+      '<div class="swgrid2">' + tiles + '</div></div>';
+  }
+  function cellSizeOf(label){
+    return /triple/i.test(label) ? 'Triple Cell' : /double/i.test(label) ? 'Double Cell' : 'Single Cell';
+  }
   function fabricBody(st){
     var html = '';
     var cg = stepByKey('cgroup');
@@ -839,24 +874,33 @@
         return '<button class="fbtn' + (SEL.cgroup === o ? ' on' : '') + '" type="button" data-cg="' + esc(o) + '">' + esc(o) + '</button>';
       }).join('') + '</div>';
     }
-    collectionOpts(st).forEach(function(c){
-      var meta = st.meta && st.meta[c.id];
-      var metaLine = meta ? [meta.transparency, meta.material].filter(Boolean).join(' · ') : '';
-      var cols = st.colours[c.id] || [];
-      var sw = st.swatches && st.swatches[c.id] || {};
-      var tiles = cols.map(function(v){
-        var s = sw[v] || {};
-        var on = SEL.collection === c.id && SEL.colour === v;
-        var img = s.lg || s.img;
-        return '<button class="swtile' + (on ? ' on' : '') + '" type="button" data-fab="' + esc(c.id) + '|' + esc(v) + '">' +
-          (img ? '<img src="' + esc(img) + '" alt="" loading="lazy">' : '') +
-          '<span class="swname">' + esc(s.name || v) + '</span>' +
-          '<span class="swcode">' + (s.name && s.name !== v ? esc(v) : '&nbsp;') + '</span>' + chk() + '</button>';
-      }).join('');
-      html += '<div class="fsec"><div class="fsechead"><b>' + esc(c.label) + '</b>' +
-        (metaLine ? ' &middot; ' + esc(metaLine) : '') + '</div>' +
-        '<div class="swgrid2">' + tiles + '</div></div>';
-    });
+    if(P.id === 'cellular'){
+      /* the cell fabrics fold into Single / Double / Triple sub-sections */
+      var order = ['Single Cell', 'Double Cell', 'Triple Cell'];
+      var groups = {};
+      collectionOpts(st).forEach(function(c){
+        var g = cellSizeOf(c.label);
+        (groups[g] = groups[g] || []).push(c);
+      });
+      if(!SUBOPEN._init){
+        var chosen = st.options.filter(function(o){ return o.id === SEL.collection; })[0];
+        SUBOPEN = { _init: true };
+        SUBOPEN[chosen ? cellSizeOf(chosen.label) : 'Single Cell'] = true;
+      }
+      order.forEach(function(g){
+        var list = groups[g];
+        if(!list || !list.length) return;
+        var open = !!SUBOPEN[g];
+        html += '<div class="subacc' + (open ? ' open' : '') + '">' +
+          '<button class="subhead" type="button" data-sub="' + esc(g) + '">' +
+            '<span class="stitle">' + esc(g) + '</span>' +
+            '<span class="scount">' + list.length + (list.length === 1 ? ' style' : ' styles') + '</span>' +
+            '<span class="chev">&#9662;</span></button>' +
+          '<div class="subbody">' + list.map(function(c){ return fsecHTML(st, c); }).join('') + '</div></div>';
+      });
+      return html;
+    }
+    collectionOpts(st).forEach(function(c){ html += fsecHTML(st, c); });
     return html;
   }
 
@@ -964,6 +1008,12 @@
       SEL._room = b.dataset.room;
       renderSteps();
       if(SEL._room === 'Other'){ var t = document.getElementById('roomtext'); if(t) t.focus(); }
+      return;
+    }
+    if((b = e.target.closest('[data-sub]'))){
+      SUBOPEN[b.dataset.sub] = !SUBOPEN[b.dataset.sub];
+      SUBOPEN._init = true;
+      renderSteps();
       return;
     }
     if((b = e.target.closest('[data-cg]'))){
