@@ -153,6 +153,8 @@
   .swtile.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
   .swtile img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
   .swtile .clr{display:block;width:100%;aspect-ratio:1}
+  .swtile .clrart{display:flex;align-items:center;justify-content:center;aspect-ratio:1;background:var(--paper);padding:6px}
+  .swtile .clrart svg{width:88%;height:auto}
   .swtile .swname{display:block;padding:7px 9px 1px;font-size:11.5px;font-weight:500;line-height:1.3;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .swtile .swcode{display:block;padding:0 9px 7px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.06em;color:var(--muted)}
@@ -798,10 +800,14 @@
     var opts = plainOpts(st);
     var colors = OPT_COLORS[st.key] || null;
     if(colors){
+      /* each colour drawn as banding on a white shade */
       return '<div class="swgrid2">' + opts.map(function(o){
         var on = SEL[st.key] === o;
         return '<button class="swtile' + (on ? ' on' : '') + '" type="button" data-step="' + esc(st.key) + '" data-val="' + esc(o) + '">' +
-          '<span class="clr" style="background:' + (colors[o] || '#ccc') + '"></span>' +
+          '<span class="clrart"><svg viewBox="0 0 90 90" fill="none" stroke="#3A3D40" stroke-width="1.8" stroke-linecap="round">' +
+            '<rect x="17" y="6" width="56" height="74" rx="2" fill="#FFFFFF"/>' +
+            '<rect x="24" y="13" width="42" height="60" stroke="' + (colors[o] || '#ccc') + '" stroke-width="5"/>' +
+          '</svg></span>' +
           '<span class="swname">' + esc(o) + '</span>' + chk() + '</button>';
       }).join('') + '</div>';
     }
