@@ -252,6 +252,14 @@
   .csubrow .cst{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:block}
   .csubrow b{font-family:'Archivo',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.02em}
 
+  /* accessory rows at checkout */
+  .accrow{display:flex;align-items:center;gap:16px;padding:14px 2px;border-bottom:1px solid var(--line)}
+  .accrow:last-child{border-bottom:0}
+  .accrow .an{flex:1;min-width:0}
+  .accrow .an b{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;letter-spacing:-.01em;display:block}
+  .accrow .an span{font-size:12.5px;color:var(--muted)}
+  .accrow .ap{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;white-space:nowrap}
+
   /* ── checkout ── */
   /* the details band wears the logo's burnt brown */
   section.checkout{padding:46px 0 150px;background:#591C00;border-top:1px solid #4A1700}
@@ -375,6 +383,12 @@
 
   <section class="checkout" id="checkout" hidden>
     <div class="wrap">
+      <!-- asked once, for the whole order: one remote can run many shades -->
+      <div class="xcard" id="accblock" hidden style="margin-bottom:22px">
+        <div class="xtitle">Motorized accessories</div>
+        <p class="xsub" id="acchint"></p>
+        <div id="accrows"></div>
+      </div>
       <div class="xcard">
         <div class="xtitle">Your details</div>
         <p class="xsub" style="margin-bottom:20px">We make everything to order &mdash; your details are only used for this purchase and its delivery.</p>
@@ -482,8 +496,9 @@
   /* ════════ views: home (the four products) / one product's wizard ════════ */
   var SELECT = '— Select —';
   var CFG = null, P = null, SEL = {}, OPEN = {}, SUBOPEN = {}, lines = [], editIdx = null, booted = false;
-  var W = 36, H = 48, QTY = 1;
+  var W = 36, H = 48, QTY = 1, ACC = {};
   try{ lines = JSON.parse(sessionStorage.getItem('lumia_home_cart') || '[]'); }catch(e){}
+  try{ ACC = JSON.parse(sessionStorage.getItem('lumia_home_acc') || '{}'); }catch(e){}
 
   var home = document.getElementById('home'), pview = document.getElementById('pview'),
       stepsBox = document.getElementById('steps'), rowerr = document.getElementById('rowerr');
@@ -614,13 +629,16 @@
     var e = pp.extras.filter(function(x){ return x.label === label; })[0];
     return (e && e.usd) || 0;
   }
-  function motorExtras(pp, sel){
-    var add = 0;
-    var m = (sel.remote || '').match(/^(\d+)-channel/);
-    if(m) add += xt(pp, 'Remote control — ' + m[1] + ' channel');
-    if(sel.cable === 'Yes') add += xt(pp, '10 ft USB cable');
-    if(sel.hub === 'Yes') add += xt(pp, 'Smart home hub') || xt(pp, 'Motionblinds WiFi hub');
-    return add;
+  /* accessories (remotes, cable, hub) are priced from any product's extras */
+  function xtAny(labels){
+    var prods = PRICES().products || [];
+    for(var i = 0; i < prods.length; i++){
+      var ex = prods[i].extras || [];
+      for(var j = 0; j < ex.length; j++){
+        if(labels.indexOf(ex[j].label) !== -1 && typeof ex[j].usd === 'number') return ex[j].usd;
+      }
+    }
+    return null;
   }
   function priceLine(pid, sel, w, h){
     var pp, base, add = 0, pct = 0;
@@ -637,7 +655,6 @@
         if(sel.tdbu === 'Yes') add += xt(pp, 'CCL TDBU');
       } else if(sel.drive === 'Motorized'){
         add += sel.tdbu === 'Yes' ? xt(pp, 'Motor + TDBU') : xt(pp, 'Motorization');
-        add += motorExtras(pp, sel);
       } else if(sel.tdbu === 'Yes'){
         add += xt(pp, 'Cordless TDBU');
       }
@@ -652,7 +669,6 @@
         add += sel.tdbu === 'Yes' ? xt(pp, 'CCL + TDBU') : xt(pp, 'Continuous cord loop (CCL)');
       } else if(sel.drive === 'Motorized'){
         add += sel.tdbu === 'Yes' ? xt(pp, 'Motor + TDBU') : xt(pp, 'Motorization');
-        add += motorExtras(pp, sel);
       } else if(sel.tdbu === 'Yes'){
         add += xt(pp, 'Cordless TDBU');
       }
@@ -667,7 +683,6 @@
       if(sel.drive === 'Cord loop') add += xt(pp, 'Continuous cord loop (CCL)');
       if(sel.drive === 'Motorized'){
         add += sel.tdbu === 'Yes' ? xt(pp, 'Motor + TDBU') : xt(pp, 'Motorization');
-        add += motorExtras(pp, sel);
       } else if(sel.tdbu === 'Yes'){
         add += xt(pp, 'Cordless TDBU');
       }
@@ -1217,10 +1232,14 @@
     linesBox.innerHTML = lines.map(cartRow).join('');
     count.hidden = lines.length === 0;
     var t = orderTotals(lines);
+    renderAcc();
+    var at = accTotal();
+    var grand = Math.round((t.total + at) * 100) / 100;
     count.innerHTML = lines.length
       ? '<div class="csubrow"><span>' + plural(lines.length, 'line') + ' &middot; ' + plural(t.units, 'unit') +
+        (at > 0 ? ' &middot; accessories $' + at.toFixed(2) : '') +
         '<span class="cst">Made to measure &middot; reviewed before production</span></span>' +
-        '<b>$' + t.total.toFixed(2) + '</b></div>'
+        '<b>$' + grand.toFixed(2) + '</b></div>'
       : '';
     syncPay();
     syncSections();
@@ -1254,14 +1273,79 @@
     window.scrollTo(0, 0);
   }
 
+  /* ── motorized accessories: asked once, for the whole order ── */
+  var ACCDEFS = [
+    { labels: ['Remote control — 1 channel'], name: '1-channel remote', sub: 'All shades together on one channel' },
+    { labels: ['Remote control — 5 channel'], name: '5-channel remote', sub: 'Up to 5 shades, each on its own channel' },
+    { labels: ['Remote control — 15 channel'], name: '15-channel remote', sub: 'Up to 15 shades, each on its own channel' },
+    { labels: ['10 ft USB cable'], name: 'USB-C charging cable', sub: 'For recharging the motors' },
+    { labels: ['Smart home hub', 'Motionblinds WiFi hub'], name: 'Smart home hub', sub: 'App control, works with Alexa and Google' }
+  ];
+  function saveAcc(){ try{ sessionStorage.setItem('lumia_home_acc', JSON.stringify(ACC)); }catch(e){} }
+  function motorCount(){
+    var n = 0;
+    lines.forEach(function(l){
+      if(l.pick && l.pick.sel && l.pick.sel.drive === 'Motorized') n += l.qty;
+    });
+    return n;
+  }
+  function accTotal(){
+    var t = 0;
+    ACCDEFS.forEach(function(a){
+      var q = ACC[a.name] || 0, p = xtAny(a.labels);
+      if(q > 0 && p != null) t += q * p;
+    });
+    return Math.round(t * 100) / 100;
+  }
+  function accLines(){
+    var out = [];
+    ACCDEFS.forEach(function(a){
+      var q = ACC[a.name] || 0, p = xtAny(a.labels);
+      if(q > 0 && p != null){
+        out.push({ label: '', product: 'Accessories', pid: 'accessory', desc: a.name,
+          spec: 'Accessory: ' + a.name, specs: [{ k: 'Accessory', v: a.name }],
+          w: null, h: null, qty: q, price: p });
+      }
+    });
+    return out;
+  }
+  function renderAcc(){
+    var block = document.getElementById('accblock');
+    var n = motorCount();
+    if(!n){ ACC = {}; saveAcc(); block.hidden = true; return; }
+    block.hidden = false;
+    document.getElementById('acchint').textContent =
+      'You have ' + n + ' motorized shade' + (n === 1 ? '' : 's') + ' in the cart. ' +
+      'One remote can run several shades — pick what you need for the whole order.';
+    document.getElementById('accrows').innerHTML = ACCDEFS.map(function(a){
+      var p = xtAny(a.labels);
+      if(p == null) return '';
+      var q = ACC[a.name] || 0;
+      return '<div class="accrow">' +
+        '<div class="an"><b>' + esc(a.name) + '</b><span>' + esc(a.sub) + '</span></div>' +
+        '<span class="ap">$' + p.toFixed(2) + '</span>' +
+        '<div class="qtyrow">' +
+          '<button class="qbtn" type="button" data-accq="' + esc(a.name) + '|-1">&minus;</button>' +
+          '<span class="qnum">' + q + '</span>' +
+          '<button class="qbtn" type="button" data-accq="' + esc(a.name) + '|1">+</button></div></div>';
+    }).join('');
+  }
+  document.getElementById('accrows').addEventListener('click', function(e){
+    var b = e.target.closest('[data-accq]'); if(!b) return;
+    var p = b.dataset.accq.split('|');
+    ACC[p[0]] = clamp((ACC[p[0]] || 0) + (+p[1]), 0, 50);
+    saveAcc();
+    renderLines();
+  });
+
   /* ── checkout ── */
   var paybtn = document.getElementById('paybtn'), savebtn = document.getElementById('savebtn'),
       ckerr = document.getElementById('ckerr');
   function syncPay(){
-    var t = orderTotals(lines);
+    var total = Math.round((orderTotals(lines).total + accTotal()) * 100) / 100;
     paybtn.disabled = !lines.length;
     savebtn.disabled = !lines.length;
-    paybtn.textContent = lines.length ? 'Pay $' + t.total.toFixed(2) : 'Pay';
+    paybtn.textContent = lines.length ? 'Pay $' + total.toFixed(2) : 'Pay';
   }
   function ckMsg(text){
     ckerr.textContent = text || '';
@@ -1308,7 +1392,7 @@
     fetch('/api/home/order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-home-code': (SESSION && SESSION.code) || '' },
-      body: JSON.stringify({ lines: lines, customer: c, notes: notes, paylater: !!paylater })
+      body: JSON.stringify({ lines: lines.concat(accLines()), customer: c, notes: notes, paylater: !!paylater })
     }).then(function(r){
       if(r.status === 401){ loggedOut(); throw new Error('out'); }
       return r.json().then(function(d){ return { ok: r.ok, d: d }; });
@@ -1318,6 +1402,7 @@
         localStorage.setItem('lumia_home_last', JSON.stringify({ ref: x.d.ref, email: c.email, at: Date.now() }));
       }catch(e){}
       lines = []; saveLines();
+      ACC = {}; saveAcc();
       location.href = paylater
         ? 'track.html?ref=' + encodeURIComponent(x.d.ref) + '&saved=1'
         : x.d.url;

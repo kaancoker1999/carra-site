@@ -1646,7 +1646,7 @@
         (st.note ? '<br><span style="font-size:11px;color:#2F5D25">“' + esc(st.note) + '”</span>' : '');
 
       var lrows = (o.lines || []).map(function(l, i){
-        var size = l.w == null ? 'by the yard' : fmtIn(l.w) + '″ × ' + fmtIn(l.h) + '″';
+        var size = l.w == null ? (l.pid === 'accessory' ? '—' : 'by the yard') : fmtIn(l.w) + '″ × ' + fmtIn(l.h) + '″';
         return '<tr><td>' + (i+1) + '</td><td class="l">' + (l.label ? '<b>' + esc(l.label) + '</b> · ' : '') + esc(l.product) +
           '<div style="color:var(--muted);font-size:11px">' + esc(cleanSpec(l.spec)) + '</div></td>' +
           '<td>' + size + '</td><td>' + l.qty + '</td>' +

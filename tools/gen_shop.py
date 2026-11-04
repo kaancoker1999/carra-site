@@ -74,6 +74,8 @@ def build():
         fname = p["id"] + ".html"
         cfg = gp.PRODUCTS[fname]
         p["img"] = cfg["img"]
+        # remotes, cables and hubs are asked once at checkout, not per shade
+        p["steps"] = [s for s in p["steps"] if s["key"] not in ("remote", "cable", "hub")]
         for step in p["steps"]:
             # retail shoppers don't get the plain Flat fold — trade only
             if p["id"] == "roman" and step["key"] == "fold":
