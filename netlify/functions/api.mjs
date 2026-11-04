@@ -617,12 +617,13 @@ export default async (req) => {
     return json({ prices: scaled(base, () => cfg.mult) });
   }
 
-  // ── home customer: place an order and go straight to Stripe ──────
+  // ── home customer: place an order — straight to Stripe, or saved
+  //    unpaid ({paylater:true}) to be paid later from the orders page ──
   if (path === "/api/home/order" && req.method === "POST") {
     const cfg = await consumerCfg();
     if (!homeOk(cfg, req.headers.get("x-home-code"))) return bad("unauthorized", 401);
     const sk = process.env.STRIPE_SECRET_KEY;
-    if (!sk) return bad("Card payments are not set up yet.", 503);
+    if (!sk && !body.paylater) return bad("Card payments are not set up yet.", 503);
     const c = body.customer || {};
     const home = {
       name: String(c.name || "").trim().slice(0, 120),
@@ -661,6 +662,7 @@ export default async (req) => {
     order.total = "$" + (cents / 100).toFixed(2);
     await s.setJSON(`order:${ref}`, order);
     await notifyOrder(order);
+    if (body.paylater) return json({ ref });
     const sess = await homeCheckout(order, new URL(req.url).origin, sk);
     if (!sess) return bad("Could not start the payment.", 502);
     return json({ ref, url: sess.url });

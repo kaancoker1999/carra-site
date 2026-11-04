@@ -121,7 +121,7 @@
     </div>
 
     <div class="okbanner" id="okbanner">Payment received &mdash; thank you! Your order is confirmed and goes to review now.</div>
-    <div class="warnbanner" id="warnbanner">The payment was not completed, so your order is on hold.
+    <div class="warnbanner" id="warnbanner"><span id="warntext">The payment was not completed, so your order is on hold.</span>
       <button id="retrybtn" type="button">Pay now</button></div>
 
     <div class="xcard">
@@ -189,7 +189,7 @@
   /* back from Stripe? confirm the session, then load the order */
   var q = location.search;
   var refQ = /[?&]ref=([^&]+)/.exec(q), payQ = /[?&]paysession=([^&]+)/.exec(q),
-      cancQ = /[?&]pay=cancelled/.test(q);
+      cancQ = /[?&]pay=cancelled/.test(q), savedQ = /[?&]saved=1/.test(q);
   if(refQ) refIn.value = decodeURIComponent(refQ[1]);
   var saved = last();
   if(saved && saved.email && (!refQ || (saved.ref || '').toUpperCase() === refIn.value.toUpperCase().trim())){
@@ -312,6 +312,13 @@
     }).catch(function(){
       if(refIn.value && emailIn.value) lookup();
     });
+  } else if(savedQ){
+    /* just saved without paying — friendlier wording than a failed payment */
+    var ok = document.getElementById('okbanner');
+    ok.textContent = 'Order saved — pay whenever you are ready with the Pay now button below.';
+    ok.classList.add('on');
+    document.getElementById('warntext').textContent = 'This order has not been paid yet.';
+    if(refIn.value && emailIn.value) lookup();
   } else if(cancQ){
     document.getElementById('warnbanner').classList.add('on');
     if(refIn.value && emailIn.value) lookup();

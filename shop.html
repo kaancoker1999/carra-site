@@ -266,6 +266,8 @@
     background:var(--ink);color:#fff;border:0;border-radius:10px;padding:17px 34px;cursor:pointer;transition:.25s}
   .paybtn:hover{background:var(--bronze)}
   .paybtn[disabled]{opacity:.5;cursor:not-allowed}
+  .paybtn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line2)}
+  .paybtn.ghost:hover{border-color:var(--ink);background:#fff}
   .paynote{font-size:13px;color:var(--muted)}
   .secure{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
   .secure svg{flex:none}
@@ -285,7 +287,7 @@
   <div class="wrap">
     <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="LUMIA"></a>
     <nav>
-      <a href="track.html">Track my order</a>
+      <a href="track.html">Orders</a>
       <button id="signout" type="button" hidden>Sign out</button>
     </nav>
   </div>
@@ -387,6 +389,7 @@
         </div>
         <div class="paybar">
           <button class="paybtn" id="paybtn" type="button" disabled>Pay</button>
+          <button class="paybtn ghost" id="savebtn" type="button" disabled>Save &mdash; pay later</button>
           <span class="secure">
             <svg width="14" height="16" viewBox="0 0 14 16" fill="none"><path d="M7 1 1.5 3v4c0 3.7 2.3 6.6 5.5 8 3.2-1.4 5.5-4.3 5.5-8V3L7 1Z" stroke="#767A7E" stroke-width="1.3"/></svg>
             Secure checkout by Stripe &middot; card or US bank
@@ -1236,10 +1239,12 @@
   }
 
   /* ── checkout ── */
-  var paybtn = document.getElementById('paybtn'), ckerr = document.getElementById('ckerr');
+  var paybtn = document.getElementById('paybtn'), savebtn = document.getElementById('savebtn'),
+      ckerr = document.getElementById('ckerr');
   function syncPay(){
     var t = orderTotals(lines);
     paybtn.disabled = !lines.length;
+    savebtn.disabled = !lines.length;
     paybtn.textContent = lines.length ? 'Pay $' + t.total.toFixed(2) : 'Pay';
   }
   function ckMsg(text){
@@ -1262,7 +1267,8 @@
     });
     return c;
   }
-  paybtn.addEventListener('click', function(){
+  /* one submit path: pay right away, or save the order to pay later */
+  function submitOrder(paylater){
     ckMsg('');
     if(!lines.length) return;
     var c = readContact();
@@ -1279,28 +1285,38 @@
     }
     try{ localStorage.setItem('lumia_home_contact', JSON.stringify(c)); }catch(e){}
     var notes = (document.getElementById('ck-notes').value || '').trim();
-    var lbl = paybtn.textContent;
-    paybtn.disabled = true; paybtn.textContent = 'Opening secure checkout…';
+    var btn = paylater ? savebtn : paybtn;
+    var lbl = btn.innerHTML;
+    paybtn.disabled = true; savebtn.disabled = true;
+    btn.textContent = paylater ? 'Saving…' : 'Opening secure checkout…';
     fetch('/api/home/order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-home-code': (SESSION && SESSION.code) || '' },
-      body: JSON.stringify({ lines: lines, customer: c, notes: notes })
+      body: JSON.stringify({ lines: lines, customer: c, notes: notes, paylater: !!paylater })
     }).then(function(r){
       if(r.status === 401){ loggedOut(); throw new Error('out'); }
       return r.json().then(function(d){ return { ok: r.ok, d: d }; });
     }).then(function(x){
-      if(!x.ok || !x.d.url) throw new Error((x.d && x.d.error) || 'failed');
+      if(!x.ok || !x.d.ref || (!paylater && !x.d.url)) throw new Error((x.d && x.d.error) || 'failed');
       try{
         localStorage.setItem('lumia_home_last', JSON.stringify({ ref: x.d.ref, email: c.email, at: Date.now() }));
       }catch(e){}
       lines = []; saveLines();
-      location.href = x.d.url;
+      location.href = paylater
+        ? 'track.html?ref=' + encodeURIComponent(x.d.ref) + '&saved=1'
+        : x.d.url;
     }).catch(function(err){
       if(String(err.message) === 'out') return;
-      paybtn.disabled = false; paybtn.textContent = lbl;
-      ckMsg('Could not start the payment — please try again, or write to lumiashades@gmail.com.');
+      paybtn.disabled = false; savebtn.disabled = false;
+      btn.innerHTML = lbl;
+      syncPay();
+      ckMsg(paylater
+        ? 'Could not save the order — please try again, or write to lumiashades@gmail.com.'
+        : 'Could not start the payment — please try again, or write to lumiashades@gmail.com.');
     });
-  });
+  }
+  paybtn.addEventListener('click', function(){ submitOrder(false); });
+  savebtn.addEventListener('click', function(){ submitOrder(true); });
 
   /* ── boot ── */
   function refreshPrices(){
