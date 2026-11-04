@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="assets/i18n.js?v=12"></script>
+<title>LUMIA — Track your order</title>
+<meta name="description" content="Track your LUMIA order.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Fraunces:opsz,wght@9..144,520;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --white:#FFFFFF; --paper:#FAF5EA; --paper2:#F3ECDD; --ink:#14171A; --muted:#767A7E;
+    --line:#E4E3DE; --line2:#D3D2CC; --bronze:#8A6220; --bronze-lt:#C79A45;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;color:var(--ink);background:var(--paper);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.62;
+    -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+  h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.025em;margin:0;line-height:1.08}
+  a{color:inherit}
+  .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .wrap{max-width:860px;padding:0 44px;margin:0 auto;width:100%}
+
+  header{position:sticky;top:0;z-index:50;background:rgba(250,245,234,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;height:76px;gap:24px;max-width:1180px}
+  .logo{display:flex;align-items:center;text-decoration:none}
+  .logo img{height:30px;display:block;mix-blend-mode:multiply}
+  header nav a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);text-decoration:none;transition:color .2s}
+  header nav a:hover{color:var(--ink)}
+
+  main{flex:1;padding:56px 0 90px}
+  .pagehead{text-align:center;margin:0 0 34px}
+  .pagehead h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(30px,4vw,44px)}
+  .pagehead .note{margin:12px auto 0;font-size:15px;color:var(--muted);max-width:52ch}
+
+  .xcard{background:var(--white);border:1px solid var(--line2);border-radius:18px;padding:28px 30px 30px;margin:0 0 22px}
+  .lkgrid{display:grid;grid-template-columns:1fr 1fr auto;gap:14px;align-items:end}
+  @media(max-width:640px){ .lkgrid{grid-template-columns:1fr} }
+  .cell{display:flex;flex-direction:column;gap:7px}
+  .cell label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+  .cell input{font:inherit;font-size:15px;padding:13px 14px;border:1px solid var(--line2);border-radius:9px;background:var(--white)}
+  .cell input:focus{outline:none;border-color:var(--ink)}
+  .btn{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    background:var(--ink);color:#fff;border:0;border-radius:10px;padding:15px 26px;cursor:pointer;transition:.25s;white-space:nowrap}
+  .btn:hover{background:var(--bronze)}
+  .btn[disabled]{opacity:.55;cursor:wait}
+  .err{display:none;margin:16px 0 0;font-size:14px;color:#8A2620;background:#FBF1F0;border:1px solid #E5C9C6;border-radius:10px;padding:12px 14px}
+  .err.on{display:block}
+  .okbanner{display:none;margin:0 0 22px;font-size:14.5px;color:#1F5B2D;background:#EFF7EF;border:1px solid #BFDCC2;border-radius:12px;padding:14px 18px}
+  .okbanner.on{display:block}
+  .warnbanner{display:none;margin:0 0 22px;font-size:14.5px;color:#7A4A12;background:#FCF4E6;border:1px solid #E8D2AC;border-radius:12px;padding:14px 18px}
+  .warnbanner.on{display:block}
+  .warnbanner button{margin-left:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    background:var(--ink);color:#fff;border:0;border-radius:7px;padding:8px 14px;cursor:pointer}
+
+  /* ── the timeline ── */
+  #result{display:none}
+  #result.on{display:block}
+  .ohead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:0 0 6px}
+  .ohead .ref{font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.08em;color:var(--bronze)}
+  .ohead .amt{font-family:'Archivo',sans-serif;font-weight:600;font-size:22px;letter-spacing:-.02em;margin-left:auto}
+  .oname{font-size:14px;color:var(--muted);margin:0 0 24px}
+  .steps{display:flex;flex-direction:column;gap:0;margin:0 0 8px}
+  .step{display:flex;gap:16px;position:relative;padding:0 0 26px}
+  .step:last-child{padding-bottom:0}
+  .step .dot{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--line2);background:var(--white);
+    display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;z-index:1}
+  .step::before{content:"";position:absolute;left:12px;top:26px;bottom:0;width:2px;background:var(--line)}
+  .step:last-child::before{display:none}
+  .step.done .dot{background:#2F6B3A;border-color:#2F6B3A}
+  .step.now .dot{border-color:var(--bronze);background:var(--bronze)}
+  .step.off .dot{background:var(--paper2)}
+  .step .tx b{display:block;font-family:'Archivo',sans-serif;font-weight:600;font-size:15.5px;letter-spacing:-.01em}
+  .step .tx span{font-size:13.5px;color:var(--muted)}
+  .step.now .tx b{color:var(--bronze)}
+  .cancelnote{margin:0 0 18px;font-size:14.5px;color:#8A2620;background:#FBF1F0;border:1px solid #E5C9C6;border-radius:12px;padding:13px 16px}
+  .lumianote{margin:14px 0 0;font-size:14px;color:#4A4E52;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 15px}
+  .trackbox{display:flex;align-items:center;gap:12px;margin:18px 0 0;border:1px solid var(--line2);border-radius:12px;background:var(--paper);padding:14px 18px;flex-wrap:wrap}
+  .trackbox a.tn{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--bronze)}
+  .trackbox a.go{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink);text-decoration:none;border:1px solid var(--line2);border-radius:8px;padding:8px 14px}
+  .trackbox a.go:hover{border-color:var(--ink)}
+
+  /* ── lines ── */
+  .lineswrap{border:1px solid var(--line2);border-radius:12px;overflow-x:auto;background:var(--white);margin:22px 0 0}
+  table{border-collapse:collapse;width:100%;font-size:13.5px}
+  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;color:var(--muted);font-weight:500;background:var(--paper);text-transform:uppercase}
+  tr:last-child td{border-bottom:0}
+  td.num{text-align:right}
+
+  footer{background:#1D1C1A;margin-top:auto}
+  footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap;max-width:1180px}
+  footer .mono{color:rgba(255,255,255,.5)}
+
+  @media(max-width:980px){ .wrap{padding:0 22px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="LUMIA"></a>
+    <nav>
+      <a href="shop.html">Shop</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="pagehead">
+      <h1>Track your order</h1>
+      <p class="note">Enter your order reference and the e-mail you used at checkout.</p>
+    </div>
+
+    <div class="okbanner" id="okbanner">Payment received &mdash; thank you! Your order is confirmed and goes to review now.</div>
+    <div class="warnbanner" id="warnbanner">The payment was not completed, so your order is on hold.
+      <button id="retrybtn" type="button">Pay now</button></div>
+
+    <div class="xcard">
+      <form id="lookform">
+        <div class="lkgrid">
+          <div class="cell"><label for="lk-ref">Order reference</label>
+            <input id="lk-ref" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="HOME-XXXXXX-XXXX"></div>
+          <div class="cell"><label for="lk-email">E-mail</label>
+            <input id="lk-email" type="email" autocomplete="email" placeholder="you@example.com"></div>
+          <button class="btn" id="lookbtn" type="submit">Track</button>
+        </div>
+        <div class="err" id="lookerr">We could not find that order — check the reference and the e-mail (it must be the one used at checkout).</div>
+      </form>
+    </div>
+
+    <div class="xcard" id="result">
+      <div class="ohead">
+        <span class="ref" id="r-ref"></span>
+        <span class="amt" id="r-total"></span>
+      </div>
+      <p class="oname" id="r-name"></p>
+      <div class="cancelnote" id="r-cancel" hidden>This order was cancelled. If that is unexpected, write to <a href="mailto:lumiashades@gmail.com">lumiashades@gmail.com</a>.</div>
+      <div class="steps" id="r-steps"></div>
+      <div class="lumianote" id="r-note" hidden></div>
+      <div class="trackbox" id="r-track" hidden>
+        <span>📦</span>
+        <div><b style="font-family:'Archivo',sans-serif;font-size:14px">Shipped &middot; FedEx tracking</b><br>
+          <a class="tn" id="r-tn" target="_blank" rel="noopener"></a></div>
+        <a class="go" id="r-tngo" target="_blank" rel="noopener">Track it &rarr;</a>
+      </div>
+      <div class="lineswrap">
+        <table>
+          <thead><tr><th>#</th><th>Product</th><th>Details</th><th>Size</th><th>Qty</th><th class="num">Total</th></tr></thead>
+          <tbody id="r-lines"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="mono">&copy; 2026 LUMIA &middot; All rights reserved</span>
+    <span class="mono">lumiashades@gmail.com</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var form = document.getElementById('lookform'), btn = document.getElementById('lookbtn'),
+      err = document.getElementById('lookerr'),
+      refIn = document.getElementById('lk-ref'), emailIn = document.getElementById('lk-email');
+
+  var FRAC_NAMES = {0:'0/8',1:'1/8',2:'1/4',3:'3/8',4:'1/2',5:'5/8',6:'3/4',7:'7/8'};
+  function fmtIn(v){
+    var n = Math.floor(v), f = Math.round((v - n) * 8);
+    if(f === 8){ n += 1; f = 0; }
+    return n + (f ? ' ' + FRAC_NAMES[f] : '');
+  }
+  function esc(t){ return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function last(){
+    try{ return JSON.parse(localStorage.getItem('lumia_home_last') || 'null'); }catch(e){ return null; }
+  }
+
+  /* back from Stripe? confirm the session, then load the order */
+  var q = location.search;
+  var refQ = /[?&]ref=([^&]+)/.exec(q), payQ = /[?&]paysession=([^&]+)/.exec(q),
+      cancQ = /[?&]pay=cancelled/.test(q);
+  if(refQ) refIn.value = decodeURIComponent(refQ[1]);
+  var saved = last();
+  if(saved && saved.email && (!refQ || (saved.ref || '').toUpperCase() === refIn.value.toUpperCase().trim())){
+    emailIn.value = saved.email;
+  }
+  if(q) history.replaceState(null, '', location.pathname);
+
+  function setStep(key, cls, when){
+    var el = document.querySelector('.step[data-k="' + key + '"]');
+    if(!el) return;
+    el.className = 'step ' + cls;
+    el.querySelector('.dot').innerHTML = cls === 'done' ? '&check;' : '';
+    if(when) el.querySelector('.tx span').textContent = when;
+  }
+
+  function stepHTML(key, title, sub){
+    return '<div class="step off" data-k="' + key + '"><div class="dot"></div>' +
+      '<div class="tx"><b>' + title + '</b><span>' + sub + '</span></div></div>';
+  }
+
+  function render(o){
+    document.getElementById('result').classList.add('on');
+    document.getElementById('r-ref').textContent = o.ref;
+    document.getElementById('r-total').textContent = o.total || '';
+    document.getElementById('r-name').textContent = 'Order for ' + o.name;
+    var cancelled = o.status === 'Cancelled';
+    document.getElementById('r-cancel').hidden = !cancelled;
+
+    var steps = document.getElementById('r-steps');
+    steps.innerHTML =
+      stepHTML('placed', 'Order placed', new Date(o.at).toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'})) +
+      stepHTML('paid', 'Payment', o.paid ? 'Paid — thank you.' : 'Not completed yet.') +
+      stepHTML('review', 'Review', 'We check every order before production.') +
+      stepHTML('prod', 'In production', 'Being made to your sizes.') +
+      stepHTML('shipped', 'Shipped', 'On its way to you.');
+    steps.style.display = cancelled ? 'none' : '';
+
+    if(!cancelled){
+      setStep('placed', 'done');
+      setStep('paid', o.paid ? 'done' : 'now');
+      var st = o.status;
+      if(st === 'Pending review'){ setStep('review', o.paid ? 'now' : 'off'); }
+      else if(st === 'Shipped'){ setStep('review', 'done'); setStep('prod', 'done'); setStep('shipped', 'done'); }
+      else { /* In production, On hold, anything accepted */ setStep('review', 'done'); setStep('prod', 'now'); }
+    }
+
+    var noteEl = document.getElementById('r-note');
+    noteEl.hidden = !o.note;
+    if(o.note) noteEl.textContent = 'LUMIA: ' + o.note;
+
+    var tbox = document.getElementById('r-track');
+    tbox.hidden = !o.tracking;
+    if(o.tracking){
+      var url = 'https://www.fedex.com/fedextrack/?trknbr=' + encodeURIComponent(o.tracking);
+      var tn = document.getElementById('r-tn');
+      tn.textContent = o.tracking; tn.href = url;
+      document.getElementById('r-tngo').href = url;
+    }
+
+    document.getElementById('r-lines').innerHTML = (o.lines || []).map(function(l, i){
+      return '<tr><td>' + (i + 1) + '</td><td>' + esc(l.product) + '</td>' +
+        '<td style="white-space:normal;max-width:380px">' + esc(l.desc || l.spec || '') + '</td>' +
+        '<td>' + (l.w == null ? '&mdash;' : fmtIn(l.w) + '&Prime; &times; ' + fmtIn(l.h) + '&Prime;') + '</td>' +
+        '<td>' + l.qty + '</td>' +
+        '<td class="num">' + (l.price == null ? '&mdash;' : '$' + (l.price * l.qty).toFixed(2)) + '</td></tr>';
+    }).join('');
+
+    /* an unpaid, not-cancelled order can be paid from here */
+    document.getElementById('warnbanner').classList.toggle('on', !cancelled && !o.paid);
+  }
+
+  function lookup(){
+    var ref = refIn.value.trim().toUpperCase(), email = emailIn.value.trim().toLowerCase();
+    if(!ref || !email) return;
+    err.classList.remove('on');
+    btn.disabled = true; btn.textContent = 'Looking…';
+    fetch('/api/home/track', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: ref, email: email })
+    }).then(function(r){ if(!r.ok) throw new Error('nf'); return r.json(); })
+    .then(function(d){
+      btn.disabled = false; btn.textContent = 'Track';
+      try{ localStorage.setItem('lumia_home_last', JSON.stringify({ ref: ref, email: email, at: Date.now() })); }catch(e){}
+      render(d.order);
+    }).catch(function(){
+      btn.disabled = false; btn.textContent = 'Track';
+      document.getElementById('result').classList.remove('on');
+      err.classList.add('on');
+    });
+  }
+
+  form.addEventListener('submit', function(e){ e.preventDefault(); lookup(); });
+
+  /* retry an unpaid order */
+  document.getElementById('retrybtn').addEventListener('click', function(){
+    var b = this, ref = refIn.value.trim().toUpperCase(), email = emailIn.value.trim().toLowerCase();
+    if(!ref || !email) return;
+    b.disabled = true; b.textContent = 'Opening…';
+    fetch('/api/home/pay', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: ref, email: email })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+    .then(function(x){
+      if(!x.ok || !x.d.url) throw new Error('failed');
+      location.href = x.d.url;
+    }).catch(function(){
+      b.disabled = false; b.textContent = 'Pay now';
+    });
+  });
+
+  /* arriving back from Stripe: confirm first (the redirect can beat the webhook) */
+  if(payQ){
+    fetch('/api/home/confirm', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session: decodeURIComponent(payQ[1]) })
+    }).then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d && d.ok) document.getElementById('okbanner').classList.add('on');
+      if(refIn.value && emailIn.value) lookup();
+    }).catch(function(){
+      if(refIn.value && emailIn.value) lookup();
+    });
+  } else if(cancQ){
+    document.getElementById('warnbanner').classList.add('on');
+    if(refIn.value && emailIn.value) lookup();
+  } else if(refIn.value && emailIn.value){
+    lookup();
+  }
+})();
+</script>
+
+</body>
+</html>

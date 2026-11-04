@@ -122,6 +122,7 @@ const NEEDS = {
   "/api/admin/dealers:POST": "dealers", "/api/admin/dealer-contact": "dealers", "/api/admin/dealer-mult": "dealers",
   "/api/admin/dealer-promo": "dealers", "/api/admin/dealer-active": "dealers", "/api/admin/dealer-test": "dealers",
   "/api/admin/dealer-delete": "admins", "/api/admin/dealer-recode": "dealers",
+  "/api/admin/consumer": "dealers",
   "/api/admin/prices": "admins", "/api/admin/backup": "admins",
   "/api/admin/admins": "accounts", "/api/admin/admin-update": "accounts", "/api/admin/admin-delete": "accounts", "/api/admin/admin-password": "accounts",
 };
@@ -190,6 +191,56 @@ async function dealerFromReq(req) {
   const dealers = await getDealers();
   const d = dealers[code];
   return d && d.active !== false ? { code, ...d } : null;
+}
+
+/* home customers (shop.html): everyone shares ONE access code and a retail
+   price level; each order carries that customer's own contact + shipping.
+   Config lives in the "consumer" blob and is edited from the admin panel. */
+async function consumerCfg() {
+  const c = await store().get("consumer", { type: "json" });
+  return { code: "LUMIA-HOME", mult: 1.4, active: true, ...(c || {}) };
+}
+function homeOk(cfg, raw) {
+  return cfg.active !== false &&
+    String(raw || "").trim().toUpperCase() === String(cfg.code || "").toUpperCase();
+}
+/* one Checkout session for a home order — paid right at checkout, reviewed after */
+async function homeCheckout(order, origin, sk) {
+  const form = new URLSearchParams({
+    mode: "payment",
+    "adaptive_pricing[enabled]": "false",
+    client_reference_id: order.ref,
+    customer_email: order.home.email,
+    "metadata[refs]": order.ref,
+    "metadata[home]": "1",
+    success_url: `${origin}/track.html?ref=${encodeURIComponent(order.ref)}&paysession={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/track.html?ref=${encodeURIComponent(order.ref)}&pay=cancelled`,
+  });
+  const lines = order.lines || [];
+  if (lines.length <= 20) {
+    lines.forEach((l, i) => {
+      // Stripe quantities are whole numbers; fractional ones (fabric yards) fold into the amount
+      const whole = Number.isInteger(l.qty);
+      form.set(`line_items[${i}][quantity]`, String(whole ? l.qty : 1));
+      form.set(`line_items[${i}][price_data][currency]`, "usd");
+      form.set(`line_items[${i}][price_data][unit_amount]`,
+        String(Math.round(l.price * (whole ? 1 : l.qty) * 100)));
+      form.set(`line_items[${i}][price_data][product_data][name]`,
+        `${l.product || "LUMIA"}${l.desc ? " — " + l.desc : ""}${l.w != null ? ` (${l.w}″ × ${l.h}″)` : ""}`.slice(0, 120));
+    });
+  } else {
+    form.set("line_items[0][quantity]", "1");
+    form.set("line_items[0][price_data][currency]", "usd");
+    form.set("line_items[0][price_data][unit_amount]", String(orderCents(order)));
+    form.set("line_items[0][price_data][product_data][name]", `LUMIA order ${order.ref}`);
+  }
+  const r = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${sk}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: form.toString(),
+  });
+  const sess = await r.json().catch(() => null);
+  return r.ok && sess && sess.url ? sess : null;
 }
 
 /* prices are stored once at group-1 level; each dealer gets them scaled.
@@ -557,6 +608,116 @@ export default async (req) => {
     return json({ ok: true, payment });
   }
 
+  // ── home customer: shared-code login → retail price list ─────────
+  if (path === "/api/home/login" && req.method === "POST") {
+    const cfg = await consumerCfg();
+    if (!homeOk(cfg, body.code)) return bad("invalid code", 401);
+    const base = await store().get("prices", { type: "json" });
+    if (!base) return bad("prices not loaded yet", 503);
+    return json({ prices: scaled(base, () => cfg.mult) });
+  }
+
+  // ── home customer: place an order and go straight to Stripe ──────
+  if (path === "/api/home/order" && req.method === "POST") {
+    const cfg = await consumerCfg();
+    if (!homeOk(cfg, req.headers.get("x-home-code"))) return bad("unauthorized", 401);
+    const sk = process.env.STRIPE_SECRET_KEY;
+    if (!sk) return bad("Card payments are not set up yet.", 503);
+    const c = body.customer || {};
+    const home = {
+      name: String(c.name || "").trim().slice(0, 120),
+      email: String(c.email || "").trim().toLowerCase().slice(0, 160),
+      phone: String(c.phone || "").trim().slice(0, 40),
+      address: String(c.address || "").trim().slice(0, 240),
+      city: String(c.city || "").trim().slice(0, 80),
+      state: String(c.state || "").trim().slice(0, 40),
+      zip: String(c.zip || "").trim().slice(0, 20),
+    };
+    if (!home.name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(home.email) ||
+        !home.address || !home.city || !home.state || !home.zip)
+      return bad("name, e-mail and shipping address are required");
+    if (!Array.isArray(body.lines) || !body.lines.length) return bad("lines required");
+    const lines = body.lines.slice(0, 60);
+    if (lines.some((l) => l.price == null || !(l.qty > 0))) return bad("every line needs a price");
+    const s = store();
+    // the ref is made here, not in the browser — two customers can never collide
+    let ref, tries = 0;
+    do {
+      const d = new Date();
+      ref = "HOME-" + d.getFullYear().toString().slice(2) +
+        String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") +
+        "-" + String(Math.floor(Math.random() * 9000) + 1000);
+    } while ((await s.get(`order:${ref}`, { type: "json" })) && ++tries < 5);
+    const order = {
+      ref, code: cfg.code, dealer: "Home customer", consumer: true,
+      at: new Date().toISOString(), updatedAt: new Date().toISOString(), kind: "new",
+      customer: home.name, notes: String(body.notes || "").slice(0, 2000),
+      home, total: "", lines,
+      status: { status: "Pending review", locked: false, note: "" },
+      payment: null, test: false,
+    };
+    const cents = orderCents(order);
+    if (cents < 50) return bad("order total too small");
+    order.total = "$" + (cents / 100).toFixed(2);
+    await s.setJSON(`order:${ref}`, order);
+    await notifyOrder(order);
+    const sess = await homeCheckout(order, new URL(req.url).origin, sk);
+    if (!sess) return bad("Could not start the payment.", 502);
+    return json({ ref, url: sess.url });
+  }
+
+  // ── home customer: retry the payment of an unpaid order ──────────
+  if (path === "/api/home/pay" && req.method === "POST") {
+    const cfg = await consumerCfg();
+    const sk = process.env.STRIPE_SECRET_KEY;
+    if (!sk) return bad("Card payments are not set up yet.", 503);
+    const ref = String(body.ref || "").trim().toUpperCase().slice(0, 40);
+    const email = String(body.email || "").trim().toLowerCase();
+    const o = await store().get(`order:${ref}`, { type: "json" });
+    if (!o || !o.consumer || !o.home || o.home.email !== email) return bad("no such order", 404);
+    if (o.payment && o.payment.paid) return bad("already paid", 409);
+    if (o.status && o.status.status === "Cancelled") return bad("order was cancelled", 409);
+    const sess = await homeCheckout(o, new URL(req.url).origin, sk);
+    if (!sess) return bad("Could not start the payment.", 502);
+    return json({ ref, url: sess.url });
+  }
+
+  // ── home customer: back from Stripe — the redirect may beat the webhook ──
+  if (path === "/api/home/confirm" && req.method === "POST") {
+    const sk = process.env.STRIPE_SECRET_KEY;
+    if (!sk) return bad("Card payments are not set up yet.", 503);
+    const sid = String(body.session || "");
+    if (!/^cs_[A-Za-z0-9_]+$/.test(sid)) return bad("bad session", 400);
+    const r = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sid}`,
+      { headers: { Authorization: `Bearer ${sk}` } });
+    const sess = await r.json().catch(() => null);
+    if (!r.ok || !sess) return bad("Could not check the payment.", 502);
+    const refsStr = sess.metadata && (sess.metadata.refs || sess.metadata.ref);
+    if (!sess.metadata || sess.metadata.home !== "1" || !refsStr) return bad("no such payment", 404);
+    if (sess.payment_status !== "paid") return json({ ok: false, status: sess.payment_status });
+    let payment = null;
+    for (const rr of refsStr.split(",")) payment = await markStripePaid(rr.trim(), sess.id);
+    return json({ ok: true, payment });
+  }
+
+  // ── home customer: track an order (reference + checkout e-mail) ───
+  // POST so the e-mail never travels in a URL
+  if (path === "/api/home/track" && req.method === "POST") {
+    const ref = String(body.ref || "").trim().toUpperCase().slice(0, 40);
+    const email = String(body.email || "").trim().toLowerCase();
+    if (!ref || !email) return bad("ref and e-mail required");
+    const o = await store().get(`order:${ref}`, { type: "json" });
+    if (!o || !o.consumer || !o.home || o.home.email !== email) return bad("no such order", 404);
+    return json({ order: {
+      ref: o.ref, at: o.at,
+      status: (o.status && o.status.status) || "Pending review",
+      note: (o.status && o.status.note) || "",
+      paid: !!(o.payment && o.payment.paid),
+      tracking: o.tracking || "",
+      name: o.home.name, lines: o.lines, total: o.total,
+    } });
+  }
+
   // ── a photo from a conversation: its dealer, or any admin ─────────
   if (path.startsWith("/api/photo/") && req.method === "GET") {
     const id = path.slice("/api/photo/".length);
@@ -890,6 +1051,29 @@ export default async (req) => {
       d.address = String(body.address || "").trim().slice(0, 300);
       await s.setJSON("dealers", dealers);
       return json({ ok: true });
+    }
+
+    // ── home-shop settings: the shared code, retail level, on/off ──
+    if (path === "/api/admin/consumer" && req.method === "GET") {
+      return json({ consumer: await consumerCfg() });
+    }
+    if (path === "/api/admin/consumer" && req.method === "POST") {
+      const cfg = await consumerCfg();
+      if (body.code != null) {
+        const code = String(body.code).trim().toUpperCase().slice(0, 40);
+        if (!/^[A-Z0-9-]{4,40}$/.test(code)) return bad("bad code");
+        const dealers = await getDealers();
+        if (dealers[code]) return bad("that code belongs to a dealer");
+        cfg.code = code;
+      }
+      if (body.mult != null) {
+        const m = Number(body.mult);
+        if (!isFinite(m) || m < 1 || m > 10) return bad("bad multiplier");
+        cfg.mult = m;
+      }
+      if (body.active != null) cfg.active = !!body.active;
+      await s.setJSON("consumer", cfg);
+      return json({ consumer: cfg });
     }
 
     if (path === "/api/admin/backup" && req.method === "GET") {
