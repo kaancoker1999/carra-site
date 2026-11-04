@@ -58,32 +58,68 @@
   .err{display:none;margin:16px 0 0;font-size:14px;color:#8A2620;background:#FBF1F0;border:1px solid #E5C9C6;border-radius:10px;padding:12px 14px}
   .err.on{display:block}
 
-  /* ── shop ── */
+  /* ── home view: just the four products, edge to edge ── */
   .pagehead{padding-top:58px;padding-bottom:10px;text-align:center}
   .pagehead h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(32px,4.4vw,52px)}
   .pagehead .note{margin:14px auto 0;font-size:15px;color:var(--muted);max-width:62ch}
 
-  .prods{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin:38px 0 0}
-  .p{display:block;text-decoration:none;background:var(--white);border:1px solid var(--line2);border-radius:16px;overflow:hidden;
-    cursor:pointer;transition:border-color .2s, transform .2s;text-align:left;padding:0;font:inherit;color:inherit}
-  .p:hover{border-color:var(--bronze);transform:translateY(-2px)}
-  .p.on{border-color:var(--bronze);box-shadow:0 0 0 1px var(--bronze)}
-  .p .art{display:block;aspect-ratio:4/3;overflow:hidden;background:var(--paper2)}
-  .p .art img{width:100%;height:100%;object-fit:cover;display:block}
-  .p .txt{display:block;text-align:center;padding:16px 18px 18px}
-  .p .pname{display:block;font-family:'Archivo',sans-serif;font-weight:600;font-size:18px;letter-spacing:-.02em;margin:0 0 5px}
-  .p .pdesc{display:block;font-size:13.5px;color:var(--muted);line-height:1.5}
+  .prodstrip{display:grid;grid-template-columns:repeat(4,1fr);width:100%;margin:46px 0 0;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--white)}
+  .pt{display:block;border:0;border-right:1px solid var(--line);background:var(--white);padding:0;cursor:pointer;
+    font:inherit;color:inherit;text-align:center;overflow:hidden}
+  .pt:last-child{border-right:0}
+  .pt .art{display:block;overflow:hidden}
+  .pt .art img{width:100%;aspect-ratio:3/4;max-height:520px;object-fit:cover;display:block;transition:transform .5s ease}
+  .pt:hover .art img{transform:scale(1.04)}
+  .pt .txt{display:block;padding:20px 18px 24px}
+  .pt .pname{display:block;font-family:'Archivo',sans-serif;font-weight:600;font-size:18.5px;letter-spacing:-.02em;margin:0 0 5px;transition:color .2s}
+  .pt:hover .pname{color:var(--bronze)}
+  .pt .pdesc{display:block;font-size:13px;color:var(--muted);line-height:1.5;max-width:30ch;margin:0 auto}
+  @media(max-width:900px){
+    .prodstrip{grid-template-columns:repeat(2,1fr)}
+    .pt:nth-child(2n){border-right:0}
+    .pt{border-bottom:1px solid var(--line)}
+  }
+  @media(max-width:520px){
+    .prodstrip{grid-template-columns:1fr}
+    .pt{border-right:0}
+  }
 
-  section.builder{padding:54px 0 30px}
-  .xcard{background:var(--white);border:1px solid var(--line2);border-radius:18px;padding:26px 28px 28px}
+  /* ── product view: hero, then the options ── */
+  .phero{position:relative;width:100%;height:min(54vh,480px);overflow:hidden;background:var(--paper2)}
+  .phero img{width:100%;height:100%;object-fit:cover;display:block}
+  .pveil{position:absolute;inset:0;background:linear-gradient(rgba(20,23,26,.14),rgba(20,23,26,.36))}
+  .ptit{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+  .ptit h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(32px,4.8vw,56px);color:#fff;
+    text-shadow:0 2px 26px rgba(0,0,0,.4);text-align:center;padding:0 20px}
+  .backpill{position:absolute;top:18px;left:18px;z-index:2;font-family:'IBM Plex Mono',monospace;font-size:10px;
+    letter-spacing:.14em;text-transform:uppercase;background:rgba(250,245,234,.94);border:0;border-radius:999px;
+    padding:11px 18px;cursor:pointer;color:var(--ink);transition:background .2s}
+  .backpill:hover{background:#fff}
+
+  section.builder{padding:44px 0 30px}
+  .xcard{background:var(--white);border:1px solid var(--line2);border-radius:18px;padding:10px 28px 28px}
   .xcard .xtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:21px;letter-spacing:-.02em;margin:0 0 4px}
   .xcard .xsub{font-size:14px;color:var(--muted);margin:0 0 6px}
 
-  /* ── configurator steps — same language as the product pages ── */
-  .grp{padding:24px 0 26px;border-top:1px solid var(--line)}
+  /* ── collapsible configurator steps ── */
+  .grp{border-top:1px solid var(--line)}
   .grp:first-child{border-top:0}
-  .grp .code{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--bronze);text-transform:uppercase}
-  .grp h3{font-size:18px;margin:8px 0 16px}
+  .grphead{width:100%;display:flex;align-items:center;gap:16px;background:none;border:0;cursor:pointer;
+    font:inherit;padding:19px 2px;text-align:left}
+  .grphead .code{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--bronze);
+    text-transform:uppercase;white-space:nowrap;min-width:64px}
+  .grphead .gtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:16.5px;letter-spacing:-.015em}
+  .grphead .cur{margin-left:auto;font-size:13px;color:var(--muted);text-align:right;max-width:46%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .grphead .cur.need{color:#8A2620}
+  .grphead .chev{flex:none;color:var(--muted);font-size:11px;transition:transform .2s}
+  .grp.open .chev{transform:rotate(180deg)}
+  .grp.open .grphead .cur{color:var(--bronze)}
+  .grpbody{display:none;padding:0 2px 26px}
+  .grp.open .grpbody{display:block}
+  .grp.static{padding:20px 2px 4px}
+
   .chips{display:flex;flex-wrap:wrap;gap:10px}
   .chip{font:inherit;font-size:14.5px;border:1px solid var(--line2);background:var(--white);color:var(--ink);
     padding:10px 17px;border-radius:10px;cursor:pointer;transition:border-color .15s,background .15s,color .15s;text-align:left}
@@ -221,57 +257,71 @@
 <!-- the shop itself -->
 <div id="shop" hidden>
 
-  <div class="wrap pagehead">
-    <h1>Shop LUMIA</h1>
-    <p class="note">Pick a product, configure it to your exact window, and pay by card or bank. Every piece is made to measure and ships to your door.</p>
-  </div>
-
-  <div class="wrap">
-    <div class="prods" id="prods">
-      <button class="p" type="button" data-pid="roman"><span class="art"><img src="assets/card-roman.jpg" alt="Roman shades in a living room"></span><span class="txt"><span class="pname">Roman Shades</span><span class="pdesc">Back-rod, front-rod, relaxed and hobbled folds in every fabric group.</span></span></button>
-      <button class="p" type="button" data-pid="cellular"><span class="art"><img src="assets/card-cellular.jpg" alt="Cellular shades in a bedroom"></span><span class="txt"><span class="pname">Cellular Shades</span><span class="pdesc">Single, double and triple cell honeycomb, sheer to blackout.</span></span></button>
-      <button class="p" type="button" data-pid="pleated"><span class="art"><img src="assets/card-pleated.jpg" alt="Pleated shades in a study"></span><span class="txt"><span class="pname">Pleated Shades</span><span class="pdesc">Crisp pleats in smooth and crushed fabrics.</span></span></button>
-      <button class="p" type="button" data-pid="drapery"><span class="art"><img src="assets/card-drapery.jpg" alt="Wave-fold drapery in a dining room"></span><span class="txt"><span class="pname">Drapery</span><span class="pdesc">Wave fold, pinch pleat and euro pleat headings, made to the drop.</span></span></button>
+  <!-- home: just the four products, full width -->
+  <div id="home">
+    <div class="wrap pagehead">
+      <h1>Shop LUMIA</h1>
+      <p class="note">Made to measure, straight from the factory &mdash; pick a product to start.</p>
+    </div>
+    <div class="prodstrip" id="prods">
+      <button class="pt" type="button" data-pid="roman"><span class="art"><img src="assets/card-roman.jpg" alt="Roman shades in a living room"></span><span class="txt"><span class="pname">Roman Shades</span><span class="pdesc">Back-rod, front-rod, relaxed and hobbled folds in every fabric group.</span></span></button>
+      <button class="pt" type="button" data-pid="cellular"><span class="art"><img src="assets/card-cellular.jpg" alt="Cellular shades in a bedroom"></span><span class="txt"><span class="pname">Cellular Shades</span><span class="pdesc">Single, double and triple cell honeycomb, sheer to blackout.</span></span></button>
+      <button class="pt" type="button" data-pid="pleated"><span class="art"><img src="assets/card-pleated.jpg" alt="Pleated shades in a study"></span><span class="txt"><span class="pname">Pleated Shades</span><span class="pdesc">Crisp pleats in smooth and crushed fabrics.</span></span></button>
+      <button class="pt" type="button" data-pid="drapery"><span class="art"><img src="assets/card-drapery.jpg" alt="Wave-fold drapery in a dining room"></span><span class="txt"><span class="pname">Drapery</span><span class="pdesc">Wave fold, pinch pleat and euro pleat headings, made to the drop.</span></span></button>
     </div>
   </div>
 
-  <section class="builder" id="build" hidden>
-    <div class="wrap">
-      <div class="xcard" id="rowbar">
-        <div class="xtitle" id="buildtitle">Configure</div>
-        <p class="xsub">Choose the options, enter the size, and add it to your cart. Repeat for every window.</p>
-        <div id="steps"></div>
-        <div class="grp" id="sizegrp">
-          <div class="code" id="sizecode">Size</div>
-          <h3>Size</h3>
-          <div class="dims">
-            <div class="dim"><span class="cap">Width (inches)</span>
-              <input id="c-w" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 36 1/2">
-              <span class="rng" id="rng-w"></span></div>
-            <div class="dim"><span class="cap" id="cap-h">Height (inches)</span>
-              <input id="c-h" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 48">
-              <span class="rng" id="rng-h"></span></div>
+  <!-- a product's own page: hero image, then the options -->
+  <div id="pview" hidden>
+    <section class="phero">
+      <img id="pv-img" src="" alt="">
+      <div class="pveil"></div>
+      <button class="backpill" id="backbtn" type="button">&larr; All products</button>
+      <div class="ptit"><h1 id="pv-name"></h1></div>
+    </section>
+
+    <section class="builder" id="build">
+      <div class="wrap">
+        <div class="xcard" id="rowbar">
+          <div id="steps"></div>
+          <div class="grp" id="sizegrp">
+            <button class="grphead" id="sizetoggle" type="button">
+              <span class="code" id="sizecode">Size</span>
+              <span class="gtitle">Size</span>
+              <span class="cur" id="sizecur"></span>
+              <span class="chev">&#9662;</span>
+            </button>
+            <div class="grpbody">
+              <div class="dims">
+                <div class="dim"><span class="cap">Width (inches)</span>
+                  <input id="c-w" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 36 1/2">
+                  <span class="rng" id="rng-w"></span></div>
+                <div class="dim"><span class="cap" id="cap-h">Height (inches)</span>
+                  <input id="c-h" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 48">
+                  <span class="rng" id="rng-h"></span></div>
+              </div>
+              <p class="xsub" style="margin:12px 0 0">Measure to the nearest 1/8&Prime; &mdash; write it like &ldquo;36 1/2&rdquo; or &ldquo;36.5&rdquo;.</p>
+            </div>
           </div>
-          <p class="xsub" style="margin:12px 0 0">Measure to the nearest 1/8&Prime; &mdash; write it like &ldquo;36 1/2&rdquo; or &ldquo;36.5&rdquo;.</p>
-        </div>
-        <div class="grp">
-          <div class="lineprice"><span class="lp" id="lp">&mdash;</span><span class="lk" id="lk">Pick the options and enter the size to see the price.</span></div>
-          <div class="addrow">
-            <div class="dim"><span class="cap">Room / label (optional)</span>
-              <input id="c-label" type="text" placeholder="e.g. Living room" autocomplete="off"></div>
-            <div class="dim qty"><span class="cap">Qty</span>
-              <input id="c-qty" type="number" min="1" step="1" value="1"></div>
-            <button class="addbtn" id="addbtn" type="button">Add to cart &darr;</button>
+          <div class="grp static">
+            <div class="lineprice"><span class="lp" id="lp">&mdash;</span><span class="lk" id="lk">Pick the options and enter the size to see the price.</span></div>
+            <div class="addrow">
+              <div class="dim"><span class="cap">Room / label (optional)</span>
+                <input id="c-label" type="text" placeholder="e.g. Living room" autocomplete="off"></div>
+              <div class="dim qty"><span class="cap">Qty</span>
+                <input id="c-qty" type="number" min="1" step="1" value="1"></div>
+              <button class="addbtn" id="addbtn" type="button">Add to cart &darr;</button>
+            </div>
+            <div class="rowerr" id="rowerr"></div>
           </div>
-          <div class="rowerr" id="rowerr"></div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </div>
 
   <section class="cartsec" id="cartsec" hidden>
     <div class="wrap">
-      <div class="xcard" style="padding-bottom:22px">
+      <div class="xcard" style="padding-top:26px;padding-bottom:22px">
         <div class="xtitle">Your cart</div>
         <p class="xsub" style="margin-bottom:20px">Everything below is made to your sizes. You can edit or remove a line before paying.</p>
         <div class="lineswrap">
@@ -285,7 +335,7 @@
 
   <section class="checkout" id="checkout" hidden>
     <div class="wrap">
-      <div class="xcard">
+      <div class="xcard" style="padding-top:26px">
         <div class="xtitle">Your details</div>
         <p class="xsub" style="margin-bottom:20px">We make everything to order &mdash; your details are only used for this purchase and its delivery.</p>
         <div class="ckgrid">
@@ -365,24 +415,78 @@
   signout.addEventListener('click', function(){
     setSession(null); SESSION = null;
     try{ sessionStorage.removeItem('lumia_home_cart'); }catch(e){}
+    location.hash = '';
     location.reload();
   });
 
   /* a 401 anywhere means the shared code changed — back to the gate */
   function loggedOut(){
-    setSession(null); SESSION = null; location.reload();
+    setSession(null); SESSION = null; location.hash = ''; location.reload();
   }
 
-  /* ════════ configurator — the product-page look on the order engine ════════ */
+  /* ════════ views: home (the four products) / one product's page ════════ */
   var SELECT = '— Select —';
-  var CFG = null, P = null, SEL = {}, lines = [], editIdx = null, booted = false;
+  var CFG = null, P = null, SEL = {}, OPEN = {}, lines = [], editIdx = null, booted = false;
   try{ lines = JSON.parse(sessionStorage.getItem('lumia_home_cart') || '[]'); }catch(e){}
 
-  var stepsBox = document.getElementById('steps'), rowerr = document.getElementById('rowerr'),
+  var home = document.getElementById('home'), pview = document.getElementById('pview'),
+      stepsBox = document.getElementById('steps'), rowerr = document.getElementById('rowerr'),
       rowbar = document.getElementById('rowbar');
 
   function esc(t){ return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
 
+  /* cart + checkout show on a product page, or on home while the cart has lines */
+  function syncSections(){
+    var show = !pview.hidden || lines.length > 0;
+    document.getElementById('cartsec').hidden = !show;
+    document.getElementById('checkout').hidden = !show;
+  }
+
+  function openProduct(pid, fromHash){
+    if(!CFG) return;
+    P = CFG.products.filter(function(p){ return p.id === pid; })[0];
+    if(!P){ closeProduct(); return; }
+    SEL = {}; OPEN = {};
+    /* first step lands open, the rest start collapsed */
+    var first = (P.steps || []).filter(stepVisibleBase)[0];
+    if(first) OPEN[first.key] = true;
+    document.getElementById('pv-img').src = P.img || '';
+    document.getElementById('pv-name').textContent = P.name;
+    home.hidden = true; pview.hidden = false;
+    renderSteps();
+    document.getElementById('c-w').value = '';
+    document.getElementById('c-h').value = '';
+    document.getElementById('c-qty').value = '1';
+    document.getElementById('c-label').value = '';
+    clearFail(); syncPrice(); syncSections();
+    if(!fromHash && location.hash !== '#p/' + pid){
+      try{ history.pushState(null, '', '#p/' + pid); }catch(e){ location.hash = 'p/' + pid; }
+    }
+    window.scrollTo(0, 0);
+  }
+  function closeProduct(fromHash){
+    pview.hidden = true; home.hidden = false;
+    P = null;
+    syncSections();
+    if(!fromHash && location.hash){
+      try{ history.pushState(null, '', location.pathname); }catch(e){ location.hash = ''; }
+    }
+    window.scrollTo(0, 0);
+  }
+  function applyHash(){
+    var m = /^#p\/([a-z]+)$/.exec(location.hash || '');
+    if(m) openProduct(m[1], true); else closeProduct(true);
+  }
+  window.addEventListener('hashchange', applyHash);
+  window.addEventListener('popstate', applyHash);
+
+  document.getElementById('prods').addEventListener('click', function(e){
+    var card = e.target.closest('.pt'); if(!card || !CFG) return;
+    openProduct(card.dataset.pid);
+  });
+  document.getElementById('backbtn').addEventListener('click', function(){ closeProduct(); });
+
+  /* ════════ the configurator — collapsible steps ════════ */
   function clearFail(){
     rowerr.classList.remove('on');
     ['c-w','c-h'].forEach(function(id){ document.getElementById(id).classList.remove('bad'); });
@@ -400,6 +504,8 @@
     if(dep && !stepVisible(dep)) return false;
     return [].concat(st.showIf.value).indexOf(SEL[st.showIf.key]) !== -1;
   }
+  /* visibility ignoring SEL (used before defaults exist) */
+  function stepVisibleBase(st){ return !st.showIf; }
 
   /* options struck out while another choice is made (relaxed fold -> no motor) */
   function disabledOf(st){
@@ -443,11 +549,33 @@
 
   function pad2(n){ return n < 10 ? '0' + n : String(n); }
 
+  /* what a collapsed step says it is set to */
+  function curOf(st){
+    if(st.key === 'collection'){
+      var chosen = st.options.filter(function(o){ return o.id === SEL.collection; })[0] || {};
+      return (chosen.label || '') + (SEL.colour ? ' · ' + SEL.colour : '');
+    }
+    if(isChoose(st) && !SEL[st.key]) return '';
+    return SEL[st.key] || '';
+  }
+
   function chipHTML(st, o, dis, sub){
     var on = SEL[st.key] === o;
     return '<button class="chip' + (on ? ' on' : '') + '" type="button" data-step="' + esc(st.key) +
       '" data-val="' + esc(o) + '"' + (dis ? ' disabled title="Not with ' + esc(SEL[dis]) + '"' : '') + '>' +
       esc(o) + (sub ? '<span class="chipsub">' + esc(sub) + '</span>' : '') + '</button>';
+  }
+
+  function grpHTML(key, n, label, cur, needs, body){
+    var open = !!OPEN[key];
+    return '<div class="grp' + (open ? ' open' : '') + '">' +
+      '<button class="grphead" type="button" data-acc="' + esc(key) + '">' +
+        '<span class="code">Step ' + pad2(n) + '</span>' +
+        '<span class="gtitle">' + esc(label) + '</span>' +
+        '<span class="cur' + (needs ? ' need' : '') + '">' + esc(needs ? 'Choose' : cur) + '</span>' +
+        '<span class="chev">&#9662;</span>' +
+      '</button>' +
+      '<div class="grpbody">' + body + '</div></div>';
   }
 
   function renderSteps(){
@@ -485,10 +613,10 @@
             return '<button class="chip' + (on ? ' on' : '') + '" type="button" data-step="colour" data-val="' + esc(c) + '">' + esc(c) + '</button>';
           }).join('') + '</div>';
         }
-        html += '<div class="grp"><div class="code">Step ' + pad2(n++) + '</div><h3>' + esc(st.label) + ' &amp; colour</h3>' +
-          '<div class="chips">' + chips + '</div>' +
+        var body = '<div class="chips">' + chips + '</div>' +
           (metaLine ? '<div class="fabmeta">' + esc(metaLine) + '</div>' : '<div style="height:14px"></div>') +
-          colsHtml + '</div>';
+          colsHtml;
+        html += grpHTML(st.key, n++, st.label + ' & colour', curOf(st), false, body);
         return;
       }
 
@@ -506,7 +634,7 @@
       } else {
         body = '<div class="chips">' + opts.map(function(o){ return chipHTML(st, o, dis[o]); }).join('') + '</div>';
       }
-      html += '<div class="grp"><div class="code">Step ' + pad2(n++) + '</div><h3>' + esc(st.label) + '</h3>' + body + '</div>';
+      html += grpHTML(st.key, n++, st.label, curOf(st), isChoose(st) && !SEL[st.key], body);
     });
     stepsBox.innerHTML = html;
     document.getElementById('sizecode').textContent = 'Step ' + pad2(n);
@@ -515,12 +643,24 @@
   }
 
   stepsBox.addEventListener('click', function(e){
+    var head = e.target.closest('[data-acc]');
+    if(head){
+      var k = head.dataset.acc;
+      OPEN[k] = !OPEN[k];
+      renderSteps();
+      return;
+    }
     var b = e.target.closest('[data-step]'); if(!b || b.disabled) return;
     clearFail();
-    var k = b.dataset.step, v = b.dataset.val;
-    if(k === 'collection' && SEL.collection !== v){ SEL.collection = v; SEL.colour = null; }
-    else SEL[k] = v;
+    var key = b.dataset.step, v = b.dataset.val;
+    if(key === 'collection' && SEL.collection !== v){ SEL.collection = v; SEL.colour = null; }
+    else SEL[key] = v;
     renderSteps();
+  });
+
+  /* the size step collapses like the rest */
+  document.getElementById('sizetoggle').addEventListener('click', function(){
+    document.getElementById('sizegrp').classList.toggle('open');
   });
 
   /* ── sizes (eighth-inch precision, typed like "36 1/2" or 36.5) ── */
@@ -548,6 +688,12 @@
     document.getElementById('cap-h').textContent = (P.hLabel || 'Height') + ' (inches)';
     document.getElementById('rng-w').textContent = lim.w[0] + '–' + lim.w[1] + '″';
     document.getElementById('rng-h').textContent = lim.h[0] + '–' + lim.h[1] + '″';
+  }
+  function syncSizeCur(){
+    var w = parseIn(document.getElementById('c-w').value),
+        h = parseIn(document.getElementById('c-h').value);
+    var ok = w != null && h != null && !isNaN(w) && !isNaN(h);
+    document.getElementById('sizecur').textContent = ok ? fmtIn(w).replace(' 0/8','') + '″ × ' + fmtIn(h).replace(' 0/8','') + '″' : '';
   }
 
   /* ── pricing (retail — scaled by the server at login) ── */
@@ -677,6 +823,8 @@
 
   /* the live price under the steps */
   function syncPrice(){
+    if(!P) return;
+    syncSizeCur();
     var lp = document.getElementById('lp'), lk = document.getElementById('lk');
     var w = parseIn(document.getElementById('c-w').value),
         h = parseIn(document.getElementById('c-h').value);
@@ -786,6 +934,7 @@
     count.hidden = lines.length === 0;
     count.innerHTML = lines.length ? totalsTiles(lines) : '';
     syncPay();
+    syncSections();
   }
 
   linesBox.addEventListener('click', function(e){
@@ -811,6 +960,7 @@
     var lim = sizeLimits();
     if(w == null || h == null || isNaN(w) || isNaN(h) ||
        w < lim.w[0] || w > lim.w[1] || h < lim.h[0] || h > lim.h[1]){
+      document.getElementById('sizegrp').classList.add('open');
       fail('Check the size — width ' + lim.w[0] + '–' + lim.w[1] +
         '″, ' + (P.hLabel || 'height').toLowerCase() + ' ' + lim.h[0] + '–' + lim.h[1] + '″.');
       ['c-w','c-h'].forEach(function(id){
@@ -829,6 +979,8 @@
       return stepVisible(st) && isChoose(st) && !SEL[st.key];
     });
     if(missing.length){
+      missing.forEach(function(st){ OPEN[st.key] = true; });
+      renderSteps();
       fail('Choose ' + missing.map(function(st){ return st.label.toLowerCase(); }).join(', ') + ' before adding this line.');
       return;
     }
@@ -875,20 +1027,10 @@
     if(b) b.innerHTML = editIdx == null ? 'Add to cart &darr;' : 'Update line &darr;';
   }
 
-  function setProduct(pid){
-    P = CFG.products.filter(function(p){ return p.id === pid; })[0];
-    if(!P) P = CFG.products[0];
-    SEL = {};
-    document.getElementById('buildtitle').textContent = 'Configure — ' + P.name;
-    markCard(P.id);
-    renderSteps();
-  }
-
   function editLine(i){
     var l = lines[i];
     if(!l) return;
-    showBuy();
-    setProduct(l.pid);
+    openProduct(l.pid);
     if(l.pick && l.pick.sel){ SEL = JSON.parse(JSON.stringify(l.pick.sel)); renderSteps(); }
     if(l.w != null) document.getElementById('c-w').value = fmtIn(l.w).replace(' 0/8', '');
     if(l.h != null) document.getElementById('c-h').value = fmtIn(l.h).replace(' 0/8', '');
@@ -899,28 +1041,7 @@
     renderLines();
     clearFail();
     syncPrice();
-    rowbar.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-
-  function markCard(pid){
-    document.querySelectorAll('#prods .p').forEach(function(c){
-      c.classList.toggle('on', c.dataset.pid === pid);
-    });
-  }
-
-  /* ── the cards open the purchase flow; the shop lands on them alone ── */
-  function showBuy(){
-    ['build', 'cartsec', 'checkout'].forEach(function(id){
-      document.getElementById(id).hidden = false;
-    });
-  }
-  document.getElementById('prods').addEventListener('click', function(e){
-    var card = e.target.closest('.p'); if(!card || !CFG) return;
-    showBuy();
-    setProduct(card.dataset.pid);
-    clearFail();
-    document.getElementById('build').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
 
   /* ── checkout ── */
   var paybtn = document.getElementById('paybtn'), ckerr = document.getElementById('ckerr');
@@ -1013,12 +1134,8 @@
       .then(function(r){ return r.json(); })
       .then(function(cfg){
         CFG = cfg;
-        /* a returning cart re-opens the purchase flow; otherwise only the cards show */
-        if(lines.length){
-          showBuy();
-          setProduct(lines[lines.length - 1].pid);
-        }
         renderLines();
+        applyHash();
       });
   }
 
