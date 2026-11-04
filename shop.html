@@ -131,6 +131,7 @@
   .bigcard .bcart{display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;padding:8px 8px 0;color:#3A3D40}
   .bigcard.on .bcart{color:var(--ink)}
   .bigcard .bcname{display:block;padding:15px 12px 16px;font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;letter-spacing:-.01em}
+  .bigcard .bcsub{display:block;padding:0 16px 16px;margin-top:-10px;font-size:12px;color:var(--muted);line-height:1.5}
   .bigcard.noimg .bcname{padding:32px 12px}
   .bchk{position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;
     display:none;align-items:center;justify-content:center;font-size:12px;z-index:1}
@@ -835,6 +836,13 @@
       '<p class="stepnote">Names this window in your cart so you can tell them apart. Optional.</p>';
   }
 
+  /* short captions under specific option cards */
+  var OPT_SUB = {
+    drive: {
+      'Motorized': 'Remote, charging cable and smart hub are picked once at checkout — one remote can run several shades.'
+    }
+  };
+
   /* colour steps (edge banding) draw each colour as banding on a folded white shade */
   var OPT_COLORS = {
     banding: { 'Beige':'#E6DCC3', 'Tan':'#B08D4F', 'Red':'#C01F2F', 'Grey':'#63655C',
@@ -873,7 +881,10 @@
         '" type="button" data-step="' + esc(st.key) + '" data-val="' + esc(o) + '"' +
         (dis[o] ? ' disabled title="Not with ' + esc(SEL[dis[o]]) + '"' : '') + '>' +
         visual +
-        '<span class="bcname">' + esc(o) + '</span>' + chk() + '</button>';
+        '<span class="bcname">' + esc(o) + '</span>' +
+        (OPT_SUB[st.key] && OPT_SUB[st.key][o]
+          ? '<span class="bcsub">' + esc(OPT_SUB[st.key][o]) + '</span>' : '') +
+        chk() + '</button>';
     }).join('');
     return '<div class="cardgrid' + (anyVisual ? '' : ' txt') + '">' + cards + '</div>';
   }
