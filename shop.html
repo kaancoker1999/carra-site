@@ -604,7 +604,7 @@
       base = gridPrice(grid, w, h); if(base == null) return null;
       pct += ({'Flat':0, 'Back rods':0, 'Front rods':10, 'Relaxed':10, 'Hobbled':25})[sel.fold] || 0;
       pct += ({'White liner':10, 'Blackout liner':20})[sel.liner] || 0;
-      if(sel.banding === 'Yes') pct += 50;
+      if(sel.banding && sel.banding !== 'None') pct += 50;
       base = base * (1 + pct / 100);
       if(sel.drive === 'Continuous cord loop'){
         add += xt(pp, 'Continuous cord loop (CCL)');
@@ -750,10 +750,6 @@
       'Unlined': art('<rect x="36" y="12" width="50" height="66" rx="2" fill="' + FAB + '"/><path d="M36 28h50M36 44h50M36 60h50"/>'),
       'White liner': art('<rect x="44" y="8" width="50" height="64" rx="2" fill="#fff"/><rect x="26" y="18" width="50" height="64" rx="2" fill="' + FAB + '"/><path d="M26 34h50M26 50h50M26 66h50"/><circle cx="106" cy="16" r="4.5"/><path d="M106 6v4M106 22v4M96 16h4M112 16h4"/>'),
       'Blackout liner': art('<rect x="44" y="8" width="50" height="64" rx="2" fill="#fff"/><rect x="26" y="18" width="50" height="64" rx="2" fill="' + FAB + '"/><path d="M26 34h50M26 50h50M26 66h50"/><circle cx="106" cy="16" r="4.5"/><path d="M106 6v4M106 22v4M96 16h4M112 16h4"/><path d="M98 24 114 8" stroke-width="2.5"/>')
-    },
-    banding: {
-      'None': art('<rect x="32" y="10" width="56" height="70" rx="2" fill="' + FAB + '"/><path d="M32 28h56M32 46h56M32 64h56"/>'),
-      'Yes': art('<rect x="32" y="10" width="56" height="70" rx="2" fill="' + FAB + '"/><rect x="38.5" y="16.5" width="43" height="57" stroke="#8A6220" stroke-width="3.5"/>')
     }
   };
 
@@ -789,10 +785,10 @@
       '<p class="stepnote">Names this window in your cart so you can tell them apart. Optional.</p>';
   }
 
-  /* solid-colour steps (edge banding colour) render as little colour tiles */
+  /* colour steps (edge banding) draw each colour as banding on a folded white shade */
   var OPT_COLORS = {
-    bandcolor: { 'Beige':'#E6DCC3', 'Tan':'#B08D4F', 'Red':'#C01F2F', 'Grey':'#63655C',
-                 'Navy':'#1C2340', 'Moss':'#3C4237', 'Black':'#141414' }
+    banding: { 'Beige':'#E6DCC3', 'Tan':'#B08D4F', 'Red':'#C01F2F', 'Grey':'#63655C',
+               'Navy':'#1C2340', 'Moss':'#3C4237', 'Black':'#141414' }
   };
 
   function optBody(st){
@@ -800,13 +796,18 @@
     var opts = plainOpts(st);
     var colors = OPT_COLORS[st.key] || null;
     if(colors){
-      /* each colour drawn as banding on a white shade */
+      /* a folded white shade; the band runs down the sides and along the
+         bottom only (never across the top). "None" is the plain shade. */
       return '<div class="swgrid2">' + opts.map(function(o){
         var on = SEL[st.key] === o;
+        var band = colors[o]
+          ? '<path d="M21.5 6v73.5h47V6" stroke="' + colors[o] + '" stroke-width="5" fill="none" stroke-linecap="butt"/>'
+          : '';
         return '<button class="swtile' + (on ? ' on' : '') + '" type="button" data-step="' + esc(st.key) + '" data-val="' + esc(o) + '">' +
           '<span class="clrart"><svg viewBox="0 0 90 90" fill="none" stroke="#3A3D40" stroke-width="1.8" stroke-linecap="round">' +
-            '<rect x="17" y="6" width="56" height="74" rx="2" fill="#FFFFFF"/>' +
-            '<rect x="24" y="13" width="42" height="60" stroke="' + (colors[o] || '#ccc') + '" stroke-width="5"/>' +
+            '<rect x="17" y="6" width="56" height="78" rx="2" fill="#FFFFFF"/>' +
+            '<path d="M17 56h56M17 65h56M17 74h56"/>' +
+            band +
           '</svg></span>' +
           '<span class="swname">' + esc(o) + '</span>' + chk() + '</button>';
       }).join('') + '</div>';

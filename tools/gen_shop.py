@@ -87,15 +87,11 @@ def build():
                 else:
                     step["swatches"] = fabric_swatches(gp.FAB)
                     step["meta"] = fabric_meta(gp.FAB)
-        # the banding colour choice appears once edge banding is picked
+        # edge banding is one step: None, or straight to a banding colour
         if p["id"] == "roman":
-            for i, s in enumerate(p["steps"]):
+            for s in p["steps"]:
                 if s["key"] == "banding":
-                    p["steps"].insert(i + 1, {
-                        "key": "bandcolor", "label": "Edge banding color",
-                        "options": ["Beige", "Tan", "Red", "Grey", "Navy", "Moss", "Black"],
-                        "showIf": {"key": "banding", "value": "Yes"},
-                    })
+                    s["options"] = ["None", "Beige", "Tan", "Red", "Grey", "Navy", "Moss", "Black"]
                     break
     OUT.write_text(json.dumps({"products": products}, separators=(",", ":")))
     print(f"wrote {OUT} ({OUT.stat().st_size // 1024} KB)")
