@@ -733,6 +733,83 @@ export default async (req) => {
     });
   }
 
+  // ── home customer: place an order — straight to Stripe, or saved
+  //    unpaid ({paylater:true}) to be paid later from the orders page ──
+  if (path === "/api/home/order" && req.method === "POST") {
+    const cfg = await consumerCfg();
+    if (cfg.active === false) return bad("The shop is closed right now.", 503);
+    const sk = process.env.STRIPE_SECRET_KEY;
+    if (!sk && !body.paylater) return bad("Card payments are not set up yet.", 503);
+    const home = homeContact(body.customer, { loose: true });
+    if (!home) return bad("name and a valid e-mail are required");
+    if (!Array.isArray(body.lines) || !body.lines.length) return bad("lines required");
+    const lines = body.lines.slice(0, 60);
+    if (lines.some((l) => l.price == null || !(l.qty > 0))) return bad("every line needs a price");
+    const s = store();
+    // the ref is made here, not in the browser — two customers can never collide
+    let ref, tries = 0;
+    do {
+      const d = new Date();
+      ref = "HOME-" + d.getFullYear().toString().slice(2) +
+        String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") +
+        "-" + String(Math.floor(Math.random() * 9000) + 1000);
+    } while ((await s.get(`order:${ref}`, { type: "json" })) && ++tries < 5);
+    const order = {
+      ref, code: "HOME-SHOP", dealer: "Home customer", consumer: true,
+      at: new Date().toISOString(), updatedAt: new Date().toISOString(), kind: "new",
+      customer: home.name, notes: String(body.notes || "").slice(0, 2000),
+      home, total: "", lines,
+      status: { status: "Pending review", locked: false, note: "" },
+      payment: null, test: false,
+      // every home order stays hidden from the admin until the payment lands —
+      // an abandoned checkout never clutters the panel (unpaid drafts purge after 45 days)
+      draft: true,
+    };
+    const cents = orderCents(order);
+    if (cents < 50) return bad("order total too small");
+    order.total = "$" + (cents / 100).toFixed(2);
+    await s.setJSON(`order:${ref}`, order);
+    // the admin is notified when the payment lands (markStripePaid), not before
+    if (body.paylater) return json({ ref });
+    const sess = await homeCheckout(order, new URL(req.url).origin, sk);
+    if (!sess) return bad("Could not start the payment.", 502);
+    return json({ ref, url: sess.url });
+  }
+
+  // ── home customer: retry the payment of an unpaid order ──────────
+  if (path === "/api/home/pay" && req.method === "POST") {
+    const cfg = await consumerCfg();
+    const sk = process.env.STRIPE_SECRET_KEY;
+    if (!sk) return bad("Card payments are not set up yet.", 503);
+    const ref = String(body.ref || "").trim().toUpperCase().slice(0, 40);
+    const email = String(body.email || "").trim().toLowerCase();
+    const o = await store().get(`order:${ref}`, { type: "json" });
+    if (!o || !o.consumer || !o.home || o.home.email !== email) return bad("no such order", 404);
+    if (o.payment && o.payment.paid) return bad("already paid", 409);
+    if (o.status && o.status.status === "Cancelled") return bad("order was cancelled", 409);
+    const sess = await homeCheckout(o, new URL(req.url).origin, sk);
+    if (!sess) return bad("Could not start the payment.", 502);
+    return json({ ref, url: sess.url });
+  }
+
+  // ── home customer: back from Stripe — the redirect may beat the webhook ──
+  if (path === "/api/home/confirm" && req.method === "POST") {
+    const sk = process.env.STRIPE_SECRET_KEY;
+    if (!sk) return bad("Card payments are not set up yet.", 503);
+    const sid = String(body.session || "");
+    if (!/^cs_[A-Za-z0-9_]+$/.test(sid)) return bad("bad session", 400);
+    const r = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sid}`,
+      { headers: { Authorization: `Bearer ${sk}` } });
+    const sess = await r.json().catch(() => null);
+    if (!r.ok || !sess) return bad("Could not check the payment.", 502);
+    const refsStr = sess.metadata && (sess.metadata.refs || sess.metadata.ref);
+    if (!sess.metadata || sess.metadata.home !== "1" || !refsStr) return bad("no such payment", 404);
+    if (sess.payment_status !== "paid") return json({ ok: false, status: sess.payment_status });
+    let payment = null;
+    for (const rr of refsStr.split(",")) payment = await markStripePaid(rr.trim(), sess.id, sess);
+    return json({ ok: true, payment });
+  }
+
   // ── home customer: the account page lists every order on the e-mail.
   //    Needs the account key that log-in / sign-up hand out; the ship-to
   //    never comes back here. ──
