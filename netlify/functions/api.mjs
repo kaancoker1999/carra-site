@@ -833,6 +833,77 @@ export default async (req) => {
     return json({ name: acct.name, orders });
   }
 
+  // ── home customer messages: questions to LUMIA, optionally about an
+  //    order. Same thread blobs the dealers use; code "HOME:<email>" groups
+  //    them per customer in the admin's Messages tab, and the customer side
+  //    reuses the dealer seen-marker. Account key required throughout. ──
+  async function homeAuth() {
+    const email = String((body || {}).email || "").trim().toLowerCase().slice(0, 160);
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return null;
+    const acct = await store().get(`homeacct:${email}`, { type: "json" });
+    if (!acct || !acct.key || String((body || {}).key || "") !== acct.key) return null;
+    return { email, acct };
+  }
+  if (path === "/api/home/threads" && req.method === "POST") {
+    const auth = await homeAuth();
+    if (!auth) return bad("Please log in to see your messages.", 401);
+    return json({ threads: await listThreads(`HOME:${auth.email}`) });
+  }
+  if (path === "/api/home/thread" && req.method === "POST") {
+    const auth = await homeAuth();
+    if (!auth) return bad("Please log in to send a message.", 401);
+    const text = cleanText(body.text, MSG_MAX);
+    if (!text) return bad("message required");
+    const s = store();
+    const now = new Date().toISOString();
+    const orderRef = cleanText(body.orderRef, 40);
+    let kind, subject;
+    if (orderRef) {
+      const o = await s.get(`order:${orderRef}`, { type: "json" });
+      if (!o || !o.consumer || !o.home || o.home.email !== auth.email) return bad("no such order", 404);
+      kind = ORDER_KINDS.includes(body.kind) ? body.kind : "Question";
+      subject = `${kind} — order ${orderRef}`;
+    } else {
+      kind = "Question";
+      subject = cleanText(body.subject, 120) || "Question";
+    }
+    let id = newThreadId();
+    while (await s.get(`thread:${id}`, { type: "json" })) id = newThreadId();
+    const t = {
+      id, code: `HOME:${auth.email}`, dealer: `${auth.acct.name || auth.email} · home`,
+      home: auth.email, subject, kind, orderRef,
+      status: "open", createdAt: now, updatedAt: now,
+      dealerSeenAt: now, adminSeenAt: null,
+      messages: [{ from: "dealer", by: auth.acct.name || auth.email, text, at: now }],
+    };
+    await s.setJSON(`thread:${id}`, t);
+    await notifyMessage(t, text, true);
+    return json({ ok: true, thread: t });
+  }
+  if ((path === "/api/home/thread/reply" || path === "/api/home/thread/seen") && req.method === "POST") {
+    const auth = await homeAuth();
+    if (!auth) return bad("Please log in first.", 401);
+    const s = store();
+    const key = `thread:${String(body.id || "").slice(0, 40)}`;
+    const t = await s.get(key, { type: "json" });
+    if (!t || t.home !== auth.email) return bad("no such conversation", 404);
+    const now = new Date().toISOString();
+    let wrote = "";
+    if (path.endsWith("/reply")) {
+      const text = cleanText(body.text, MSG_MAX);
+      if (!text) return bad("message required");
+      if (t.messages.length >= THREAD_MAX_MSGS) return bad("this conversation is full — please start a new one", 409);
+      t.messages.push({ from: "dealer", by: auth.acct.name || auth.email, text, at: now });
+      t.updatedAt = now;
+      t.status = "open";
+      wrote = text;
+    }
+    t.dealerSeenAt = now;
+    await s.setJSON(key, t);
+    if (wrote) await notifyMessage(t, wrote, false);
+    return json({ ok: true, thread: t });
+  }
+
   if (path === "/api/home/track" && req.method === "POST") {
     const ref = String(body.ref || "").trim().toUpperCase().slice(0, 40);
     const email = String(body.email || "").trim().toLowerCase();

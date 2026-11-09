@@ -146,12 +146,162 @@
   .orow .opay:hover{background:var(--bronze)}
   .emptynote{font-size:14px;color:var(--muted);padding:6px 0}
 
+  /* ── messages ── */
+  var THREADS = [], MOPEN = null;
+  function msgAuth(){ return { email: ACCOUNT.email, key: ACCOUNT.key || '' }; }
+  function unreadOf(t){
+    var seen = t.dealerSeenAt || '', n = 0;
+    for(var i = t.messages.length - 1; i >= 0; i--){
+      var m = t.messages[i];
+      if(m.from === 'dealer' || m.at <= seen) break;
+      n++;
+    }
+    return n;
+  }
+  function loadThreads(){
+    if(!ACCOUNT) return;
+    fetch('/api/home/threads', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(msgAuth())
+    }).then(function(r){ if(!r.ok) throw new Error('nf'); return r.json(); })
+    .then(function(d){ THREADS = d.threads || []; renderMsgs(); })
+    .catch(function(){});
+  }
+  function renderMsgs(){
+    var un = 0;
+    THREADS.forEach(function(t){ un += unreadOf(t); });
+    $('n-msg').textContent = THREADS.length + (un ? ' · ' + un + ' new' : '');
+    $('msglisthead').hidden = !THREADS.length;
+    $('msglist').innerHTML = THREADS.map(function(t){
+      var l = t.messages[t.messages.length - 1] || {};
+      var u = unreadOf(t);
+      return '<div class="mrow" data-mid="' + esc(t.id) + '">' +
+        '<span class="msub">' + esc(t.subject || 'Question') + '</span>' +
+        '<span class="mwhen">' + new Date(t.updatedAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '</span>' +
+        (u ? '<span class="mnew">' + u + ' new</span>' : '') +
+        '<span class="mprev">' + esc((l.by || '') + ': ' + (l.text || '')) + '</span></div>';
+    }).join('');
+    /* the About picker always mirrors the orders on the account */
+    var sel = $('mo-ref');
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">General question</option>' + ORDERS.map(function(o){
+      return '<option value="' + esc(o.ref) + '">Order ' + esc(o.ref) + '</option>';
+    }).join('');
+    sel.value = cur;
+  }
+  function threadById(id){ return THREADS.filter(function(t){ return t.id === id; })[0] || null; }
+  function openThread(id){
+    var t = threadById(id); if(!t) return;
+    MOPEN = id;
+    $('msgnew').hidden = true; $('msglist').hidden = true; $('msglisthead').hidden = true;
+    $('msgthread').hidden = false;
+    $('msubject').textContent = t.subject || 'Question';
+    $('mbubbles').innerHTML = t.messages.map(function(m){
+      var mine = m.from === 'dealer';
+      return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="bwho">' +
+        esc(mine ? (m.by || 'You') : 'LUMIA') + ' · ' +
+        new Date(m.at).toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '</span>' + esc(m.text) + '</div>';
+    }).join('');
+    /* opening marks it read */
+    fetch('/api/home/thread/seen', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ id: id }, msgAuth()))
+    }).then(function(r){ return r.json(); })
+    .then(function(d){ if(d && d.thread){ var i = THREADS.findIndex(function(x){ return x.id === id; }); if(i > -1) THREADS[i] = d.thread; renderCountsOnly(); } })
+    .catch(function(){});
+  }
+  function renderCountsOnly(){
+    var un = 0;
+    THREADS.forEach(function(t){ un += unreadOf(t); });
+    $('n-msg').textContent = THREADS.length + (un ? ' · ' + un + ' new' : '');
+  }
+  function closeThread(){
+    MOPEN = null;
+    $('msgthread').hidden = true;
+    $('msgnew').hidden = false; $('msglist').hidden = false;
+    renderMsgs();
+  }
+  $('mback').addEventListener('click', closeThread);
+  $('msglist').addEventListener('click', function(e){
+    var r = e.target.closest('.mrow'); if(!r) return;
+    openThread(r.dataset.mid);
+  });
+  $('mo-send').addEventListener('click', function(){
+    var btn = this, err = $('mo-err');
+    err.classList.remove('on'); $('mo-ok').classList.remove('on');
+    var text = ($('mo-text').value || '').trim();
+    if(!text){ err.textContent = 'Please write your message first.'; err.classList.add('on'); return; }
+    btn.disabled = true; btn.textContent = 'Sending…';
+    fetch('/api/home/thread', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ text: text, orderRef: $('mo-ref').value || '' }, msgAuth()))
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+    .then(function(x){
+      btn.disabled = false; btn.textContent = 'Send';
+      if(!x.ok || !x.d.thread) throw new Error((x.d && x.d.error) || 'failed');
+      $('mo-text').value = '';
+      $('mo-ok').classList.add('on');
+      THREADS.unshift(x.d.thread);
+      renderMsgs();
+    }).catch(function(e2){
+      btn.disabled = false; btn.textContent = 'Send';
+      err.textContent = 'Could not send — please try again, or write to lumiashades@gmail.com.';
+      err.classList.add('on');
+    });
+  });
+  $('mr-send').addEventListener('click', function(){
+    var btn = this, err = $('mr-err');
+    err.classList.remove('on');
+    var text = ($('mr-text').value || '').trim();
+    if(!text || !MOPEN) return;
+    btn.disabled = true; btn.textContent = 'Sending…';
+    fetch('/api/home/thread/reply', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ id: MOPEN, text: text }, msgAuth()))
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+    .then(function(x){
+      btn.disabled = false; btn.textContent = 'Reply';
+      if(!x.ok || !x.d.thread) throw new Error('failed');
+      $('mr-text').value = '';
+      var i = THREADS.findIndex(function(t){ return t.id === MOPEN; });
+      if(i > -1) THREADS[i] = x.d.thread;
+      openThread(MOPEN);
+    }).catch(function(){
+      btn.disabled = false; btn.textContent = 'Reply';
+      err.textContent = 'Could not send — please try again.';
+      err.classList.add('on');
+    });
+  });
+
   /* ── profile ── */
   .pfgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   .pfgrid .span2{grid-column:1 / -1}
   @media(max-width:640px){ .pfgrid{grid-template-columns:1fr} }
   .pfok{display:none;margin:14px 0 0;font-size:14px;color:#1F5B2D}
   .pfok.on{display:inline-block}
+
+  /* ── messages ── */
+  .cell textarea{font:inherit;font-size:15px;padding:13px 14px;border:1px solid var(--line2);border-radius:9px;background:var(--white);resize:vertical}
+  .cell textarea:focus{outline:none;border-color:var(--ink)}
+  .mrow{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line);cursor:pointer;flex-wrap:wrap}
+  .mrow:last-child{border-bottom:0}
+  .mrow:hover .msub{color:var(--bronze)}
+  .mrow .msub{font-weight:600;font-size:14.5px}
+  .mrow .mwhen{font-size:12.5px;color:var(--muted)}
+  .mrow .mprev{flex-basis:100%;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mrow .mnew{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:#fff;background:var(--bronze);border-radius:999px;padding:3px 10px}
+  .mback{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+    background:none;border:1px solid var(--line2);border-radius:8px;padding:8px 14px;cursor:pointer;color:var(--ink);margin:0 0 14px}
+  .mback:hover{border-color:var(--ink)}
+  .msubject{font-family:'Archivo',sans-serif;font-weight:600;font-size:16px;margin:0 0 14px}
+  .bub{max-width:78%;border-radius:14px;padding:10px 14px;margin:0 0 10px;font-size:14px;line-height:1.55;white-space:pre-wrap}
+  .bub .bwho{display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .bub.me{margin-left:auto;background:var(--paper);border:1px solid var(--line)}
+  .bub.them{background:var(--white);border:1px solid var(--line2)}
+  .askbtn{margin:18px 0 0;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+    background:none;border:1px solid var(--line2);border-radius:8px;padding:9px 15px;cursor:pointer;color:var(--bronze)}
+  .askbtn:hover{border-color:var(--bronze)}
 
   footer{background:#1D1C1A;margin-top:auto}
   footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap;max-width:1180px}
@@ -201,6 +351,7 @@
         <button class="snav on" data-sec="profile" type="button" id="nav-profile">Profile</button>
         <button class="snav" data-sec="saved" type="button">Saved orders <span class="n" id="n-saved">0</span></button>
         <button class="snav" data-sec="placed" type="button">Placed orders <span class="n" id="n-placed">0</span></button>
+        <button class="snav" data-sec="messages" type="button" id="nav-messages">Messages <span class="n" id="n-msg">0</span></button>
         <button class="snav out" id="signoutbtn" type="button" hidden>Sign out</button>
       </nav>
 
@@ -224,6 +375,37 @@
           <h2 style="font-size:19px;margin:0 0 4px">Placed orders</h2>
           <p style="font-size:13.5px;color:var(--muted);margin:0 0 10px">Paid orders, newest first.</p>
           <div id="placedlist"></div>
+        </div>
+
+        <!-- messages: questions to LUMIA, optionally about an order -->
+        <div class="sect xcard" id="sec-messages" hidden>
+          <h2 style="font-size:19px;margin:0 0 4px">Messages</h2>
+          <p style="font-size:13.5px;color:var(--muted);margin:0 0 16px">Ask us anything &mdash; about an order or in general. We reply right here.</p>
+          <div id="msgnew">
+            <div class="pfgrid">
+              <div class="cell span2"><label for="mo-ref">About</label>
+                <select id="mo-ref"><option value="">General question</option></select></div>
+              <div class="cell span2"><label for="mo-text">Your message</label>
+                <textarea id="mo-text" rows="3" maxlength="2000" placeholder="Write your question&hellip;"></textarea></div>
+            </div>
+            <div style="margin-top:14px;display:flex;align-items:center;gap:14px">
+              <button class="btn" id="mo-send" type="button">Send</button>
+              <span class="pfok" id="mo-ok">Sent &check;</span>
+            </div>
+            <div class="err" id="mo-err"></div>
+          </div>
+          <div class="ltitle" id="msglisthead" hidden>Your conversations</div>
+          <div id="msglist"></div>
+          <div id="msgthread" hidden>
+            <button class="mback" id="mback" type="button">&larr; All messages</button>
+            <div class="msubject" id="msubject"></div>
+            <div id="mbubbles"></div>
+            <div class="pfgrid" style="margin-top:14px">
+              <div class="cell span2"><textarea id="mr-text" rows="2" maxlength="2000" placeholder="Reply&hellip;"></textarea></div>
+            </div>
+            <div style="margin-top:12px"><button class="btn" id="mr-send" type="button">Reply</button></div>
+            <div class="err" id="mr-err"></div>
+          </div>
         </div>
 
         <!-- profile -->
@@ -296,7 +478,7 @@
 
   /* ── sidebar ── */
   function showSec(key){
-    ['status','saved','placed','profile'].forEach(function(k){
+    ['status','saved','placed','profile','messages'].forEach(function(k){
       $('sec-' + k).hidden = k !== key;
     });
     [].forEach.call(document.querySelectorAll('.snav[data-sec]'), function(b){
@@ -420,7 +602,8 @@
         '<div><b style="font-family:\'Archivo\',sans-serif;font-size:14px">Shipped &middot; FedEx tracking</b><br>' +
         '<a class="tn" target="_blank" rel="noopener" href="https://www.fedex.com/fedextrack/?trknbr=' + encodeURIComponent(o.tracking) + '">' + esc(o.tracking) + '</a></div>' +
         '<a class="go" target="_blank" rel="noopener" href="https://www.fedex.com/fedextrack/?trknbr=' + encodeURIComponent(o.tracking) + '">Track it &rarr;</a></div>' : '') +
-      (o.lines && o.lines.length ? '<div class="ltitle">What\'s in this order</div>' + o.lines.map(lineHTML).join('') : '');
+      (o.lines && o.lines.length ? '<div class="ltitle">What\'s in this order</div>' + o.lines.map(lineHTML).join('') : '') +
+      (ACCOUNT ? '<button class="askbtn" id="askbtn" type="button">Ask a question about this order</button>' : '');
     $('statusbody').innerHTML = html;
     if(!cancelled){
       setStep('paid', o.paid ? 'done' : 'now');
@@ -429,6 +612,13 @@
       else { setStep('review', 'done'); setStep('prod', 'now'); }
     }
     $('warnbanner').classList.toggle('on', !cancelled && !o.paid);
+    var ask = $('askbtn');
+    if(ask) ask.addEventListener('click', function(){
+      showSec('messages');
+      if(MOPEN) closeThread();
+      $('mo-ref').value = o.ref;
+      $('mo-text').focus();
+    });
   }
 
   /* ── the saved / placed lists ── */
@@ -490,6 +680,133 @@
     if(p){ payOrder(p.dataset.ref, p); }
   });
   $('retrybtn').addEventListener('click', function(){ if(SEL) payOrder(SEL, this); });
+
+  /* ── messages ── */
+  var THREADS = [], MOPEN = null;
+  function msgAuth(){ return { email: ACCOUNT.email, key: ACCOUNT.key || '' }; }
+  function unreadOf(t){
+    var seen = t.dealerSeenAt || '', n = 0;
+    for(var i = t.messages.length - 1; i >= 0; i--){
+      var m = t.messages[i];
+      if(m.from === 'dealer' || m.at <= seen) break;
+      n++;
+    }
+    return n;
+  }
+  function loadThreads(){
+    if(!ACCOUNT) return;
+    fetch('/api/home/threads', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(msgAuth())
+    }).then(function(r){ if(!r.ok) throw new Error('nf'); return r.json(); })
+    .then(function(d){ THREADS = d.threads || []; renderMsgs(); })
+    .catch(function(){});
+  }
+  function renderMsgs(){
+    var un = 0;
+    THREADS.forEach(function(t){ un += unreadOf(t); });
+    $('n-msg').textContent = THREADS.length + (un ? ' · ' + un + ' new' : '');
+    $('msglisthead').hidden = !THREADS.length;
+    $('msglist').innerHTML = THREADS.map(function(t){
+      var l = t.messages[t.messages.length - 1] || {};
+      var u = unreadOf(t);
+      return '<div class="mrow" data-mid="' + esc(t.id) + '">' +
+        '<span class="msub">' + esc(t.subject || 'Question') + '</span>' +
+        '<span class="mwhen">' + new Date(t.updatedAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '</span>' +
+        (u ? '<span class="mnew">' + u + ' new</span>' : '') +
+        '<span class="mprev">' + esc((l.by || '') + ': ' + (l.text || '')) + '</span></div>';
+    }).join('');
+    /* the About picker always mirrors the orders on the account */
+    var sel = $('mo-ref');
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">General question</option>' + ORDERS.map(function(o){
+      return '<option value="' + esc(o.ref) + '">Order ' + esc(o.ref) + '</option>';
+    }).join('');
+    sel.value = cur;
+  }
+  function threadById(id){ return THREADS.filter(function(t){ return t.id === id; })[0] || null; }
+  function openThread(id){
+    var t = threadById(id); if(!t) return;
+    MOPEN = id;
+    $('msgnew').hidden = true; $('msglist').hidden = true; $('msglisthead').hidden = true;
+    $('msgthread').hidden = false;
+    $('msubject').textContent = t.subject || 'Question';
+    $('mbubbles').innerHTML = t.messages.map(function(m){
+      var mine = m.from === 'dealer';
+      return '<div class="bub ' + (mine ? 'me' : 'them') + '"><span class="bwho">' +
+        esc(mine ? (m.by || 'You') : 'LUMIA') + ' · ' +
+        new Date(m.at).toLocaleDateString('en-US', {month:'short', day:'numeric'}) + '</span>' + esc(m.text) + '</div>';
+    }).join('');
+    /* opening marks it read */
+    fetch('/api/home/thread/seen', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ id: id }, msgAuth()))
+    }).then(function(r){ return r.json(); })
+    .then(function(d){ if(d && d.thread){ var i = THREADS.findIndex(function(x){ return x.id === id; }); if(i > -1) THREADS[i] = d.thread; renderCountsOnly(); } })
+    .catch(function(){});
+  }
+  function renderCountsOnly(){
+    var un = 0;
+    THREADS.forEach(function(t){ un += unreadOf(t); });
+    $('n-msg').textContent = THREADS.length + (un ? ' · ' + un + ' new' : '');
+  }
+  function closeThread(){
+    MOPEN = null;
+    $('msgthread').hidden = true;
+    $('msgnew').hidden = false; $('msglist').hidden = false;
+    renderMsgs();
+  }
+  $('mback').addEventListener('click', closeThread);
+  $('msglist').addEventListener('click', function(e){
+    var r = e.target.closest('.mrow'); if(!r) return;
+    openThread(r.dataset.mid);
+  });
+  $('mo-send').addEventListener('click', function(){
+    var btn = this, err = $('mo-err');
+    err.classList.remove('on'); $('mo-ok').classList.remove('on');
+    var text = ($('mo-text').value || '').trim();
+    if(!text){ err.textContent = 'Please write your message first.'; err.classList.add('on'); return; }
+    btn.disabled = true; btn.textContent = 'Sending…';
+    fetch('/api/home/thread', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ text: text, orderRef: $('mo-ref').value || '' }, msgAuth()))
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+    .then(function(x){
+      btn.disabled = false; btn.textContent = 'Send';
+      if(!x.ok || !x.d.thread) throw new Error((x.d && x.d.error) || 'failed');
+      $('mo-text').value = '';
+      $('mo-ok').classList.add('on');
+      THREADS.unshift(x.d.thread);
+      renderMsgs();
+    }).catch(function(e2){
+      btn.disabled = false; btn.textContent = 'Send';
+      err.textContent = 'Could not send — please try again, or write to lumiashades@gmail.com.';
+      err.classList.add('on');
+    });
+  });
+  $('mr-send').addEventListener('click', function(){
+    var btn = this, err = $('mr-err');
+    err.classList.remove('on');
+    var text = ($('mr-text').value || '').trim();
+    if(!text || !MOPEN) return;
+    btn.disabled = true; btn.textContent = 'Sending…';
+    fetch('/api/home/thread/reply', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ id: MOPEN, text: text }, msgAuth()))
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+    .then(function(x){
+      btn.disabled = false; btn.textContent = 'Reply';
+      if(!x.ok || !x.d.thread) throw new Error('failed');
+      $('mr-text').value = '';
+      var i = THREADS.findIndex(function(t){ return t.id === MOPEN; });
+      if(i > -1) THREADS[i] = x.d.thread;
+      openThread(MOPEN);
+    }).catch(function(){
+      btn.disabled = false; btn.textContent = 'Reply';
+      err.textContent = 'Could not send — please try again.';
+      err.classList.add('on');
+    });
+  });
 
   /* ── profile ── */
   var PF = ['name','email','phone','address','city','state','zip'];
@@ -571,6 +888,7 @@
       SEL = refFromQ && byRef(refFromQ) ? refFromQ : (ORDERS[0] ? ORDERS[0].ref : null);
       $('acct').hidden = false;
       renderStatus(); renderLists();
+      loadThreads();
       /* an order link (or a fresh save / payment return) opens that order;
          otherwise the account lands on the profile */
       showSec((refFromQ || savedQ || payQ || cancQ) && SEL ? 'status' : 'profile');
@@ -585,6 +903,7 @@
     $('pagenote').textContent = 'Enter your order reference and the e-mail you used at checkout.';
     $('lookcard').hidden = false;
     $('nav-profile').style.display = 'none';
+    $('nav-messages').style.display = 'none';
     if(refFromQ) refIn.value = refFromQ;
     var saved = last();
     if(saved && saved.email && (!refFromQ || (saved.ref || '').toUpperCase() === refIn.value.toUpperCase().trim())){
