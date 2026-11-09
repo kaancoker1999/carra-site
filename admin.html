@@ -413,7 +413,7 @@
             <button class="btn ghost" id="refreshorders" type="button">Refresh</button>
           </div>
         </div>
-        <div id="homehint" hidden style="font-size:12.5px;color:var(--muted);background:#FAF5EA;border:1px solid #E4E3DE;border-radius:8px;padding:10px 14px;margin:0 0 12px">Orders from the shop land here <b>once they are paid</b> — a customer’s unpaid save never shows up. To enter an order for someone who called or wrote: open a product page <b>in this browser</b> — being signed in here is enough, the prices unlock on their own — configure their lines, and at checkout fill in the customer’s name and e-mail (the fields are already open for you). Choose <b>Save &mdash; pay later</b> and send them the link of the page you land on — they open it with their e-mail and pay there; the order then appears here with its shipping address.<br><span style="display:inline-block;margin-top:6px">Start on a product page:&nbsp;<a href="roman.html" target="_blank" rel="noopener">Roman</a> &middot; <a href="cellular.html" target="_blank" rel="noopener">Cellular</a> &middot; <a href="pleated.html" target="_blank" rel="noopener">Pleated</a> &middot; <a href="drapery.html" target="_blank" rel="noopener">Drapery</a></span></div>
+        <div id="homehint" hidden style="font-size:12.5px;color:var(--muted);background:#FAF5EA;border:1px solid #E4E3DE;border-radius:8px;padding:10px 14px;margin:0 0 12px">Orders from the shop land here <b>once they are paid</b> — a customer’s unpaid save never shows up. To enter an order for someone who called or wrote: open a product page <b>with the links below</b> (they carry your admin session into the new tab, so the prices unlock on their own — ticking “keep me signed in” at log-in does the same for any tab), configure their lines, and at checkout fill in the customer’s name and e-mail (the fields are already open for you). Choose <b>Save &mdash; pay later</b> and send them the link of the page you land on — they open it with their e-mail and pay there; the order then appears here with its shipping address.<br><span style="display:inline-block;margin-top:6px">Start on a product page:&nbsp;<a href="roman.html" target="_blank" rel="noopener">Roman</a> &middot; <a href="cellular.html" target="_blank" rel="noopener">Cellular</a> &middot; <a href="pleated.html" target="_blank" rel="noopener">Pleated</a> &middot; <a href="drapery.html" target="_blank" rel="noopener">Drapery</a></span></div>
         <div class="pvtabs" id="stagetabs" style="margin-bottom:14px"></div>
         <div id="cancelbar" style="margin:0 0 12px"></div>
         <div class="cal" id="cal"></div>
@@ -618,6 +618,14 @@
   if(key()) unlock();
 
   /* ── tabs ── */
+  /* the product links in the Home orders note open a NEW tab, and the
+     session key normally lives only in THIS tab — copy it over briefly
+     so the shop can unlock the retail prices there */
+  $('homehint').addEventListener('click', function(e){
+    if(!e.target.closest('a')) return;
+    try{ localStorage.setItem(KEY, JSON.stringify({ k: key(), exp: Date.now() + 7200000 })); }catch(err){}
+  });
+
   document.querySelectorAll('.tab').forEach(function(t){
     t.addEventListener('click', function(){
       document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('on', x === t); });
