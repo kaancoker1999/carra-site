@@ -1659,12 +1659,16 @@
       var detail =
         '<div class="ordwrap"><table class="oli"><thead><tr><th>#</th><th>Item</th><th>Size</th><th>Qty</th><th>Unit</th><th>Amount</th></tr></thead><tbody>' + lrows + '</tbody></table></div>' +
         (o.notes ? '<div style="font-size:12.5px;margin-top:10px"><b>Customer note:</b> ' + esc(o.notes) + '</div>' : '') +
-        /* a home-shop order carries the buyer's own contact + shipping address */
+        /* a home-shop order: the buyer's contact, and the ship-to that the
+           Stripe payment page collects (it lands here with the payment) */
         (o.home ? '<div style="font-size:12.5px;margin-top:10px;background:#FAF5EA;border:1px solid #E4E3DE;border-radius:8px;padding:10px 14px">' +
-          '<b>Home customer — ship to:</b><br>' + esc(o.home.name) +
+          '<b>Home customer:</b> ' + esc(o.home.name) +
           ' · <a href="mailto:' + esc(o.home.email) + '">' + esc(o.home.email) + '</a>' +
           (o.home.phone ? ' · ' + esc(o.home.phone) : '') + '<br>' +
-          esc(o.home.address) + ', ' + esc(o.home.city) + ', ' + esc(o.home.state) + ' ' + esc(o.home.zip) + '</div>' : '') +
+          (o.home.address
+            ? '<b>Ship to:</b> ' + esc(o.home.address) + ', ' + esc(o.home.city) + ', ' + esc(o.home.state) + ' ' + esc(o.home.zip)
+            : '<span style="color:#8A6220">Delivery address not in yet &mdash; the customer enters it on Stripe\'s payment page and it appears here as soon as the order is paid.</span>') +
+          '</div>' : '') +
         '<div style="font-family:\'Archivo\',sans-serif;font-weight:600;font-size:13px;text-align:right;margin-top:8px">Total $' + t.total.toFixed(2) + (t.unknown ? ' + ' + t.unknown + ' TBD' : '') + '</div>' +
         '<div class="octl">' +
           '<label class="fld"><span>Status</span>' + sel + '</label>' +
