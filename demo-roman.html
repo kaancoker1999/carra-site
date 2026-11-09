@@ -37,6 +37,9 @@
   header nav a:hover,header nav button:hover{color:var(--ink)}
   header nav a.partner{border:1px solid var(--line2);padding:8px 15px;color:var(--bronze)}
   header nav a.partner:hover{border-color:var(--bronze)}
+  /* consumer sign-in, first thing in the bar */
+  header nav button#shoplogin{border:1px solid var(--bronze);padding:8px 15px;color:var(--bronze)}
+  header nav button#shoplogin:hover{background:var(--bronze);color:#fff}
   /* product intro under the hero */
   .pdesc{max-width:62ch;color:#3D4246;font-size:17px;margin:0;padding:40px 0 10px}
   .pdfbtn{display:inline-flex;align-items:center;gap:10px;margin:6px 0 4px;padding:13px 22px;
@@ -322,6 +325,7 @@
   <div class="wrap">
     <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="LUMIA"></a>
     <nav>
+      <button id="shoplogin" type="button" hidden>Log in to shop</button>
       <a href="index.html#products">Products</a>
       <a href="tdbu.html">TDBU</a>
       <a href="motorization.html">Motorization</a>
@@ -470,6 +474,9 @@
   var ACCOUNT = getAccount();
   var signout = document.getElementById('signout');
   signout.hidden = !ACCOUNT;
+  var shoplogin = document.getElementById('shoplogin');
+  shoplogin.hidden = !!ACCOUNT;
+  shoplogin.addEventListener('click', function(){ openRegister(); });
 
   signout.addEventListener('click', function(){
     setAccount(null); ACCOUNT = null;
@@ -523,6 +530,7 @@
       ACCOUNT = Object.assign({}, c, { prices: x.d.prices, at: Date.now() });
       setAccount(ACCOUNT);
       signout.hidden = false;
+      shoplogin.hidden = true;
       loadContact();
       closeRegister();
       if(P) renderSteps();
