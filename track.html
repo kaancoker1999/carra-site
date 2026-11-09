@@ -328,6 +328,26 @@
         var s = st.swatches[sel.collection][sel.colour];
         if(s && s.img) return s.img;
       }
+      /* no pick (an older or hand-entered order): read "Outlander F109"
+         from the spec and match the colour code against the catalogue */
+      if(st && st.swatches){
+        var fab = specPairs(l).filter(function(x){ return /fabric|cell|collection|colou?r/i.test(x.k || ''); })[0];
+        if(fab && fab.v){
+          var toks = String(fab.v).trim().split(/\s+/), code = toks[toks.length - 1].toUpperCase();
+          var hit = null;
+          for(var cid in st.swatches){
+            for(var key in st.swatches[cid]){
+              if(String(key).toUpperCase() === code ||
+                 String(key).toUpperCase().split(/\s+/).pop() === code){
+                var pref = fab.v.toLowerCase().indexOf(cid.toLowerCase()) !== -1;
+                if(pref) return st.swatches[cid][key].img;
+                if(!hit) hit = st.swatches[cid][key].img;
+              }
+            }
+          }
+          if(hit) return hit;
+        }
+      }
     }catch(e){}
     return l.pid === 'accessory' ? '' : 'assets/card-' + (l.pid || 'roman') + '.jpg';
   }
