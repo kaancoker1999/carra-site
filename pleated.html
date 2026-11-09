@@ -300,6 +300,10 @@
   .ckgrid .span2{grid-column:span 2}
   @media(max-width:560px){ .ckgrid .span2{grid-column:span 1} }
   .paybar{display:flex;align-items:center;gap:18px;margin-top:24px;flex-wrap:wrap}
+  .forlink{margin:14px 0 0;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--bronze);background:none;border:0;cursor:pointer;padding:0;
+    text-decoration:underline;text-underline-offset:3px}
+  #forgrid[hidden]{display:none}
   .paybtn{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
     background:var(--ink);color:#fff;border:0;border-radius:10px;padding:17px 34px;cursor:pointer;transition:.25s}
   .paybtn:hover{background:var(--bronze)}
@@ -432,6 +436,14 @@
         <div class="ckgrid">
           <div class="cell span2"><label for="ck-notes">Notes (optional)</label><input id="ck-notes" type="text" placeholder="e.g. mounting, delivery instructions"></div>
         </div>
+        <!-- a phone/e-mail order entered on a customer's behalf: the order and
+             its link belong to THEM, not to the signed-in account -->
+        <button class="forlink" id="forother" type="button">Ordering for someone else?</button>
+        <div class="ckgrid" id="forgrid" hidden style="margin-top:12px">
+          <div class="cell"><label for="fo-name">Their full name *</label><input id="fo-name" type="text" autocomplete="off"></div>
+          <div class="cell"><label for="fo-email">Their e-mail *</label><input id="fo-email" type="email" autocomplete="off"></div>
+          <div class="cell span2" style="font-size:12.5px;color:var(--muted)">The order is saved under their e-mail &mdash; share the link of the page you land on and they review and pay there.</div>
+        </div>
         <div class="paybar">
           <button class="paybtn" id="paybtn" type="button" disabled>Pay</button>
           <button class="paybtn ghost" id="savebtn" type="button" disabled>Save &mdash; pay later</button>
@@ -495,7 +507,7 @@
   </div>
 </footer>
 
-<script src="assets/shopkit.js?v=8"></script>
+<script src="assets/shopkit.js?v=9"></script>
 <script src="assets/trade.js?v=23" defer></script>
 
 </body>

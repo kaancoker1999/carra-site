@@ -1019,6 +1019,13 @@
   }
   var CK_FIELDS = ['name','email','phone','address','city','state','zip'];
   function loadContact(){ /* the checkout form is gone — Stripe's page collects the ship-to */ }
+  /* "Ordering for someone else?" — the order goes under THEIR name + e-mail */
+  var forother = document.getElementById('forother'), forgrid = document.getElementById('forgrid');
+  forother.addEventListener('click', function(){
+    forgrid.hidden = !forgrid.hidden;
+    forother.textContent = forgrid.hidden ? 'Ordering for someone else?' : 'No — this order is mine';
+    if(!forgrid.hidden) document.getElementById('fo-name').focus();
+  });
   /* one submit path: pay right away, or save the order to pay later.
      The order carries the account's identity; address and phone are typed
      on Stripe's secure payment page and land on the order with the payment. */
@@ -1028,6 +1035,16 @@
     if(!ACCOUNT || !ACCOUNT.email){ openRegister('login'); return; }
     var c = {};
     CK_FIELDS.forEach(function(k){ c[k] = String(ACCOUNT[k] || '').trim(); });
+    if(!forgrid.hidden){
+      /* entered on a customer's behalf: their identity, none of our details */
+      var fn = (document.getElementById('fo-name').value || '').trim();
+      var fe = (document.getElementById('fo-email').value || '').trim().toLowerCase();
+      if(!fn || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fe)){
+        ckMsg('Ordering for someone else: please fill in their name and a valid e-mail.');
+        return;
+      }
+      c = { name: fn, email: fe, phone: '', address: '', city: '', state: '', zip: '' };
+    }
     var notes = (document.getElementById('ck-notes').value || '').trim();
     var btn = paylater ? savebtn : paybtn;
     var lbl = btn.innerHTML;
