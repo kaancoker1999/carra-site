@@ -77,6 +77,9 @@ def build():
         # remotes, cables and hubs are asked once at checkout, not per shade
         p["steps"] = [s for s in p["steps"] if s["key"] not in ("remote", "cable", "hub")]
         for step in p["steps"]:
+            # Flat sits last in the shop's fold list
+            if p["id"] == "roman" and step["key"] == "fold":
+                step["options"] = [o for o in step["options"] if o != "Flat"] + ["Flat"]
             # the lift is always called "Mechanism" in the shop, never "Drive"
             if step["key"] == "drive":
                 step["label"] = "Mechanism"
