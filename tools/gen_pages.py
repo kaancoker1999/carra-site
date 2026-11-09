@@ -169,6 +169,7 @@ TEMPLATE = r"""<!doctype html>
       <a href="motorization.html">Motorization</a>
       <a href="about.html">About us</a>
       <a href="index.html#contact">Contact</a>
+      <a href="shop.html">Shop</a>
       <a class="partner" href="trade.html">Log in</a>
     </nav>
   </div>
@@ -457,7 +458,7 @@ var CONFIG = @@CONFIG@@;
   update();
 })();
 </script>
-<script src="assets/trade.js?v=22" defer></script>
+<script src="assets/trade.js?v=23" defer></script>
 </body>
 </html>
 """

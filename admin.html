@@ -451,11 +451,10 @@
       <div class="card" id="homeshop">
         <h2 style="font-size:18px;margin-bottom:6px">Home shop — end customers</h2>
         <p style="font-size:13px;color:var(--muted);margin:0 0 14px">
-          Retail customers shop at <a href="shop.html" target="_blank" rel="noopener">lumiashades.com/shop.html</a>
-          with one shared access code; each order carries that customer's own contact and shipping details
-          and lands under <b>Home customer</b> in Orders. Give the code only to people you want shopping.</p>
+          The shop at <a href="shop.html" target="_blank" rel="noopener">lumiashades.com/shop.html</a> is public:
+          anyone can configure, prices unlock after a free sign-up (name, e-mail, phone, address — stored per
+          customer). Orders land under <b>Home customer</b> in Orders.</p>
         <div class="row">
-          <div><label>Shared access code</label><input id="hs-code" type="text" style="min-width:180px" autocapitalize="characters" spellcheck="false"></div>
           <div><label>Retail level (× base list)</label>
             <select id="hs-mult">
               <option value="1.3">+30% (×1.30)</option>
@@ -1808,7 +1807,6 @@
   function loadConsumer(){
     api('/api/admin/consumer').then(function(d){
       var c = d.consumer || {};
-      $('hs-code').value = c.code || '';
       var sel = $('hs-mult');
       if(c.mult != null && ![].some.call(sel.options, function(o){ return +o.value === +c.mult; })){
         var o = document.createElement('option');
@@ -1822,14 +1820,13 @@
   $('hs-save').addEventListener('click', function(){
     var b = this; b.disabled = true; b.textContent = 'Saving…';
     api('/api/admin/consumer', 'POST', {
-      code: $('hs-code').value.trim(),
       mult: parseFloat($('hs-mult').value),
       active: $('hs-active').value === '1'
     }).then(function(d){
       b.disabled = false; b.textContent = 'Save';
       var c = d.consumer || {};
       $('hsmsg').className = 'msg ok';
-      $('hsmsg').textContent = 'Saved — code ' + c.code + ', ×' + c.mult + (c.active === false ? ', shop closed.' : ', shop open.');
+      $('hsmsg').textContent = 'Saved — retail ×' + c.mult + (c.active === false ? ', shop closed.' : ', shop open.');
       loadConsumer();
     }).catch(function(e){
       b.disabled = false; b.textContent = 'Save';

@@ -81,7 +81,7 @@
   </div>
 </footer>
 
-<script src="assets/trade.js?v=22"></script>
+<script src="assets/trade.js?v=23"></script>
 <script>
 (function(){
   if(LUMIA_TRADE.getSession()){ location.href = 'account.html'; return; }
@@ -93,18 +93,11 @@
     if(!raw) return;
     err.classList.remove('on');
     btn.disabled = true; btn.textContent = 'Checking…';
-    /* one door, two portals: a dealer code opens the trade area, the
-       shared home code drops straight into the shop — no second screen */
+    /* dealer access codes only — the shop itself is public at shop.html */
     LUMIA_TRADE.login(raw).then(function(prices){
       if(prices){ location.href = 'account.html'; return; }
-      return fetch('/api/home/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: raw })
-      }).then(function(r){ if(!r.ok) throw new Error('no'); return r.json(); })
-      .then(function(d){
-        try{ localStorage.setItem('lumia_home', JSON.stringify({ code: raw, prices: d.prices, at: Date.now() })); }catch(_){}
-        location.href = 'shop.html';
-      });
+      err.classList.add('on');
+      btn.disabled = false; btn.textContent = 'Log in';
     }).catch(function(){
       err.classList.add('on');
       btn.disabled = false; btn.textContent = 'Log in';

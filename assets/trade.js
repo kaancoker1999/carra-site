@@ -137,8 +137,7 @@
       dr.innerHTML = html + '</div>' + cta;
     }
 
-    /* the drawer's own login: dealer codes open the portal, the shared
-       home code drops straight into the shop */
+    /* the drawer's own login — dealer access codes only (the shop is public) */
     function submitInline() {
       var box = dr.querySelector('#dlogin');
       if (!box) return;
@@ -150,15 +149,9 @@
       cta.textContent = 'Checking…';
       login(code).then(function (prices) {
         if (prices) { location.href = 'account.html'; return; }
-        return fetch('/api/home/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code: code })
-        }).then(function (r) { if (!r.ok) throw new Error('no'); return r.json(); })
-          .then(function (d) {
-            try { localStorage.setItem('lumia_home', JSON.stringify({ code: code, prices: d.prices, at: Date.now() })); } catch (e) {}
-            location.href = 'shop.html';
-          });
+        err.hidden = false;
+        cta.textContent = old;
+        inp.focus();
       }).catch(function () {
         err.hidden = false;
         cta.textContent = old;

@@ -292,6 +292,22 @@
   @media(max-width:980px){ .wrap{padding:0 22px} }
   /* the injected EN/ES/FR pill must not sit on the wizard bar's Next button */
   #langsw{bottom:96px!important}
+
+  /* sign-up overlay */
+  #regveil{position:fixed;inset:0;background:rgba(24,16,8,.56);z-index:120;display:flex;
+    align-items:center;justify-content:center;padding:18px}
+  #regveil[hidden]{display:none}
+  .regcard{position:relative;background:#fff;border-radius:18px;max-width:580px;width:100%;
+    max-height:92vh;overflow:auto;padding:32px 34px 30px}
+  .regcard h2{font-family:'Fraunces',serif;font-weight:600;font-size:28px;margin:0 0 8px}
+  .regsub{font-size:14px;color:var(--muted);margin:0 0 20px;line-height:1.6}
+  #regclose{position:absolute;top:12px;right:14px;font-size:26px;line-height:1;background:none;
+    border:0;cursor:pointer;color:var(--muted);padding:6px 8px}
+  #regclose:hover{color:var(--ink)}
+  /* locked price in the bar reads as an invitation */
+  .wizmid .wizprice .lockcta{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--bronze);cursor:pointer;background:none;border:0;padding:0;
+    text-decoration:underline;text-underline-offset:3px}
 </style>
 </head>
 <body>
@@ -308,23 +324,8 @@
 
 <main>
 
-<!-- shared access code gate -->
-<div id="gate" hidden>
-  <div class="gatecard">
-    <h1>Shop LUMIA</h1>
-    <p class="sub">Made-to-measure shades and drapery, straight from the factory.</p>
-    <form id="gateform">
-      <label for="gcode">Access code</label>
-      <input id="gcode" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Your LUMIA code">
-      <button class="btn" id="gatebtn" type="submit">Enter</button>
-      <div class="err" id="gateerr">That code was not recognized. Check it and try again.</div>
-    </form>
-    <p class="gateapply">No code yet? Write to <a href="mailto:lumiashades@gmail.com">lumiashades@gmail.com</a> and we will send you one.</p>
-  </div>
-</div>
-
-<!-- the shop itself -->
-<div id="shop" hidden>
+<!-- the shop — public; prices unlock after the free sign-up -->
+<div id="shop">
 
   <!-- home: just the four products, full width -->
   <div id="home">
@@ -423,6 +424,26 @@
 </div>
 </main>
 
+<!-- free no-password sign-up: unlocks every price -->
+<div id="regveil" hidden>
+  <div class="regcard">
+    <button id="regclose" type="button" aria-label="Close">&times;</button>
+    <h2>See your prices</h2>
+    <p class="regsub">Create a free account &mdash; no password. Fill in your details once and every price on the shop appears instantly. We only use them for your orders and delivery.</p>
+    <div class="ckgrid">
+      <div class="cell span2"><label for="rg-name">Full name *</label><input id="rg-name" type="text" autocomplete="name"></div>
+      <div class="cell"><label for="rg-email">E-mail *</label><input id="rg-email" type="email" autocomplete="email"></div>
+      <div class="cell"><label for="rg-phone">Phone *</label><input id="rg-phone" type="tel" autocomplete="tel"></div>
+      <div class="cell span2"><label for="rg-address">Street address *</label><input id="rg-address" type="text" autocomplete="street-address"></div>
+      <div class="cell"><label for="rg-city">City *</label><input id="rg-city" type="text" autocomplete="address-level2"></div>
+      <div class="cell"><label for="rg-state">State *</label><input id="rg-state" type="text" autocomplete="address-level1"></div>
+      <div class="cell"><label for="rg-zip">ZIP *</label><input id="rg-zip" type="text" autocomplete="postal-code"></div>
+    </div>
+    <button class="paybtn" id="regbtn" type="button" style="margin-top:20px">Show my prices &rarr;</button>
+    <div class="err" id="regerr"></div>
+  </div>
+</div>
+
 <footer>
   <div class="wrap">
     <span class="mono">&copy; 2026 LUMIA &middot; All rights reserved</span>
@@ -432,70 +453,82 @@
 
 <script>
 (function(){
-  /* ── shared-code session ── */
-  function getSession(){
-    try{ return JSON.parse(localStorage.getItem('lumia_home') || 'null'); }catch(e){ return null; }
+  /* ── the free no-password account: holds the contact details + prices ── */
+  function getAccount(){
+    try{ return JSON.parse(localStorage.getItem('lumia_home_acct') || 'null'); }catch(e){ return null; }
   }
-  function setSession(s){
-    try{ if(s){ localStorage.setItem('lumia_home', JSON.stringify(s)); } else { localStorage.removeItem('lumia_home'); } }catch(e){}
+  function setAccount(a){
+    try{ if(a){ localStorage.setItem('lumia_home_acct', JSON.stringify(a)); } else { localStorage.removeItem('lumia_home_acct'); } }catch(e){}
   }
-  var SESSION = getSession();
-  var gate = document.getElementById('gate'), shop = document.getElementById('shop'),
-      signout = document.getElementById('signout');
-
-  function showGate(){
-    gate.hidden = false; shop.hidden = true; signout.hidden = true;
-    var c = document.getElementById('gcode'); if(c) setTimeout(function(){ c.focus(); }, 50);
-  }
-  function showShop(){ gate.hidden = true; shop.hidden = false; signout.hidden = false; boot(); }
-
-  document.getElementById('gateform').addEventListener('submit', function(e){
-    e.preventDefault();
-    var code = document.getElementById('gcode').value.trim();
-    if(!code) return;
-    var btn = document.getElementById('gatebtn'), err = document.getElementById('gateerr');
-    err.classList.remove('on');
-    btn.disabled = true; btn.textContent = 'Checking…';
-    fetch('/api/home/login', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ code: code })
-    }).then(function(r){ if(!r.ok) throw new Error('bad'); return r.json(); })
-    .then(function(d){
-      SESSION = { code: code.toUpperCase(), prices: d.prices, at: Date.now() };
-      setSession(SESSION);
-      btn.disabled = false; btn.textContent = 'Enter';
-      showShop();
-    }).catch(function(){
-      /* not the shop code — a dealer code typed here goes straight to the trade portal */
-      fetch('/api/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code.toUpperCase() })
-      }).then(function(r){ if(!r.ok) throw new Error('no'); return r.json(); })
-      .then(function(d){
-        if(!d || !d.prices) throw new Error('no');
-        try{
-          localStorage.setItem('lumia_trade', JSON.stringify({
-            at: new Date().toISOString(), code: code.toUpperCase(), name: d.name,
-            prices: d.prices, promo: d.promo || null, contact: d.contact || null }));
-        }catch(_){}
-        location.href = 'account.html';
-      }).catch(function(){
-        err.classList.add('on');
-        btn.disabled = false; btn.textContent = 'Enter';
-      });
-    });
-  });
+  try{ localStorage.removeItem('lumia_home'); }catch(e){}   /* the old code-gate session */
+  var ACCOUNT = getAccount();
+  var signout = document.getElementById('signout');
+  signout.hidden = !ACCOUNT;
 
   signout.addEventListener('click', function(){
-    setSession(null); SESSION = null;
-    try{ sessionStorage.removeItem('lumia_home_cart'); }catch(e){}
+    setAccount(null); ACCOUNT = null;
     location.hash = '';
     location.reload();
   });
 
-  function loggedOut(){
-    setSession(null); SESSION = null; location.hash = ''; location.reload();
+  /* ── sign-up overlay ── */
+  var RG_FIELDS = ['name','email','phone','address','city','state','zip'];
+  function openRegister(){
+    var a = ACCOUNT || {};
+    RG_FIELDS.forEach(function(k){
+      var el = document.getElementById('rg-' + k);
+      if(el && !el.value && a[k]) el.value = a[k];
+    });
+    document.getElementById('regerr').classList.remove('on');
+    document.getElementById('regveil').hidden = false;
+    setTimeout(function(){ document.getElementById('rg-name').focus(); }, 50);
   }
+  function closeRegister(){ document.getElementById('regveil').hidden = true; }
+  document.getElementById('regclose').addEventListener('click', closeRegister);
+  document.getElementById('regveil').addEventListener('click', function(e){
+    if(e.target === this) closeRegister();
+  });
+  document.getElementById('regbtn').addEventListener('click', function(){
+    var btn = this, err = document.getElementById('regerr');
+    err.classList.remove('on');
+    var c = {};
+    RG_FIELDS.forEach(function(k){ c[k] = (document.getElementById('rg-' + k).value || '').trim(); });
+    var missing = [];
+    if(!c.name) missing.push('your name');
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email)) missing.push('a valid e-mail');
+    if(!c.phone) missing.push('a phone number');
+    if(!c.address) missing.push('the street address');
+    if(!c.city) missing.push('the city');
+    if(!c.state) missing.push('the state');
+    if(!c.zip) missing.push('the ZIP code');
+    if(missing.length){
+      err.textContent = 'Please fill in ' + missing.join(', ') + '.';
+      err.classList.add('on');
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'One moment…';
+    fetch('/api/home/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customer: c })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+    .then(function(x){
+      btn.disabled = false; btn.innerHTML = 'Show my prices &rarr;';
+      if(!x.ok || !x.d.prices) throw new Error((x.d && x.d.error) || 'failed');
+      ACCOUNT = Object.assign({}, c, { prices: x.d.prices, at: Date.now() });
+      setAccount(ACCOUNT);
+      signout.hidden = false;
+      loadContact();
+      closeRegister();
+      if(P) renderSteps();
+      renderLines();
+    }).catch(function(e2){
+      btn.disabled = false; btn.innerHTML = 'Show my prices &rarr;';
+      err.textContent = String(e2.message || '') === 'The shop is closed right now.'
+        ? 'The shop is closed right now — please try again later.'
+        : 'Could not create the account — please try again, or write to lumiashades@gmail.com.';
+      err.classList.add('on');
+    });
+  });
 
   /* ════════ views: home (the four products) / one product's wizard ════════ */
   var SELECT = '— Select —';
@@ -618,7 +651,8 @@
     return (r && !r.na) ? { w: r.w, h: r.h } : { w: P.width, h: P.height };
   }
 
-  function PRICES(){ return (SESSION || {}).prices || {}; }
+  function PRICES(){ return (ACCOUNT || {}).prices || {}; }
+  function hasPrices(){ return !!(ACCOUNT && ACCOUNT.prices); }
   function prodPrices(id){
     return (PRICES().products || []).filter(function(p){ return p.id === id; })[0] || null;
   }
@@ -1033,15 +1067,22 @@
   }
 
   function syncBar(){
-    var price = currentPrice();
     var el = document.getElementById('wizprice');
-    if(price == null){ el.innerHTML = '&mdash;'; }
-    else if(QTY > 1){ el.textContent = QTY + ' × $' + price.toFixed(2) + ' = $' + (price * QTY).toFixed(2); }
-    else { el.textContent = '$' + price.toFixed(2); }
+    if(!hasPrices()){
+      el.innerHTML = '<button class="lockcta" type="button" id="pricecta">Sign up free to see it</button>';
+    } else {
+      var price = currentPrice();
+      if(price == null){ el.innerHTML = '&mdash;'; }
+      else if(QTY > 1){ el.textContent = QTY + ' × $' + price.toFixed(2) + ' = $' + (price * QTY).toFixed(2); }
+      else { el.textContent = '$' + price.toFixed(2); }
+    }
     document.getElementById('qnum').textContent = QTY;
     document.getElementById('wiznext').innerHTML =
       editIdx == null ? 'Add to cart &rarr;' : 'Update line &rarr;';
   }
+  document.getElementById('wizbar').addEventListener('click', function(e){
+    if(e.target.closest('#pricecta')) openRegister();
+  });
 
   /* step interactions */
   stepsBox.addEventListener('click', function(e){
@@ -1120,6 +1161,8 @@
 
   /* ── add to cart ── */
   function addToCart(){
+    /* prices (and so the cart) unlock with the free sign-up */
+    if(!hasPrices()){ openRegister(); return; }
     /* every choose-step needs an answer — open the ones still waiting */
     var missing = (P.steps || []).filter(function(st){
       return stepVisible(st) && isChoose(st) && !SEL[st.key];
@@ -1371,7 +1414,10 @@
     try{ c = JSON.parse(localStorage.getItem('lumia_home_contact') || '{}'); }catch(e){}
     CK_FIELDS.forEach(function(k){
       var el = document.getElementById('ck-' + k);
-      if(el && c[k]) el.value = c[k];
+      if(!el) return;
+      /* the account's details come first; an edited checkout field wins */
+      var v = c[k] || (ACCOUNT && ACCOUNT[k]) || '';
+      if(v) el.value = v;
     });
   }
   function readContact(){
@@ -1405,10 +1451,9 @@
     btn.textContent = paylater ? 'Saving…' : 'Opening secure checkout…';
     fetch('/api/home/order', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-home-code': (SESSION && SESSION.code) || '' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ lines: lines.concat(accLines()), customer: c, notes: notes, paylater: !!paylater })
     }).then(function(r){
-      if(r.status === 401){ loggedOut(); throw new Error('out'); }
       return r.json().then(function(d){ return { ok: r.ok, d: d }; });
     }).then(function(x){
       if(!x.ok || !x.d.ref || (!paylater && !x.d.url)) throw new Error((x.d && x.d.error) || 'failed');
@@ -1421,7 +1466,6 @@
         ? 'track.html?ref=' + encodeURIComponent(x.d.ref) + '&saved=1'
         : x.d.url;
     }).catch(function(err){
-      if(String(err.message) === 'out') return;
       paybtn.disabled = false; savebtn.disabled = false;
       btn.innerHTML = lbl;
       syncPay();
@@ -1434,16 +1478,19 @@
   savebtn.addEventListener('click', function(){ submitOrder(true); });
 
   /* ── boot ── */
+  /* a returning customer: quietly refresh the stored price list */
   function refreshPrices(){
-    fetch('/api/home/login', {
+    if(!ACCOUNT) return;
+    var c = {};
+    RG_FIELDS.forEach(function(k){ c[k] = ACCOUNT[k] || ''; });
+    fetch('/api/home/register', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ code: (SESSION && SESSION.code) || '' })
-    }).then(function(r){
-      if(r.status === 401){ loggedOut(); throw new Error('out'); }
-      if(!r.ok) throw new Error('skip');
-      return r.json();
-    }).then(function(d){
-      SESSION.prices = d.prices; setSession(SESSION);
+      body: JSON.stringify({ customer: c })
+    }).then(function(r){ if(!r.ok) throw new Error('skip'); return r.json(); })
+    .then(function(d){
+      ACCOUNT.prices = d.prices; setAccount(ACCOUNT);
+      if(P) renderSteps();
+      renderLines();
     }).catch(function(){});
   }
   function boot(){
@@ -1460,7 +1507,7 @@
       });
   }
 
-  if(SESSION){ showShop(); } else { showGate(); }
+  boot();
 })();
 </script>
 

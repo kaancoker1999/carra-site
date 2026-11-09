@@ -196,16 +196,27 @@ async function dealerFromReq(req) {
   return d && d.active !== false ? { code, ...d } : null;
 }
 
-/* home customers (shop.html): everyone shares ONE access code and a retail
-   price level; each order carries that customer's own contact + shipping.
-   Config lives in the "consumer" blob and is edited from the admin panel. */
+/* home customers (shop.html): the shop is public — anyone can configure,
+   but prices unlock only after a simple no-password sign-up (name, e-mail,
+   phone, shipping address), kept as a "homeacct:<email>" blob. The retail
+   level and open/closed switch live in the "consumer" blob (admin panel). */
 async function consumerCfg() {
   const c = await store().get("consumer", { type: "json" });
-  return { code: "LUMIA-HOME", mult: 1.4, active: true, ...(c || {}) };
+  return { mult: 1.4, active: true, ...(c || {}) };
 }
-function homeOk(cfg, raw) {
-  return cfg.active !== false &&
-    String(raw || "").trim().toUpperCase() === String(cfg.code || "").toUpperCase();
+function homeContact(c) {
+  const home = {
+    name: String((c || {}).name || "").trim().slice(0, 120),
+    email: String((c || {}).email || "").trim().toLowerCase().slice(0, 160),
+    phone: String((c || {}).phone || "").trim().slice(0, 40),
+    address: String((c || {}).address || "").trim().slice(0, 240),
+    city: String((c || {}).city || "").trim().slice(0, 80),
+    state: String((c || {}).state || "").trim().slice(0, 40),
+    zip: String((c || {}).zip || "").trim().slice(0, 20),
+  };
+  const ok = home.name && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(home.email) &&
+    home.address && home.city && home.state && home.zip;
+  return ok ? home : null;
 }
 /* one Checkout session for a home order — paid right at checkout, reviewed after */
 async function homeCheckout(order, origin, sk) {
@@ -620,12 +631,21 @@ export default async (req) => {
     return json({ ok: true, payment });
   }
 
-  // ── home customer: shared-code login → retail price list ─────────
-  if (path === "/api/home/login" && req.method === "POST") {
+  // ── home customer: a free no-password sign-up unlocks the price list;
+  //    repeat posts simply refresh the stored details ─────────────────
+  if (path === "/api/home/register" && req.method === "POST") {
     const cfg = await consumerCfg();
-    if (!homeOk(cfg, body.code)) return bad("invalid code", 401);
+    if (cfg.active === false) return bad("The shop is closed right now.", 503);
+    const home = homeContact(body.customer || body);
+    if (!home) return bad("name, e-mail, phone and shipping address are required");
     const base = await store().get("prices", { type: "json" });
     if (!base) return bad("prices not loaded yet", 503);
+    const s = store();
+    const key = `homeacct:${home.email}`;
+    const prev = await s.get(key, { type: "json" });
+    await s.setJSON(key, { ...home,
+      at: (prev && prev.at) || new Date().toISOString(),
+      lastSeen: new Date().toISOString() });
     return json({ prices: scaled(base, () => cfg.mult) });
   }
 
@@ -633,22 +653,11 @@ export default async (req) => {
   //    unpaid ({paylater:true}) to be paid later from the orders page ──
   if (path === "/api/home/order" && req.method === "POST") {
     const cfg = await consumerCfg();
-    if (!homeOk(cfg, req.headers.get("x-home-code"))) return bad("unauthorized", 401);
+    if (cfg.active === false) return bad("The shop is closed right now.", 503);
     const sk = process.env.STRIPE_SECRET_KEY;
     if (!sk && !body.paylater) return bad("Card payments are not set up yet.", 503);
-    const c = body.customer || {};
-    const home = {
-      name: String(c.name || "").trim().slice(0, 120),
-      email: String(c.email || "").trim().toLowerCase().slice(0, 160),
-      phone: String(c.phone || "").trim().slice(0, 40),
-      address: String(c.address || "").trim().slice(0, 240),
-      city: String(c.city || "").trim().slice(0, 80),
-      state: String(c.state || "").trim().slice(0, 40),
-      zip: String(c.zip || "").trim().slice(0, 20),
-    };
-    if (!home.name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(home.email) ||
-        !home.address || !home.city || !home.state || !home.zip)
-      return bad("name, e-mail and shipping address are required");
+    const home = homeContact(body.customer);
+    if (!home) return bad("name, e-mail and shipping address are required");
     if (!Array.isArray(body.lines) || !body.lines.length) return bad("lines required");
     const lines = body.lines.slice(0, 60);
     if (lines.some((l) => l.price == null || !(l.qty > 0))) return bad("every line needs a price");
@@ -662,7 +671,7 @@ export default async (req) => {
         "-" + String(Math.floor(Math.random() * 9000) + 1000);
     } while ((await s.get(`order:${ref}`, { type: "json" })) && ++tries < 5);
     const order = {
-      ref, code: cfg.code, dealer: "Home customer", consumer: true,
+      ref, code: "HOME-SHOP", dealer: "Home customer", consumer: true,
       at: new Date().toISOString(), updatedAt: new Date().toISOString(), kind: "new",
       customer: home.name, notes: String(body.notes || "").slice(0, 2000),
       home, total: "", lines,
@@ -1084,13 +1093,7 @@ export default async (req) => {
     }
     if (path === "/api/admin/consumer" && req.method === "POST") {
       const cfg = await consumerCfg();
-      if (body.code != null) {
-        const code = String(body.code).trim().toUpperCase().slice(0, 40);
-        if (!/^[A-Z0-9-]{4,40}$/.test(code)) return bad("bad code");
-        const dealers = await getDealers();
-        if (dealers[code]) return bad("that code belongs to a dealer");
-        cfg.code = code;
-      }
+      delete cfg.code;   // the shop is public now — no shared code
       if (body.mult != null) {
         const m = Number(body.mult);
         if (!isFinite(m) || m < 1 || m > 10) return bad("bad multiplier");
