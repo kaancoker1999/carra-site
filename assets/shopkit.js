@@ -13,10 +13,19 @@
   try{ localStorage.removeItem('lumia_home'); }catch(e){}   /* the old code-gate session */
   var ACCOUNT = getAccount();
   var signout = document.getElementById('signout');
-  signout.hidden = !ACCOUNT;
   var shoplogin = document.getElementById('shoplogin');
-  shoplogin.hidden = !!ACCOUNT;
+  var profilebtn = document.getElementById('profilebtn');
+  var ordersbtn = document.getElementById('ordersbtn');
+  /* signed out: just the log-in; signed in: Profile · Orders · Sign out */
+  function syncAcct(){
+    shoplogin.hidden = !!ACCOUNT;
+    signout.hidden = !ACCOUNT;
+    profilebtn.hidden = !ACCOUNT;
+    ordersbtn.hidden = !ACCOUNT;
+  }
+  syncAcct();
   shoplogin.addEventListener('click', function(){ openRegister('login'); });
+  profilebtn.addEventListener('click', function(){ openRegister('profile'); });
 
   signout.addEventListener('click', function(){
     setAccount(null); ACCOUNT = null;
@@ -26,9 +35,19 @@
 
   /* ── sign-up / log-in overlay ── */
   var RG_FIELDS = ['name','email','phone','address','city','state','zip'];
+  var REGMODE = 'new';
   function setRegMode(mode){
+    REGMODE = mode;
+    var isP = mode === 'profile';
     document.getElementById('rlogin').hidden = mode !== 'login';
     document.getElementById('rnew').hidden = mode === 'login';
+    document.getElementById('rnew-title').textContent = isP ? 'Your profile' : 'See your prices';
+    document.getElementById('rnew-sub').textContent = isP
+      ? 'Your details prefill checkout and help us with delivery — update them whenever you like.'
+      : 'Create a free account — no password. Your name and e-mail are enough to see every price; the rest is optional and simply prefills checkout. We only use your details for your orders and delivery.';
+    document.getElementById('regbtn').innerHTML = isP ? 'Save &rarr;' : 'Show my prices &rarr;';
+    document.getElementById('rnew-swap').hidden = isP;
+    document.getElementById('rg-email').readOnly = isP;   /* the e-mail IS the account */
     setTimeout(function(){
       document.getElementById(mode === 'login' ? 'li-email' : 'rg-name').focus();
     }, 50);
@@ -37,12 +56,15 @@
     var a = ACCOUNT || {};
     RG_FIELDS.forEach(function(k){
       var el = document.getElementById('rg-' + k);
-      if(el && !el.value && a[k]) el.value = a[k];
+      if(!el) return;
+      /* the profile shows the account as it stands; sign-up only fills gaps */
+      if(mode === 'profile'){ el.value = a[k] || ''; }
+      else if(!el.value && a[k]){ el.value = a[k]; }
     });
     document.getElementById('regerr').classList.remove('on');
     document.getElementById('lierr').classList.remove('on');
     document.getElementById('regveil').hidden = false;
-    setRegMode(mode === 'login' ? 'login' : 'new');
+    setRegMode(mode === 'login' || mode === 'profile' ? mode : 'new');
   }
   function closeRegister(){ document.getElementById('regveil').hidden = true; }
   document.getElementById('regveil').addEventListener('click', function(e){
@@ -53,8 +75,7 @@
   function acceptAccount(c, prices){
     ACCOUNT = Object.assign({}, c, { prices: prices, at: Date.now() });
     setAccount(ACCOUNT);
-    signout.hidden = false;
-    shoplogin.hidden = true;
+    syncAcct();
     loadContact();
     closeRegister();
     if(P) renderSteps();
@@ -109,11 +130,11 @@
       body: JSON.stringify({ customer: c })
     }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
     .then(function(x){
-      btn.disabled = false; btn.innerHTML = 'Show my prices &rarr;';
+      btn.disabled = false; btn.innerHTML = REGMODE === 'profile' ? 'Save &rarr;' : 'Show my prices &rarr;';
       if(!x.ok || !x.d.prices) throw new Error((x.d && x.d.error) || 'failed');
       acceptAccount(c, x.d.prices);
     }).catch(function(e2){
-      btn.disabled = false; btn.innerHTML = 'Show my prices &rarr;';
+      btn.disabled = false; btn.innerHTML = REGMODE === 'profile' ? 'Save &rarr;' : 'Show my prices &rarr;';
       err.textContent = String(e2.message || '') === 'The shop is closed right now.'
         ? 'The shop is closed right now — please try again later.'
         : 'Could not create the account — please try again, or write to lumiashades@gmail.com.';
