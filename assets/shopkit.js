@@ -1002,41 +1002,16 @@
     ckerr.classList.toggle('on', !!text);
   }
   var CK_FIELDS = ['name','email','phone','address','city','state','zip'];
-  function loadContact(){
-    var c = {};
-    try{ c = JSON.parse(localStorage.getItem('lumia_home_contact') || '{}'); }catch(e){}
-    CK_FIELDS.forEach(function(k){
-      var el = document.getElementById('ck-' + k);
-      if(!el) return;
-      /* the account's details come first; an edited checkout field wins */
-      var v = c[k] || (ACCOUNT && ACCOUNT[k]) || '';
-      if(v) el.value = v;
-    });
-  }
-  function readContact(){
-    var c = {};
-    CK_FIELDS.forEach(function(k){
-      c[k] = (document.getElementById('ck-' + k).value || '').trim();
-    });
-    return c;
-  }
-  /* one submit path: pay right away, or save the order to pay later */
+  function loadContact(){ /* the checkout form is gone — Stripe's page collects the ship-to */ }
+  /* one submit path: pay right away, or save the order to pay later.
+     The order carries the account's identity; address and phone are typed
+     on Stripe's secure payment page and land on the order with the payment. */
   function submitOrder(paylater){
     ckMsg('');
     if(!lines.length) return;
-    var c = readContact();
-    var missing = [];
-    if(!c.name) missing.push('your name');
-    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email)) missing.push('a valid e-mail');
-    if(!c.address) missing.push('the street address');
-    if(!c.city) missing.push('the city');
-    if(!c.state) missing.push('the state');
-    if(!c.zip) missing.push('the ZIP code');
-    if(missing.length){
-      ckMsg('Please fill in ' + missing.join(', ') + ' — we need them to make and ship your order.');
-      return;
-    }
-    try{ localStorage.setItem('lumia_home_contact', JSON.stringify(c)); }catch(e){}
+    if(!ACCOUNT || !ACCOUNT.email){ openRegister('login'); return; }
+    var c = {};
+    CK_FIELDS.forEach(function(k){ c[k] = String(ACCOUNT[k] || '').trim(); });
     var notes = (document.getElementById('ck-notes').value || '').trim();
     var btn = paylater ? savebtn : paybtn;
     var lbl = btn.innerHTML;

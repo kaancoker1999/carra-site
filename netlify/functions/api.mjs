@@ -150,11 +150,36 @@ function orderCents(o) {
   const total = (o.lines || []).reduce((a, l) => a + (l.price != null ? l.price * l.qty : 0), 0);
   return Math.round(total * 100);
 }
-async function markStripePaid(ref, sessId) {
+/* the ship-to a home customer typed on Stripe's payment page */
+function shipFromSession(sess) {
+  if (!sess) return null;
+  const sd = sess.shipping_details ||
+    (sess.collected_information && sess.collected_information.shipping_details) || null;
+  const cd = sess.customer_details || {};
+  const a = (sd && sd.address) || null;
+  if (!a && !cd.phone && !cd.name) return null;
+  return {
+    name: String((sd && sd.name) || cd.name || "").slice(0, 120),
+    phone: String(cd.phone || "").slice(0, 40),
+    address: a ? [a.line1, a.line2].filter(Boolean).join(", ").slice(0, 240) : "",
+    city: a ? String(a.city || "").slice(0, 80) : "",
+    state: a ? String(a.state || "").slice(0, 40) : "",
+    zip: a ? String(a.postal_code || "").slice(0, 20) : "",
+  };
+}
+async function markStripePaid(ref, sessId, sess) {
   const s = store();
   const key = `order:${String(ref).slice(0, 40)}`;
   const o = await s.get(key, { type: "json" });
   if (!o) return null;
+  let dirty = false;
+  // the address typed on the payment page is the freshest — it wins
+  const ship = o.consumer ? shipFromSession(sess) : null;
+  if (ship) {
+    o.home = { ...(o.home || {}) };
+    for (const [k, v] of Object.entries(ship)) if (v) { o.home[k] = v; dirty = true; }
+    if (ship.name && !o.customer) o.customer = ship.name;
+  }
   if (!(o.payment && o.payment.paid)) {
     const wasDraft = !!o.draft;
     delete o.draft;   // a paid draft becomes a real order the admin sees
@@ -163,6 +188,8 @@ async function markStripePaid(ref, sessId) {
       updatedAt: new Date().toISOString() };
     await s.setJSON(key, o);
     if (wasDraft) await notifyOrder(o);
+  } else if (dirty) {
+    await s.setJSON(key, o);
   }
   return o.payment;
 }
@@ -183,7 +210,7 @@ async function stripeWebhook(req) {
     const sess = ev.data.object;
     const refsStr = sess.metadata && (sess.metadata.refs || sess.metadata.ref);
     if (sess.payment_status === "paid" && refsStr)
-      for (const r of refsStr.split(",")) await markStripePaid(r.trim(), sess.id);
+      for (const r of refsStr.split(",")) await markStripePaid(r.trim(), sess.id, sess);
   }
   return json({ received: true });
 }
@@ -227,6 +254,8 @@ async function homeCheckout(order, origin, sk) {
     "adaptive_pricing[enabled]": "false",
     client_reference_id: order.ref,
     customer_email: order.home.email,
+    "shipping_address_collection[allowed_countries][0]": "US",
+    "phone_number_collection[enabled]": "true",
     "metadata[refs]": order.ref,
     "metadata[home]": "1",
     success_url: `${origin}/track.html?ref=${encodeURIComponent(order.ref)}&paysession={CHECKOUT_SESSION_ID}`,
@@ -629,7 +658,7 @@ export default async (req) => {
     if (!sess.metadata || sess.metadata.code !== d.code || !refsStr) return bad("no such payment", 404);
     if (sess.payment_status !== "paid") return json({ ok: false, status: sess.payment_status });
     let payment = null;
-    for (const r of refsStr.split(",")) payment = await markStripePaid(r.trim(), sess.id);
+    for (const r of refsStr.split(",")) payment = await markStripePaid(r.trim(), sess.id, sess);
     return json({ ok: true, payment });
   }
 
@@ -686,8 +715,8 @@ export default async (req) => {
     if (cfg.active === false) return bad("The shop is closed right now.", 503);
     const sk = process.env.STRIPE_SECRET_KEY;
     if (!sk && !body.paylater) return bad("Card payments are not set up yet.", 503);
-    const home = homeContact(body.customer);
-    if (!home) return bad("name, e-mail and shipping address are required");
+    const home = homeContact(body.customer, { loose: true });
+    if (!home) return bad("name and a valid e-mail are required");
     if (!Array.isArray(body.lines) || !body.lines.length) return bad("lines required");
     const lines = body.lines.slice(0, 60);
     if (lines.some((l) => l.price == null || !(l.qty > 0))) return bad("every line needs a price");
@@ -750,7 +779,7 @@ export default async (req) => {
     if (!sess.metadata || sess.metadata.home !== "1" || !refsStr) return bad("no such payment", 404);
     if (sess.payment_status !== "paid") return json({ ok: false, status: sess.payment_status });
     let payment = null;
-    for (const rr of refsStr.split(",")) payment = await markStripePaid(rr.trim(), sess.id);
+    for (const rr of refsStr.split(",")) payment = await markStripePaid(rr.trim(), sess.id, sess);
     return json({ ok: true, payment });
   }
 
