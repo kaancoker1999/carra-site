@@ -198,16 +198,16 @@
 
     <div class="acctgrid" id="acct" hidden>
       <nav class="sidenav" id="sidenav">
-        <button class="snav on" data-sec="status" type="button">Current status</button>
+        <button class="snav on" data-sec="profile" type="button" id="nav-profile">Profile</button>
         <button class="snav" data-sec="saved" type="button">Saved orders <span class="n" id="n-saved">0</span></button>
         <button class="snav" data-sec="placed" type="button">Placed orders <span class="n" id="n-placed">0</span></button>
-        <button class="snav" data-sec="profile" type="button" id="nav-profile">Profile</button>
         <button class="snav out" id="signoutbtn" type="button" hidden>Sign out</button>
       </nav>
 
       <div>
-        <!-- current status: the loved timeline + clear, cart-style lines -->
-        <div class="sect xcard" id="sec-status">
+        <!-- an order's detail: the timeline + cart-style lines (opened from
+             the lists or an order link — no nav entry of its own) -->
+        <div class="sect xcard" id="sec-status" hidden>
           <div id="statusbody"></div>
           <div class="emptynote" id="statusempty" hidden>No orders yet &mdash; configure a product in the <a href="index.html#products" style="color:var(--bronze)">shop</a> and it will appear here.</div>
         </div>
@@ -227,7 +227,7 @@
         </div>
 
         <!-- profile -->
-        <div class="sect xcard" id="sec-profile" hidden>
+        <div class="sect xcard" id="sec-profile">
           <h2 style="font-size:19px;margin:0 0 4px">Profile</h2>
           <p style="font-size:13.5px;color:var(--muted);margin:0 0 16px">Your details prefill checkout and help us with delivery.</p>
           <div class="pfgrid">
@@ -571,7 +571,9 @@
       SEL = refFromQ && byRef(refFromQ) ? refFromQ : (ORDERS[0] ? ORDERS[0].ref : null);
       $('acct').hidden = false;
       renderStatus(); renderLists();
-      if(savedQ) showSec('status');
+      /* an order link (or a fresh save / payment return) opens that order;
+         otherwise the account lands on the profile */
+      showSec((refFromQ || savedQ || payQ || cancQ) && SEL ? 'status' : 'profile');
     }).catch(function(){
       /* the account could not be opened server-side — fall back to the link form */
       $('acct').hidden = true;
