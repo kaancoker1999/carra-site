@@ -15,6 +15,31 @@
   if(ACCOUNT && !ACCOUNT.key){ setAccount(null); ACCOUNT = null; }   /* pre-password session */
   var shoplogin = document.getElementById('shoplogin');
   var acctbtn = document.getElementById('acctbtn');
+  /* an admin signed in to the panel (same browser) gets the retail prices
+     without a customer account, and orders are entered for customers */
+  var ADMIN = null;
+  function adminStoredKey(){
+    try{ var v = sessionStorage.getItem('lumia_admin_key'); if(v) return v; }catch(e){}
+    try{
+      var raw = localStorage.getItem('lumia_admin_key');
+      if(raw){ var o = JSON.parse(raw); if(o && o.k && o.exp > Date.now()) return o.k; }
+    }catch(e){}
+    return null;
+  }
+  function tryAdmin(){
+    var k = adminStoredKey();
+    if(!k || ACCOUNT) return;
+    fetch('/api/admin/retail-prices', { headers: { 'Authorization': 'Bearer ' + k } })
+      .then(function(r){ if(!r.ok) throw new Error('no'); return r.json(); })
+      .then(function(d){
+        ADMIN = { prices: d.prices };
+        shoplogin.hidden = true;
+        var fg = document.getElementById('forgrid'), fo = document.getElementById('forother');
+        if(fg && fg.hidden){ fg.hidden = false; fo.textContent = 'Admin: this order is entered for the customer below'; }
+        if(P) renderSteps();
+        renderLines();
+      }).catch(function(){});
+  }
   /* signed out: just the log-in; signed in: one Account door (track.html
      carries Current status / Saved / Placed / Profile / Sign out) */
   function syncAcct(){
@@ -254,8 +279,8 @@
     return (r && !r.na) ? { w: r.w, h: r.h } : { w: P.width, h: P.height };
   }
 
-  function PRICES(){ return (ACCOUNT || {}).prices || {}; }
-  function hasPrices(){ return !!(ACCOUNT && ACCOUNT.prices); }
+  function PRICES(){ return (ACCOUNT && ACCOUNT.prices) || (ADMIN && ADMIN.prices) || {}; }
+  function hasPrices(){ return !!((ACCOUNT && ACCOUNT.prices) || (ADMIN && ADMIN.prices)); }
   function prodPrices(id){
     return (PRICES().products || []).filter(function(p){ return p.id === id; })[0] || null;
   }
@@ -1032,9 +1057,18 @@
   function submitOrder(paylater){
     ckMsg('');
     if(!lines.length) return;
-    if(!ACCOUNT || !ACCOUNT.email){ openRegister('login'); return; }
     var c = {};
-    CK_FIELDS.forEach(function(k){ c[k] = String(ACCOUNT[k] || '').trim(); });
+    if(ACCOUNT && ACCOUNT.email){
+      CK_FIELDS.forEach(function(k){ c[k] = String(ACCOUNT[k] || '').trim(); });
+    } else if(ADMIN){
+      if(forgrid.hidden){
+        forgrid.hidden = false;
+        forother.textContent = 'Admin: this order is entered for the customer below';
+        ckMsg("Fill in the customer's name and e-mail below first.");
+        document.getElementById('fo-name').focus();
+        return;
+      }
+    } else { openRegister('login'); return; }
     if(!forgrid.hidden){
       /* entered on a customer's behalf: their identity, none of our details */
       var fn = (document.getElementById('fo-name').value || '').trim();
@@ -1108,6 +1142,7 @@
     if(booted) return;
     booted = true;
     refreshPrices();
+    tryAdmin();
     loadContact();
     fetch('assets/shop-config.json?v=' + Date.now())
       .then(function(r){ return r.json(); })

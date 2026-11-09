@@ -1037,6 +1037,15 @@ export default async (req) => {
     const can = (p) => admin.perms.includes(p);
     const s = store();
 
+    // the retail price list, for an admin entering an order on a customer's
+    // behalf straight on the product pages (any admin may read it)
+    if (path === "/api/admin/retail-prices" && req.method === "GET") {
+      const base = await s.get("prices", { type: "json" });
+      if (!base) return bad("prices not loaded yet", 503);
+      const cfg = await consumerCfg();
+      return json({ prices: scaled(base, () => cfg.mult) });
+    }
+
     // who am I — the panel shows and hides its controls from this
     if (path === "/api/admin/me" && req.method === "GET") {
       return json({ id: admin.id, name: admin.name, perms: admin.perms, owner: admin.owner,
