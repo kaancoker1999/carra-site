@@ -1046,6 +1046,19 @@ export default async (req) => {
       return json({ prices: scaled(base, () => cfg.mult) });
     }
 
+    // every registered home-shop account (who signed up, when, last seen)
+    if (path === "/api/admin/home-accounts" && req.method === "GET") {
+      const { blobs } = await s.list({ prefix: "homeacct:" });
+      const out = [];
+      for (const b of blobs) {
+        const a = await s.get(b.key, { type: "json" });
+        if (a) out.push({ email: b.key.slice("homeacct:".length), name: a.name || "",
+          phone: a.phone || "", at: a.at || "", lastSeen: a.lastSeen || "", pass: !!a.pass });
+      }
+      out.sort((x, y) => (x.lastSeen < y.lastSeen ? 1 : -1));
+      return json({ accounts: out });
+    }
+
     // who am I — the panel shows and hides its controls from this
     if (path === "/api/admin/me" && req.method === "GET") {
       return json({ id: admin.id, name: admin.name, perms: admin.perms, owner: admin.owner,
