@@ -672,134 +672,77 @@ export default async (req) => {
     const base = await store().get("prices", { type: "json" });
     if (!base) return bad("prices not loaded yet", 503);
     const s = store();
-    const key = `homeacct:${home.email}`;
-    const prev = await s.get(key, { type: "json" });
-    // a repeat sign-up with fewer fields must not wipe what the account holds
-    const kept = { ...(prev || {}) };
-    for (const [k, v] of Object.entries(home)) if (v) kept[k] = v;
-    await s.setJSON(key, { ...kept,
-      at: (prev && prev.at) || new Date().toISOString(),
-      lastSeen: new Date().toISOString() });
-    return json({ prices: scaled(base, () => cfg.mult) });
+    const blobKey = `homeacct:${home.email}`;
+    const prev = await s.get(blobKey, { type: "json" });
+    const tok = String((body || {}).key || "");
+    const owner = !!(prev && prev.key && tok === prev.key);
+    if (prev && prev.pass && !owner) {
+      // the e-mail already belongs to a password-protected account
+      return bad("This e-mail already has an account — please log in.", 409);
+    }
+    // a repeat save with fewer fields must not wipe what the account holds
+    const acct = { ...(prev || {}) };
+    for (const [k, v] of Object.entries(home)) if (v) acct[k] = v;
+    if (!owner) {
+      // creating the account (or claiming a legacy one): set its password
+      const pw = String((body || {}).password || "");
+      if (pw.length < 8) return bad("Please choose a password of at least 8 characters.");
+      const salt = randomBytes(16).toString("hex");
+      acct.pass = { salt, hash: hashPass(pw, salt) };
+      acct.key = randomBytes(16).toString("hex");
+      delete acct.fails;
+    }
+    acct.at = (prev && prev.at) || new Date().toISOString();
+    acct.lastSeen = new Date().toISOString();
+    await s.setJSON(blobKey, acct);
+    return json({ prices: scaled(base, () => cfg.mult), key: acct.key });
   }
 
-  // ── home customer: log back in with e-mail + phone (no password).
-  //    The phone on file is the key to the saved details: when it matches,
-  //    name/address/phone come back; otherwise only the name and prices. ──
+  // ── home customer: log back in with e-mail + password. A matching
+  //    password hands back the stored details, the prices and the account
+  //    key that opens the account page. 8 wrong tries lock it for 15 min. ──
   if (path === "/api/home/signin" && req.method === "POST") {
     const cfg = await consumerCfg();
     if (cfg.active === false) return bad("The shop is closed right now.", 503);
     const email = String((body || {}).email || "").trim().toLowerCase().slice(0, 160);
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return bad("a valid e-mail is required");
-    const acct = await store().get(`homeacct:${email}`, { type: "json" });
-    if (!acct) return bad("No account with this e-mail yet — creating one only takes a few seconds.", 404);
-    const base = await store().get("prices", { type: "json" });
-    if (!base) return bad("prices not loaded yet", 503);
-    const digits = (v) => String(v || "").replace(/\D/g, "");
-    const a = digits(acct.phone), b = digits((body || {}).phone);
-    const match = a && b && (a === b ||
-      (b.length >= 7 && a.endsWith(b)) || (a.length >= 7 && b.endsWith(a)));
-    if (a && b && !match) return bad("That phone doesn't match the one on the account.");
-    const customer = match
-      ? { name: acct.name, email, phone: acct.phone,
-          address: acct.address, city: acct.city, state: acct.state, zip: acct.zip }
-      : { name: acct.name, email };
-    await store().setJSON(`homeacct:${email}`, { ...acct, lastSeen: new Date().toISOString() });
-    return json({ customer, prices: scaled(base, () => cfg.mult) });
-  }
-
-  // ── home customer: place an order — straight to Stripe, or saved
-  //    unpaid ({paylater:true}) to be paid later from the orders page ──
-  if (path === "/api/home/order" && req.method === "POST") {
-    const cfg = await consumerCfg();
-    if (cfg.active === false) return bad("The shop is closed right now.", 503);
-    const sk = process.env.STRIPE_SECRET_KEY;
-    if (!sk && !body.paylater) return bad("Card payments are not set up yet.", 503);
-    const home = homeContact(body.customer, { loose: true });
-    if (!home) return bad("name and a valid e-mail are required");
-    if (!Array.isArray(body.lines) || !body.lines.length) return bad("lines required");
-    const lines = body.lines.slice(0, 60);
-    if (lines.some((l) => l.price == null || !(l.qty > 0))) return bad("every line needs a price");
     const s = store();
-    // the ref is made here, not in the browser — two customers can never collide
-    let ref, tries = 0;
-    do {
-      const d = new Date();
-      ref = "HOME-" + d.getFullYear().toString().slice(2) +
-        String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") +
-        "-" + String(Math.floor(Math.random() * 9000) + 1000);
-    } while ((await s.get(`order:${ref}`, { type: "json" })) && ++tries < 5);
-    const order = {
-      ref, code: "HOME-SHOP", dealer: "Home customer", consumer: true,
-      at: new Date().toISOString(), updatedAt: new Date().toISOString(), kind: "new",
-      customer: home.name, notes: String(body.notes || "").slice(0, 2000),
-      home, total: "", lines,
-      status: { status: "Pending review", locked: false, note: "" },
-      payment: null, test: false,
-      // every home order stays hidden from the admin until the payment lands —
-      // an abandoned checkout never clutters the panel (unpaid drafts purge after 45 days)
-      draft: true,
-    };
-    const cents = orderCents(order);
-    if (cents < 50) return bad("order total too small");
-    order.total = "$" + (cents / 100).toFixed(2);
-    await s.setJSON(`order:${ref}`, order);
-    // the admin is notified when the payment lands (markStripePaid), not before
-    if (body.paylater) return json({ ref });
-    const sess = await homeCheckout(order, new URL(req.url).origin, sk);
-    if (!sess) return bad("Could not start the payment.", 502);
-    return json({ ref, url: sess.url });
+    const acct = await s.get(`homeacct:${email}`, { type: "json" });
+    if (!acct) return bad("No account with this e-mail yet — creating one only takes a few seconds.", 404);
+    if (!acct.pass) return bad("This account has no password yet — use Create account with this e-mail to set one.", 409);
+    const f = acct.fails || { n: 0, at: 0 };
+    if (f.n >= LOCK_AFTER && Date.now() - f.at < LOCK_MS)
+      return bad("Too many tries — please wait 15 minutes and try again.", 429);
+    const pw = String((body || {}).password || "");
+    const good = Buffer.from(acct.pass.hash, "hex"), got = Buffer.from(hashPass(pw, acct.pass.salt), "hex");
+    if (good.length !== got.length || !timingSafeEqual(good, got)) {
+      acct.fails = { n: (Date.now() - f.at < LOCK_MS ? f.n : 0) + 1, at: Date.now() };
+      await s.setJSON(`homeacct:${email}`, acct);
+      return bad("Wrong password — check it and try again.", 401);
+    }
+    delete acct.fails;
+    if (!acct.key) acct.key = randomBytes(16).toString("hex");
+    acct.lastSeen = new Date().toISOString();
+    await s.setJSON(`homeacct:${email}`, acct);
+    const base = await s.get("prices", { type: "json" });
+    if (!base) return bad("prices not loaded yet", 503);
+    return json({
+      customer: { name: acct.name, email, phone: acct.phone || "",
+        address: acct.address || "", city: acct.city || "", state: acct.state || "", zip: acct.zip || "" },
+      prices: scaled(base, () => cfg.mult), key: acct.key,
+    });
   }
 
-  // ── home customer: retry the payment of an unpaid order ──────────
-  if (path === "/api/home/pay" && req.method === "POST") {
-    const cfg = await consumerCfg();
-    const sk = process.env.STRIPE_SECRET_KEY;
-    if (!sk) return bad("Card payments are not set up yet.", 503);
-    const ref = String(body.ref || "").trim().toUpperCase().slice(0, 40);
-    const email = String(body.email || "").trim().toLowerCase();
-    const o = await store().get(`order:${ref}`, { type: "json" });
-    if (!o || !o.consumer || !o.home || o.home.email !== email) return bad("no such order", 404);
-    if (o.payment && o.payment.paid) return bad("already paid", 409);
-    if (o.status && o.status.status === "Cancelled") return bad("order was cancelled", 409);
-    const sess = await homeCheckout(o, new URL(req.url).origin, sk);
-    if (!sess) return bad("Could not start the payment.", 502);
-    return json({ ref, url: sess.url });
-  }
-
-  // ── home customer: back from Stripe — the redirect may beat the webhook ──
-  if (path === "/api/home/confirm" && req.method === "POST") {
-    const sk = process.env.STRIPE_SECRET_KEY;
-    if (!sk) return bad("Card payments are not set up yet.", 503);
-    const sid = String(body.session || "");
-    if (!/^cs_[A-Za-z0-9_]+$/.test(sid)) return bad("bad session", 400);
-    const r = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sid}`,
-      { headers: { Authorization: `Bearer ${sk}` } });
-    const sess = await r.json().catch(() => null);
-    if (!r.ok || !sess) return bad("Could not check the payment.", 502);
-    const refsStr = sess.metadata && (sess.metadata.refs || sess.metadata.ref);
-    if (!sess.metadata || sess.metadata.home !== "1" || !refsStr) return bad("no such payment", 404);
-    if (sess.payment_status !== "paid") return json({ ok: false, status: sess.payment_status });
-    let payment = null;
-    for (const rr of refsStr.split(",")) payment = await markStripePaid(rr.trim(), sess.id, sess);
-    return json({ ok: true, payment });
-  }
-
-  // ── home customer: track an order (reference + checkout e-mail) ───
-  // POST so the e-mail never travels in a URL
   // ── home customer: the account page lists every order on the e-mail.
-  //    Same key rule as sign-in: when the account carries a phone, it must
-  //    match. The ship-to never comes back here. ──
+  //    Needs the account key that log-in / sign-up hand out; the ship-to
+  //    never comes back here. ──
   if (path === "/api/home/orders" && req.method === "POST") {
     const email = String((body || {}).email || "").trim().toLowerCase().slice(0, 160);
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return bad("a valid e-mail is required");
     const acct = await store().get(`homeacct:${email}`, { type: "json" });
     if (!acct) return bad("No account with this e-mail yet.", 404);
-    const digits = (v) => String(v || "").replace(/\D/g, "");
-    const a = digits(acct.phone), b = digits((body || {}).phone);
-    const match = a && b && (a === b ||
-      (b.length >= 7 && a.endsWith(b)) || (a.length >= 7 && b.endsWith(a)));
-    if (a && !match) return bad("That phone doesn't match the one on the account.", 401);
+    const tok = String((body || {}).key || "");
+    if (!acct.key || tok !== acct.key) return bad("Please log in to open your account.", 401);
     const orders = (await listOrders())
       .filter((x) => x.consumer && x.home && x.home.email === email)
       .map((x) => ({

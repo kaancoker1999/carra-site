@@ -12,6 +12,7 @@
   }
   try{ localStorage.removeItem('lumia_home'); }catch(e){}   /* the old code-gate session */
   var ACCOUNT = getAccount();
+  if(ACCOUNT && !ACCOUNT.key){ setAccount(null); ACCOUNT = null; }   /* pre-password session */
   var shoplogin = document.getElementById('shoplogin');
   var acctbtn = document.getElementById('acctbtn');
   /* signed out: just the log-in; signed in: one Account door (track.html
@@ -62,8 +63,8 @@
     if(sw) setRegMode(sw.dataset.rmode);
   });
   /* accept the account the server hands back (sign-up or log-in) */
-  function acceptAccount(c, prices){
-    ACCOUNT = Object.assign({}, c, { prices: prices, at: Date.now() });
+  function acceptAccount(c, prices, key){
+    ACCOUNT = Object.assign({}, c, { prices: prices, key: key || (ACCOUNT && ACCOUNT.key) || '', at: Date.now() });
     setAccount(ACCOUNT);
     syncAcct();
     loadContact();
@@ -75,21 +76,21 @@
     var btn = this, err = document.getElementById('lierr');
     err.classList.remove('on');
     var email = (document.getElementById('li-email').value || '').trim();
-    var phone = (document.getElementById('li-phone').value || '').trim();
-    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){
-      err.textContent = 'Please enter a valid e-mail.';
+    var pw = document.getElementById('li-password').value || '';
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !pw){
+      err.textContent = 'Please enter your e-mail and password.';
       err.classList.add('on');
       return;
     }
     btn.disabled = true; btn.textContent = 'One moment…';
     fetch('/api/home/signin', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, phone: phone })
+      body: JSON.stringify({ email: email, password: pw })
     }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
     .then(function(x){
       btn.disabled = false; btn.innerHTML = 'Log in &rarr;';
       if(!x.ok || !x.d.prices) throw new Error((x.d && x.d.error) || 'failed');
-      acceptAccount(x.d.customer || { email: email }, x.d.prices);
+      acceptAccount(x.d.customer || { email: email }, x.d.prices, x.d.key);
     }).catch(function(e2){
       btn.disabled = false; btn.innerHTML = 'Log in &rarr;';
       err.textContent = String(e2.message || '') || 'Could not log in — please try again.';
@@ -106,9 +107,11 @@
     var c = {};
     RG_FIELDS.forEach(function(k){ c[k] = (document.getElementById('rg-' + k).value || '').trim(); });
     /* only an identity is needed to see prices — the address can wait for checkout */
+    var pw = (document.getElementById('rg-password') || {}).value || '';
     var missing = [];
     if(!c.name) missing.push('your name');
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email)) missing.push('a valid e-mail');
+    if(REGMODE !== 'profile' && pw.length < 8) missing.push('a password of at least 8 characters');
     if(missing.length){
       err.textContent = 'Please fill in ' + missing.join(', ') + '.';
       err.classList.add('on');
@@ -117,16 +120,18 @@
     btn.disabled = true; btn.textContent = 'One moment…';
     fetch('/api/home/register', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customer: c })
+      body: JSON.stringify({ customer: c, password: pw,
+        key: (ACCOUNT && ACCOUNT.key) || '' })
     }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
     .then(function(x){
       btn.disabled = false; btn.innerHTML = REGMODE === 'profile' ? 'Save &rarr;' : 'Show my prices &rarr;';
       if(!x.ok || !x.d.prices) throw new Error((x.d && x.d.error) || 'failed');
-      acceptAccount(c, x.d.prices);
+      acceptAccount(c, x.d.prices, x.d.key);
     }).catch(function(e2){
       btn.disabled = false; btn.innerHTML = REGMODE === 'profile' ? 'Save &rarr;' : 'Show my prices &rarr;';
-      err.textContent = String(e2.message || '') === 'The shop is closed right now.'
-        ? 'The shop is closed right now — please try again later.'
+      var m = String(e2.message || '');
+      err.textContent = (m && m !== 'failed')
+        ? m
         : 'Could not create the account — please try again, or write to lumiashades@gmail.com.';
       err.classList.add('on');
     });
@@ -1059,13 +1064,23 @@
   /* ── boot ── */
   /* a returning customer: quietly refresh the stored price list */
   function refreshPrices(){
-    if(!ACCOUNT) return;
+    if(!ACCOUNT || !ACCOUNT.key) return;
     var c = {};
     RG_FIELDS.forEach(function(k){ c[k] = ACCOUNT[k] || ''; });
     fetch('/api/home/register', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ customer: c })
-    }).then(function(r){ if(!r.ok) throw new Error('skip'); return r.json(); })
+      body: JSON.stringify({ customer: c, key: ACCOUNT.key })
+    }).then(function(r){
+      if(r.status === 401 || r.status === 409){
+        /* the key no longer opens the account — sign this device out */
+        setAccount(null); ACCOUNT = null; syncAcct();
+        if(P) renderSteps();
+        renderLines();
+        throw new Error('skip');
+      }
+      if(!r.ok) throw new Error('skip');
+      return r.json();
+    })
     .then(function(d){
       ACCOUNT.prices = d.prices; setAccount(ACCOUNT);
       if(P) renderSteps();

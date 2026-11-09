@@ -275,6 +275,10 @@
   }
 
   var ACCOUNT = getAccount();
+  if(ACCOUNT && !ACCOUNT.key){                     /* pre-password session */
+    try{ localStorage.removeItem('lumia_home_acct'); }catch(e){}
+    ACCOUNT = null;
+  }
   var ORDERS = [];              /* every order we know about, newest first */
   var SEL = null;               /* the ref shown in Current status */
   var EMAIL = (ACCOUNT && ACCOUNT.email) || '';
@@ -502,7 +506,7 @@
     btn.disabled = true; btn.textContent = 'Saving…';
     fetch('/api/home/register', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ customer: c })
+      body: JSON.stringify({ customer: c, key: (ACCOUNT && ACCOUNT.key) || '' })
     }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
     .then(function(x){
       btn.disabled = false; btn.textContent = 'Save';
@@ -553,9 +557,14 @@
     fillProfile();
     fetch('/api/home/orders', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: ACCOUNT.email, phone: ACCOUNT.phone || '' })
-    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+      body: JSON.stringify({ email: ACCOUNT.email, key: ACCOUNT.key || '' })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
     .then(function(x){
+      if(x.status === 401 || x.status === 404){
+        /* the session no longer opens the account — sign this device out */
+        try{ localStorage.removeItem('lumia_home_acct'); }catch(e){}
+        ACCOUNT = null;
+      }
       if(!x.ok) throw new Error((x.d && x.d.error) || 'failed');
       ORDERS = [];
       (x.d.orders || []).forEach(putOrder);

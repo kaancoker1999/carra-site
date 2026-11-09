@@ -457,10 +457,10 @@
     <!-- returning customer: e-mail + the phone on file (no password) -->
     <div id="rlogin" hidden>
       <h2>Log in</h2>
-      <p class="regsub">Welcome back &mdash; no password needed. Your e-mail unlocks the prices; add the phone you saved with the account and your details come back for checkout too.</p>
+      <p class="regsub">Welcome back &mdash; your details and prices come right back. Forgot the password? Write to <a href="mailto:lumiashades@gmail.com" style="color:var(--bronze)">lumiashades@gmail.com</a>.</p>
       <div class="ckgrid">
         <div class="cell span2"><label for="li-email">E-mail *</label><input id="li-email" type="email" autocomplete="email"></div>
-        <div class="cell span2"><label for="li-phone">Phone (if you saved one)</label><input id="li-phone" type="tel" autocomplete="tel"></div>
+        <div class="cell span2"><label for="li-password">Password *</label><input id="li-password" type="password" autocomplete="current-password"></div>
       </div>
       <button class="paybtn" id="libtn" type="button" style="margin-top:20px">Log in &rarr;</button>
       <div class="err" id="lierr"></div>
@@ -470,10 +470,11 @@
     <!-- first visit: the free no-password sign-up -->
     <div id="rnew">
       <h2 id="rnew-title">See your prices</h2>
-      <p class="regsub" id="rnew-sub">Create a free account &mdash; no password. Your name and e-mail are enough to see every price; the rest is optional and simply prefills checkout. We only use your details for your orders and delivery.</p>
+      <p class="regsub" id="rnew-sub">Create a free account &mdash; your name, e-mail and a password are enough to see every price; the rest is optional and simply prefills checkout. We only use your details for your orders and delivery.</p>
       <div class="ckgrid">
         <div class="cell span2"><label for="rg-name">Full name *</label><input id="rg-name" type="text" autocomplete="name"></div>
         <div class="cell"><label for="rg-email">E-mail *</label><input id="rg-email" type="email" autocomplete="email"></div>
+        <div class="cell"><label for="rg-password">Password * <span style="text-transform:none;letter-spacing:0">(8+ characters)</span></label><input id="rg-password" type="password" autocomplete="new-password"></div>
         <div class="cell"><label for="rg-phone">Phone (optional)</label><input id="rg-phone" type="tel" autocomplete="tel"></div>
         <div class="cell span2"><label for="rg-address">Street address (optional)</label><input id="rg-address" type="text" autocomplete="street-address"></div>
         <div class="cell"><label for="rg-city">City (optional)</label><input id="rg-city" type="text" autocomplete="address-level2"></div>
@@ -494,7 +495,7 @@
   </div>
 </footer>
 
-<script src="assets/shopkit.js?v=7"></script>
+<script src="assets/shopkit.js?v=8"></script>
 <script src="assets/trade.js?v=23" defer></script>
 
 </body>
