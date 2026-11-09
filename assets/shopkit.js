@@ -16,7 +16,7 @@
   signout.hidden = !ACCOUNT;
   var shoplogin = document.getElementById('shoplogin');
   shoplogin.hidden = !!ACCOUNT;
-  shoplogin.addEventListener('click', function(){ openRegister(); });
+  shoplogin.addEventListener('click', function(){ openRegister('login'); });
 
   signout.addEventListener('click', function(){
     setAccount(null); ACCOUNT = null;
@@ -24,19 +24,67 @@
     location.reload();
   });
 
-  /* ── sign-up overlay ── */
+  /* ── sign-up / log-in overlay ── */
   var RG_FIELDS = ['name','email','phone','address','city','state','zip'];
-  function openRegister(){
+  function setRegMode(mode){
+    document.getElementById('rlogin').hidden = mode !== 'login';
+    document.getElementById('rnew').hidden = mode === 'login';
+    setTimeout(function(){
+      document.getElementById(mode === 'login' ? 'li-email' : 'rg-name').focus();
+    }, 50);
+  }
+  function openRegister(mode){
     var a = ACCOUNT || {};
     RG_FIELDS.forEach(function(k){
       var el = document.getElementById('rg-' + k);
       if(el && !el.value && a[k]) el.value = a[k];
     });
     document.getElementById('regerr').classList.remove('on');
+    document.getElementById('lierr').classList.remove('on');
     document.getElementById('regveil').hidden = false;
-    setTimeout(function(){ document.getElementById('rg-name').focus(); }, 50);
+    setRegMode(mode === 'login' ? 'login' : 'new');
   }
   function closeRegister(){ document.getElementById('regveil').hidden = true; }
+  document.getElementById('regveil').addEventListener('click', function(e){
+    var sw = e.target.closest('.swaplink');
+    if(sw) setRegMode(sw.dataset.rmode);
+  });
+  /* accept the account the server hands back (sign-up or log-in) */
+  function acceptAccount(c, prices){
+    ACCOUNT = Object.assign({}, c, { prices: prices, at: Date.now() });
+    setAccount(ACCOUNT);
+    signout.hidden = false;
+    shoplogin.hidden = true;
+    loadContact();
+    closeRegister();
+    if(P) renderSteps();
+    renderLines();
+  }
+  document.getElementById('libtn').addEventListener('click', function(){
+    var btn = this, err = document.getElementById('lierr');
+    err.classList.remove('on');
+    var email = (document.getElementById('li-email').value || '').trim();
+    var phone = (document.getElementById('li-phone').value || '').trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){
+      err.textContent = 'Please enter a valid e-mail.';
+      err.classList.add('on');
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'One moment…';
+    fetch('/api/home/signin', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, phone: phone })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+    .then(function(x){
+      btn.disabled = false; btn.innerHTML = 'Log in &rarr;';
+      if(!x.ok || !x.d.prices) throw new Error((x.d && x.d.error) || 'failed');
+      acceptAccount(x.d.customer || { email: email }, x.d.prices);
+    }).catch(function(e2){
+      btn.disabled = false; btn.innerHTML = 'Log in &rarr;';
+      err.textContent = String(e2.message || '') || 'Could not log in — please try again.';
+      err.classList.add('on');
+    });
+  });
   document.getElementById('regclose').addEventListener('click', closeRegister);
   document.getElementById('regveil').addEventListener('click', function(e){
     if(e.target === this) closeRegister();
@@ -63,14 +111,7 @@
     .then(function(x){
       btn.disabled = false; btn.innerHTML = 'Show my prices &rarr;';
       if(!x.ok || !x.d.prices) throw new Error((x.d && x.d.error) || 'failed');
-      ACCOUNT = Object.assign({}, c, { prices: x.d.prices, at: Date.now() });
-      setAccount(ACCOUNT);
-      signout.hidden = false;
-      shoplogin.hidden = true;
-      loadContact();
-      closeRegister();
-      if(P) renderSteps();
-      renderLines();
+      acceptAccount(c, x.d.prices);
     }).catch(function(e2){
       btn.disabled = false; btn.innerHTML = 'Show my prices &rarr;';
       err.textContent = String(e2.message || '') === 'The shop is closed right now.'

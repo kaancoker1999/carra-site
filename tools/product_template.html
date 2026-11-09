@@ -326,6 +326,10 @@
     max-height:92vh;overflow:auto;padding:32px 34px 30px}
   .regcard h2{font-family:'Fraunces',serif;font-weight:600;font-size:28px;margin:0 0 8px}
   .regsub{font-size:14px;color:var(--muted);margin:0 0 20px;line-height:1.6}
+  .regswap{margin:18px 0 0;padding-top:16px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+  .swaplink{font:inherit;background:none;border:0;cursor:pointer;color:var(--bronze);padding:0;
+    text-decoration:underline;text-underline-offset:3px}
+  #rlogin[hidden],#rnew[hidden]{display:none}
   #regclose{position:absolute;top:12px;right:14px;font-size:26px;line-height:1;background:none;
     border:0;cursor:pointer;color:var(--muted);padding:6px 8px}
   #regclose:hover{color:var(--ink)}
@@ -456,19 +460,37 @@
 <div id="regveil" hidden>
   <div class="regcard">
     <button id="regclose" type="button" aria-label="Close">&times;</button>
-    <h2>See your prices</h2>
-    <p class="regsub">Create a free account &mdash; no password. Your name and e-mail are enough to see every price; the rest is optional and simply prefills checkout. We only use your details for your orders and delivery.</p>
-    <div class="ckgrid">
-      <div class="cell span2"><label for="rg-name">Full name *</label><input id="rg-name" type="text" autocomplete="name"></div>
-      <div class="cell"><label for="rg-email">E-mail *</label><input id="rg-email" type="email" autocomplete="email"></div>
-      <div class="cell"><label for="rg-phone">Phone (optional)</label><input id="rg-phone" type="tel" autocomplete="tel"></div>
-      <div class="cell span2"><label for="rg-address">Street address (optional)</label><input id="rg-address" type="text" autocomplete="street-address"></div>
-      <div class="cell"><label for="rg-city">City (optional)</label><input id="rg-city" type="text" autocomplete="address-level2"></div>
-      <div class="cell"><label for="rg-state">State (optional)</label><input id="rg-state" type="text" autocomplete="address-level1"></div>
-      <div class="cell"><label for="rg-zip">ZIP (optional)</label><input id="rg-zip" type="text" autocomplete="postal-code"></div>
+
+    <!-- returning customer: e-mail + the phone on file (no password) -->
+    <div id="rlogin" hidden>
+      <h2>Log in</h2>
+      <p class="regsub">Welcome back &mdash; no password needed. Your e-mail unlocks the prices; add the phone you saved with the account and your details come back for checkout too.</p>
+      <div class="ckgrid">
+        <div class="cell span2"><label for="li-email">E-mail *</label><input id="li-email" type="email" autocomplete="email"></div>
+        <div class="cell span2"><label for="li-phone">Phone (if you saved one)</label><input id="li-phone" type="tel" autocomplete="tel"></div>
+      </div>
+      <button class="paybtn" id="libtn" type="button" style="margin-top:20px">Log in &rarr;</button>
+      <div class="err" id="lierr"></div>
+      <p class="regswap">New here? <button type="button" class="swaplink" data-rmode="new">Create a free account</button></p>
     </div>
-    <button class="paybtn" id="regbtn" type="button" style="margin-top:20px">Show my prices &rarr;</button>
-    <div class="err" id="regerr"></div>
+
+    <!-- first visit: the free no-password sign-up -->
+    <div id="rnew">
+      <h2>See your prices</h2>
+      <p class="regsub">Create a free account &mdash; no password. Your name and e-mail are enough to see every price; the rest is optional and simply prefills checkout. We only use your details for your orders and delivery.</p>
+      <div class="ckgrid">
+        <div class="cell span2"><label for="rg-name">Full name *</label><input id="rg-name" type="text" autocomplete="name"></div>
+        <div class="cell"><label for="rg-email">E-mail *</label><input id="rg-email" type="email" autocomplete="email"></div>
+        <div class="cell"><label for="rg-phone">Phone (optional)</label><input id="rg-phone" type="tel" autocomplete="tel"></div>
+        <div class="cell span2"><label for="rg-address">Street address (optional)</label><input id="rg-address" type="text" autocomplete="street-address"></div>
+        <div class="cell"><label for="rg-city">City (optional)</label><input id="rg-city" type="text" autocomplete="address-level2"></div>
+        <div class="cell"><label for="rg-state">State (optional)</label><input id="rg-state" type="text" autocomplete="address-level1"></div>
+        <div class="cell"><label for="rg-zip">ZIP (optional)</label><input id="rg-zip" type="text" autocomplete="postal-code"></div>
+      </div>
+      <button class="paybtn" id="regbtn" type="button" style="margin-top:20px">Show my prices &rarr;</button>
+      <div class="err" id="regerr"></div>
+      <p class="regswap">Already have an account? <button type="button" class="swaplink" data-rmode="login">Log in</button></p>
+    </div>
   </div>
 </div>
 
@@ -479,7 +501,7 @@
   </div>
 </footer>
 
-<script src="assets/shopkit.js?v=3"></script>
+<script src="assets/shopkit.js?v=4"></script>
 <script src="assets/trade.js?v=23" defer></script>
 
 </body>

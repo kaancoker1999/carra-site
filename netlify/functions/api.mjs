@@ -645,10 +645,38 @@ export default async (req) => {
     const s = store();
     const key = `homeacct:${home.email}`;
     const prev = await s.get(key, { type: "json" });
-    await s.setJSON(key, { ...home,
+    // a repeat sign-up with fewer fields must not wipe what the account holds
+    const kept = { ...(prev || {}) };
+    for (const [k, v] of Object.entries(home)) if (v) kept[k] = v;
+    await s.setJSON(key, { ...kept,
       at: (prev && prev.at) || new Date().toISOString(),
       lastSeen: new Date().toISOString() });
     return json({ prices: scaled(base, () => cfg.mult) });
+  }
+
+  // ── home customer: log back in with e-mail + phone (no password).
+  //    The phone on file is the key to the saved details: when it matches,
+  //    name/address/phone come back; otherwise only the name and prices. ──
+  if (path === "/api/home/signin" && req.method === "POST") {
+    const cfg = await consumerCfg();
+    if (cfg.active === false) return bad("The shop is closed right now.", 503);
+    const email = String((body || {}).email || "").trim().toLowerCase().slice(0, 160);
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return bad("a valid e-mail is required");
+    const acct = await store().get(`homeacct:${email}`, { type: "json" });
+    if (!acct) return bad("No account with this e-mail yet — creating one only takes a few seconds.", 404);
+    const base = await store().get("prices", { type: "json" });
+    if (!base) return bad("prices not loaded yet", 503);
+    const digits = (v) => String(v || "").replace(/\D/g, "");
+    const a = digits(acct.phone), b = digits((body || {}).phone);
+    const match = a && b && (a === b ||
+      (b.length >= 7 && a.endsWith(b)) || (a.length >= 7 && b.endsWith(a)));
+    if (a && b && !match) return bad("That phone doesn't match the one on the account.");
+    const customer = match
+      ? { name: acct.name, email, phone: acct.phone,
+          address: acct.address, city: acct.city, state: acct.state, zip: acct.zip }
+      : { name: acct.name, email };
+    await store().setJSON(`homeacct:${email}`, { ...acct, lastSeen: new Date().toISOString() });
+    return json({ customer, prices: scaled(base, () => cfg.mult) });
   }
 
   // ── home customer: place an order — straight to Stripe, or saved
