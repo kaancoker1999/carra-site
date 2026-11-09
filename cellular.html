@@ -5,132 +5,330 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="assets/i18n.js?v=12"></script>
 <title>LUMIA — Cellular Shades</title>
-<meta name="description" content="LUMIA Cellular Shades — Single, double and triple cell honeycomb in sheer, light-filtering and blackout, bonded so the cell holds its shape for the life of the shade. The most energy-efficient range we build. Configure options and fabrics, request a trade quotation.">
+<meta name="description" content="LUMIA Cellular Shades — Single, double and triple cell honeycomb in sheer, light-filtering and blackout, bonded so the cell holds its shape for the life of the shade. The most energy-efficient range we build. Configure options and fabrics, see your price and order online.">
 <link rel="canonical" href="https://lumiashades.com/cellular.html">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="LUMIA — Cellular Shades">
-<meta property="og:description" content="Configure Cellular Shades — options, fabrics and specification.">
+<meta property="og:description" content="Configure Cellular Shades — options, fabrics, price and checkout.">
 <meta property="og:image" content="https://lumiashades.com/assets/product-cellular.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Fraunces:opsz,wght@9..144,520;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
     --white:#FFFFFF; --paper:#FAF5EA; --paper2:#F3ECDD; --ink:#14171A; --muted:#767A7E;
     --line:#E4E3DE; --line2:#D3D2CC; --bronze:#8A6220; --bronze-lt:#C79A45;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--white);color:var(--ink);
+  body{margin:0;color:var(--ink);background:var(--white);
     font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.62;
-    -webkit-font-smoothing:antialiased}
-  h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.025em;margin:0;line-height:1.05}
+    -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+  h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.025em;margin:0;line-height:1.08}
   a{color:inherit}
   .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-  .wrap{max-width:1180px;padding:0 44px;margin:0 auto}
+  .wrap{max-width:1180px;padding:0 44px;margin:0 auto;width:100%}
 
+  /* marketing-site header: white, sticky, full nav */
   header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
   header .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;gap:24px}
-  .logo{font-family:'Archivo',sans-serif;font-weight:700;font-size:20px;letter-spacing:.28em;text-decoration:none}
+  .logo{display:flex;align-items:center;text-decoration:none}
   .logo img{height:26px;width:auto;display:block;mix-blend-mode:multiply}
-  nav{display:flex;gap:34px;align-items:center}
-  nav a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:color .2s}
-  nav a:hover{color:var(--ink)}
-  .partner{border:1px solid var(--line2);padding:8px 15px;color:var(--bronze)!important}
-  .partner:hover{border-color:var(--bronze)}
-
-
-  .phero{position:relative;height:56vh;min-height:400px;overflow:hidden;background:var(--paper2)}
-  .phero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-  .pveil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 38%,rgba(8,10,12,.66) 100%)}
-  .ptit{position:absolute;left:50%;transform:translateX(-50%);bottom:38px;width:100%;max-width:1180px;padding:0 44px;text-align:center}
-  .ptit .mono{color:var(--bronze-lt)}
-  .ptit h1{font-size:clamp(34px,5vw,60px);color:#fff;margin-top:10px}
-  .pdesc{max-width:62ch;color:#3D4246;font-size:17px;margin:0;padding:44px 0 10px}
-  .pdfbtn{display:inline-flex;align-items:center;gap:10px;margin:6px 0 8px;padding:13px 22px;
+  header nav{display:flex;gap:30px;align-items:center;flex-wrap:wrap}
+  header nav a,header nav button{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer;transition:color .2s;padding:0}
+  header nav a:hover,header nav button:hover{color:var(--ink)}
+  header nav a.partner{border:1px solid var(--line2);padding:8px 15px;color:var(--bronze)}
+  header nav a.partner:hover{border-color:var(--bronze)}
+  /* consumer sign-in lives in the bar itself (the nav collapses into the drawer) */
+  .acct{margin-left:auto;display:flex;gap:16px;align-items:center}
+  .acct button{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);background:none;border:0;cursor:pointer;transition:color .2s;padding:0}
+  .acct button:hover{color:var(--ink)}
+  .acct #shoplogin{border:1px solid var(--bronze);padding:8px 15px;color:var(--bronze)}
+  .acct #shoplogin:hover{background:var(--bronze);color:#fff}
+  /* product intro under the hero */
+  .pdesc{max-width:62ch;color:#3D4246;font-size:17px;margin:0;padding:40px 0 10px}
+  .pdfbtn{display:inline-flex;align-items:center;gap:10px;margin:6px 0 4px;padding:13px 22px;
     border:1px solid var(--line2);border-radius:10px;text-decoration:none;background:var(--white);
     font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
     color:var(--bronze);transition:border-color .2s}
   .pdfbtn:hover{border-color:var(--bronze)}
   .pdfbtn .sz{color:var(--muted);letter-spacing:.06em;font-size:10px;text-transform:none}
 
-  .cfg{padding-bottom:20px}
-  .grp{padding:26px 0 30px;border-top:1px solid var(--line)}
-  .grp .code{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--bronze);text-transform:uppercase}
-  .grp h3{font-size:18px;margin:8px 0 16px}
-  .chips{display:flex;flex-wrap:wrap;gap:10px}
-  .chip:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through}
-  .chip{font:inherit;font-size:14.5px;border:1px solid var(--line2);background:var(--white);color:var(--ink);
-    padding:10px 17px;border-radius:10px;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
-  .chip:hover{border-color:var(--ink)}
-  .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
-  .chip .sw{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:9px;vertical-align:-1px;border:1px solid rgba(0,0,0,.18)}
-  .chip .chipsub{display:block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.06em;color:var(--muted);margin-top:3px}
-  .chip.on .chipsub{color:#B9BDC0}
+  main{flex:1}
 
-  .optgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:12px}
-  .optcard{cursor:pointer;border:1px solid var(--line2);border-radius:12px;padding:10px 10px 12px;background:var(--white);
-    font:inherit;text-align:center;transition:border-color .15s,box-shadow .15s}
-  .optcard:hover{border-color:var(--ink)}
-  .optcard.on{border-color:var(--ink);box-shadow:0 0 0 1.5px var(--ink)}
-  .optcard img{width:100%;aspect-ratio:3/4;object-fit:contain;display:block;background:#fff;border-radius:8px}
-  .optcard .nm{font-size:13px;margin-top:8px;color:var(--ink)}
-  .optgrid.ph{grid-template-columns:repeat(auto-fill,minmax(148px,1fr))}
-  .optcard img.ph{aspect-ratio:4/3;object-fit:cover}
+  /* ── the gate: one shared access code ── */
+  #gate{display:flex;align-items:center;justify-content:center;padding:70px 22px 90px}
+  #gate[hidden]{display:none}
+  .gatecard{background:var(--white);border:1px solid var(--line2);border-radius:18px;padding:46px 48px 42px;max-width:470px;width:100%}
+  .gatecard h1{font-family:'Fraunces',serif;font-weight:600;font-size:34px;text-align:center;margin:0 0 10px}
+  .gatecard .sub{text-align:center;color:var(--muted);font-size:15px;margin:0 0 26px}
+  .gatecard label{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+  .gatecard input{font:inherit;font-size:16px;width:100%;padding:14px 16px;border:1px solid var(--line2);border-radius:10px;background:var(--white);letter-spacing:.04em}
+  .gatecard input:focus{outline:none;border-color:var(--ink)}
+  .gatecard .btn{display:block;width:100%;margin-top:18px}
+  .gateapply{margin:26px 0 0;padding:18px 0 0;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+  .gateapply a{color:var(--bronze)}
 
-  .sumgrid{display:grid;grid-template-columns:1fr 300px;gap:40px;align-items:start}
-  .sumimg img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1px solid var(--line2);display:block}
-  .sumimg .cap{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:10px;text-align:center}
+  .btn{display:inline-block;padding:16px 30px;border:0;cursor:pointer;text-decoration:none;border-radius:10px;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    background:var(--ink);color:#fff;transition:.25s}
+  .btn:hover{background:var(--bronze)}
+  .btn[disabled]{opacity:.55;cursor:wait}
+  .err{display:none;margin:16px 0 0;font-size:14px;color:#8A2620;background:#FBF1F0;border:1px solid #E5C9C6;border-radius:10px;padding:12px 14px}
+  .err.on{display:block}
 
-  .fabmeta{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--muted);margin:16px 0 14px}
-  .swgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
-  .swatch{cursor:pointer;border:1px solid var(--line2);border-radius:10px;padding:7px 7px 9px;background:var(--white);
-    font:inherit;text-align:center;transition:border-color .15s,box-shadow .15s}
-  .swatch:hover{border-color:var(--ink)}
-  .swatch.on{border-color:var(--ink);box-shadow:0 0 0 1.5px var(--ink)}
-  .swatch img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:7px;display:block}
-  .swatch .nm{font-size:11px;line-height:1.35;margin-top:6px;color:var(--ink)}
-  .swatch .cd{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.08em;color:var(--muted)}
+  /* ── home view: just the four products, edge to edge ── */
+  .pagehead{text-align:center}
+  .wrap.pagehead{padding-top:54px;padding-bottom:10px}
+  .pagehead h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(40px,5.4vw,64px)}
+  .pagehead .note{margin:14px auto 0;font-size:15px;color:var(--muted);max-width:62ch}
 
-  .dims{display:flex;gap:16px;flex-wrap:wrap}
-  .dim{display:flex;flex-direction:column;gap:7px}
-  .dim .cap{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-  .dim input{font:inherit;font-size:15px;width:150px;padding:12px 14px;border:1px solid var(--line2);border-radius:10px;background:var(--white)}
-  .dim input:focus{outline:none;border-color:var(--ink)}
-  .dim input.err{border-color:var(--bronze)}
-  .dim .rng{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--muted)}
+  .prodstrip{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;width:100%;margin:46px 0 110px;padding:0 24px}
+  .pt{display:block;border:1px solid var(--line2);border-radius:16px;background:var(--white);padding:0;cursor:pointer;
+    font:inherit;color:inherit;text-align:center;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+  .pt:hover{border-color:var(--bronze);box-shadow:0 10px 28px rgba(20,23,26,.07)}
+  .pt .art{display:block;overflow:hidden}
+  /* 3:4 portrait tiles (editorial look); height:auto so the box beats the
+     height attribute. no hover zoom: a mid-transition frame reads as shifted */
+  .pt .art img{width:100%;height:auto;aspect-ratio:3/4;object-fit:cover;display:block}
+  .pt .txt{display:block;padding:20px 18px 24px}
+  .pt .pname{display:block;font-family:'Archivo',sans-serif;font-weight:600;font-size:18.5px;letter-spacing:-.02em;margin:0 0 5px;transition:color .2s}
+  .pt:hover .pname{color:var(--bronze)}
+  .pt .pdesc{display:block;font-size:13px;color:var(--muted);line-height:1.5;max-width:30ch;margin:0 auto}
+  @media(max-width:900px){ .prodstrip{grid-template-columns:repeat(2,1fr)} }
+  @media(max-width:520px){ .prodstrip{grid-template-columns:1fr} }
 
-  .sum{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:32px 36px;margin:26px 0 90px}
-  .sum .code{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--bronze);text-transform:uppercase}
-  .sum h3{font-size:19px;margin:8px 0 18px}
-  .kv{border-top:1px solid var(--line2)}
-  .kv div{display:flex;justify-content:space-between;gap:18px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
-  .kv span{color:var(--muted)}
-  .kv b{font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:12.5px;text-align:right}
-  .sumnote{font-size:13px;color:var(--muted);margin:16px 0 20px}
-  .btns{display:flex;gap:12px;flex-wrap:wrap}
-  .btn{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-    padding:14px 22px;border:1px solid var(--ink);border-radius:10px;text-decoration:none;cursor:pointer;font-weight:500;transition:opacity .15s}
-  .btn.solid{background:var(--ink);color:#fff}
-  .btn.ghost{background:transparent;color:var(--ink)}
-  .btn:hover{opacity:.85}
+  /* ── product view: hero, then the step wizard ── */
+  /* product-page hero: photo with the title resting at the bottom */
+  .phero{position:relative;height:56vh;min-height:400px;overflow:hidden;background:var(--paper2)}
+  .phero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .pveil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 38%,rgba(8,10,12,.66) 100%)}
+  .ptit{position:absolute;left:50%;transform:translateX(-50%);bottom:38px;width:100%;max-width:1180px;padding:0 44px;text-align:center}
+  .ptit h1{font-size:clamp(34px,5vw,60px);color:#fff;margin-top:10px}
 
-  footer{border-top:0;background:var(--ink)}
-  footer .mono{color:rgba(255,255,255,.55)}
-  footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
+  section.builder{padding:46px 0 150px}
 
-  @media(max-width:980px){
-    .wrap{padding:0 22px}
-    .swgrid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}
-    .sum{padding:24px 22px}
-    .sumgrid{grid-template-columns:1fr}
-    .sumimg{max-width:340px}
+  /* collapsible steps: each one its own framed card, header = 01 ── FOLD STYLE */
+  .grp{border:1px solid var(--line2);border-radius:14px;background:var(--white);margin:0 0 14px;overflow:hidden}
+  .grp:hover{border-color:#BFBBB0}
+  .grphead{width:100%;display:flex;align-items:center;gap:15px;background:none;border:0;cursor:pointer;
+    font:inherit;color:inherit;padding:19px 22px;text-align:left}
+  .grphead .code{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;font-weight:500;white-space:nowrap}
+  .grphead .gdash{width:32px;height:1px;background:var(--line2);flex:none}
+  .grphead .gtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:13.5px;letter-spacing:.14em;text-transform:uppercase}
+  .grphead .cur{margin-left:auto;font-size:13px;color:var(--muted);text-align:right;max-width:42%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .grphead .cur.need{color:#8A2620}
+  .grp.open .grphead .cur{color:var(--bronze)}
+  .grphead .chev{flex:none;color:var(--muted);font-size:11px;transition:transform .2s}
+  .grp.open .chev{transform:rotate(180deg)}
+  .grpbody{display:none;padding:4px 22px 26px}
+  .grp.open .grpbody{display:block}
+
+  /* the room step: small cards with line icons */
+  .roomgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+  .roomcard{position:relative;border:1px solid var(--line2);background:var(--white);border-radius:8px;cursor:pointer;
+    font:inherit;color:inherit;text-align:center;padding:16px 8px 13px;transition:border-color .15s,background .15s}
+  .roomcard:hover{border-color:var(--ink)}
+  .roomcard.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);background:#F3F1EA}
+  .roomcard svg{display:block;margin:0 auto 8px;color:#6B5320}
+  .roomcard .rname{display:block;font-size:12.5px;font-weight:500;letter-spacing:-.01em}
+  .roomcard .bchk{top:6px;right:6px;width:18px;height:18px;font-size:10px}
+
+  /* big option cards */
+  .cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+  .cardgrid.txt{grid-template-columns:repeat(auto-fill,minmax(172px,1fr))}
+  .bigcard{position:relative;border:1px solid var(--line2);background:var(--white);cursor:pointer;font:inherit;color:inherit;
+    text-align:center;padding:0;overflow:hidden;border-radius:6px;transition:border-color .15s,background .15s}
+  .bigcard:hover{border-color:var(--ink)}
+  .bigcard.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);background:#F3F1EA}
+  .bigcard:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through}
+  .bigcard img{width:100%;aspect-ratio:1/1;object-fit:contain;display:block;background:#fff;padding:10px 10px 0}
+  .bigcard .bcart{display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;padding:8px 8px 0;color:#3A3D40}
+  .bigcard.on .bcart{color:var(--ink)}
+  .bigcard .bcname{display:block;padding:15px 12px 16px;font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;letter-spacing:-.01em}
+  .bigcard .bcsub{display:block;padding:0 16px 16px;margin-top:-10px;font-size:12px;color:var(--muted);line-height:1.5}
+  .bigcard.noimg .bcname{padding:32px 12px}
+  .bchk{position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;
+    display:none;align-items:center;justify-content:center;font-size:12px;z-index:1}
+  .bigcard.on .bchk,.swtile.on .bchk{display:flex}
+
+  /* fabric step: filter buttons + collection sections of big swatch tiles */
+  .filterrow{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 26px}
+  .fbtn{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+    background:var(--white);border:1px solid var(--line2);padding:13px 18px;cursor:pointer;color:var(--ink);border-radius:4px}
+  .fbtn:hover{border-color:var(--ink)}
+  .fbtn.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);background:#F3F1EA}
+  .fsec{margin:0 0 32px}
+  .fsechead{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+    margin:0 0 12px;padding:0 0 9px;border-bottom:1px solid var(--line)}
+  .fsechead b{color:var(--ink);font-weight:500}
+  /* blackout families get a slightly darker band behind the heading */
+  .fsechead.dark{background:#E5E0D4;border-bottom:0;border-radius:7px;padding:9px 13px;color:#5C564C}
+  /* cell-size sub-sections inside the cellular fabric step */
+  .subacc{border:1px solid var(--line2);border-radius:12px;background:var(--white);margin:0 0 12px;overflow:hidden}
+  .subhead{width:100%;display:flex;align-items:center;gap:12px;font:inherit;color:inherit;background:var(--paper);
+    border:0;cursor:pointer;padding:15px 18px;text-align:left}
+  .subhead:hover{background:var(--paper2)}
+  .subhead .stitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;letter-spacing:-.01em}
+  .subhead .scount{font-size:12px;color:var(--muted)}
+  .subhead .chev{margin-left:auto;color:var(--muted);font-size:11px;transition:transform .2s}
+  .subacc.open .subhead .chev{transform:rotate(180deg)}
+  .subbody{display:none;padding:18px 18px 2px}
+  .subacc.open .subbody{display:block}
+  .swgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:9px}
+  .swtile{position:relative;border:1px solid var(--line2);background:var(--white);cursor:pointer;font:inherit;color:inherit;
+    text-align:left;padding:0;border-radius:6px;overflow:hidden;transition:border-color .15s}
+  .swtile:hover{border-color:var(--ink)}
+  .swtile.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+  .swtile img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+  .swtile .clr{display:block;width:100%;aspect-ratio:1}
+  .swtile .clrart{display:flex;align-items:center;justify-content:center;aspect-ratio:1;background:var(--paper);padding:6px}
+  .swtile .clrart svg{width:88%;height:auto}
+  .swtile .swname{display:block;padding:7px 9px 1px;font-size:11.5px;font-weight:500;line-height:1.3;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .swtile .swcode{display:block;padding:0 9px 7px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.06em;color:var(--muted)}
+  .swtile .bchk{top:6px;right:6px;width:18px;height:18px;font-size:10px}
+
+  /* size step: inches + fraction fields with a slider, like the reference */
+  .sizeblock{margin:0 0 34px;max-width:760px}
+  .sizecap{font-family:'Archivo',sans-serif;font-weight:600;font-size:17px;margin:0 0 12px}
+  .sizerow{display:grid;grid-template-columns:1fr 170px;gap:14px;margin:0 0 14px}
+  @media(max-width:560px){ .sizerow{grid-template-columns:1fr 120px} }
+  .sfield{display:flex;flex-direction:column;gap:7px}
+  .sfield label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink)}
+  .sfield select{font-family:'Archivo',sans-serif;font-weight:600;font-size:18px;padding:15px 14px;border:1px solid var(--line2);
+    background:#F4F2EC;border-radius:5px;text-align:center;color:var(--ink)}
+  .sfield select:focus{outline:none;border-color:var(--ink)}
+  .srange{width:100%;accent-color:#14171A;margin:2px 0 0}
+  .steprng{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:var(--muted);margin:6px 0 0}
+  .stepnote{font-size:13.5px;color:var(--muted);margin:18px 0 0}
+  .steperr{display:none;margin:18px 0 0;font-size:14px;color:#8A2620;background:#FBF1F0;border:1px solid #E5C9C6;border-radius:10px;padding:12px 14px}
+  .steperr.on{display:block}
+  #roomtext{font:inherit;font-size:15px;margin-top:16px;width:100%;max-width:420px;padding:13px 14px;border:1px solid var(--line2);border-radius:6px;background:var(--white)}
+  #roomtext:focus{outline:none;border-color:var(--ink)}
+
+  /* review step */
+  .revwrap{max-width:760px}
+  .revkv{border-top:1px solid var(--line2);margin:0 0 24px}
+  .revkv div{display:flex;justify-content:space-between;gap:18px;padding:11px 2px;border-bottom:1px solid var(--line);font-size:14px}
+  .revkv span{color:var(--muted)}
+  .revkv b{font-weight:500;text-align:right}
+  .revrow{display:flex;gap:26px;align-items:flex-end;flex-wrap:wrap;margin:0 0 6px}
+  .qtywrap label,.lblwrap label{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink);margin:0 0 8px}
+  .qtyrow{display:flex;align-items:center;gap:0;border:1px solid var(--line2);border-radius:6px;overflow:hidden;background:#fff;width:max-content}
+  .qbtn{width:44px;height:46px;border:0;background:#fff;font-size:19px;cursor:pointer;color:var(--ink)}
+  .qbtn:hover{background:var(--paper)}
+  .qnum{font-family:'Archivo',sans-serif;font-weight:600;font-size:17px;min-width:44px;text-align:center}
+  .lblwrap input{font:inherit;font-size:15px;padding:12px 14px;border:1px solid var(--line2);border-radius:6px;background:var(--white);min-width:260px}
+  .lblwrap input:focus{outline:none;border-color:var(--ink)}
+
+  /* the fixed wizard bar: BACK · STEP N OF M + price · NEXT */
+  #wizbar{position:fixed;left:0;right:0;bottom:0;z-index:70;background:#fff;border-top:1px solid var(--line2);
+    display:flex;align-items:center;gap:14px;padding:13px 22px}
+  #wizback{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    background:#fff;border:1px solid var(--line2);padding:16px 22px;cursor:pointer;border-radius:5px;color:var(--ink)}
+  #wizback:hover{border-color:var(--ink)}
+  #wizback.off{visibility:hidden}
+  .wizmid{margin:0 auto;text-align:center;line-height:1.3}
+  .wizmid .wizstep{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .wizmid .wizprice{display:block;font-family:'Archivo',sans-serif;font-weight:700;font-size:21px;letter-spacing:-.02em}
+  #wiznext{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;
+    background:var(--ink);color:#fff;border:0;padding:18px 32px;cursor:pointer;border-radius:5px;transition:.2s;white-space:nowrap}
+  #wiznext:hover{background:var(--bronze)}
+  @media(max-width:560px){
+    #wizback{padding:16px 14px}
+    #wiznext{padding:18px 18px}
   }
+
+  /* ── cart + checkout: their own band, split from the steps by a rule ── */
+  section.cartsec{padding:46px 0 24px;background:var(--paper2);border-top:1px solid #C8BEA6}
+  #cartsec .xcard{border:2px solid #14171A}
+  .xcard{background:var(--white);border:1px solid var(--line2);border-radius:18px;padding:26px 28px 28px}
+  .xcard .xtitle{font-family:'Archivo',sans-serif;font-weight:600;font-size:21px;letter-spacing:-.02em;margin:0 0 4px}
+  .xcard .xsub{font-size:14px;color:var(--muted);margin:0 0 6px}
+  .empty{border:1px dashed var(--line2);border-radius:14px;padding:24px 20px;color:var(--muted);font-size:14.5px}
+  .cline{display:flex;gap:18px;padding:20px 2px;border-bottom:1px solid var(--line);align-items:flex-start}
+  .cline:first-child{padding-top:6px}
+  .cline.editing{background:var(--paper2);border-radius:12px;padding-left:12px;padding-right:12px}
+  .cthumb{width:76px;height:76px;object-fit:cover;border-radius:10px;border:1px solid var(--line2);flex:none;background:var(--paper2)}
+  .cinfo{flex:1;min-width:0}
+  .cname{font-family:'Archivo',sans-serif;font-weight:600;font-size:16.5px;letter-spacing:-.015em}
+  .croom{color:var(--muted);font-weight:500;font-size:14px}
+  .cspec{font-size:13px;color:var(--muted);line-height:1.55;margin-top:2px}
+  .cspec.dim2{color:var(--ink);margin-top:5px;font-weight:500}
+  .cacts{display:flex;gap:10px;align-items:center;margin-top:9px;color:var(--line2)}
+  .clink{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    background:none;border:0;cursor:pointer;color:var(--bronze);padding:0}
+  .clink:hover{text-decoration:underline}
+  .clink.danger{color:#8A2620}
+  .cprice{font-family:'Archivo',sans-serif;font-weight:600;font-size:17.5px;white-space:nowrap;text-align:right;letter-spacing:-.02em}
+  .cunit{display:block;font-family:'IBM Plex Sans',system-ui,sans-serif;font-weight:400;font-size:12px;color:var(--muted);margin-top:2px}
+  .csubrow{display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+    border-top:2px solid var(--ink);margin-top:2px;padding:16px 2px 0}
+  .csubrow span{font-size:13.5px;color:var(--muted)}
+  .csubrow .cst{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:block}
+  .csubrow b{font-family:'Archivo',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.02em}
+
+  /* accessory rows at checkout */
+  .accrow{display:flex;align-items:center;gap:16px;padding:14px 2px;border-bottom:1px solid var(--line)}
+  .accrow:last-child{border-bottom:0}
+  .accrow .an{flex:1;min-width:0}
+  .accrow .an b{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;letter-spacing:-.01em;display:block}
+  .accrow .an span{font-size:12.5px;color:var(--muted)}
+  .accrow .ap{font-family:'Archivo',sans-serif;font-weight:600;font-size:15px;white-space:nowrap}
+
+  /* ── checkout ── */
+  /* the details band wears the logo's burnt brown */
+  section.checkout{padding:46px 0 150px;background:#591C00;border-top:1px solid #4A1700}
+  .ckgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .ckgrid .cell{display:flex;flex-direction:column;gap:7px}
+  .ckgrid .cell label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+  .ckgrid .cell input{font:inherit;font-size:14.5px;padding:12px 12px;border:1px solid var(--line2);border-radius:9px;background:var(--white);width:100%}
+  .ckgrid .cell input:focus{outline:none;border-color:var(--ink)}
+  .ckgrid .span2{grid-column:span 2}
+  @media(max-width:560px){ .ckgrid .span2{grid-column:span 1} }
+  .paybar{display:flex;align-items:center;gap:18px;margin-top:24px;flex-wrap:wrap}
+  .paybtn{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    background:var(--ink);color:#fff;border:0;border-radius:10px;padding:17px 34px;cursor:pointer;transition:.25s}
+  .paybtn:hover{background:var(--bronze)}
+  .paybtn[disabled]{opacity:.5;cursor:not-allowed}
+  .paybtn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line2)}
+  .paybtn.ghost:hover{border-color:var(--ink);background:#fff}
+  .paynote{font-size:13px;color:var(--muted)}
+  .secure{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+  .secure svg{flex:none}
+
+  footer{background:#1D1C1A;margin-top:auto}
+  footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap}
+  footer .mono{color:rgba(255,255,255,.5)}
+
+  @media(max-width:980px){ .wrap{padding:0 22px} }
+  /* the injected EN/ES/FR pill must not sit on the wizard bar's Next button */
+  #langsw{bottom:96px!important}
+
+  /* sign-up overlay */
+  #regveil{position:fixed;inset:0;background:rgba(24,16,8,.56);z-index:120;display:flex;
+    align-items:center;justify-content:center;padding:18px}
+  #regveil[hidden]{display:none}
+  .regcard{position:relative;background:#fff;border-radius:18px;max-width:580px;width:100%;
+    max-height:92vh;overflow:auto;padding:32px 34px 30px}
+  .regcard h2{font-family:'Fraunces',serif;font-weight:600;font-size:28px;margin:0 0 8px}
+  .regsub{font-size:14px;color:var(--muted);margin:0 0 20px;line-height:1.6}
+  #regclose{position:absolute;top:12px;right:14px;font-size:26px;line-height:1;background:none;
+    border:0;cursor:pointer;color:var(--muted);padding:6px 8px}
+  #regclose:hover{color:var(--ink)}
+  /* locked price in the bar reads as an invitation */
+  .wizmid .wizprice .lockcta{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--bronze);cursor:pointer;background:none;border:0;padding:0;
+    text-decoration:underline;text-underline-offset:3px}
 </style>
 </head>
-<body>
+<body data-shop="cellular">
 
 <header>
   <div class="wrap">
@@ -141,46 +339,130 @@
       <a href="motorization.html">Motorization</a>
       <a href="about.html">About us</a>
       <a href="index.html#contact">Contact</a>
-      <a href="shop.html">Shop</a>
+      <a href="track.html">Orders</a>
       <a class="partner" href="trade.html">Log in</a>
     </nav>
+    <span class="acct">
+      <button id="shoplogin" type="button" hidden>Log in to shop</button>
+      <button id="signout" type="button" hidden>Sign out</button>
+    </span>
   </div>
 </header>
 
-<section class="phero">
-  <img src="assets/product-cellular.jpg" alt="Cellular Shades room scene">
-  <div class="pveil"></div>
-  <div class="ptit">
-    <h1>Cellular Shades</h1>
-  </div>
-</section>
+<main>
 
-<div class="wrap">
-  <p class="pdesc">Single, double and triple cell honeycomb in sheer, light-filtering and blackout, bonded so the cell holds its shape for the life of the shade. The most energy-efficient range we build.</p>
-  <p><a class="pdfbtn" href="assets/pdf/lumia-cellular-shades-catalogue-2025.pdf" target="_blank" rel="noopener">View product catalogue <span class="sz">PDF &#8599;</span></a></p>
+<!-- the shop — public; prices unlock after the free sign-up -->
+<div id="shop">
 
-  <div class="cfg">
-    <form id="form" onsubmit="return false"></form>
-  </div>
+  <!-- this page IS the product — no shop home (stubs keep the shared script happy) -->
+  <div id="home" hidden><div id="prods" hidden></div></div>
 
-  <aside class="sum">
-    <div class="code">Specification</div>
-    <h3>Your configuration</h3>
-    <div class="sumgrid">
-      <div>
-        <div class="kv" id="sumkv"></div>
-        <p class="sumnote">No retail pricing is shown online — quotations are issued from your trade price list, usually within one working day.</p>
-        <div class="btns">
-          <a class="btn solid" id="mailbtn" href="#">Request quotation</a>
-          <button class="btn ghost" id="copybtn" type="button">Copy spec</button>
-        </div>
+  <!-- the product page: hero image, intro, then the configurator -->
+  <div id="pview" hidden>
+    <section class="phero">
+      <img id="pv-img" src="assets/product-cellular.jpg" alt="Cellular Shades room scene">
+      <div class="pveil"></div>
+      <button id="backbtn" type="button" hidden></button>
+      <div class="ptit"><h1 id="pv-name">Cellular Shades</h1></div>
+    </section>
+
+    <div class="wrap">
+      <p class="pdesc">Single, double and triple cell honeycomb in sheer, light-filtering and blackout, bonded so the cell holds its shape for the life of the shade. The most energy-efficient range we build.</p>
+      <p><a class="pdfbtn" href="assets/pdf/lumia-cellular-shades-catalogue-2025.pdf" target="_blank" rel="noopener">View product catalogue <span class="sz">PDF &#8599;</span></a></p>
+    </div>
+
+    <section class="builder">
+      <div class="wrap">
+        <div id="steps"></div>
+        <div class="steperr" id="rowerr"></div>
       </div>
-      <div class="sumimg" id="sumimg" hidden>
-        <img id="sumimg-img" src="" alt="Selected colour">
-        <div class="cap" id="sumimg-cap"></div>
+    </section>
+
+    <!-- fixed: live price · quantity · add to cart -->
+    <div id="wizbar">
+      <div class="wizmid" style="margin:0;text-align:left">
+        <span class="wizstep">Price</span>
+        <span class="wizprice" id="wizprice">&mdash;</span>
+      </div>
+      <div class="qtyrow" style="margin-left:auto">
+        <button class="qbtn" type="button" data-q="-1">&minus;</button>
+        <span class="qnum" id="qnum">1</span>
+        <button class="qbtn" type="button" data-q="1">+</button>
+      </div>
+      <button id="wiznext" type="button">Add to cart &rarr;</button>
+    </div>
+  </div>
+
+  <section class="cartsec" id="cartsec" hidden>
+    <div class="wrap">
+      <div class="xcard" style="padding-bottom:22px">
+        <div class="xtitle">Your cart</div>
+        <p class="xsub" style="margin-bottom:20px">Everything below is made to your sizes. You can edit or remove a line before paying.</p>
+        <div class="lineswrap">
+          <div id="lines" hidden></div>
+          <div class="empty" id="empty">Your cart is empty &mdash; configure a product above and press Add to cart.</div>
+        </div>
+        <div class="totals" id="count" hidden></div>
       </div>
     </div>
-  </aside>
+  </section>
+
+  <section class="checkout" id="checkout" hidden>
+    <div class="wrap">
+      <!-- asked once, for the whole order: one remote can run many shades -->
+      <div class="xcard" id="accblock" hidden style="margin-bottom:22px">
+        <div class="xtitle">Motorized accessories</div>
+        <p class="xsub" id="acchint"></p>
+        <div id="accrows"></div>
+      </div>
+      <div class="xcard">
+        <div class="xtitle">Your details</div>
+        <p class="xsub" style="margin-bottom:20px">We make everything to order &mdash; your details are only used for this purchase and its delivery.</p>
+        <div class="ckgrid">
+          <div class="cell span2"><label for="ck-name">Full name *</label><input id="ck-name" type="text" autocomplete="name"></div>
+          <div class="cell"><label for="ck-email">E-mail *</label><input id="ck-email" type="email" autocomplete="email"></div>
+          <div class="cell"><label for="ck-phone">Phone</label><input id="ck-phone" type="tel" autocomplete="tel"></div>
+          <div class="cell span2"><label for="ck-address">Street address *</label><input id="ck-address" type="text" autocomplete="street-address"></div>
+          <div class="cell"><label for="ck-city">City *</label><input id="ck-city" type="text" autocomplete="address-level2"></div>
+          <div class="cell"><label for="ck-state">State *</label><input id="ck-state" type="text" autocomplete="address-level1"></div>
+          <div class="cell"><label for="ck-zip">ZIP *</label><input id="ck-zip" type="text" autocomplete="postal-code"></div>
+          <div class="cell span2"><label for="ck-notes">Notes (optional)</label><input id="ck-notes" type="text" placeholder="e.g. mounting, delivery instructions"></div>
+        </div>
+        <div class="paybar">
+          <button class="paybtn" id="paybtn" type="button" disabled>Pay</button>
+          <button class="paybtn ghost" id="savebtn" type="button" disabled>Save &mdash; pay later</button>
+          <span class="secure">
+            <svg width="14" height="16" viewBox="0 0 14 16" fill="none"><path d="M7 1 1.5 3v4c0 3.7 2.3 6.6 5.5 8 3.2-1.4 5.5-4.3 5.5-8V3L7 1Z" stroke="#767A7E" stroke-width="1.3"/></svg>
+            Secure checkout by Stripe &middot; card or US bank
+          </span>
+        </div>
+        <div class="err" id="ckerr"></div>
+        <p class="paynote" style="margin:16px 0 0">After payment you get an order reference &mdash; follow it any time on the <a href="track.html" style="color:var(--bronze)">tracking page</a>. We review every order before production and contact you if anything needs a second look.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<!-- free no-password sign-up: unlocks every price -->
+<div id="regveil" hidden>
+  <div class="regcard">
+    <button id="regclose" type="button" aria-label="Close">&times;</button>
+    <h2>See your prices</h2>
+    <p class="regsub">Create a free account &mdash; no password. Fill in your details once and every price on the shop appears instantly. We only use them for your orders and delivery.</p>
+    <div class="ckgrid">
+      <div class="cell span2"><label for="rg-name">Full name *</label><input id="rg-name" type="text" autocomplete="name"></div>
+      <div class="cell"><label for="rg-email">E-mail *</label><input id="rg-email" type="email" autocomplete="email"></div>
+      <div class="cell"><label for="rg-phone">Phone *</label><input id="rg-phone" type="tel" autocomplete="tel"></div>
+      <div class="cell span2"><label for="rg-address">Street address *</label><input id="rg-address" type="text" autocomplete="street-address"></div>
+      <div class="cell"><label for="rg-city">City *</label><input id="rg-city" type="text" autocomplete="address-level2"></div>
+      <div class="cell"><label for="rg-state">State *</label><input id="rg-state" type="text" autocomplete="address-level1"></div>
+      <div class="cell"><label for="rg-zip">ZIP *</label><input id="rg-zip" type="text" autocomplete="postal-code"></div>
+    </div>
+    <button class="paybtn" id="regbtn" type="button" style="margin-top:20px">Show my prices &rarr;</button>
+    <div class="err" id="regerr"></div>
+  </div>
 </div>
 
 <footer>
@@ -190,246 +472,8 @@
   </div>
 </footer>
 
-<script>
-var CONFIG = {"code": "02", "name": "Cellular Shades", "img": "assets/product-cellular.jpg", "pdf": "assets/pdf/lumia-cellular-shades-catalogue-2025.pdf", "pdfsize": "3.9 MB", "desc": "Single, double and triple cell honeycomb in sheer, light-filtering and blackout, bonded so the cell holds its shape for the life of the shade. The most energy-efficient range we build.", "hLabel": "Height", "width": [19, 105], "height": [20, 137], "sizeRange": "W 19\" \u2013 105\" \u00b7 H 20\" \u2013 137\"", "depth": "Inside 1\u00bd\u2033 \u00b7 fully recessed 2\u215c\u2033 \u00b7 outside surface 2\u00bc\u2033", "sizeRules": [{"drive": "Cordless", "tdbu": "No", "cls": ["S", "DLF"], "w": [19, 96], "h": [20, 96]}, {"drive": "Cordless", "tdbu": "No", "cls": ["DBO", "T"], "w": [19, 84], "h": [20, 84]}, {"drive": "Cordless", "tdbu": "Yes", "cls": ["S"], "w": [24, 84], "h": [20, 84]}, {"drive": "Cordless", "tdbu": "Yes", "cls": ["DLF"], "w": [24, 72], "h": [20, 72]}, {"drive": "Cordless", "tdbu": "Yes", "cls": ["DBO", "T"], "na": true}, {"drive": "Cord loop", "tdbu": "No", "w": [19, 105], "h": [20, 137]}, {"drive": "Cord loop", "tdbu": "Yes", "w": [24, 105], "h": [20, 137]}, {"drive": "Motorized", "tdbu": "No", "w": [24, 105], "h": [20, 137]}, {"drive": "Motorized", "tdbu": "Yes", "w": [34, 105], "h": [20, 137]}], "groups": [{"key": "cell", "label": "Cell", "options": ["Single", "Double", "Triple"]}, {"key": "opacity", "label": "Opacity", "options": ["Sheer", "Light-filtering", "Blackout"]}, {"type": "fabrics"}, {"key": "mount", "label": "Mount", "options": ["Inside", "Outside"]}, {"key": "drive", "label": "Drive", "options": ["Cordless", "Cord loop", "Motorized"]}, {"key": "chain", "label": "Control side", "options": ["Left", "Right"], "showIf": {"key": "drive", "value": ["Cord loop", "Motorized"]}}, {"key": "remote", "label": "Remote control", "options": ["No remote", "1-channel remote", "5-channel remote", "15-channel remote"], "showIf": {"key": "drive", "value": "Motorized"}}, {"key": "cable", "label": "USB-C charging cable", "options": ["No", "Yes"], "showIf": {"key": "drive", "value": "Motorized"}}, {"key": "hub", "label": "Smart home hub", "options": ["No", "Yes"], "showIf": {"key": "drive", "value": "Motorized"}}, {"key": "tdbu", "label": "Top-down bottom-up", "options": ["No", "Yes"]}], "fabrics": {"collections": [{"id": "cellular-classic", "label": "Classic", "transparency": "Classic colours", "material": ""}, {"id": "cellular-sheer", "label": "Sheer", "transparency": "Sheer colours", "material": ""}, {"id": "cellular-designer", "label": "Designer", "transparency": "Designer colours", "material": ""}], "colors": {"cellular-classic": [{"id": "001", "label": "001", "code": "", "img": "assets/fabrics/cellular-classic/001.jpg", "lg": "assets/fabrics-lg/cellular-classic/001.jpg"}, {"id": "002", "label": "002", "code": "", "img": "assets/fabrics/cellular-classic/002.jpg", "lg": "assets/fabrics-lg/cellular-classic/002.jpg"}, {"id": "004", "label": "004", "code": "", "img": "assets/fabrics/cellular-classic/004.jpg", "lg": "assets/fabrics-lg/cellular-classic/004.jpg"}, {"id": "005", "label": "005", "code": "", "img": "assets/fabrics/cellular-classic/005.jpg", "lg": "assets/fabrics-lg/cellular-classic/005.jpg"}, {"id": "007", "label": "007", "code": "", "img": "assets/fabrics/cellular-classic/007.jpg", "lg": "assets/fabrics-lg/cellular-classic/007.jpg"}, {"id": "009", "label": "009", "code": "", "img": "assets/fabrics/cellular-classic/009.jpg", "lg": "assets/fabrics-lg/cellular-classic/009.jpg"}, {"id": "010", "label": "010", "code": "", "img": "assets/fabrics/cellular-classic/010.jpg", "lg": "assets/fabrics-lg/cellular-classic/010.jpg"}, {"id": "011", "label": "011", "code": "", "img": "assets/fabrics/cellular-classic/011.jpg", "lg": "assets/fabrics-lg/cellular-classic/011.jpg"}, {"id": "012", "label": "012", "code": "", "img": "assets/fabrics/cellular-classic/012.jpg", "lg": "assets/fabrics-lg/cellular-classic/012.jpg"}, {"id": "015", "label": "015", "code": "", "img": "assets/fabrics/cellular-classic/015.jpg", "lg": "assets/fabrics-lg/cellular-classic/015.jpg"}, {"id": "019", "label": "019", "code": "", "img": "assets/fabrics/cellular-classic/019.jpg", "lg": "assets/fabrics-lg/cellular-classic/019.jpg"}, {"id": "021", "label": "021", "code": "", "img": "assets/fabrics/cellular-classic/021.jpg", "lg": "assets/fabrics-lg/cellular-classic/021.jpg"}, {"id": "023", "label": "023", "code": "", "img": "assets/fabrics/cellular-classic/023.jpg", "lg": "assets/fabrics-lg/cellular-classic/023.jpg"}, {"id": "024", "label": "024", "code": "", "img": "assets/fabrics/cellular-classic/024.jpg", "lg": "assets/fabrics-lg/cellular-classic/024.jpg"}, {"id": "025", "label": "025", "code": "", "img": "assets/fabrics/cellular-classic/025.jpg", "lg": "assets/fabrics-lg/cellular-classic/025.jpg"}, {"id": "027", "label": "027", "code": "", "img": "assets/fabrics/cellular-classic/027.jpg", "lg": "assets/fabrics-lg/cellular-classic/027.jpg"}, {"id": "030", "label": "030", "code": "", "img": "assets/fabrics/cellular-classic/030.jpg", "lg": "assets/fabrics-lg/cellular-classic/030.jpg"}, {"id": "040", "label": "040", "code": "", "img": "assets/fabrics/cellular-classic/040.jpg", "lg": "assets/fabrics-lg/cellular-classic/040.jpg"}, {"id": "101", "label": "101", "code": "", "img": "assets/fabrics/cellular-classic/101.jpg", "lg": "assets/fabrics-lg/cellular-classic/101.jpg"}], "cellular-sheer": [{"id": "sh-100", "label": "SH 100", "code": "", "img": "assets/fabrics/cellular-sheer/sh-100.jpg", "lg": "assets/fabrics-lg/cellular-sheer/sh-100.jpg"}, {"id": "sh-300", "label": "SH 300", "code": "", "img": "assets/fabrics/cellular-sheer/sh-300.jpg", "lg": "assets/fabrics-lg/cellular-sheer/sh-300.jpg"}, {"id": "sh-600", "label": "SH 600", "code": "", "img": "assets/fabrics/cellular-sheer/sh-600.jpg", "lg": "assets/fabrics-lg/cellular-sheer/sh-600.jpg"}, {"id": "sh-900", "label": "SH 900", "code": "", "img": "assets/fabrics/cellular-sheer/sh-900.jpg", "lg": "assets/fabrics-lg/cellular-sheer/sh-900.jpg"}], "cellular-designer": [{"id": "dh-100", "label": "DH 200", "code": "", "img": "assets/fabrics/cellular-designer/dh-100.jpg", "lg": "assets/fabrics-lg/cellular-designer/dh-100.jpg"}, {"id": "dh-400", "label": "DH 400", "code": "", "img": "assets/fabrics/cellular-designer/dh-400.jpg", "lg": "assets/fabrics-lg/cellular-designer/dh-400.jpg"}, {"id": "dh-500", "label": "DH 500", "code": "", "img": "assets/fabrics/cellular-designer/dh-500.jpg", "lg": "assets/fabrics-lg/cellular-designer/dh-500.jpg"}, {"id": "dh-5247", "label": "DH 5247", "code": "", "img": "assets/fabrics/cellular-designer/dh-5247.jpg", "lg": "assets/fabrics-lg/cellular-designer/dh-5247.jpg"}, {"id": "dh-5249", "label": "DH 5249", "code": "", "img": "assets/fabrics/cellular-designer/dh-5249.jpg", "lg": "assets/fabrics-lg/cellular-designer/dh-5249.jpg"}]}}};
-
-(function(){
-  var form = document.getElementById('form');
-  var state = {};
-  CONFIG.groups.forEach(function(g){
-    if(g.type === 'fabrics') return;
-    state[g.key] = (typeof g.options[0] === 'string' ? g.options[0] : g.options[0].n);
-  });
-  var F = CONFIG.fabrics || null;
-  if(F){
-    state.collection = F.collections[0].id;
-    state.colour = F.colors[state.collection][0].id;
-  }
-
-  function stepCode(n){ return 'Step ' + (n < 10 ? '0' + n : n); }
-  var step = 1;
-
-  function optName(o){ return typeof o === 'string' ? o : o.n; }
-
-  function findCollection(id){ return F.collections.filter(function(c){ return c.id === id; })[0]; }
-  function findColour(){ return F.colors[state.collection].filter(function(c){ return c.id === state.colour; })[0]; }
-
-  function renderSwatches(){
-    var meta = findCollection(state.collection);
-    document.getElementById('fabmeta').innerHTML = [meta.transparency, meta.material].filter(Boolean).join(' &middot; ');
-    document.getElementById('swgrid').innerHTML = F.colors[state.collection].map(function(c){
-      return '<button type="button" class="swatch' + (c.id === state.colour ? ' on' : '') + '" data-c="' + c.id + '" title="' + (c.name || c.label) + '">' +
-        '<img loading="lazy" src="' + c.img + '" alt="' + (c.name || c.label) + '">' +
-        '<div class="nm">' + (c.code || c.label) + '</div></button>';
-    }).join('');
-  }
-
-  /* option groups (fabric step rendered in place) */
-  CONFIG.groups.forEach(function(g){
-    if(g.type === 'fabrics'){
-      var chips = F.collections.map(function(c,i){
-        return '<button type="button" class="chip' + (i===0?' on':'') + '" data-col="' + c.id + '">' + c.label + '</button>';
-      }).join('');
-      form.insertAdjacentHTML('beforeend',
-        '<div class="grp"><div class="code">' + stepCode(step++) + '</div><h3>Fabric &amp; colour</h3>' +
-        '<div class="chips" id="colchips">' + chips + '</div>' +
-        '<div class="fabmeta" id="fabmeta"></div>' +
-        '<div class="swgrid" id="swgrid"></div></div>');
-      renderSwatches();
-      return;
-    }
-    var si = g.showIf ? ' data-si-key="' + g.showIf.key + '" data-si-val="' + [].concat(g.showIf.value).join('|') + '"' : '';
-    var hasImg = g.options.some(function(o){ return typeof o === 'object' && o.img; });
-    if(hasImg){
-      var isPh = g.options.some(function(o){ return typeof o === 'object' && o.ph; });
-      var cards = g.options.map(function(o,i){
-        return '<button type="button" class="optcard' + (i===0?' on':'') + '" data-g="' + g.key + '" data-v="' + o.n + '">' +
-          '<img loading="lazy"' + (o.ph ? ' class="ph"' : '') + ' src="' + o.img + '" alt="' + o.n + '"><div class="nm">' + o.n + '</div></button>';
-      }).join('');
-      form.insertAdjacentHTML('beforeend',
-        '<div class="grp"' + si + '><div class="code">' + stepCode(step++) + '</div><h3>' + g.label + '</h3>' +
-        '<div class="optgrid' + (isPh ? ' ph' : '') + '">' + cards + '</div></div>');
-      return;
-    }
-    var chips = g.options.map(function(o,i){
-      var name = optName(o);
-      var sw = (typeof o === 'object' && o.c) ? '<span class="sw" style="background:' + o.c + '"></span>' : '';
-      return '<button type="button" class="chip' + (i===0?' on':'') + '" data-g="' + g.key + '" data-v="' + name + '">' + sw + name + '</button>';
-    }).join('');
-    form.insertAdjacentHTML('beforeend',
-      '<div class="grp"' + si + '><div class="code">' + stepCode(step++) + '</div><h3>' + g.label + '</h3>' +
-      '<div class="chips">' + chips + '</div></div>');
-  });
-
-  form.addEventListener('click', function(e){
-    var col = e.target.closest('.chip[data-col]');
-    if(col){
-      state.collection = col.dataset.col;
-      state.colour = F.colors[state.collection][0].id;
-      document.querySelectorAll('#colchips .chip').forEach(function(x){ x.classList.toggle('on', x === col); });
-      renderSwatches(); update(); return;
-    }
-    var sw = e.target.closest('.swatch');
-    if(sw){
-      state.colour = sw.dataset.c;
-      document.querySelectorAll('.swatch').forEach(function(x){ x.classList.toggle('on', x === sw); });
-      update(); return;
-    }
-    var c = e.target.closest('.chip[data-g], .optcard[data-g]'); if(!c) return;
-    state[c.dataset.g] = c.dataset.v;
-    document.querySelectorAll('[data-g="' + c.dataset.g + '"]').forEach(function(x){ x.classList.toggle('on', x === c); });
-    update();
-  });
-
-  function setChipSub(ch, wb, hb){
-    var s = ch.querySelector('.chipsub');
-    if(!s){ s = document.createElement('span'); s.className = 'chipsub'; ch.appendChild(s); }
-    var t = 'W ' + wb[0] + '&quot;&ndash;' + wb[1] + '&quot;';
-    if(hb) t += ' &middot; H ' + hb[0] + '&quot;&ndash;' + hb[1] + '&quot;';
-    s.innerHTML = t;
-  }
-  function refreshRuleSubs(){
-    if(!CONFIG.widthRules) return;
-    var R = CONFIG.widthRules, HR = CONFIG.heightRules;
-    document.querySelectorAll('.chip[data-g="' + R.drive + '"]').forEach(function(ch){
-      var wb = R.rules[ch.dataset.v + '|' + state[R.tdbu]];
-      var hb = HR ? HR.rules[ch.dataset.v] : null;
-      if(wb) setChipSub(ch, wb, hb);
-    });
-    document.querySelectorAll('.chip[data-g="' + R.tdbu + '"]').forEach(function(ch){
-      var wb = R.rules[state[R.drive] + '|' + ch.dataset.v];
-      var hb = HR ? HR.rules[state[R.drive]] : null;
-      if(wb) setChipSub(ch, wb, hb);
-    });
-  }
-
-  var sumkv = document.getElementById('sumkv');
-  var mailbtn = document.getElementById('mailbtn');
-
-  function rows(){
-    var r = [['Product', CONFIG.name]];
-    CONFIG.groups.forEach(function(g){
-      if(g.type === 'fabrics'){
-        var col = findColour();
-        r.push(['Collection', findCollection(state.collection).label]);
-        r.push(['Colour', col.code || col.label]);
-        return;
-      }
-      if(g.showIf && [].concat(g.showIf.value).indexOf(state[g.showIf.key]) === -1) return;
-      r.push([g.label, state[g.key]]);
-    });
-    if(CONFIG.sizeRange) r.push(['Size range', sizeRangeText()]);
-    if(CONFIG.depth) r.push(['Min. depth', CONFIG.depth]);
-    if(CONFIG.note) r.push(['Included', CONFIG.note]);
-    return r;
-  }
-
-  /* "exclude": some options are unavailable while another choice is made
-     (e.g. relaxed fold -> no motor); an excluded pick falls back to the first allowed one */
-  function applyExcludes(){
-    CONFIG.groups.forEach(function(g){
-      if(!g.exclude) return;
-      var X = g.exclude, active = X.value.indexOf(state[X.key]) !== -1;
-      var chips = document.querySelectorAll('[data-g="' + g.key + '"]');
-      chips.forEach(function(ch){
-        var off = active && X.options.indexOf(ch.dataset.v) !== -1;
-        ch.disabled = off;
-        ch.title = off ? 'Not available with ' + state[X.key] + ' ' + X.key : '';
-      });
-      if(active && X.options.indexOf(state[g.key]) !== -1){
-        var first = [].filter.call(chips, function(ch){ return !ch.disabled; })[0];
-        state[g.key] = first.dataset.v;
-        chips.forEach(function(ch){ ch.classList.toggle('on', ch === first); });
-      }
-    });
-  }
-
-  /* cellular: size limits depend on cell type, drive and TDBU (sizeRules) */
-  function cellClass(){
-    if(state.cell === 'Single') return 'S';
-    if(state.cell === 'Double') return state.opacity === 'Blackout' ? 'DBO' : 'DLF';
-    return 'T';
-  }
-  function sizeRule(drive, tdbu){
-    var cls = cellClass();
-    return (CONFIG.sizeRules || []).filter(function(r){
-      return r.drive === drive && r.tdbu === tdbu && (!r.cls || r.cls.indexOf(cls) !== -1);
-    })[0] || null;
-  }
-  function refreshSizeRules(){
-    if(!CONFIG.sizeRules) return;
-    var tchips = document.querySelectorAll('.chip[data-g="tdbu"]');
-    tchips.forEach(function(ch){
-      var r = sizeRule(state.drive, ch.dataset.v), na = !r || r.na;
-      ch.disabled = na;
-      ch.title = na ? 'Not available with this cell type and drive' : '';
-      if(!na) setChipSub(ch, r.w, r.h);
-      else { var sub = ch.querySelector('.chipsub'); if(sub) sub.innerHTML = 'n/a'; }
-    });
-    if(tchips.length && [].some.call(tchips, function(ch){ return ch.disabled && ch.dataset.v === state.tdbu; })){
-      state.tdbu = 'No';
-      tchips.forEach(function(ch){ ch.classList.toggle('on', ch.dataset.v === 'No'); });
-    }
-    document.querySelectorAll('.chip[data-g="drive"]').forEach(function(ch){
-      var r = sizeRule(ch.dataset.v, state.tdbu);
-      if(r && !r.na) setChipSub(ch, r.w, r.h);
-    });
-  }
-  function sizeRangeText(){
-    var r = CONFIG.sizeRules && sizeRule(state.drive, state.tdbu);
-    return (r && !r.na) ? 'W ' + r.w[0] + '" – ' + r.w[1] + '" · H ' + r.h[0] + '" – ' + r.h[1] + '"' : CONFIG.sizeRange;
-  }
-
-  function update(){
-    applyExcludes();
-    refreshSizeRules();
-    document.querySelectorAll('.grp[data-si-key]').forEach(function(grp){
-      grp.hidden = grp.dataset.siVal.split('|').indexOf(state[grp.dataset.siKey]) === -1;
-    });
-    var n = 1;
-    document.querySelectorAll('#form .grp').forEach(function(grp){
-      if(!grp.hidden) grp.querySelector('.code').textContent = 'Step ' + (n < 10 ? '0' + n : n), n++;
-    });
-    refreshRuleSubs();
-    if(F){
-      var col = findColour();
-      var box = document.getElementById('sumimg');
-      box.hidden = false;
-      document.getElementById('sumimg-img').src = col.lg || col.img;
-      document.getElementById('sumimg-cap').textContent =
-        findCollection(state.collection).label + ' — ' + (col.code || col.label);
-    }
-    sumkv.innerHTML = rows().map(function(r){
-      return '<div><span>' + r[0] + '</span><b>' + r[1] + '</b></div>';
-    }).join('');
-
-    var body = rows().map(function(r){ return r[0] + ': ' + r[1]; }).join('\n');
-    mailbtn.href = 'mailto:lumiashades@gmail.com?subject=' +
-      encodeURIComponent('Quotation request — ' + CONFIG.name) +
-      '&body=' + encodeURIComponent(body + '\n\n—\nSent from the LUMIA product configurator');
-  }
-
-  document.getElementById('copybtn').addEventListener('click', function(){
-    var txt = 'LUMIA — ' + CONFIG.name + '\n' + rows().map(function(r){ return r[0] + ': ' + r[1]; }).join('\n');
-    navigator.clipboard.writeText(txt).then(function(){
-      var b = document.getElementById('copybtn');
-      b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy spec'; }, 1400);
-    });
-  });
-
-  /* preselect via query string, e.g. ?tdbu=1 from the TDBU landing page */
-  var qs = new URLSearchParams(location.search);
-  if(qs.get('tdbu') === '1'){
-    var pre = form.querySelector('.chip[data-g="tdbu"][data-v="Yes"]');
-    if(pre){
-      state.tdbu = 'Yes';
-      document.querySelectorAll('.chip[data-g="tdbu"]').forEach(function(x){ x.classList.toggle('on', x === pre); });
-    }
-  }
-
-  update();
-})();
-</script>
+<script src="assets/shopkit.js?v=1"></script>
 <script src="assets/trade.js?v=23" defer></script>
+
 </body>
 </html>
