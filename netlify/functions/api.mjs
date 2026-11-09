@@ -196,15 +196,16 @@ async function dealerFromReq(req) {
   return d && d.active !== false ? { code, ...d } : null;
 }
 
-/* home customers (shop.html): the shop is public — anyone can configure,
-   but prices unlock only after a simple no-password sign-up (name, e-mail,
-   phone, shipping address), kept as a "homeacct:<email>" blob. The retail
-   level and open/closed switch live in the "consumer" blob (admin panel). */
+/* home customers (the shop on the product pages): the shop is public —
+   anyone can configure, but prices unlock only after a simple no-password
+   sign-up (just name + e-mail; phone/address optional until checkout),
+   kept as a "homeacct:<email>" blob. The retail level and open/closed
+   switch live in the "consumer" blob (admin panel). */
 async function consumerCfg() {
   const c = await store().get("consumer", { type: "json" });
   return { mult: 1.4, active: true, ...(c || {}) };
 }
-function homeContact(c) {
+function homeContact(c, opts) {
   const home = {
     name: String((c || {}).name || "").trim().slice(0, 120),
     email: String((c || {}).email || "").trim().toLowerCase().slice(0, 160),
@@ -214,9 +215,10 @@ function homeContact(c) {
     state: String((c || {}).state || "").trim().slice(0, 40),
     zip: String((c || {}).zip || "").trim().slice(0, 20),
   };
-  const ok = home.name && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(home.email) &&
-    home.address && home.city && home.state && home.zip;
-  return ok ? home : null;
+  if (!home.name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(home.email)) return null;
+  /* sign-up only needs an identity; an order also needs somewhere to ship */
+  if (!(opts && opts.loose) && !(home.address && home.city && home.state && home.zip)) return null;
+  return home;
 }
 /* one Checkout session for a home order — paid right at checkout, reviewed after */
 async function homeCheckout(order, origin, sk) {
@@ -636,8 +638,8 @@ export default async (req) => {
   if (path === "/api/home/register" && req.method === "POST") {
     const cfg = await consumerCfg();
     if (cfg.active === false) return bad("The shop is closed right now.", 503);
-    const home = homeContact(body.customer || body);
-    if (!home) return bad("name, e-mail, phone and shipping address are required");
+    const home = homeContact(body.customer || body, { loose: true });
+    if (!home) return bad("name and a valid e-mail are required");
     const base = await store().get("prices", { type: "json" });
     if (!base) return bad("prices not loaded yet", 503);
     const s = store();

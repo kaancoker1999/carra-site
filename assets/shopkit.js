@@ -46,14 +46,10 @@
     err.classList.remove('on');
     var c = {};
     RG_FIELDS.forEach(function(k){ c[k] = (document.getElementById('rg-' + k).value || '').trim(); });
+    /* only an identity is needed to see prices — the address can wait for checkout */
     var missing = [];
     if(!c.name) missing.push('your name');
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email)) missing.push('a valid e-mail');
-    if(!c.phone) missing.push('a phone number');
-    if(!c.address) missing.push('the street address');
-    if(!c.city) missing.push('the city');
-    if(!c.state) missing.push('the state');
-    if(!c.zip) missing.push('the ZIP code');
     if(missing.length){
       err.textContent = 'Please fill in ' + missing.join(', ') + '.';
       err.classList.add('on');
