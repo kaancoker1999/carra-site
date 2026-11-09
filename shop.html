@@ -554,7 +554,7 @@
     if(!CFG) return;
     P = CFG.products.filter(function(p){ return p.id === pid; })[0];
     if(!P){ closeProduct(); return; }
-    SEL = {}; OPEN = { _room: true }; SUBOPEN = {}; QTY = 1; editIdx = null;
+    SEL = {}; OPEN = { _size: true }; SUBOPEN = {}; QTY = 1; editIdx = null;
     ensureDefaults();
     var lim = sizeLimits();
     W = clamp(36, lim.w[0], lim.w[1]);
@@ -845,7 +845,9 @@
   };
 
   function stepList(){
-    var list = [{ kind: 'room', key: '_room', label: 'Room' }];
+    /* the measurements come first, then the room, then the product's own steps */
+    var list = [{ kind: 'size', key: '_size', label: 'Width & height' },
+                { kind: 'room', key: '_room', label: 'Room' }];
     (P.steps || []).forEach(function(st){
       if(st.key === 'cgroup') return;          /* it becomes the filter inside the fabric step */
       if(!stepVisible(st)) return;
@@ -856,7 +858,6 @@
         list.push({ kind: 'opt', key: st.key, st: st, label: st.label });
       }
     });
-    list.push({ kind: 'size', key: '_size', label: 'Width & height' });
     return list;
   }
 
