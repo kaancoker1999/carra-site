@@ -260,7 +260,14 @@
   .cname{font-family:'Archivo',sans-serif;font-weight:600;font-size:16.5px;letter-spacing:-.015em}
   .croom{color:var(--muted);font-weight:500;font-size:14px}
   .cspec{font-size:13px;color:var(--muted);line-height:1.55;margin-top:2px}
-  .cspec.dim2{color:var(--ink);margin-top:5px;font-weight:500}
+  .cspec.dim2{color:var(--ink);margin-top:7px;font-weight:500}
+  /* the line's full configuration, label by label */
+  .ckv{margin:7px 0 0;max-width:460px}
+  .ckv div{display:flex;justify-content:space-between;gap:16px;font-size:12.5px;
+    padding:3.5px 0;border-bottom:1px dashed var(--line)}
+  .ckv div:last-child{border-bottom:0}
+  .ckv span{color:var(--muted)}
+  .ckv b{font-weight:500;text-align:right}
   .cacts{display:flex;gap:10px;align-items:center;margin-top:9px;color:var(--line2)}
   .clink{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
     background:none;border:0;cursor:pointer;color:var(--bronze);padding:0}
@@ -472,7 +479,7 @@
   </div>
 </footer>
 
-<script src="assets/shopkit.js?v=1"></script>
+<script src="assets/shopkit.js?v=2"></script>
 <script src="assets/trade.js?v=23" defer></script>
 
 </body>

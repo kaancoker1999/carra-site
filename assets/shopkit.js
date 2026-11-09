@@ -809,18 +809,17 @@
   function inTxt(v){ return fmtIn8(v).replace(' 0/8', ''); }
 
   function cartRow(l, i){
-    var pairs = specPairs(l).filter(function(p){ return p.k && !tdbuNo(p); });
-    var fab = pairs.filter(function(p){ return /fabric|cell/i.test(p.k); })[0];
-    var rest = pairs.filter(function(p){
-      return p !== fab && !/^(no|none)$/i.test(p.v || '');
-    }).map(function(p){ return p.v; }).join(' · ');
+    /* the full configuration, label by label */
+    var pairs = specPairs(l).filter(function(p){ return p.k; });
+    var kv = pairs.map(function(p){
+      return '<div><span>' + esc(p.k) + '</span><b>' + esc(p.v) + '</b></div>';
+    }).join('');
     return '<div class="cline' + (i === editIdx ? ' editing' : '') + '">' +
       '<img class="cthumb" src="' + esc(swatchOf(l)) + '" alt="" loading="lazy">' +
       '<div class="cinfo">' +
         '<div class="cname">' + esc(l.product) +
           (l.label ? ' <span class="croom">&mdash; ' + esc(l.label) + '</span>' : '') + '</div>' +
-        (fab ? '<div class="cspec">' + esc(fab.v) + '</div>' : '') +
-        (rest ? '<div class="cspec">' + esc(rest) + '</div>' : '') +
+        (kv ? '<div class="ckv">' + kv + '</div>' : '') +
         '<div class="cspec dim2">' +
           (l.w != null ? inTxt(l.w) + '&Prime; &times; ' + inTxt(l.h) + '&Prime; &middot; ' : '') +
           'Qty ' + l.qty + '</div>' +
