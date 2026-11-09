@@ -736,13 +736,15 @@ export default async (req) => {
       home, total: "", lines,
       status: { status: "Pending review", locked: false, note: "" },
       payment: null, test: false,
-      draft: !!body.paylater,   // saved without paying: hidden from the admin until paid
+      // every home order stays hidden from the admin until the payment lands —
+      // an abandoned checkout never clutters the panel (unpaid drafts purge after 45 days)
+      draft: true,
     };
     const cents = orderCents(order);
     if (cents < 50) return bad("order total too small");
     order.total = "$" + (cents / 100).toFixed(2);
     await s.setJSON(`order:${ref}`, order);
-    if (!body.paylater) await notifyOrder(order);
+    // the admin is notified when the payment lands (markStripePaid), not before
     if (body.paylater) return json({ ref });
     const sess = await homeCheckout(order, new URL(req.url).origin, sk);
     if (!sess) return bad("Could not start the payment.", 502);

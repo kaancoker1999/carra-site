@@ -309,6 +309,7 @@
       <button class="tab on" data-tab="overview" type="button">Overview</button>
       <button class="tab" data-tab="dealers" type="button">Customers</button>
       <button class="tab" data-tab="orders" type="button">Orders</button>
+      <button class="tab" data-tab="homeorders" type="button">Home orders</button>
       <button class="tab" data-tab="payments" type="button">Payments</button>
       <button class="tab" data-tab="messages" type="button">Messages<span id="msgcount"></span></button>
       <button class="tab" data-tab="admins" type="button" id="adminstab" hidden>Admins</button>
@@ -406,12 +407,13 @@
     <div id="tab-orders" hidden>
       <div class="card ordwrap">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-          <h2 style="font-size:18px">All orders</h2>
+          <h2 style="font-size:18px" id="ordtitle">All orders</h2>
           <div class="row" style="gap:8px">
             <button class="btn ghost" id="csvbtn" type="button">Export CSV</button>
             <button class="btn ghost" id="refreshorders" type="button">Refresh</button>
           </div>
         </div>
+        <div id="homehint" hidden style="font-size:12.5px;color:var(--muted);background:#FAF5EA;border:1px solid #E4E3DE;border-radius:8px;padding:10px 14px;margin:0 0 12px">Orders from the shop land here <b>once they are paid</b> — a customer’s unpaid save never shows up. To enter an order for someone who called or wrote: open a product page, configure their lines, log in to the shop with <b>their</b> name and e-mail, choose <b>Save &mdash; pay later</b>, and send them the link of the page you land on. They open it with their e-mail and pay there; the order then appears here with its shipping address.</div>
         <div class="pvtabs" id="stagetabs" style="margin-bottom:14px"></div>
         <div id="cancelbar" style="margin:0 0 12px"></div>
         <div class="cal" id="cal"></div>
@@ -620,7 +622,14 @@
     t.addEventListener('click', function(){
       document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('on', x === t); });
       $('tab-overview').hidden = t.dataset.tab !== 'overview';
-      $('tab-orders').hidden = t.dataset.tab !== 'orders';
+      $('tab-orders').hidden = t.dataset.tab !== 'orders' && t.dataset.tab !== 'homeorders';
+      if(t.dataset.tab === 'orders' || t.dataset.tab === 'homeorders'){
+        var hm = t.dataset.tab === 'homeorders';
+        if(hm !== homeMode){ homeMode = hm; stageSel = 'orders'; }
+        $('ordtitle').textContent = homeMode ? 'Home orders' : 'All orders';
+        $('homehint').hidden = !homeMode;
+        renderCalendar();
+      }
       $('tab-dealers').hidden = t.dataset.tab !== 'dealers';
       $('tab-payments').hidden = t.dataset.tab !== 'payments';
       $('tab-messages').hidden = t.dataset.tab !== 'messages';
@@ -633,6 +642,8 @@
   /* ── orders ── */
   var STATUSES = ['Pending review', 'In production', 'Shipped', 'On hold', 'Cancelled'];
   var allOrders = [];
+  var homeMode = false;                         /* Orders tab: dealers; Home orders tab: the shop */
+  function pool(){ return allOrders.filter(function(o){ return !!o.consumer === homeMode; }); }
   var calMonth = null;                          /* first of the month on screen */
   var stageSel = 'orders';                      /* orders (active) | past (paid) | cancelled */
   /* top-level split for the Orders tab: paid orders move to Past, cancelled
@@ -647,6 +658,8 @@
     var st = (o.status && o.status.status) || 'Pending review';
     if(o.test) return 'test';                   /* test accounts never mix with real orders */
     if(st === 'Cancelled') return 'cancelled';
+    /* home orders are paid up front — done means shipped, not paid */
+    if(o.consumer) return st === 'Shipped' ? 'past' : 'orders';
     if(o.payment && o.payment.paid) return 'past';
     return 'orders';
   }
@@ -1485,21 +1498,21 @@
   });
 
   function ordersOn(dayKey){
-    return allOrders.filter(function(o){ return ymd(o.at) === dayKey; });
+    return pool().filter(function(o){ return ymd(o.at) === dayKey; });
   }
   function ordersInWeek(mondayKey){
-    return allOrders.filter(function(o){ return ymd(weekStart(o.at)) === mondayKey; });
+    return pool().filter(function(o){ return ymd(weekStart(o.at)) === mondayKey; });
   }
   function selectedOrders(){
     if(calSel.mode === 'day') return ordersOn(calSel.key);
     if(calSel.mode === 'week') return ordersInWeek(calSel.key);
     if(calSel.mode === 'range'){
-      return allOrders.filter(function(o){
+      return pool().filter(function(o){
         var k = ymd(o.at);
         return k >= calSel.from && k <= calSel.to;      /* ISO dates compare as text */
       });
     }
-    return allOrders;
+    return pool();
   }
   function inSelection(key){
     if(calSel.mode === 'day') return key === calSel.key;
@@ -1512,7 +1525,7 @@
 
   function renderCalendar(){
     var counts = {};
-    allOrders.forEach(function(o){ if(o.test) return; var k = ymd(o.at); counts[k] = (counts[k] || 0) + 1; });
+    pool().forEach(function(o){ if(o.test) return; var k = ymd(o.at); counts[k] = (counts[k] || 0) + 1; });
 
     var first = calMonth, todayKey = ymd(new Date());
     var head = '<div class="calhead">' +
@@ -1562,7 +1575,7 @@
     list = byGroup[stageSel];
     /* on the Cancelled tab, offer to purge every cancelled order in the system
        (not just the date-filtered view) so they stop piling up */
-    var allCancelled = allOrders.filter(function(o){ return (o.status && o.status.status) === 'Cancelled'; });
+    var allCancelled = pool().filter(function(o){ return (o.status && o.status.status) === 'Cancelled'; });
     $('cancelbar').innerHTML = (stageSel === 'cancelled' && allCancelled.length)
       ? '<button class="btn ghost o-del-all" type="button" style="padding:8px 14px;color:#8A2620;border-color:#E0B7B3">' +
         'Delete all cancelled (' + allCancelled.length + ')</button>' +
@@ -1861,14 +1874,14 @@
   }
   $('csvbtn').addEventListener('click', function(){
     var rows = [['Date','Ref','Customer account','End customer','Lines','Units','Total','Status','Paid','Locked','Note','Order notes']];
-    allOrders.forEach(function(o){
+    pool().forEach(function(o){
       var units = (o.lines || []).reduce(function(a,l){ return a + (l.qty || 0); }, 0);
       var st = o.status || {};
       rows.push([o.at.slice(0,10), o.ref, o.dealer, o.customer || '', (o.lines || []).length, units,
         o.total || '', st.status || '', (o.payment && o.payment.paid) ? 'yes' : '', st.locked ? 'yes' : '', st.note || '', o.notes || '']);
     });
     var csv = rows.map(function(r){ return r.map(csvCell).join(','); }).join('\n');
-    download('lumia-orders-' + new Date().toISOString().slice(0,10) + '.csv', csv, 'text/csv');
+    download('lumia-' + (homeMode ? 'home-orders-' : 'orders-') + new Date().toISOString().slice(0,10) + '.csv', csv, 'text/csv');
   });
 
   /* ── invoice from the admin side (same layout as the dealer one) ── */
