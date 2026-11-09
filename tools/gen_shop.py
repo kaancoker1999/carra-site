@@ -77,12 +77,16 @@ def build():
         # remotes, cables and hubs are asked once at checkout, not per shade
         p["steps"] = [s for s in p["steps"] if s["key"] not in ("remote", "cable", "hub")]
         for step in p["steps"]:
-            # retail shoppers don't get the plain Flat fold — trade only
-            if p["id"] == "roman" and step["key"] == "fold":
-                step["options"] = [o for o in step["options"] if o != "Flat"]
             # the lift is always called "Mechanism" in the shop, never "Drive"
             if step["key"] == "drive":
                 step["label"] = "Mechanism"
+                # Flat folds hang on a corded lift: CCL or motor, never cordless
+                if p["id"] == "roman":
+                    ex = step.get("exclude")
+                    rules = [ex] if isinstance(ex, dict) else list(ex or [])
+                    rules.append({"key": "fold", "value": ["Flat"],
+                                  "options": ["Cordless"]})
+                    step["exclude"] = rules
             imgs = option_imgs(cfg, step["key"])
             if imgs:
                 step["imgs"] = imgs

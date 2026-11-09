@@ -352,7 +352,7 @@
     </section>
 
     <div class="wrap">
-      <p class="pdesc">Five fold styles across every fabric group &mdash; back rods, front rods, relaxed and hobbled &mdash; with square hems and a consistent stack at any width. Lining and blackout backing are made in house.</p>
+      <p class="pdesc">Five fold styles across every fabric group &mdash; flat, back rods, front rods, relaxed and hobbled &mdash; with square hems and a consistent stack at any width. Lining and blackout backing are made in house.</p>
       <p><a class="pdfbtn" href="assets/pdf/lumia-roman-shades-catalogue.pdf" target="_blank" rel="noopener">View product catalogue <span class="sz">PDF &#8599;</span></a></p>
     </div>
 
@@ -610,9 +610,12 @@
   }
   function disabledOf(st){
     var m = {};
-    if(st.exclude && [].concat(st.exclude.value).indexOf(SEL[st.exclude.key]) !== -1){
-      st.exclude.options.forEach(function(o){ m[o] = st.exclude.key; });
-    }
+    /* exclude is one rule or a list of rules */
+    [].concat(st.exclude || []).forEach(function(ex){
+      if([].concat(ex.value).indexOf(SEL[ex.key]) !== -1){
+        ex.options.forEach(function(o){ m[o] = ex.key; });
+      }
+    });
     return m;
   }
   function collectionOpts(st){

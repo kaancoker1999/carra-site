@@ -604,9 +604,12 @@
   }
   function disabledOf(st){
     var m = {};
-    if(st.exclude && [].concat(st.exclude.value).indexOf(SEL[st.exclude.key]) !== -1){
-      st.exclude.options.forEach(function(o){ m[o] = st.exclude.key; });
-    }
+    /* exclude is one rule or a list of rules */
+    [].concat(st.exclude || []).forEach(function(ex){
+      if([].concat(ex.value).indexOf(SEL[ex.key]) !== -1){
+        ex.options.forEach(function(o){ m[o] = ex.key; });
+      }
+    });
     return m;
   }
   function collectionOpts(st){
