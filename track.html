@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="assets/i18n.js?v=12"></script>
-<title>LUMIA — Track your order</title>
-<meta name="description" content="Track your LUMIA order.">
+<title>LUMIA — Your account</title>
+<meta name="description" content="Your LUMIA account — order status, saved orders and profile.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -14,38 +14,39 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Fraunces:opsz,wght@9..144,520;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --white:#FFFFFF; --paper:#F1E8D6; --paper2:#E8DDC6; --ink:#14171A; --muted:#767A7E;
+    --white:#FFFFFF; --paper:#FAF5EA; --paper2:#F3ECDD; --ink:#14171A; --muted:#767A7E;
     --line:#E4E3DE; --line2:#D3D2CC; --bronze:#8A6220; --bronze-lt:#C79A45;
   }
   *{box-sizing:border-box}
-  body{margin:0;color:var(--ink);background:var(--paper);
+  body{margin:0;color:var(--ink);background:var(--white);
     font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:1.62;
     -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
   h1,h2,h3{font-family:'Archivo',sans-serif;font-weight:600;letter-spacing:-.025em;margin:0;line-height:1.08}
   a{color:inherit}
   .mono{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-  .wrap{max-width:860px;padding:0 44px;margin:0 auto;width:100%}
+  .wrap{max-width:1080px;padding:0 44px;margin:0 auto;width:100%}
 
-  header{position:sticky;top:0;z-index:50;background:#591C00;border-bottom:1px solid #4A1700}
-  header .wrap{display:flex;align-items:center;justify-content:space-between;height:76px;gap:24px;max-width:1180px}
+  /* marketing-site header */
+  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;gap:24px;max-width:1180px}
   .logo{display:flex;align-items:center;text-decoration:none}
-  .logo img{height:30px;display:block}
+  .logo img{height:26px;width:auto;display:block;mix-blend-mode:multiply}
+  header nav{display:flex;gap:26px;align-items:center}
   header nav a{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-    color:rgba(255,255,255,.72);text-decoration:none;transition:color .2s}
-  header nav a:hover{color:#fff}
+    color:var(--muted);text-decoration:none;transition:color .2s}
+  header nav a:hover{color:var(--ink)}
 
-  main{flex:1;padding:56px 0 90px}
-  .pagehead{text-align:center;margin:0 0 34px}
-  .pagehead h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(30px,4vw,44px)}
-  .pagehead .note{margin:12px auto 0;font-size:15px;color:var(--muted);max-width:52ch}
+  main{flex:1;padding:48px 0 90px}
+  .pagehead{margin:0 0 28px}
+  .pagehead h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(30px,4vw,42px)}
+  .pagehead .note{margin:10px 0 0;font-size:15px;color:var(--muted);max-width:60ch}
 
   .xcard{background:var(--white);border:1px solid var(--line2);border-radius:18px;padding:28px 30px 30px;margin:0 0 22px}
-  .lkgrid{display:grid;grid-template-columns:1fr 1fr auto;gap:14px;align-items:end}
-  @media(max-width:640px){ .lkgrid{grid-template-columns:1fr} }
   .cell{display:flex;flex-direction:column;gap:7px}
   .cell label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
   .cell input{font:inherit;font-size:15px;padding:13px 14px;border:1px solid var(--line2);border-radius:9px;background:var(--white)}
   .cell input:focus{outline:none;border-color:var(--ink)}
+  .cell input[readonly]{background:var(--paper);color:var(--muted)}
   .btn{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
     background:var(--ink);color:#fff;border:0;border-radius:10px;padding:15px 26px;cursor:pointer;transition:.25s;white-space:nowrap}
   .btn:hover{background:var(--bronze)}
@@ -59,9 +60,30 @@
   .warnbanner button{margin-left:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
     background:var(--ink);color:#fff;border:0;border-radius:7px;padding:8px 14px;cursor:pointer}
 
-  /* ── the timeline ── */
-  #result{display:none}
-  #result.on{display:block}
+  /* ── guest lookup ── */
+  .lkgrid{display:grid;grid-template-columns:1fr 1fr auto;gap:14px;align-items:end}
+  @media(max-width:640px){ .lkgrid{grid-template-columns:1fr} }
+
+  /* ── the account layout: sections on the left, content on the right ── */
+  .acctgrid{display:grid;grid-template-columns:230px minmax(0,1fr);gap:26px;align-items:start}
+  .sidenav{position:sticky;top:96px;background:var(--white);border:1px solid var(--line2);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:2px}
+  .snav{font:inherit;font-size:14.5px;text-align:left;background:none;border:0;border-radius:9px;cursor:pointer;
+    padding:12px 14px;color:var(--muted);display:flex;align-items:center;gap:10px;transition:background .15s,color .15s}
+  .snav:hover{color:var(--ink)}
+  .snav.on{background:var(--paper);color:var(--ink);font-weight:600}
+  .snav .n{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted);
+    border:1px solid var(--line2);border-radius:999px;padding:1px 8px;background:var(--white)}
+  .snav.out{color:#8A2620;border-top:1px solid var(--line);border-radius:0 0 9px 9px;margin-top:6px;padding-top:14px}
+  @media(max-width:820px){
+    .acctgrid{grid-template-columns:1fr}
+    .sidenav{position:static;flex-direction:row;overflow-x:auto;padding:8px}
+    .snav{white-space:nowrap}
+    .snav.out{border-top:0;margin-top:0;padding-top:12px}
+  }
+
+  .sect[hidden]{display:none}
+
+  /* ── the timeline (unchanged look) ── */
   .ohead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:0 0 6px}
   .ohead .ref{font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.08em;color:var(--bronze)}
   .ohead .amt{font-family:'Archivo',sans-serif;font-weight:600;font-size:22px;letter-spacing:-.02em;margin-left:auto}
@@ -87,16 +109,27 @@
   .trackbox a.go{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink);text-decoration:none;border:1px solid var(--line2);border-radius:8px;padding:8px 14px}
   .trackbox a.go:hover{border-color:var(--ink)}
 
-  /* ── lines ── */
-  .lineswrap{border:1px solid var(--line2);border-radius:12px;overflow-x:auto;background:var(--white);margin:22px 0 0}
-  table{border-collapse:collapse;width:100%;font-size:13.5px}
-  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-  th{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;color:var(--muted);font-weight:500;background:var(--paper);text-transform:uppercase}
-  tr:last-child td{border-bottom:0}
-  td.num{text-align:right}
+  /* ── order lines, cart style: swatch thumb + the full configuration ── */
+  .ltitle{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:26px 0 4px}
+  .cline{display:flex;gap:18px;padding:18px 2px;border-bottom:1px solid var(--line);align-items:flex-start}
+  .cline:last-child{border-bottom:0}
+  .cthumb{width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--line2);flex:none;background:var(--paper2)}
+  .cinfo{flex:1;min-width:0}
+  .cname{font-family:'Archivo',sans-serif;font-weight:600;font-size:16px;letter-spacing:-.015em}
+  .croom{color:var(--muted);font-weight:500;font-size:13.5px}
+  .ckv{margin:7px 0 0;max-width:440px}
+  .ckv div{display:flex;justify-content:space-between;gap:16px;font-size:12.5px;padding:3.5px 0;border-bottom:1px dashed var(--line)}
+  .ckv div:last-child{border-bottom:0}
+  .ckv span{color:var(--muted)}
+  .ckv b{font-weight:500;text-align:right}
+  .ckv div.fab b{display:flex;align-items:center;gap:8px;justify-content:flex-end;font-weight:600}
+  .ckv .fsw{width:20px;height:20px;border-radius:5px;border:1px solid var(--line2);object-fit:cover;flex:none}
+  .cdim{font-size:13px;color:var(--ink);margin-top:7px;font-weight:500}
+  .cprice{font-family:'Archivo',sans-serif;font-weight:600;font-size:15.5px;white-space:nowrap;text-align:right}
+  .cprice .cunit{display:block;font-family:'IBM Plex Sans',sans-serif;font-weight:400;font-size:12px;color:var(--muted);margin-top:3px}
 
-  /* the other-orders list */
-  .orow{display:flex;align-items:center;gap:14px;padding:13px 2px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  /* ── the saved / placed lists ── */
+  .orow{display:flex;align-items:center;gap:14px;padding:14px 2px;border-bottom:1px solid var(--line);flex-wrap:wrap}
   .orow:last-child{border-bottom:0}
   .orow .oref{font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.06em;color:var(--bronze)}
   .orow .owhen{font-size:13px;color:var(--muted)}
@@ -105,9 +138,20 @@
   .orow .ost.unpaid{color:#8A2620;border-color:#E5C9C6;background:#FBF1F0}
   .orow .ost.paidok{color:#1F5B2D;border-color:#BFDCC2;background:#EFF7EF}
   .orow .oamt{margin-left:auto;font-family:'Archivo',sans-serif;font-weight:600;font-size:15px}
-  .orow .oview{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
-    background:var(--ink);color:#fff;border:0;border-radius:8px;padding:9px 14px;cursor:pointer}
-  .orow .oview:hover{background:var(--bronze)}
+  .orow .oview,.orow .opay{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    border-radius:8px;padding:9px 14px;cursor:pointer;border:0}
+  .orow .oview{background:var(--white);color:var(--ink);border:1px solid var(--line2)}
+  .orow .oview:hover{border-color:var(--ink)}
+  .orow .opay{background:var(--ink);color:#fff}
+  .orow .opay:hover{background:var(--bronze)}
+  .emptynote{font-size:14px;color:var(--muted);padding:6px 0}
+
+  /* ── profile ── */
+  .pfgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pfgrid .span2{grid-column:1 / -1}
+  @media(max-width:640px){ .pfgrid{grid-template-columns:1fr} }
+  .pfok{display:none;margin:14px 0 0;font-size:14px;color:#1F5B2D}
+  .pfok.on{display:inline-block}
 
   footer{background:#1D1C1A;margin-top:auto}
   footer .wrap{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;flex-wrap:wrap;max-width:1180px}
@@ -120,7 +164,7 @@
 
 <header>
   <div class="wrap">
-    <a class="logo" href="index.html"><img src="assets/logo-white.png" alt="LUMIA"></a>
+    <a class="logo" href="index.html"><img src="assets/logo.jpg" alt="LUMIA"></a>
     <nav>
       <a href="index.html#products">Shop</a>
     </nav>
@@ -130,55 +174,78 @@
 <main>
   <div class="wrap">
     <div class="pagehead">
-      <h1>Track your order</h1>
-      <p class="note">Enter your order reference and the e-mail you used at checkout.</p>
+      <h1 id="pagetitle">Your account</h1>
+      <p class="note" id="pagenote">Order status, saved orders and your details — all in one place.</p>
     </div>
 
     <div class="okbanner" id="okbanner">Payment received &mdash; thank you! Your order is confirmed and goes to review now.</div>
     <div class="warnbanner" id="warnbanner"><span id="warntext">The payment was not completed, so your order is on hold.</span>
       <button id="retrybtn" type="button">Pay now</button></div>
 
-    <div class="xcard">
+    <!-- guests (an order link from us, or no account on this device) -->
+    <div class="xcard" id="lookcard" hidden>
       <form id="lookform">
         <div class="lkgrid">
           <div class="cell"><label for="lk-ref">Order reference</label>
             <input id="lk-ref" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="HOME-XXXXXX-XXXX"></div>
           <div class="cell"><label for="lk-email">E-mail</label>
             <input id="lk-email" type="email" autocomplete="email" placeholder="you@example.com"></div>
-          <button class="btn" id="lookbtn" type="submit">Track</button>
+          <button class="btn" id="lookbtn" type="submit">Open</button>
         </div>
         <div class="err" id="lookerr">We could not find that order — check the reference and the e-mail (it must be the one used at checkout).</div>
       </form>
     </div>
 
-    <div class="xcard" id="result">
-      <div class="ohead">
-        <span class="ref" id="r-ref"></span>
-        <span class="amt" id="r-total"></span>
-      </div>
-      <p class="oname" id="r-name"></p>
-      <div class="cancelnote" id="r-cancel" hidden>This order was cancelled. If that is unexpected, write to <a href="mailto:lumiashades@gmail.com">lumiashades@gmail.com</a>.</div>
-      <div class="steps" id="r-steps"></div>
-      <div class="lumianote" id="r-note" hidden></div>
-      <div class="trackbox" id="r-track" hidden>
-        <span>📦</span>
-        <div><b style="font-family:'Archivo',sans-serif;font-size:14px">Shipped &middot; FedEx tracking</b><br>
-          <a class="tn" id="r-tn" target="_blank" rel="noopener"></a></div>
-        <a class="go" id="r-tngo" target="_blank" rel="noopener">Track it &rarr;</a>
-      </div>
-      <div class="lineswrap">
-        <table>
-          <thead><tr><th>#</th><th>Product</th><th>Details</th><th>Size</th><th>Qty</th><th class="num">Total</th></tr></thead>
-          <tbody id="r-lines"></tbody>
-        </table>
-      </div>
-    </div>
+    <div class="acctgrid" id="acct" hidden>
+      <nav class="sidenav" id="sidenav">
+        <button class="snav on" data-sec="status" type="button">Current status</button>
+        <button class="snav" data-sec="saved" type="button">Saved orders <span class="n" id="n-saved">0</span></button>
+        <button class="snav" data-sec="placed" type="button">Placed orders <span class="n" id="n-placed">0</span></button>
+        <button class="snav" data-sec="profile" type="button" id="nav-profile">Profile</button>
+        <button class="snav out" id="signoutbtn" type="button" hidden>Sign out</button>
+      </nav>
 
-    <!-- every other order on the same e-mail, saved drafts included -->
-    <div class="xcard" id="others" hidden>
-      <h2 style="font-size:19px;margin:0 0 4px">Your other orders</h2>
-      <p style="font-size:13.5px;color:var(--muted);margin:0 0 10px">Everything placed or saved with this e-mail.</p>
-      <div id="o-list"></div>
+      <div>
+        <!-- current status: the loved timeline + clear, cart-style lines -->
+        <div class="sect xcard" id="sec-status">
+          <div id="statusbody"></div>
+          <div class="emptynote" id="statusempty" hidden>No orders yet &mdash; configure a product in the <a href="index.html#products" style="color:var(--bronze)">shop</a> and it will appear here.</div>
+        </div>
+
+        <!-- saved, not paid yet -->
+        <div class="sect xcard" id="sec-saved" hidden>
+          <h2 style="font-size:19px;margin:0 0 4px">Saved orders</h2>
+          <p style="font-size:13.5px;color:var(--muted);margin:0 0 10px">Saved without paying &mdash; pay whenever you are ready; the delivery address is typed on the payment page.</p>
+          <div id="savedlist"></div>
+        </div>
+
+        <!-- placed = paid -->
+        <div class="sect xcard" id="sec-placed" hidden>
+          <h2 style="font-size:19px;margin:0 0 4px">Placed orders</h2>
+          <p style="font-size:13.5px;color:var(--muted);margin:0 0 10px">Paid orders, newest first.</p>
+          <div id="placedlist"></div>
+        </div>
+
+        <!-- profile -->
+        <div class="sect xcard" id="sec-profile" hidden>
+          <h2 style="font-size:19px;margin:0 0 4px">Profile</h2>
+          <p style="font-size:13.5px;color:var(--muted);margin:0 0 16px">Your details prefill checkout and help us with delivery.</p>
+          <div class="pfgrid">
+            <div class="cell span2"><label for="pf-name">Full name *</label><input id="pf-name" type="text" autocomplete="name"></div>
+            <div class="cell"><label for="pf-email">E-mail</label><input id="pf-email" type="email" readonly></div>
+            <div class="cell"><label for="pf-phone">Phone</label><input id="pf-phone" type="tel" autocomplete="tel"></div>
+            <div class="cell span2"><label for="pf-address">Street address</label><input id="pf-address" type="text" autocomplete="street-address"></div>
+            <div class="cell"><label for="pf-city">City</label><input id="pf-city" type="text" autocomplete="address-level2"></div>
+            <div class="cell"><label for="pf-state">State</label><input id="pf-state" type="text" autocomplete="address-level1"></div>
+            <div class="cell"><label for="pf-zip">ZIP</label><input id="pf-zip" type="text" autocomplete="postal-code"></div>
+          </div>
+          <div style="margin-top:18px;display:flex;align-items:center;gap:14px">
+            <button class="btn" id="pfsave" type="button">Save</button>
+            <span class="pfok" id="pfok">Saved &check;</span>
+          </div>
+          <div class="err" id="pferr"></div>
+        </div>
+      </div>
     </div>
   </div>
 </main>
@@ -192,184 +259,333 @@
 
 <script>
 (function(){
-  var form = document.getElementById('lookform'), btn = document.getElementById('lookbtn'),
-      err = document.getElementById('lookerr'),
-      refIn = document.getElementById('lk-ref'), emailIn = document.getElementById('lk-email');
-
+  function $(id){ return document.getElementById(id); }
+  function esc(t){ return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
   var FRAC_NAMES = {0:'0/8',1:'1/8',2:'1/4',3:'3/8',4:'1/2',5:'5/8',6:'3/4',7:'7/8'};
   function fmtIn(v){
     var n = Math.floor(v), f = Math.round((v - n) * 8);
     if(f === 8){ n += 1; f = 0; }
     return n + (f ? ' ' + FRAC_NAMES[f] : '');
   }
-  function esc(t){ return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function getAccount(){
+    try{ return JSON.parse(localStorage.getItem('lumia_home_acct') || 'null'); }catch(e){ return null; }
+  }
   function last(){
     try{ return JSON.parse(localStorage.getItem('lumia_home_last') || 'null'); }catch(e){ return null; }
   }
 
-  /* back from Stripe? confirm the session, then load the order */
+  var ACCOUNT = getAccount();
+  var ORDERS = [];              /* every order we know about, newest first */
+  var SEL = null;               /* the ref shown in Current status */
+  var EMAIL = (ACCOUNT && ACCOUNT.email) || '';
+  var CFG = null;               /* shop-config, for the fabric swatch images */
+  fetch('assets/shop-config.json?v=' + Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(c){ CFG = c; if(SEL) renderStatus(); });
+
+  /* ── query params: back from Stripe, a saved order, or a shared link ── */
   var q = location.search;
   var refQ = /[?&]ref=([^&]+)/.exec(q), payQ = /[?&]paysession=([^&]+)/.exec(q),
       cancQ = /[?&]pay=cancelled/.test(q), savedQ = /[?&]saved=1/.test(q);
-  if(refQ) refIn.value = decodeURIComponent(refQ[1]);
-  var saved = last();
-  if(saved && saved.email && (!refQ || (saved.ref || '').toUpperCase() === refIn.value.toUpperCase().trim())){
-    emailIn.value = saved.email;
-  }
+  var refFromQ = refQ ? decodeURIComponent(refQ[1]).toUpperCase() : '';
   if(q) history.replaceState(null, '', location.pathname);
 
-  function setStep(key, cls, when){
-    var el = document.querySelector('.step[data-k="' + key + '"]');
-    if(!el) return;
-    el.className = 'step ' + cls;
-    el.querySelector('.dot').innerHTML = cls === 'done' ? '&check;' : '';
-    if(when) el.querySelector('.tx span').textContent = when;
+  /* ── sidebar ── */
+  function showSec(key){
+    ['status','saved','placed','profile'].forEach(function(k){
+      $('sec-' + k).hidden = k !== key;
+    });
+    [].forEach.call(document.querySelectorAll('.snav[data-sec]'), function(b){
+      b.classList.toggle('on', b.dataset.sec === key);
+    });
+  }
+  $('sidenav').addEventListener('click', function(e){
+    var b = e.target.closest('.snav'); if(!b || !b.dataset.sec) return;
+    showSec(b.dataset.sec);
+  });
+  $('signoutbtn').addEventListener('click', function(){
+    try{ localStorage.removeItem('lumia_home_acct'); }catch(e){}
+    location.href = 'index.html#products';
+  });
+
+  /* ── helpers over the order list ── */
+  function byRef(ref){ return ORDERS.filter(function(o){ return o.ref === ref; })[0] || null; }
+  function savedList(){ return ORDERS.filter(function(o){ return !o.paid && o.status !== 'Cancelled'; }); }
+  function placedList(){ return ORDERS.filter(function(o){ return o.paid || o.status === 'Cancelled'; }); }
+  function putOrder(o){
+    var i = ORDERS.findIndex(function(x){ return x.ref === o.ref; });
+    if(i === -1) ORDERS.push(o); else ORDERS[i] = Object.assign(ORDERS[i], o);
+    ORDERS.sort(function(a, b){ return new Date(b.at) - new Date(a.at); });
   }
 
+  /* ── fabric swatch for a line (same lookup as the shop's cart) ── */
+  function swatchOf(l){
+    try{
+      var p = CFG.products.filter(function(x){ return x.id === l.pid; })[0];
+      var st = (p.steps || []).filter(function(s){ return s.key === 'collection'; })[0];
+      var sel = l.pick && l.pick.sel;
+      if(st && sel && st.swatches && st.swatches[sel.collection]){
+        var s = st.swatches[sel.collection][sel.colour];
+        if(s && s.img) return s.img;
+      }
+    }catch(e){}
+    return l.pid === 'accessory' ? '' : 'assets/card-' + (l.pid || 'roman') + '.jpg';
+  }
+  function specPairs(l){
+    if(Array.isArray(l.specs) && l.specs.length) return l.specs;
+    return String(l.spec || '').split(' · ').map(function(part){
+      var i = part.indexOf(': ');
+      return i < 0 ? { k: '', v: part.trim() } : { k: part.slice(0, i).trim(), v: part.slice(i + 2).trim() };
+    }).filter(function(p){ return p.v; });
+  }
+
+  function lineHTML(l){
+    var pairs = specPairs(l).filter(function(p){ return p.k; });
+    var sw = swatchOf(l);
+    var kv = pairs.map(function(p){
+      var isFab = /fabric|cell|collection|colou?r/i.test(p.k);
+      return '<div' + (isFab ? ' class="fab"' : '') + '><span>' + esc(p.k) + '</span><b>' +
+        (isFab && sw ? '<img class="fsw" src="' + esc(sw) + '" alt="">' : '') + esc(p.v) + '</b></div>';
+    }).join('');
+    return '<div class="cline">' +
+      (sw ? '<img class="cthumb" src="' + esc(sw) + '" alt="" loading="lazy">' : '<span class="cthumb" style="display:flex;align-items:center;justify-content:center">🔧</span>') +
+      '<div class="cinfo">' +
+        '<div class="cname">' + esc(l.product || '') +
+          (l.label ? ' <span class="croom">&mdash; ' + esc(l.label) + '</span>' : '') +
+          (!pairs.length && l.desc ? ' <span class="croom">&mdash; ' + esc(l.desc) + '</span>' : '') + '</div>' +
+        (kv ? '<div class="ckv">' + kv + '</div>' : '') +
+        '<div class="cdim">' +
+          (l.w != null ? fmtIn(l.w) + '&Prime; &times; ' + fmtIn(l.h) + '&Prime; &middot; ' : '') +
+          'Qty ' + (l.qty || 1) + '</div>' +
+      '</div>' +
+      '<div class="cprice">' + (l.price == null ? '&mdash;' : '$' + (l.price * (l.qty || 1)).toFixed(2)) +
+        ((l.qty || 1) > 1 && l.price != null ? '<span class="cunit">$' + (+l.price).toFixed(2) + ' each</span>' : '') +
+      '</div></div>';
+  }
+
+  /* ── the Current status section ── */
   function stepHTML(key, title, sub){
     return '<div class="step off" data-k="' + key + '"><div class="dot"></div>' +
       '<div class="tx"><b>' + title + '</b><span>' + sub + '</span></div></div>';
   }
-
-  function render(o){
-    document.getElementById('result').classList.add('on');
-    document.getElementById('r-ref').textContent = o.ref;
-    document.getElementById('r-total').textContent = o.total || '';
-    document.getElementById('r-name').textContent = 'Order for ' + o.name + ' · ' +
-      new Date(o.at).toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'});
+  function setStep(key, cls){
+    var el = document.querySelector('.step[data-k="' + key + '"]');
+    if(!el) return;
+    el.className = 'step ' + cls;
+    el.querySelector('.dot').innerHTML = cls === 'done' ? '&check;' : '';
+  }
+  function renderStatus(){
+    var o = byRef(SEL);
+    $('statusempty').hidden = !!o;
+    if(!o){ $('statusbody').innerHTML = ''; return; }
     var cancelled = o.status === 'Cancelled';
-    document.getElementById('r-cancel').hidden = !cancelled;
-
-    var steps = document.getElementById('r-steps');
-    steps.innerHTML =
-      stepHTML('paid', 'Payment', o.paid ? 'Paid — thank you.' : 'Not completed yet.') +
-      stepHTML('review', 'Review', 'We check every order before production.') +
-      stepHTML('prod', 'In production', 'Being made to your sizes.') +
-      stepHTML('shipped', 'Shipped', 'On its way to you.');
-    steps.style.display = cancelled ? 'none' : '';
-
+    var html =
+      '<div class="ohead"><span class="ref">' + esc(o.ref) + '</span><span class="amt">' + esc(o.total || '') + '</span></div>' +
+      '<p class="oname">Order for ' + esc(o.name || (ACCOUNT && ACCOUNT.name) || '') + ' &middot; ' +
+        new Date(o.at).toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'}) + '</p>' +
+      (cancelled ? '<div class="cancelnote">This order was cancelled. If that is unexpected, write to <a href="mailto:lumiashades@gmail.com">lumiashades@gmail.com</a>.</div>' : '') +
+      (!cancelled ?
+        '<div class="steps">' +
+        stepHTML('paid', 'Payment', o.paid ? 'Paid — thank you.' : 'Not completed yet.') +
+        stepHTML('review', 'Review', 'We check every order before production.') +
+        stepHTML('prod', 'In production', 'Being made to your sizes.') +
+        stepHTML('shipped', 'Shipped', 'On its way to you.') + '</div>' : '') +
+      (o.note ? '<div class="lumianote">LUMIA: ' + esc(o.note) + '</div>' : '') +
+      (o.tracking ?
+        '<div class="trackbox"><span>📦</span>' +
+        '<div><b style="font-family:\'Archivo\',sans-serif;font-size:14px">Shipped &middot; FedEx tracking</b><br>' +
+        '<a class="tn" target="_blank" rel="noopener" href="https://www.fedex.com/fedextrack/?trknbr=' + encodeURIComponent(o.tracking) + '">' + esc(o.tracking) + '</a></div>' +
+        '<a class="go" target="_blank" rel="noopener" href="https://www.fedex.com/fedextrack/?trknbr=' + encodeURIComponent(o.tracking) + '">Track it &rarr;</a></div>' : '') +
+      (o.lines && o.lines.length ? '<div class="ltitle">What\'s in this order</div>' + o.lines.map(lineHTML).join('') : '');
+    $('statusbody').innerHTML = html;
     if(!cancelled){
       setStep('paid', o.paid ? 'done' : 'now');
-      var st = o.status;
-      if(st === 'Pending review'){ setStep('review', o.paid ? 'now' : 'off'); }
-      else if(st === 'Shipped'){ setStep('review', 'done'); setStep('prod', 'done'); setStep('shipped', 'done'); }
-      else { /* In production, On hold, anything accepted */ setStep('review', 'done'); setStep('prod', 'now'); }
+      if(o.status === 'Pending review'){ setStep('review', o.paid ? 'now' : 'off'); }
+      else if(o.status === 'Shipped'){ setStep('review', 'done'); setStep('prod', 'done'); setStep('shipped', 'done'); }
+      else { setStep('review', 'done'); setStep('prod', 'now'); }
     }
-
-    var noteEl = document.getElementById('r-note');
-    noteEl.hidden = !o.note;
-    if(o.note) noteEl.textContent = 'LUMIA: ' + o.note;
-
-    var tbox = document.getElementById('r-track');
-    tbox.hidden = !o.tracking;
-    if(o.tracking){
-      var url = 'https://www.fedex.com/fedextrack/?trknbr=' + encodeURIComponent(o.tracking);
-      var tn = document.getElementById('r-tn');
-      tn.textContent = o.tracking; tn.href = url;
-      document.getElementById('r-tngo').href = url;
-    }
-
-    document.getElementById('r-lines').innerHTML = (o.lines || []).map(function(l, i){
-      return '<tr><td>' + (i + 1) + '</td><td>' + esc(l.product) + '</td>' +
-        '<td style="white-space:normal;max-width:380px">' + esc(l.desc || l.spec || '') + '</td>' +
-        '<td>' + (l.w == null ? '&mdash;' : fmtIn(l.w) + '&Prime; &times; ' + fmtIn(l.h) + '&Prime;') + '</td>' +
-        '<td>' + l.qty + '</td>' +
-        '<td class="num">' + (l.price == null ? '&mdash;' : '$' + (l.price * l.qty).toFixed(2)) + '</td></tr>';
-    }).join('');
-
-    /* an unpaid, not-cancelled order can be paid from here */
-    document.getElementById('warnbanner').classList.toggle('on', !cancelled && !o.paid);
+    $('warnbanner').classList.toggle('on', !cancelled && !o.paid);
   }
 
-  function renderOthers(list){
-    var card = document.getElementById('others');
-    card.hidden = !list.length;
-    if(!list.length) return;
-    document.getElementById('o-list').innerHTML = list.map(function(x){
-      var st, cls = '';
-      if(x.draft && !x.paid){ st = 'Saved — not paid'; cls = ' unpaid'; }
-      else if(!x.paid && x.status !== 'Cancelled'){ st = x.status + ' · unpaid'; cls = ' unpaid'; }
-      else if(x.paid){ st = x.status; cls = ' paidok'; }
-      else { st = x.status; }
-      return '<div class="orow">' +
-        '<span class="oref">' + esc(x.ref) + '</span>' +
-        '<span class="owhen">' + new Date(x.at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) + '</span>' +
-        '<span class="ost' + cls + '">' + esc(st) + '</span>' +
-        '<span class="oamt">' + esc(x.total || '') + '</span>' +
-        '<button class="oview" type="button" data-ref="' + esc(x.ref) + '">View</button></div>';
-    }).join('');
+  /* ── the saved / placed lists ── */
+  function rowHTML(x, saved){
+    var st, cls = '';
+    if(!x.paid && x.status !== 'Cancelled'){ st = 'Saved — not paid'; cls = ' unpaid'; }
+    else if(x.status === 'Cancelled'){ st = 'Cancelled'; cls = ' unpaid'; }
+    else { st = x.status; cls = ' paidok'; }
+    return '<div class="orow">' +
+      '<span class="oref">' + esc(x.ref) + '</span>' +
+      '<span class="owhen">' + new Date(x.at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) + '</span>' +
+      '<span class="ost' + cls + '">' + esc(st) + '</span>' +
+      '<span class="oamt">' + esc(x.total || '') + '</span>' +
+      '<button class="oview" type="button" data-ref="' + esc(x.ref) + '">View</button>' +
+      (saved ? '<button class="opay" type="button" data-ref="' + esc(x.ref) + '">Pay now</button>' : '') +
+      '</div>';
   }
-  document.getElementById('o-list').addEventListener('click', function(e){
-    var b = e.target.closest('.oview'); if(!b) return;
-    refIn.value = b.dataset.ref;
-    lookup();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-
-  function lookup(){
-    var ref = refIn.value.trim().toUpperCase(), email = emailIn.value.trim().toLowerCase();
-    if(!ref || !email) return;
-    err.classList.remove('on');
-    btn.disabled = true; btn.textContent = 'Looking…';
+  function renderLists(){
+    var sv = savedList(), pl = placedList();
+    $('n-saved').textContent = sv.length;
+    $('n-placed').textContent = pl.length;
+    $('savedlist').innerHTML = sv.length ? sv.map(function(x){ return rowHTML(x, true); }).join('')
+      : '<div class="emptynote">Nothing saved — a "Save &mdash; pay later" order would wait here.</div>';
+    $('placedlist').innerHTML = pl.length ? pl.map(function(x){ return rowHTML(x, false); }).join('')
+      : '<div class="emptynote">No paid orders yet.</div>';
+  }
+  function viewOrder(ref){
+    SEL = ref;
+    var o = byRef(ref);
+    if(o && o.lines){ renderStatus(); showSec('status'); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    /* a guest summary without lines: fetch the full order */
     fetch('/api/home/track', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ref: ref, email: email })
+      body: JSON.stringify({ ref: ref, email: EMAIL })
     }).then(function(r){ if(!r.ok) throw new Error('nf'); return r.json(); })
     .then(function(d){
-      btn.disabled = false; btn.textContent = 'Track';
-      try{ localStorage.setItem('lumia_home_last', JSON.stringify({ ref: ref, email: email, at: Date.now() })); }catch(e){}
-      render(d.order);
-      renderOthers(d.others || []);
-    }).catch(function(){
-      btn.disabled = false; btn.textContent = 'Track';
-      document.getElementById('result').classList.remove('on');
-      err.classList.add('on');
-    });
+      putOrder(d.order);
+      renderStatus(); renderLists(); showSec('status');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }).catch(function(){});
   }
-
-  form.addEventListener('submit', function(e){ e.preventDefault(); lookup(); });
-
-  /* retry an unpaid order */
-  document.getElementById('retrybtn').addEventListener('click', function(){
-    var b = this, ref = refIn.value.trim().toUpperCase(), email = emailIn.value.trim().toLowerCase();
-    if(!ref || !email) return;
-    b.disabled = true; b.textContent = 'Opening…';
+  function payOrder(ref, btn){
+    if(btn){ btn.disabled = true; btn.textContent = 'Opening…'; }
     fetch('/api/home/pay', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ref: ref, email: email })
+      body: JSON.stringify({ ref: ref, email: EMAIL })
     }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
     .then(function(x){
       if(!x.ok || !x.d.url) throw new Error('failed');
       location.href = x.d.url;
     }).catch(function(){
-      b.disabled = false; b.textContent = 'Pay now';
+      if(btn){ btn.disabled = false; btn.textContent = 'Pay now'; }
+    });
+  }
+  document.addEventListener('click', function(e){
+    var v = e.target.closest('.oview');
+    if(v){ viewOrder(v.dataset.ref); return; }
+    var p = e.target.closest('.opay');
+    if(p){ payOrder(p.dataset.ref, p); }
+  });
+  $('retrybtn').addEventListener('click', function(){ if(SEL) payOrder(SEL, this); });
+
+  /* ── profile ── */
+  var PF = ['name','email','phone','address','city','state','zip'];
+  function fillProfile(){
+    var a = ACCOUNT || {};
+    PF.forEach(function(k){ $('pf-' + k).value = a[k] || ''; });
+  }
+  $('pfsave').addEventListener('click', function(){
+    var btn = this, err = $('pferr');
+    err.classList.remove('on'); $('pfok').classList.remove('on');
+    var c = {};
+    PF.forEach(function(k){ c[k] = ($('pf-' + k).value || '').trim(); });
+    if(!c.name){ err.textContent = 'Please fill in your name.'; err.classList.add('on'); return; }
+    btn.disabled = true; btn.textContent = 'Saving…';
+    fetch('/api/home/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customer: c })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+    .then(function(x){
+      btn.disabled = false; btn.textContent = 'Save';
+      if(!x.ok || !x.d.prices) throw new Error((x.d && x.d.error) || 'failed');
+      ACCOUNT = Object.assign({}, ACCOUNT || {}, c, { prices: x.d.prices, at: Date.now() });
+      try{ localStorage.setItem('lumia_home_acct', JSON.stringify(ACCOUNT)); }catch(e){}
+      $('pfok').classList.add('on');
+    }).catch(function(e2){
+      btn.disabled = false; btn.textContent = 'Save';
+      err.textContent = 'Could not save — please try again, or write to lumiashades@gmail.com.';
+      err.classList.add('on');
     });
   });
 
-  /* arriving back from Stripe: confirm first (the redirect can beat the webhook) */
+  /* ── guest lookup (an order link, or no account on this device) ── */
+  var form = $('lookform'), lookbtn = $('lookbtn'),
+      lookerr = $('lookerr'), refIn = $('lk-ref'), emailIn = $('lk-email');
+  function lookup(){
+    var ref = refIn.value.trim().toUpperCase(), email = emailIn.value.trim().toLowerCase();
+    if(!ref || !email) return;
+    lookerr.classList.remove('on');
+    lookbtn.disabled = true; lookbtn.textContent = 'Looking…';
+    fetch('/api/home/track', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: ref, email: email })
+    }).then(function(r){ if(!r.ok) throw new Error('nf'); return r.json(); })
+    .then(function(d){
+      lookbtn.disabled = false; lookbtn.textContent = 'Open';
+      EMAIL = email;
+      try{ localStorage.setItem('lumia_home_last', JSON.stringify({ ref: ref, email: email, at: Date.now() })); }catch(e){}
+      ORDERS = [];
+      putOrder(d.order);
+      (d.others || []).forEach(putOrder);
+      SEL = d.order.ref;
+      $('acct').hidden = false;
+      $('lookcard').hidden = true;
+      renderStatus(); renderLists(); showSec('status');
+    }).catch(function(){
+      lookbtn.disabled = false; lookbtn.textContent = 'Open';
+      lookerr.classList.add('on');
+    });
+  }
+  form.addEventListener('submit', function(e){ e.preventDefault(); lookup(); });
+
+  /* ── boot ── */
+  function bootAccount(){
+    $('signoutbtn').hidden = false;
+    fillProfile();
+    fetch('/api/home/orders', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: ACCOUNT.email, phone: ACCOUNT.phone || '' })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+    .then(function(x){
+      if(!x.ok) throw new Error((x.d && x.d.error) || 'failed');
+      ORDERS = [];
+      (x.d.orders || []).forEach(putOrder);
+      SEL = refFromQ && byRef(refFromQ) ? refFromQ : (ORDERS[0] ? ORDERS[0].ref : null);
+      $('acct').hidden = false;
+      renderStatus(); renderLists();
+      if(savedQ) showSec('status');
+    }).catch(function(){
+      /* the account could not be opened server-side — fall back to the link form */
+      $('acct').hidden = true;
+      bootGuest();
+    });
+  }
+  function bootGuest(){
+    $('pagetitle').textContent = 'Track your order';
+    $('pagenote').textContent = 'Enter your order reference and the e-mail you used at checkout.';
+    $('lookcard').hidden = false;
+    $('nav-profile').style.display = 'none';
+    if(refFromQ) refIn.value = refFromQ;
+    var saved = last();
+    if(saved && saved.email && (!refFromQ || (saved.ref || '').toUpperCase() === refIn.value.toUpperCase().trim())){
+      emailIn.value = saved.email;
+    }
+    if(refIn.value && emailIn.value) lookup();
+  }
+
+  function boot(){
+    if(ACCOUNT && ACCOUNT.email) bootAccount(); else bootGuest();
+  }
+
+  /* back from Stripe: confirm first (the redirect can beat the webhook) */
   if(payQ){
     fetch('/api/home/confirm', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ session: decodeURIComponent(payQ[1]) })
     }).then(function(r){ return r.json(); })
     .then(function(d){
-      if(d && d.ok) document.getElementById('okbanner').classList.add('on');
-      if(refIn.value && emailIn.value) lookup();
-    }).catch(function(){
-      if(refIn.value && emailIn.value) lookup();
-    });
-  } else if(savedQ){
-    /* just saved without paying — friendlier wording than a failed payment */
-    var ok = document.getElementById('okbanner');
-    ok.textContent = 'Order saved — pay whenever you are ready with the Pay now button below.';
-    ok.classList.add('on');
-    document.getElementById('warntext').textContent = 'This order has not been paid yet.';
-    if(refIn.value && emailIn.value) lookup();
-  } else if(cancQ){
-    document.getElementById('warnbanner').classList.add('on');
-    if(refIn.value && emailIn.value) lookup();
-  } else if(refIn.value && emailIn.value){
-    lookup();
+      if(d && d.ok) $('okbanner').classList.add('on');
+      boot();
+    }).catch(boot);
+  } else {
+    if(savedQ){
+      var ok = $('okbanner');
+      ok.textContent = 'Order saved — pay whenever you are ready with the Pay now button.';
+      ok.classList.add('on');
+      $('warntext').textContent = 'This order has not been paid yet.';
+    } else if(cancQ){
+      $('warnbanner').classList.add('on');
+    }
+    boot();
   }
 })();
 </script>

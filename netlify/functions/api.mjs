@@ -787,6 +787,32 @@ export default async (req) => {
 
   // ── home customer: track an order (reference + checkout e-mail) ───
   // POST so the e-mail never travels in a URL
+  // ── home customer: the account page lists every order on the e-mail.
+  //    Same key rule as sign-in: when the account carries a phone, it must
+  //    match. The ship-to never comes back here. ──
+  if (path === "/api/home/orders" && req.method === "POST") {
+    const email = String((body || {}).email || "").trim().toLowerCase().slice(0, 160);
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return bad("a valid e-mail is required");
+    const acct = await store().get(`homeacct:${email}`, { type: "json" });
+    if (!acct) return bad("No account with this e-mail yet.", 404);
+    const digits = (v) => String(v || "").replace(/\D/g, "");
+    const a = digits(acct.phone), b = digits((body || {}).phone);
+    const match = a && b && (a === b ||
+      (b.length >= 7 && a.endsWith(b)) || (a.length >= 7 && b.endsWith(a)));
+    if (a && !match) return bad("That phone doesn't match the one on the account.", 401);
+    const orders = (await listOrders())
+      .filter((x) => x.consumer && x.home && x.home.email === email)
+      .map((x) => ({
+        ref: x.ref, at: x.at,
+        status: (x.status && x.status.status) || "Pending review",
+        note: (x.status && x.status.note) || "",
+        paid: !!(x.payment && x.payment.paid),
+        draft: !!x.draft, tracking: x.tracking || "",
+        total: x.total, lines: x.lines, name: x.home.name,
+      }));
+    return json({ name: acct.name, orders });
+  }
+
   if (path === "/api/home/track" && req.method === "POST") {
     const ref = String(body.ref || "").trim().toUpperCase().slice(0, 40);
     const email = String(body.email || "").trim().toLowerCase();

@@ -12,26 +12,16 @@
   }
   try{ localStorage.removeItem('lumia_home'); }catch(e){}   /* the old code-gate session */
   var ACCOUNT = getAccount();
-  var signout = document.getElementById('signout');
   var shoplogin = document.getElementById('shoplogin');
-  var profilebtn = document.getElementById('profilebtn');
-  var ordersbtn = document.getElementById('ordersbtn');
-  /* signed out: just the log-in; signed in: Profile · Orders · Sign out */
+  var acctbtn = document.getElementById('acctbtn');
+  /* signed out: just the log-in; signed in: one Account door (track.html
+     carries Current status / Saved / Placed / Profile / Sign out) */
   function syncAcct(){
     shoplogin.hidden = !!ACCOUNT;
-    signout.hidden = !ACCOUNT;
-    profilebtn.hidden = !ACCOUNT;
-    ordersbtn.hidden = !ACCOUNT;
+    acctbtn.hidden = !ACCOUNT;
   }
   syncAcct();
   shoplogin.addEventListener('click', function(){ openRegister('login'); });
-  profilebtn.addEventListener('click', function(){ openRegister('profile'); });
-
-  signout.addEventListener('click', function(){
-    setAccount(null); ACCOUNT = null;
-    location.hash = '';
-    location.reload();
-  });
 
   /* ── sign-up / log-in overlay ── */
   var RG_FIELDS = ['name','email','phone','address','city','state','zip'];
