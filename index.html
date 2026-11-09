@@ -810,7 +810,7 @@
    as the product pages (assets/shopkit.js is the full shop; this is just the door) */
 (function(){
   function getAccount(){ try{ return JSON.parse(localStorage.getItem('lumia_home_acct') || 'null'); }catch(e){ return null; } }
-  function setAccount(a){ try{ localStorage.setItem('lumia_home_acct', JSON.stringify(a)); }catch(e){} }
+  function setAccount(a){ try{ if(a){ localStorage.setItem('lumia_home_acct', JSON.stringify(a)); } else { localStorage.removeItem('lumia_home_acct'); } }catch(e){} }
   var ACCOUNT = getAccount();
   if(ACCOUNT && !ACCOUNT.key){ setAccount(null); ACCOUNT = null; }   /* pre-password session */
   var shoplogin = document.getElementById('shoplogin'), acctbtn = document.getElementById('acctbtn');
