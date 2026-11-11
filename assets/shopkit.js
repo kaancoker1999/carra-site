@@ -243,6 +243,12 @@
     }
     var lift = q.get('lift'), ds = stepByKey('drive');
     if(lift && ds && ds.options.indexOf(lift) !== -1) SEL.drive = lift;
+    /* any step can be preselected by its key: ?fold=Relaxed&liner=Blackout%20liner */
+    (P.steps || []).forEach(function(st){
+      if(st.key === 'collection' || st.key === 'cgroup') return;
+      var v = q.get(st.key);
+      if(v && (st.options || []).indexOf(v) !== -1) SEL[st.key] = v;
+    });
     ensureDefaults();
     var lim = sizeLimits();
     var w = parseFloat(q.get('w')), h = parseFloat(q.get('h'));

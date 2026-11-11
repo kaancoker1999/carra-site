@@ -332,8 +332,10 @@ function feedGridPrice(g, w, h) {
   return g.rows[ri].vals[ci];
 }
 /* the selection a product page boots with: the first option of every step,
-   honouring showIf/exclude — mirrors shopkit's ensureDefaults */
-function feedDefaults(p) {
+   honouring showIf/exclude — mirrors shopkit's ensureDefaults. `over` forces
+   specific steps (the config-spotlight items), exactly like the page's URL
+   params do, so an impossible combination resolves the same way. */
+function feedDefaults(p, over) {
   const sel = {};
   const byKey = {};
   (p.steps || []).forEach((s) => { byKey[s.key] = s; });
@@ -351,10 +353,32 @@ function feedDefaults(p) {
     [].concat(st.exclude || []).forEach((ex) => {
       if ([].concat(ex.value).includes(sel[ex.key])) ex.options.forEach((o) => { dis[o] = 1; });
     });
-    sel[st.key] = (st.options || []).filter((o) => !dis[o])[0];
+    const ok = (st.options || []).filter((o) => !dis[o]);
+    const pick = over && over[st.key];
+    sel[st.key] = pick && ok.includes(pick) ? pick : ok[0];
   }
   return sel;
 }
+/* one extra "spotlight" item per fabric series for the configurations people
+   search by name — motorized, blackout, fold styles. First colour, real price. */
+const FEED_SPOTS = {
+  roman: [
+    { code: "MOTOR", word: "Motorized", over: { drive: "Motorized" } },
+    { code: "CCL", word: "Cord Loop", over: { drive: "Continuous cord loop" } },
+    { code: "HOBBLED", word: "Hobbled", over: { fold: "Hobbled" } },
+    { code: "FRONTROD", word: "Front Rod", over: { fold: "Front rods" } },
+    { code: "BLKOUT", word: "Blackout Lined", over: { liner: "Blackout liner" } },
+    { code: "TDBU", word: "Top-Down Bottom-Up", over: { tdbu: "Yes" } },
+  ],
+  cellular: [
+    { code: "MOTOR", word: "Motorized", over: { drive: "Motorized" } },
+    { code: "CCL", word: "Cord Loop", over: { drive: "Cord loop" } },
+    { code: "TDBU", word: "Top-Down Bottom-Up", over: { tdbu: "Yes" } },
+  ],
+  drapery: [
+    { code: "BLKOUT", word: "Blackout Lined", over: { liner: "Blackout liner" } },
+  ],
+};
 /* same maths as shopkit's priceLine, for the default selection */
 function feedPrice(pid, prices, coll, sel, w, h) {
   const pp = (prices.products || []).find((x) => x.id === pid);
@@ -499,6 +523,58 @@ async function googleFeed(req) {
             : "<g:product_highlight>Cordless, cord loop or motorized lift on every shade</g:product_highlight>") +
           `<g:product_highlight>Free US shipping — made and dispatched in ${hd} business days</g:product_highlight>` +
           "<g:product_highlight>25+ years of window treatment manufacturing</g:product_highlight>" +
+          "<g:shipping><g:country>US</g:country><g:service>Standard</g:service><g:price>0 USD</g:price></g:shipping>" +
+          `<g:min_handling_time>${def.handling[0]}</g:min_handling_time>` +
+          `<g:max_handling_time>${def.handling[1]}</g:max_handling_time>` +
+          "</item>"
+        );
+      }
+      /* the config-spotlight items: one per series for the configurations
+         people search by name, at that configuration's real price */
+      for (const spot of FEED_SPOTS[p.id] || []) {
+        const code = colours[0];
+        if (!code) continue;
+        const ssel = feedDefaults(p, spot.over);
+        const sprice = feedPrice(p.id, prices, coll, ssel, w, h);
+        if (sprice == null) continue;
+        const s = sw[code] || {};
+        const colorName = s.name || code;
+        const stitle = `LUMIA ${spot.word} ${def.noun} - ${label} ${colorName}` +
+          (trans ? ` - ${trans}` : "") + " - Custom Size";
+        const sdesc = `Custom-made ${spot.word.toLowerCase()} ${def.noun.toLowerCase()} in ` +
+          `${label} ${colorName}` +
+          (trans ? ` (${trans.toLowerCase()}${material ? ", " + material : ""})` : "") +
+          `. Every ${label} colour is available in this configuration. Made to order to ` +
+          `your exact size (${p.width[0]}"-${p.width[1]}" wide, to the nearest 1/8"), sewn in ` +
+          `our own workshop and shipped factory-direct — no middleman. Free shipping within ` +
+          `the US; made and dispatched in ${hd} business days.`;
+        const simg = s.lg || s.img || p.img;
+        const sparams = Object.keys(spot.over)
+          .map((k) => `&${k}=${encodeURIComponent(spot.over[k])}`).join("");
+        const slink = `${SITE}/${p.id}.html?fabric=${encodeURIComponent(coll.id)}` +
+          `&color=${encodeURIComponent(code)}${sparams}&w=${w}&h=${h}`;
+        items.push(
+          "<item>" +
+          `<g:id>${X(`LUM-${def.code}-${slug(coll.id)}-${spot.code}`)}</g:id>` +
+          `<g:title>${X(stitle)}</g:title>` +
+          `<g:description>${X(sdesc)}</g:description>` +
+          `<g:link>${X(slink)}</g:link>` +
+          `<g:image_link>${X(SITE + "/" + encodeURI(simg))}</g:image_link>` +
+          (simg !== p.img ? `<g:additional_image_link>${X(SITE + "/" + encodeURI(p.img))}</g:additional_image_link>` : "") +
+          `<g:price>${sprice.toFixed(2)} USD</g:price>` +
+          "<g:availability>in_stock</g:availability>" +
+          "<g:brand>LUMIA</g:brand>" +
+          "<g:identifier_exists>no</g:identifier_exists>" +
+          "<g:condition>new</g:condition>" +
+          `<g:google_product_category>${X(def.cat)}</g:google_product_category>` +
+          `<g:product_type>${X(def.ptype + " > " + spot.word)}</g:product_type>` +
+          `<g:custom_label_1>${X(spot.word)}</g:custom_label_1>` +
+          `<g:color>${X(colorName)}</g:color>` +
+          (material ? `<g:material>${X(material)}</g:material>` : "") +
+          `<g:product_highlight>${X(spot.word + " configuration — priced as shown, every colour available")}</g:product_highlight>` +
+          "<g:product_highlight>Made to order in our own workshop — factory direct, no middleman</g:product_highlight>" +
+          "<g:product_highlight>Custom size, cut to the nearest 1/8 inch</g:product_highlight>" +
+          `<g:product_highlight>Free US shipping — made and dispatched in ${hd} business days</g:product_highlight>` +
           "<g:shipping><g:country>US</g:country><g:service>Standard</g:service><g:price>0 USD</g:price></g:shipping>" +
           `<g:min_handling_time>${def.handling[0]}</g:min_handling_time>` +
           `<g:max_handling_time>${def.handling[1]}</g:max_handling_time>` +
