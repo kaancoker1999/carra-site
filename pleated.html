@@ -361,7 +361,7 @@
       <a class="partner" href="trade.html">Log in</a>
     </nav>
     <span class="acct">
-      <button id="shoplogin" type="button" hidden>Log in to shop</button>
+      <button id="shoplogin" type="button" hidden>Log in</button>
       <a id="acctbtn" href="track.html" hidden>Account</a>
     </span>
   </div>
@@ -369,7 +369,7 @@
 
 <main>
 
-<!-- the shop — public; prices unlock after the free sign-up -->
+<!-- the shop — public, prices included; an account adds tracking + messaging -->
 <div id="shop">
 
   <!-- this page IS the product — no shop home (stubs keep the shared script happy) -->
@@ -484,8 +484,8 @@
 
     <!-- first visit: the free no-password sign-up -->
     <div id="rnew">
-      <h2 id="rnew-title">See your prices</h2>
-      <p class="regsub" id="rnew-sub">Create a free account &mdash; your name, e-mail and a password are enough to see every price; the rest is optional and simply prefills checkout. We only use your details for your orders and delivery.</p>
+      <h2 id="rnew-title">Create your account</h2>
+      <p class="regsub" id="rnew-sub">A free account keeps your orders in one place: track production and shipping, message us about any order, and check out faster next time. Only your name, e-mail and a password are needed.</p>
       <div class="ckgrid">
         <div class="cell span2"><label for="rg-name">Full name *</label><input id="rg-name" type="text" autocomplete="name"></div>
         <div class="cell"><label for="rg-email">E-mail *</label><input id="rg-email" type="email" autocomplete="email"></div>
@@ -496,7 +496,7 @@
         <div class="cell"><label for="rg-state">State (optional)</label><input id="rg-state" type="text" autocomplete="address-level1"></div>
         <div class="cell"><label for="rg-zip">ZIP (optional)</label><input id="rg-zip" type="text" autocomplete="postal-code"></div>
       </div>
-      <button class="paybtn" id="regbtn" type="button" style="margin-top:20px">Show my prices &rarr;</button>
+      <button class="paybtn" id="regbtn" type="button" style="margin-top:20px">Create account &rarr;</button>
       <div class="err" id="regerr"></div>
       <p class="regswap" id="rnew-swap">Already have an account? <button type="button" class="swaplink" data-rmode="login">Log in</button></p>
     </div>
@@ -506,11 +506,12 @@
 <footer>
   <div class="wrap">
     <span class="mono">&copy; 2026 LUMIA &middot; All rights reserved</span>
+    <span class="mono"><a href="shipping.html" style="color:inherit;text-decoration:none">Shipping</a> &middot; <a href="returns.html" style="color:inherit;text-decoration:none">Returns</a> &middot; <a href="privacy.html" style="color:inherit;text-decoration:none">Privacy</a> &middot; <a href="terms.html" style="color:inherit;text-decoration:none">Terms</a></span>
     <span class="mono">lumiashades@gmail.com</span>
   </div>
 </footer>
 
-<script src="assets/shopkit.js?v=10"></script>
+<script src="assets/shopkit.js?v=11"></script>
 <script src="assets/trade.js?v=23" defer></script>
 
 </body>

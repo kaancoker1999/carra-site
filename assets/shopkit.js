@@ -1,7 +1,9 @@
 /* LUMIA shopkit — the consumer shop embedded in each product page.
    The page declares its product with <body data-shop="roman">; steps,
    pricing, cart, sign-up and checkout all come from assets/shop-config.json
-   and the /api/home endpoints. Version-stamped: bump ?v= everywhere. */
+   and the /api/home endpoints. Version-stamped: bump ?v= everywhere.
+   Retail prices are PUBLIC (Google Merchant needs them); guest checkout
+   works with just a name + e-mail. */
 (function(){
   /* ── the free no-password account: holds the contact details + prices ── */
   function getAccount(){
@@ -18,6 +20,20 @@
   /* an admin signed in to the panel (same browser) gets the retail prices
      without a customer account, and orders are entered for customers */
   var ADMIN = null;
+  /* retail prices are public (Google Merchant requires it) — an account
+     only adds order tracking, saved details and messaging */
+  var PUBLIC = null;
+  function fetchPublicPrices(){
+    fetch('/api/home/prices')
+      .then(function(r){ if(!r.ok) throw new Error('no'); return r.json(); })
+      .then(function(d){
+        if(!d || !d.prices) return;
+        PUBLIC = { prices: d.prices };
+        if(P) renderSteps();
+        renderLines();
+        injectLD();
+      }).catch(function(){});
+  }
   function adminStoredKey(){
     try{ var v = sessionStorage.getItem('lumia_admin_key'); if(v) return v; }catch(e){}
     try{
@@ -57,11 +73,11 @@
     var isP = mode === 'profile';
     document.getElementById('rlogin').hidden = mode !== 'login';
     document.getElementById('rnew').hidden = mode === 'login';
-    document.getElementById('rnew-title').textContent = isP ? 'Your profile' : 'See your prices';
+    document.getElementById('rnew-title').textContent = isP ? 'Your profile' : 'Create your account';
     document.getElementById('rnew-sub').textContent = isP
       ? 'Your details prefill checkout and help us with delivery — update them whenever you like.'
-      : 'Create a free account — no password. Your name and e-mail are enough to see every price; the rest is optional and simply prefills checkout. We only use your details for your orders and delivery.';
-    document.getElementById('regbtn').innerHTML = isP ? 'Save &rarr;' : 'Show my prices &rarr;';
+      : 'A free account keeps your orders in one place: track production and shipping, message us about any order, and check out faster next time. Only your name, e-mail and a password are needed.';
+    document.getElementById('regbtn').innerHTML = isP ? 'Save &rarr;' : 'Create account &rarr;';
     document.getElementById('rnew-swap').hidden = isP;
     document.getElementById('rg-email').readOnly = isP;   /* the e-mail IS the account */
     setTimeout(function(){
@@ -149,11 +165,11 @@
         key: (ACCOUNT && ACCOUNT.key) || '' })
     }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
     .then(function(x){
-      btn.disabled = false; btn.innerHTML = REGMODE === 'profile' ? 'Save &rarr;' : 'Show my prices &rarr;';
+      btn.disabled = false; btn.innerHTML = REGMODE === 'profile' ? 'Save &rarr;' : 'Create account &rarr;';
       if(!x.ok || !x.d.prices) throw new Error((x.d && x.d.error) || 'failed');
       acceptAccount(c, x.d.prices, x.d.key);
     }).catch(function(e2){
-      btn.disabled = false; btn.innerHTML = REGMODE === 'profile' ? 'Save &rarr;' : 'Show my prices &rarr;';
+      btn.disabled = false; btn.innerHTML = REGMODE === 'profile' ? 'Save &rarr;' : 'Create account &rarr;';
       var m = String(e2.message || '');
       err.textContent = (m && m !== 'failed')
         ? m
@@ -208,6 +224,65 @@
   function applyHash(){
     /* each page is one product — its configurator is always open */
     openProduct(PID, true);
+    applyQuery();
+    injectLD();
+  }
+  /* ?fabric=&color=&w=&h=&lift= preselect the configurator — the Google
+     feed links here so the page opens on the exact item that was clicked */
+  function applyQuery(){
+    if(!P || !window.URLSearchParams) return;
+    var q = new URLSearchParams(location.search);
+    if(![ 'fabric','color','colour','w','h','lift' ].some(function(k){ return q.has(k); })) return;
+    var st = stepByKey('collection');
+    var fab = q.get('fabric'), col = q.get('color') || q.get('colour');
+    if(st && fab && st.options.some(function(o){ return o.id === fab; })){
+      SEL.collection = fab;
+      if(stepByKey('cgroup')) SEL.cgroup = 'All groups';
+      if(col && (st.colours[fab] || []).indexOf(col) !== -1) SEL.colour = col;
+    }
+    var lift = q.get('lift'), ds = stepByKey('drive');
+    if(lift && ds && ds.options.indexOf(lift) !== -1) SEL.drive = lift;
+    ensureDefaults();
+    var lim = sizeLimits();
+    var w = parseFloat(q.get('w')), h = parseFloat(q.get('h'));
+    if(isFinite(w)) W = clamp(w, lim.w[0], lim.w[1]);
+    if(isFinite(h)) H = clamp(h, lim.h[0], lim.h[1]);
+    renderSteps();
+  }
+  /* schema.org Product + AggregateOffer, built from the live price list */
+  function injectLD(){
+    if(!P || !hasPrices() || document.getElementById('ldjson')) return;
+    var st = stepByKey('collection');
+    if(!st) return;
+    var lo = null, hi = null;
+    st.options.forEach(function(c){
+      var prev = SEL.collection;
+      SEL.collection = c.id;
+      var v = priceLine(P.id, pricingSel(), W, H);
+      SEL.collection = prev;
+      if(v == null) return;
+      if(lo == null || v < lo) lo = v;
+      if(hi == null || v > hi) hi = v;
+    });
+    if(lo == null) return;
+    var md = document.querySelector('meta[name="description"]');
+    var ld = {
+      '@context': 'https://schema.org', '@type': 'Product',
+      name: 'LUMIA ' + P.name,
+      image: location.origin + '/' + (P.img || ''),
+      description: (md && md.content) || ('Custom ' + P.name.toLowerCase() + ', made to measure.'),
+      brand: { '@type': 'Brand', name: 'LUMIA' },
+      offers: { '@type': 'AggregateOffer', priceCurrency: 'USD',
+        lowPrice: lo.toFixed(2), highPrice: hi.toFixed(2),
+        offerCount: st.options.length,
+        availability: 'https://schema.org/InStock',
+        url: location.origin + location.pathname }
+    };
+    var tag = document.createElement('script');
+    tag.type = 'application/ld+json';
+    tag.id = 'ldjson';
+    tag.textContent = JSON.stringify(ld);
+    document.head.appendChild(tag);
   }
 
   document.getElementById('prods').addEventListener('click', function(e){
@@ -279,8 +354,8 @@
     return (r && !r.na) ? { w: r.w, h: r.h } : { w: P.width, h: P.height };
   }
 
-  function PRICES(){ return (ACCOUNT && ACCOUNT.prices) || (ADMIN && ADMIN.prices) || {}; }
-  function hasPrices(){ return !!((ACCOUNT && ACCOUNT.prices) || (ADMIN && ADMIN.prices)); }
+  function PRICES(){ return (ACCOUNT && ACCOUNT.prices) || (ADMIN && ADMIN.prices) || (PUBLIC && PUBLIC.prices) || {}; }
+  function hasPrices(){ return !!((ACCOUNT && ACCOUNT.prices) || (ADMIN && ADMIN.prices) || (PUBLIC && PUBLIC.prices)); }
   function prodPrices(id){
     return (PRICES().products || []).filter(function(p){ return p.id === id; })[0] || null;
   }
@@ -698,7 +773,7 @@
   function syncBar(){
     var el = document.getElementById('wizprice');
     if(!hasPrices()){
-      el.innerHTML = '<button class="lockcta" type="button" id="pricecta">Sign up free to see it</button>';
+      el.innerHTML = '<span style="opacity:.5">&hellip;</span>';
     } else {
       var price = currentPrice();
       if(price == null){ el.innerHTML = '&mdash;'; }
@@ -790,8 +865,7 @@
 
   /* ── add to cart ── */
   function addToCart(){
-    /* prices (and so the cart) unlock with the free sign-up */
-    if(!hasPrices()){ openRegister(); return; }
+    if(!hasPrices()){ fail('Prices are still loading — give it a second and try again.'); return; }
     /* every choose-step needs an answer — open the ones still waiting */
     var missing = (P.steps || []).filter(function(st){
       return stepVisible(st) && isChoose(st) && !SEL[st.key];
@@ -1068,7 +1142,17 @@
         document.getElementById('fo-name').focus();
         return;
       }
-    } else { openRegister('login'); return; }
+    } else {
+      /* guest checkout: a name and an e-mail are all we need — the ship-to
+         is typed on Stripe's payment page, tracking works by ref + e-mail */
+      if(forgrid.hidden){
+        forgrid.hidden = false;
+        forother.textContent = 'Your order — updates go to this e-mail';
+        ckMsg('Enter your name and e-mail, then press the button again — or log in above if you have an account.');
+        document.getElementById('fo-name').focus();
+        return;
+      }
+    }
     if(!forgrid.hidden){
       /* entered on a customer's behalf: their identity, none of our details */
       var fn = (document.getElementById('fo-name').value || '').trim();

@@ -35,7 +35,7 @@
 import { getStore } from "@netlify/blobs";
 import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 
-export const config = { path: "/api/*" };
+export const config = { path: ["/api/*", "/feeds/*"] };
 
 // strong consistency: dealer/order updates must be readable immediately
 const store = () => getStore({ name: "trade", consistency: "strong" });
@@ -309,6 +309,212 @@ function scaled(base, multOf) {
   return out;
 }
 
+/* ── Google Merchant Center product feed (free listings — these also feed
+   ChatGPT Shopping). One item per fabric colour, priced at the default
+   configuration the product page opens with via the link's URL params,
+   so the page and the feed always show the same number. ── */
+const FEED_DEFS = {
+  roman: { code: "RO", size: [24, 36], noun: "Roman Shade",
+    cat: "Home & Garden > Decor > Window Treatments > Window Blinds & Shades",
+    ptype: "Window Treatments > Roman Shades" },
+  cellular: { code: "CE", size: [24, 36], noun: "Cellular Shade",
+    cat: "Home & Garden > Decor > Window Treatments > Window Blinds & Shades",
+    ptype: "Window Treatments > Cellular Shades" },
+  drapery: { code: "DR", size: [48, 84], noun: "Drapery Panel",
+    cat: "Home & Garden > Decor > Window Treatments > Curtains & Drapes",
+    ptype: "Window Treatments > Drapery" },
+};
+function feedGridPrice(g, w, h) {
+  let ci = -1, ri = -1;
+  for (let i = 0; i < g.cols.length; i++) if (w <= parseFloat(g.cols[i])) { ci = i; break; }
+  for (let i = 0; i < g.rows.length; i++) if (h <= parseFloat(g.rows[i].label)) { ri = i; break; }
+  if (ci < 0 || ri < 0) return null;
+  return g.rows[ri].vals[ci];
+}
+/* the selection a product page boots with: the first option of every step,
+   honouring showIf/exclude — mirrors shopkit's ensureDefaults */
+function feedDefaults(p) {
+  const sel = {};
+  const byKey = {};
+  (p.steps || []).forEach((s) => { byKey[s.key] = s; });
+  const visible = (st) => {
+    if (!st || !st.showIf) return true;
+    const dep = byKey[st.showIf.key];
+    if (dep && !visible(dep)) return false;
+    return [].concat(st.showIf.value).includes(sel[st.showIf.key]);
+  };
+  for (const st of p.steps || []) {
+    if (st.key === "cgroup" || st.key === "collection") continue;
+    if (!visible(st)) continue;
+    if (st.options && st.options[0] === "— Select —") { sel[st.key] = null; continue; }
+    const dis = {};
+    [].concat(st.exclude || []).forEach((ex) => {
+      if ([].concat(ex.value).includes(sel[ex.key])) ex.options.forEach((o) => { dis[o] = 1; });
+    });
+    sel[st.key] = (st.options || []).filter((o) => !dis[o])[0];
+  }
+  return sel;
+}
+/* same maths as shopkit's priceLine, for the default selection */
+function feedPrice(pid, prices, coll, sel, w, h) {
+  const pp = (prices.products || []).find((x) => x.id === pid);
+  if (!pp) return null;
+  const xt = (label) => {
+    const e = (pp.extras || []).find((x) => x.label === label);
+    return (e && e.usd) || 0;
+  };
+  let base, add = 0, pct = 0;
+  if (pid === "roman") {
+    const grid = pp.grids[(coll.group || 1) - 1] || pp.grids[0];
+    base = feedGridPrice(grid, w, h);
+    if (base == null) return null;
+    pct += ({ Flat: 0, "Back rods": 0, "Front rods": 10, Relaxed: 10, Hobbled: 25 })[sel.fold] || 0;
+    pct += ({ "White liner": 10, "Blackout liner": 20 })[sel.liner] || 0;
+    if (sel.banding && sel.banding !== "None") pct += 50;
+    base *= 1 + pct / 100;
+    if (sel.drive === "Continuous cord loop") {
+      add += xt("Continuous cord loop (CCL)");
+      if (sel.tdbu === "Yes") add += xt("CCL TDBU");
+    } else if (sel.drive === "Motorized") {
+      add += sel.tdbu === "Yes" ? xt("Motor + TDBU") : xt("Motorization");
+    } else if (sel.tdbu === "Yes") add += xt("Cordless TDBU");
+    return Math.round((base + add) * 100) / 100;
+  }
+  if (pid === "cellular") {
+    const g = (pp.grids || []).find((x) => x.name === coll.label);
+    if (!g) return null;
+    base = feedGridPrice(g, w, h);
+    if (base == null) return null;
+    if (sel.drive === "Cord loop") {
+      add += sel.tdbu === "Yes" ? xt("CCL + TDBU") : xt("Continuous cord loop (CCL)");
+    } else if (sel.drive === "Motorized") {
+      add += sel.tdbu === "Yes" ? xt("Motor + TDBU") : xt("Motorization");
+    } else if (sel.tdbu === "Yes") add += xt("Cordless TDBU");
+    return Math.round((base + add) * 100) / 100;
+  }
+  if (pid === "drapery") {
+    const dg = (pp.grids || []).find((x) => x.name === sel.heading + " · Group " + "ABCD"[(coll.group || 1) - 1]);
+    if (!dg) return null;
+    const panels = sel.panel === "Pair, centre split" ? 2 : 1;
+    const pw = w / panels;
+    base = feedGridPrice(dg, pw, h);
+    if (base == null) return null;
+    base *= panels;
+    const lname = sel.liner === "White liner" ? "Liner · White"
+      : sel.liner === "Blackout liner" ? "Liner · Blackout" : null;
+    if (lname) {
+      const lg = (pp.grids || []).find((x) => x.name === lname);
+      const lp = lg ? feedGridPrice(lg, pw, h) : null;
+      if (lp == null) return null;
+      base += lp * panels;
+    }
+    if (sel.trackopt === "Yes") {
+      const hg = (pp.grids || []).find((x) => x.name === "Hardware · Rod & Track");
+      const tr = hg ? (hg.rows || []).find((r) => r.label === "Track") : null;
+      if (tr) {
+        let ti = -1;
+        for (let k = 0; k < hg.cols.length; k++) if (w <= parseFloat(hg.cols[k])) { ti = k; break; }
+        if (ti >= 0) base += tr.vals[ti];
+      }
+    }
+    return Math.round(base * 100) / 100;
+  }
+  return null;
+}
+const SITE = "https://lumiashades.com";
+async function googleFeed(req) {
+  const origin = new URL(req.url).origin;
+  const res = await fetch(origin + "/assets/shop-config.json").catch(() => null);
+  const shop = res && res.ok ? await res.json().catch(() => null) : null;
+  const base = await store().get("prices", { type: "json" });
+  const ccfg = await consumerCfg();
+  if (!shop || !base || ccfg.active === false)
+    return new Response("feed unavailable", { status: 503 });
+  const prices = scaled(base, () => ccfg.mult);
+  const X = (t) => String(t == null ? "" : t)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const slug = (t) => String(t).toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const fixPct = (t) => String(t || "").replace(/%\s*(\d+)/g, "$1%");
+  const items = [];
+  for (const p of shop.products || []) {
+    const def = FEED_DEFS[p.id];
+    if (!def) continue;
+    const colStep = (p.steps || []).find((s) => s.key === "collection");
+    if (!colStep) continue;
+    const sel = feedDefaults(p);
+    const [w, h] = def.size;
+    const lift = sel.drive === "Cordless" ? "Cordless " : "";
+    for (const coll of colStep.options || []) {
+      const colours = (colStep.colours || {})[coll.id] || [];
+      const sw = (colStep.swatches || {})[coll.id] || {};
+      const meta = (colStep.meta || {})[coll.id] || {};
+      const price = feedPrice(p.id, prices, coll, sel, w, h);
+      if (price == null) continue;
+      const groupId = `LUM-${def.code}-${slug(coll.id)}`;
+      const trans = String(meta.transparency || "").replace(/ fabric$/i, "");
+      const material = fixPct(meta.material);
+      const label = String(coll.label || "").replace(/\s*·\s*/g, " ");
+      for (const code of colours) {
+        const s = sw[code] || {};
+        const colorName = s.name || code;
+        const title = `LUMIA ${lift}${def.noun} - ${label} ${colorName}` +
+          (trans ? ` - ${trans}` : "") + " - Custom Size";
+        const desc = `Custom-made ${def.noun.toLowerCase()} in ${label} ${colorName}` +
+          (trans ? ` (${trans.toLowerCase()}${material ? ", " + material : ""})` : "") +
+          `. Made to order to your exact size (${p.width[0]}"-${p.width[1]}" wide, ` +
+          `${p.height[0]}"-${p.height[1]}" tall, to the nearest 1/8"), sewn in our own ` +
+          `workshop and shipped factory-direct — no middleman. ` +
+          (p.id === "drapery"
+            ? "Wave fold, pinch pleat or Euro pleat headings; optional liners and track hardware. "
+            : "Cordless, continuous cord loop or motorized lift; optional top-down bottom-up and liners. ") +
+          "Free shipping within the US; made and dispatched in 10-15 business days.";
+        const img = s.lg || s.img || p.img;
+        const link = `${SITE}/${p.id}.html?fabric=${encodeURIComponent(coll.id)}` +
+          `&color=${encodeURIComponent(code)}&w=${w}&h=${h}`;
+        items.push(
+          "<item>" +
+          `<g:id>${X(`LUM-${def.code}-${slug(coll.id)}-${slug(code)}`)}</g:id>` +
+          `<g:item_group_id>${X(groupId)}</g:item_group_id>` +
+          `<g:title>${X(title)}</g:title>` +
+          `<g:description>${X(desc)}</g:description>` +
+          `<g:link>${X(link)}</g:link>` +
+          `<g:image_link>${X(SITE + "/" + encodeURI(img))}</g:image_link>` +
+          (img !== p.img ? `<g:additional_image_link>${X(SITE + "/" + encodeURI(p.img))}</g:additional_image_link>` : "") +
+          `<g:price>${price.toFixed(2)} USD</g:price>` +
+          "<g:availability>in_stock</g:availability>" +
+          "<g:brand>LUMIA</g:brand>" +
+          "<g:identifier_exists>no</g:identifier_exists>" +
+          "<g:condition>new</g:condition>" +
+          `<g:google_product_category>${X(def.cat)}</g:google_product_category>` +
+          `<g:product_type>${X(def.ptype + " > " + coll.label)}</g:product_type>` +
+          `<g:color>${X(colorName)}</g:color>` +
+          (material ? `<g:material>${X(material)}</g:material>` : "") +
+          "<g:product_highlight>Made to order in our own workshop — factory direct, no middleman</g:product_highlight>" +
+          "<g:product_highlight>Custom size, cut to the nearest 1/8 inch</g:product_highlight>" +
+          (p.id === "drapery"
+            ? "<g:product_highlight>Wave fold, pinch pleat and Euro pleat headings</g:product_highlight>"
+            : "<g:product_highlight>Cordless, cord loop or motorized lift on every shade</g:product_highlight>") +
+          "<g:product_highlight>Free US shipping — made and dispatched in 10-15 business days</g:product_highlight>" +
+          "<g:product_highlight>25+ years of window treatment manufacturing</g:product_highlight>" +
+          "<g:shipping><g:country>US</g:country><g:service>Standard</g:service><g:price>0 USD</g:price></g:shipping>" +
+          "<g:min_handling_time>10</g:min_handling_time>" +
+          "<g:max_handling_time>15</g:max_handling_time>" +
+          "</item>"
+        );
+      }
+    }
+  }
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n` +
+    `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel>` +
+    `<title>LUMIA — Custom Window Treatments</title>` +
+    `<link>${SITE}</link>` +
+    `<description>Factory-direct custom roman shades, cellular shades and drapery, made to measure.</description>` +
+    items.join("\n") + `</channel></rss>`;
+  return new Response(xml, {
+    headers: { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" },
+  });
+}
+
 function newCode() {
   const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
   const pick = (n) =>
@@ -470,6 +676,8 @@ export default async (req) => {
   const path = new URL(req.url).pathname.replace(/\/$/, "");
   // Stripe webhook needs the raw body for its signature — route it before the JSON parse
   if (path === "/api/stripe-webhook" && req.method === "POST") return stripeWebhook(req);
+  // Google Merchant Center product feed (public)
+  if (path === "/feeds/google.xml" && req.method === "GET") return googleFeed(req);
   const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
 
   // ── dealer: login ─────────────────────────────────────────────
@@ -662,7 +870,17 @@ export default async (req) => {
     return json({ ok: true, payment });
   }
 
-  // ── home customer: a free no-password sign-up unlocks the price list;
+  // ── home customer: the retail price list is public — Google Merchant
+  //    (and ChatGPT Shopping) require prices visible without a login ──
+  if (path === "/api/home/prices" && req.method === "GET") {
+    const cfg = await consumerCfg();
+    if (cfg.active === false) return bad("The shop is closed right now.", 503);
+    const base = await store().get("prices", { type: "json" });
+    if (!base) return bad("prices not loaded yet", 503);
+    return json({ prices: scaled(base, () => cfg.mult) });
+  }
+
+  // ── home customer: an account saves your details and tracks orders;
   //    repeat posts simply refresh the stored details ─────────────────
   if (path === "/api/home/register" && req.method === "POST") {
     const cfg = await consumerCfg();
