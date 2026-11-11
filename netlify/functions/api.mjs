@@ -314,13 +314,13 @@ function scaled(base, multOf) {
    configuration the product page opens with via the link's URL params,
    so the page and the feed always show the same number. ── */
 const FEED_DEFS = {
-  roman: { code: "RO", size: [24, 36], noun: "Roman Shade",
+  roman: { code: "RO", size: [24, 36], noun: "Roman Shade", handling: [10, 15],
     cat: "Home & Garden > Decor > Window Treatments > Window Blinds & Shades",
     ptype: "Window Treatments > Roman Shades" },
-  cellular: { code: "CE", size: [24, 36], noun: "Cellular Shade",
+  cellular: { code: "CE", size: [24, 36], noun: "Cellular Shade", handling: [5, 5],
     cat: "Home & Garden > Decor > Window Treatments > Window Blinds & Shades",
     ptype: "Window Treatments > Cellular Shades" },
-  drapery: { code: "DR", size: [48, 84], noun: "Drapery Panel",
+  drapery: { code: "DR", size: [48, 84], noun: "Drapery Panel", handling: [10, 15],
     cat: "Home & Garden > Decor > Window Treatments > Curtains & Drapes",
     ptype: "Window Treatments > Drapery" },
 };
@@ -444,6 +444,8 @@ async function googleFeed(req) {
     const sel = feedDefaults(p);
     const [w, h] = def.size;
     const lift = sel.drive === "Cordless" ? "Cordless " : "";
+    const hd = def.handling[0] === def.handling[1]
+      ? String(def.handling[1]) : def.handling[0] + "-" + def.handling[1];
     for (const coll of colStep.options || []) {
       const colours = (colStep.colours || {})[coll.id] || [];
       const sw = (colStep.swatches || {})[coll.id] || {};
@@ -467,7 +469,7 @@ async function googleFeed(req) {
           (p.id === "drapery"
             ? "Wave fold, pinch pleat or Euro pleat headings; optional liners and track hardware. "
             : "Cordless, continuous cord loop or motorized lift; optional top-down bottom-up and liners. ") +
-          "Free shipping within the US; made and dispatched in 10-15 business days.";
+          `Free shipping within the US; made and dispatched in ${hd} business days.`;
         const img = s.lg || s.img || p.img;
         const link = `${SITE}/${p.id}.html?fabric=${encodeURIComponent(coll.id)}` +
           `&color=${encodeURIComponent(code)}&w=${w}&h=${h}`;
@@ -494,11 +496,11 @@ async function googleFeed(req) {
           (p.id === "drapery"
             ? "<g:product_highlight>Wave fold, pinch pleat and Euro pleat headings</g:product_highlight>"
             : "<g:product_highlight>Cordless, cord loop or motorized lift on every shade</g:product_highlight>") +
-          "<g:product_highlight>Free US shipping — made and dispatched in 10-15 business days</g:product_highlight>" +
+          `<g:product_highlight>Free US shipping — made and dispatched in ${hd} business days</g:product_highlight>` +
           "<g:product_highlight>25+ years of window treatment manufacturing</g:product_highlight>" +
           "<g:shipping><g:country>US</g:country><g:service>Standard</g:service><g:price>0 USD</g:price></g:shipping>" +
-          "<g:min_handling_time>10</g:min_handling_time>" +
-          "<g:max_handling_time>15</g:max_handling_time>" +
+          `<g:min_handling_time>${def.handling[0]}</g:min_handling_time>` +
+          `<g:max_handling_time>${def.handling[1]}</g:max_handling_time>` +
           "</item>"
         );
       }
