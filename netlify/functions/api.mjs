@@ -1059,6 +1059,19 @@ export default async (req) => {
       return json({ accounts: out });
     }
 
+    // permanently remove one home-shop account (e.g. a test signup) + its message threads
+    if (path === "/api/admin/home-account-delete" && req.method === "POST") {
+      const email = String(body.email || "").trim().toLowerCase();
+      if (!email) return bad("email required");
+      await s.delete(`homeacct:${email}`);
+      const { blobs: tb } = await s.list({ prefix: "thread:" });
+      for (const b of tb) {
+        const t = await s.get(b.key, { type: "json" });
+        if (t && t.home === email) { await s.delete(b.key); await deletePhotos(s, t.id); }
+      }
+      return json({ ok: true });
+    }
+
     // who am I — the panel shows and hides its controls from this
     if (path === "/api/admin/me" && req.method === "GET") {
       return json({ id: admin.id, name: admin.name, perms: admin.perms, owner: admin.owner,
