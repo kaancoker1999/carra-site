@@ -485,8 +485,12 @@ async function googleFeed(req) {
             const rule = (p.sizeRules || []).find((r) =>
               r.drive === driveVal && r.tdbu === tdbu && (!r.cls || r.cls.includes(cls)));
             if (rule && rule.na) continue;   // e.g. cordless TDBU on double-blackout/triple
+            // the page clamps sizes to this combination's build rule (motor+TDBU
+            // needs 34" min width, etc.) — price the same size the page will show
+            const ew = rule ? Math.max(rule.w[0], Math.min(rule.w[1], w)) : w;
+            const eh = rule ? Math.max(rule.h[0], Math.min(rule.h[1], h)) : h;
             const csel = feedDefaults(p, { drive: driveVal, tdbu });
-            const price = feedPrice("cellular", prices, coll, csel, w, h);
+            const price = feedPrice("cellular", prices, coll, csel, ew, eh);
             if (price == null) continue;
             const tdbuWord = tdbu === "Yes" ? "Top-Down Bottom-Up " : "";
             const title = `LUMIA ${liftWord} ${tdbuWord}Cellular Shade - ${label} - Custom Size`;
@@ -500,7 +504,7 @@ async function googleFeed(req) {
               `own workshop and shipped factory-direct — no middleman. Free shipping within the ` +
               `US; made and dispatched in ${hd} business days.`;
             const link = `${SITE}/cellular.html?fabric=${encodeURIComponent(coll.id)}` +
-              `&drive=${encodeURIComponent(driveVal)}&tdbu=${tdbu}&w=${w}&h=${h}`;
+              `&drive=${encodeURIComponent(driveVal)}&tdbu=${tdbu}&w=${ew}&h=${eh}`;
             items.push(
               "<item>" +
               `<g:id>${X(`LUM-CE-${slug(coll.id)}-${slug(driveVal)}${tdbu === "Yes" ? "-TDBU" : ""}`)}</g:id>` +
