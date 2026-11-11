@@ -1225,6 +1225,7 @@
   function boot(){
     if(booted) return;
     booted = true;
+    fetchPublicPrices();
     refreshPrices();
     tryAdmin();
     loadContact();
