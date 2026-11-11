@@ -488,7 +488,8 @@ async function googleFeed(req) {
           "<g:identifier_exists>no</g:identifier_exists>" +
           "<g:condition>new</g:condition>" +
           `<g:google_product_category>${X(def.cat)}</g:google_product_category>` +
-          `<g:product_type>${X(def.ptype + " > " + coll.label)}</g:product_type>` +
+          `<g:product_type>${X(def.ptype + (trans ? " > " + trans : "") + " > " + coll.label)}</g:product_type>` +
+          (trans ? `<g:custom_label_0>${X(trans)}</g:custom_label_0>` : "") +
           `<g:color>${X(colorName)}</g:color>` +
           (material ? `<g:material>${X(material)}</g:material>` : "") +
           "<g:product_highlight>Made to order in our own workshop — factory direct, no middleman</g:product_highlight>" +
