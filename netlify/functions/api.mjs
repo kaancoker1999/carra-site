@@ -359,21 +359,6 @@ function feedDefaults(p, over) {
   }
   return sel;
 }
-/* one extra "spotlight" item per fabric series for the configurations people
-   search by name — motorized, blackout, fold styles. First colour, real price. */
-const FEED_SPOTS = {
-  roman: [
-    { code: "MOTOR", word: "Motorized", over: { drive: "Motorized" } },
-    { code: "CCL", word: "Cord Loop", over: { drive: "Continuous cord loop" } },
-    { code: "HOBBLED", word: "Hobbled", over: { fold: "Hobbled" } },
-    { code: "FRONTROD", word: "Front Rod", over: { fold: "Front rods" } },
-    { code: "BLKOUT", word: "Blackout Lined", over: { liner: "Blackout liner" } },
-    { code: "TDBU", word: "Top-Down Bottom-Up", over: { tdbu: "Yes" } },
-  ],
-  drapery: [
-    { code: "BLKOUT", word: "Blackout Lined", over: { liner: "Blackout liner" } },
-  ],
-};
 /* same maths as shopkit's priceLine, for the default selection */
 function feedPrice(pid, prices, coll, sel, w, h) {
   const pp = (prices.products || []).find((x) => x.id === pid);
@@ -537,110 +522,117 @@ async function googleFeed(req) {
       }
       continue;
     }
-    for (const coll of colStep.options || []) {
-      const colours = (colStep.colours || {})[coll.id] || [];
-      const sw = (colStep.swatches || {})[coll.id] || {};
-      const meta = (colStep.meta || {})[coll.id] || {};
-      const price = feedPrice(p.id, prices, coll, sel, w, h);
-      if (price == null) continue;
-      const groupId = `LUM-${def.code}-${slug(coll.id)}`;
-      const trans = String(meta.transparency || "").replace(/ fabric$/i, "");
-      const material = fixPct(meta.material);
-      const label = String(coll.label || "").replace(/\s*·\s*/g, " ");
-      for (const code of colours) {
-        const s = sw[code] || {};
-        const colorName = s.name || code;
-        const title = `LUMIA ${lift}${def.noun} - ${label} ${colorName}` +
-          (trans ? ` - ${trans}` : "") + " - Custom Size";
-        const desc = `Custom-made ${def.noun.toLowerCase()} in ${label} ${colorName}` +
-          (trans ? ` (${trans.toLowerCase()}${material ? ", " + material : ""})` : "") +
-          `. Made to order to your exact size (${p.width[0]}"-${p.width[1]}" wide, ` +
-          `${p.height[0]}"-${p.height[1]}" tall, to the nearest 1/8"), sewn in our own ` +
-          `workshop and shipped factory-direct — no middleman. ` +
-          (p.id === "drapery"
-            ? "Wave fold, pinch pleat or Euro pleat headings; optional liners and track hardware. "
-            : "Cordless, continuous cord loop or motorized lift; optional top-down bottom-up and liners. ") +
+    /* roman: no fabric or colour items at all — one item per configuration,
+       priced on the cheapest (group-1) fabric, which is also what the page
+       opens with. The customer picks fabric and colour on the site. */
+    if (p.id === "roman") {
+      const coll = (colStep.options || [])[0];
+      const nSeries = (colStep.options || []).length;
+      const nColours = Object.values(colStep.colours || {}).reduce((t, a2) => t + a2.length, 0);
+      const LIFTS = [["Cordless", "Cordless"], ["Continuous cord loop", "Cord Loop"], ["Motorized", "Motorized"]];
+      const FOLDS = [["Back rods", "Back Rod Fold"], ["Front rods", "Front Rod Fold"], ["Hobbled", "Hobbled Fold"]];
+      const LINERS = [["Unlined", ""], ["Blackout liner", "Blackout Lined"]];
+      for (const [driveVal, liftWord] of LIFTS)
+      for (const [foldVal, foldWord] of FOLDS)
+      for (const [linerVal, linerWord] of LINERS)
+      for (const tdbu of ["No", "Yes"]) {
+        const over = { drive: driveVal, fold: foldVal, liner: linerVal, tdbu };
+        const rsel = feedDefaults(p, over);
+        if (rsel.drive !== driveVal || rsel.fold !== foldVal) continue;  // build rule says no
+        const price = feedPrice("roman", prices, coll, rsel, w, h);
+        if (price == null) continue;
+        const tdbuWord = tdbu === "Yes" ? "Top-Down Bottom-Up " : "";
+        const title = `LUMIA ${liftWord} ${tdbuWord}Roman Shade - ${foldWord}` +
+          (linerWord ? `, ${linerWord}` : "") + " - Custom Size";
+        const desc = `Custom roman shade with ${foldWord.toLowerCase()} and ${liftWord.toLowerCase()} lift` +
+          (tdbu === "Yes" ? ", top-down bottom-up operation" : "") +
+          (linerVal === "Blackout liner" ? ", fully blackout lined" : "") +
+          `. Choose from ${nSeries} fabric collections and ${nColours} colours on the page — sheer, ` +
+          `light-filtering, linen and blackout fabrics, shown with large swatches. Made to order to ` +
+          `your exact size (${p.width[0]}"-${p.width[1]}" wide, ${p.height[0]}"-${p.height[1]}" tall, ` +
+          `to the nearest 1/8"), sewn in our own workshop and shipped factory-direct — no middleman. ` +
           `Free shipping within the US; made and dispatched in ${hd} business days.`;
-        const img = s.lg || s.img || p.img;
-        const link = `${SITE}/${p.id}.html?fabric=${encodeURIComponent(coll.id)}` +
-          `&color=${encodeURIComponent(code)}&w=${w}&h=${h}`;
+        const link = `${SITE}/roman.html?fold=${encodeURIComponent(foldVal)}` +
+          `&drive=${encodeURIComponent(driveVal)}&liner=${encodeURIComponent(linerVal)}` +
+          `&tdbu=${tdbu}&w=${w}&h=${h}`;
+        const id = `LUM-RO-${slug(driveVal)}-${slug(foldVal)}` +
+          (linerVal === "Blackout liner" ? "-BLKOUT" : "") + (tdbu === "Yes" ? "-TDBU" : "");
         items.push(
           "<item>" +
-          `<g:id>${X(`LUM-${def.code}-${slug(coll.id)}-${slug(code)}`)}</g:id>` +
-          `<g:item_group_id>${X(groupId)}</g:item_group_id>` +
+          `<g:id>${X(id)}</g:id>` +
           `<g:title>${X(title)}</g:title>` +
           `<g:description>${X(desc)}</g:description>` +
           `<g:link>${X(link)}</g:link>` +
-          `<g:image_link>${X(SITE + "/" + encodeURI(img))}</g:image_link>` +
-          (img !== p.img ? `<g:additional_image_link>${X(SITE + "/" + encodeURI(p.img))}</g:additional_image_link>` : "") +
+          `<g:image_link>${X(SITE + "/" + encodeURI(p.img))}</g:image_link>` +
+          `<g:additional_image_link>${X(SITE + "/assets/card-roman.jpg")}</g:additional_image_link>` +
           `<g:price>${price.toFixed(2)} USD</g:price>` +
           "<g:availability>in_stock</g:availability>" +
           "<g:brand>LUMIA</g:brand>" +
           "<g:identifier_exists>no</g:identifier_exists>" +
           "<g:condition>new</g:condition>" +
           `<g:google_product_category>${X(def.cat)}</g:google_product_category>` +
-          `<g:product_type>${X(def.ptype + (trans ? " > " + trans : "") + " > " + coll.label)}</g:product_type>` +
-          (trans ? `<g:custom_label_0>${X(trans)}</g:custom_label_0>` : "") +
-          `<g:color>${X(colorName)}</g:color>` +
-          (material ? `<g:material>${X(material)}</g:material>` : "") +
+          `<g:product_type>${X(def.ptype + " > " + foldWord)}</g:product_type>` +
+          `<g:custom_label_0>${X(liftWord)}</g:custom_label_0>` +
+          `<g:custom_label_1>${X(linerWord || "Unlined")}</g:custom_label_1>` +
+          `<g:custom_label_2>${X(tdbu === "Yes" ? "TDBU" : "Standard")}</g:custom_label_2>` +
+          `<g:product_highlight>${X(nColours + " fabrics and colours to choose from on the page")}</g:product_highlight>` +
           "<g:product_highlight>Made to order in our own workshop — factory direct, no middleman</g:product_highlight>" +
           "<g:product_highlight>Custom size, cut to the nearest 1/8 inch</g:product_highlight>" +
-          (p.id === "drapery"
-            ? "<g:product_highlight>Wave fold, pinch pleat and Euro pleat headings</g:product_highlight>"
-            : "<g:product_highlight>Cordless, cord loop or motorized lift on every shade</g:product_highlight>") +
+          "<g:product_highlight>Cordless, cord loop or motorized lift — child-safe options</g:product_highlight>" +
           `<g:product_highlight>Free US shipping — made and dispatched in ${hd} business days</g:product_highlight>` +
-          "<g:product_highlight>25+ years of window treatment manufacturing</g:product_highlight>" +
           "<g:shipping><g:country>US</g:country><g:service>Standard</g:service><g:price>0 USD</g:price></g:shipping>" +
           `<g:min_handling_time>${def.handling[0]}</g:min_handling_time>` +
           `<g:max_handling_time>${def.handling[1]}</g:max_handling_time>` +
           "</item>"
         );
       }
-      /* the config-spotlight items: one per series for the configurations
-         people search by name, at that configuration's real price */
-      for (const spot of FEED_SPOTS[p.id] || []) {
-        const code = colours[0];
-        if (!code) continue;
-        const ssel = feedDefaults(p, spot.over);
-        const sprice = feedPrice(p.id, prices, coll, ssel, w, h);
-        if (sprice == null) continue;
-        const s = sw[code] || {};
-        const colorName = s.name || code;
-        const stitle = `LUMIA ${spot.word} ${def.noun} - ${label} ${colorName}` +
-          (trans ? ` - ${trans}` : "") + " - Custom Size";
-        const sdesc = `Custom-made ${spot.word.toLowerCase()} ${def.noun.toLowerCase()} in ` +
-          `${label} ${colorName}` +
-          (trans ? ` (${trans.toLowerCase()}${material ? ", " + material : ""})` : "") +
-          `. Every ${label} colour is available in this configuration. Made to order to ` +
-          `your exact size (${p.width[0]}"-${p.width[1]}" wide, to the nearest 1/8"), sewn in ` +
-          `our own workshop and shipped factory-direct — no middleman. Free shipping within ` +
-          `the US; made and dispatched in ${hd} business days.`;
-        const simg = s.lg || s.img || p.img;
-        const sparams = Object.keys(spot.over)
-          .map((k) => `&${k}=${encodeURIComponent(spot.over[k])}`).join("");
-        const slink = `${SITE}/${p.id}.html?fabric=${encodeURIComponent(coll.id)}` +
-          `&color=${encodeURIComponent(code)}${sparams}&w=${w}&h=${h}`;
+      continue;
+    }
+    /* drapery: one item per heading style × liner — fabric picked on the page */
+    if (p.id === "drapery") {
+      const coll = (colStep.options || [])[0];
+      const nSeries = (colStep.options || []).length;
+      const nColours = Object.values(colStep.colours || {}).reduce((t, a2) => t + a2.length, 0);
+      const headStep = (p.steps || []).find((s2) => s2.key === "heading");
+      const LINERS = [["Unlined", ""], ["Blackout liner", "Blackout Lined"]];
+      for (const heading of (headStep && headStep.options) || [])
+      for (const [linerVal, linerWord] of LINERS) {
+        const dsel = feedDefaults(p, { heading, liner: linerVal });
+        if (dsel.heading !== heading) continue;
+        const price = feedPrice("drapery", prices, coll, dsel, w, h);
+        if (price == null) continue;
+        const title = `LUMIA Custom Drapery - ${heading}` +
+          (linerWord ? `, ${linerWord}` : "") + " - Made to Measure";
+        const desc = `Custom drapery panel with a ${heading.toLowerCase()} heading` +
+          (linerVal === "Blackout liner" ? ", fully blackout lined" : "") +
+          `. Choose from ${nSeries} fabric collections and ${nColours} colours on the page — sheer, ` +
+          `light-filtering, linen and blackout fabrics. Sewn to your exact size ` +
+          `(up to ${p.width[1]}" wide, ${p.height[1]}" tall), single panels or centre-split pairs, ` +
+          `optional track hardware. Made in our own workshop and shipped factory-direct — no ` +
+          `middleman. Free shipping within the US; made and dispatched in ${hd} business days.`;
+        const link = `${SITE}/drapery.html?heading=${encodeURIComponent(heading)}` +
+          `&liner=${encodeURIComponent(linerVal)}&w=${w}&h=${h}`;
+        const id = `LUM-DR-${slug(heading)}` + (linerVal === "Blackout liner" ? "-BLKOUT" : "");
         items.push(
           "<item>" +
-          `<g:id>${X(`LUM-${def.code}-${slug(coll.id)}-${spot.code}`)}</g:id>` +
-          `<g:title>${X(stitle)}</g:title>` +
-          `<g:description>${X(sdesc)}</g:description>` +
-          `<g:link>${X(slink)}</g:link>` +
-          `<g:image_link>${X(SITE + "/" + encodeURI(simg))}</g:image_link>` +
-          (simg !== p.img ? `<g:additional_image_link>${X(SITE + "/" + encodeURI(p.img))}</g:additional_image_link>` : "") +
-          `<g:price>${sprice.toFixed(2)} USD</g:price>` +
+          `<g:id>${X(id)}</g:id>` +
+          `<g:title>${X(title)}</g:title>` +
+          `<g:description>${X(desc)}</g:description>` +
+          `<g:link>${X(link)}</g:link>` +
+          `<g:image_link>${X(SITE + "/" + encodeURI(p.img))}</g:image_link>` +
+          `<g:additional_image_link>${X(SITE + "/assets/card-drapery.jpg")}</g:additional_image_link>` +
+          `<g:price>${price.toFixed(2)} USD</g:price>` +
           "<g:availability>in_stock</g:availability>" +
           "<g:brand>LUMIA</g:brand>" +
           "<g:identifier_exists>no</g:identifier_exists>" +
           "<g:condition>new</g:condition>" +
           `<g:google_product_category>${X(def.cat)}</g:google_product_category>` +
-          `<g:product_type>${X(def.ptype + " > " + spot.word)}</g:product_type>` +
-          `<g:custom_label_1>${X(spot.word)}</g:custom_label_1>` +
-          `<g:color>${X(colorName)}</g:color>` +
-          (material ? `<g:material>${X(material)}</g:material>` : "") +
-          `<g:product_highlight>${X(spot.word + " configuration — priced as shown, every colour available")}</g:product_highlight>` +
+          `<g:product_type>${X(def.ptype + " > " + heading)}</g:product_type>` +
+          `<g:custom_label_0>${X(heading)}</g:custom_label_0>` +
+          `<g:custom_label_1>${X(linerWord || "Unlined")}</g:custom_label_1>` +
+          `<g:product_highlight>${X(nColours + " fabrics and colours to choose from on the page")}</g:product_highlight>` +
           "<g:product_highlight>Made to order in our own workshop — factory direct, no middleman</g:product_highlight>" +
-          "<g:product_highlight>Custom size, cut to the nearest 1/8 inch</g:product_highlight>" +
+          "<g:product_highlight>Single panels or centre-split pairs, optional track hardware</g:product_highlight>" +
           `<g:product_highlight>Free US shipping — made and dispatched in ${hd} business days</g:product_highlight>` +
           "<g:shipping><g:country>US</g:country><g:service>Standard</g:service><g:price>0 USD</g:price></g:shipping>" +
           `<g:min_handling_time>${def.handling[0]}</g:min_handling_time>` +
@@ -648,6 +640,7 @@ async function googleFeed(req) {
           "</item>"
         );
       }
+      continue;
     }
   }
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n` +
