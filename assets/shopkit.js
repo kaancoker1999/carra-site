@@ -194,7 +194,8 @@
   function syncSections(){
     var show = !pview.hidden || lines.length > 0;
     document.getElementById('cartsec').hidden = !show;
-    document.getElementById('checkout').hidden = !show;
+    var co = document.getElementById('checkout');   /* gone — pay lives in the cart now */
+    if(co) co.hidden = !show;
   }
 
   function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }

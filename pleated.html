@@ -421,42 +421,35 @@
           <div class="empty" id="empty">Your cart is empty &mdash; configure a product above and press Add to cart.</div>
         </div>
         <div class="totals" id="count" hidden></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="checkout" id="checkout" hidden>
-    <div class="wrap">
-      <!-- asked once, for the whole order: one remote can run many shades -->
-      <div class="xcard" id="accblock" hidden style="margin-bottom:22px">
-        <div class="xtitle">Motorized accessories</div>
-        <p class="xsub" id="acchint"></p>
-        <div id="accrows"></div>
-      </div>
-      <div class="xcard">
-        <div class="xtitle">Payment &amp; delivery</div>
-        <p class="xsub" style="margin-bottom:20px">You pay on Stripe&rsquo;s secure page &mdash; your delivery address and phone are typed right there, so there is nothing more to fill in here.</p>
-        <div class="ckgrid">
-          <div class="cell span2"><label for="ck-notes">Notes (optional)</label><input id="ck-notes" type="text" placeholder="e.g. mounting, delivery instructions"></div>
+        <!-- asked once, for the whole order: one remote can run many shades -->
+        <div id="accblock" hidden style="margin-top:26px;border-top:1px solid var(--line);padding-top:22px">
+          <div class="xtitle">Motorized accessories</div>
+          <p class="xsub" id="acchint"></p>
+          <div id="accrows"></div>
         </div>
-        <!-- a phone/e-mail order entered on a customer's behalf: the order and
-             its link belong to THEM, not to the signed-in account -->
-        <button class="forlink" id="forother" type="button">Ordering for someone else?</button>
-        <div class="ckgrid" id="forgrid" hidden style="margin-top:12px">
-          <div class="cell"><label for="fo-name">Their full name *</label><input id="fo-name" type="text" autocomplete="off"></div>
-          <div class="cell"><label for="fo-email">Their e-mail *</label><input id="fo-email" type="email" autocomplete="off"></div>
-          <div class="cell span2" style="font-size:12.5px;color:var(--muted)">The order is saved under their e-mail &mdash; share the link of the page you land on and they review and pay there.</div>
+        <div style="margin-top:26px;border-top:1px solid var(--line);padding-top:22px">
+          <div class="ckgrid">
+            <div class="cell span2"><label for="ck-notes">Notes (optional)</label><input id="ck-notes" type="text" placeholder="e.g. mounting, delivery instructions"></div>
+          </div>
+          <!-- a phone/e-mail order entered on a customer's behalf: the order and
+               its link belong to THEM, not to the signed-in account -->
+          <button class="forlink" id="forother" type="button">Ordering for someone else?</button>
+          <div class="ckgrid" id="forgrid" hidden style="margin-top:12px">
+            <div class="cell"><label for="fo-name">Their full name *</label><input id="fo-name" type="text" autocomplete="off"></div>
+            <div class="cell"><label for="fo-email">Their e-mail *</label><input id="fo-email" type="email" autocomplete="off"></div>
+            <div class="cell span2" style="font-size:12.5px;color:var(--muted)">The order is saved under their e-mail &mdash; share the link of the page you land on and they review and pay there.</div>
+          </div>
+          <div class="paybar">
+            <button class="paybtn" id="paybtn" type="button" disabled>Pay</button>
+            <button class="paybtn ghost" id="savebtn" type="button" disabled>Save &mdash; pay later</button>
+            <span class="secure">
+              <svg width="14" height="16" viewBox="0 0 14 16" fill="none"><path d="M7 1 1.5 3v4c0 3.7 2.3 6.6 5.5 8 3.2-1.4 5.5-4.3 5.5-8V3L7 1Z" stroke="#767A7E" stroke-width="1.3"/></svg>
+              Secure checkout by Stripe &middot; your delivery address and phone are typed on the payment page
+            </span>
+          </div>
+          <div class="err" id="ckerr"></div>
+          <p class="paynote" style="margin:16px 0 0">After payment you get an order reference &mdash; follow it any time on the <a href="track.html" style="color:var(--bronze)">tracking page</a>. We review every order before production and contact you if anything needs a second look.</p>
         </div>
-        <div class="paybar">
-          <button class="paybtn" id="paybtn" type="button" disabled>Pay</button>
-          <button class="paybtn ghost" id="savebtn" type="button" disabled>Save &mdash; pay later</button>
-          <span class="secure">
-            <svg width="14" height="16" viewBox="0 0 14 16" fill="none"><path d="M7 1 1.5 3v4c0 3.7 2.3 6.6 5.5 8 3.2-1.4 5.5-4.3 5.5-8V3L7 1Z" stroke="#767A7E" stroke-width="1.3"/></svg>
-            Secure checkout by Stripe &middot; card or US bank
-          </span>
-        </div>
-        <div class="err" id="ckerr"></div>
-        <p class="paynote" style="margin:16px 0 0">After payment you get an order reference &mdash; follow it any time on the <a href="track.html" style="color:var(--bronze)">tracking page</a>. We review every order before production and contact you if anything needs a second look.</p>
       </div>
     </div>
   </section>
@@ -511,7 +504,7 @@
   </div>
 </footer>
 
-<script src="assets/shopkit.js?v=12"></script>
+<script src="assets/shopkit.js?v=13"></script>
 <script src="assets/trade.js?v=23" defer></script>
 
 </body>
