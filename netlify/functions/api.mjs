@@ -370,11 +370,6 @@ const FEED_SPOTS = {
     { code: "BLKOUT", word: "Blackout Lined", over: { liner: "Blackout liner" } },
     { code: "TDBU", word: "Top-Down Bottom-Up", over: { tdbu: "Yes" } },
   ],
-  cellular: [
-    { code: "MOTOR", word: "Motorized", over: { drive: "Motorized" } },
-    { code: "CCL", word: "Cord Loop", over: { drive: "Cord loop" } },
-    { code: "TDBU", word: "Top-Down Bottom-Up", over: { tdbu: "Yes" } },
-  ],
   drapery: [
     { code: "BLKOUT", word: "Blackout Lined", over: { liner: "Blackout liner" } },
   ],
@@ -470,6 +465,74 @@ async function googleFeed(req) {
     const lift = sel.drive === "Cordless" ? "Cordless " : "";
     const hd = def.handling[0] === def.handling[1]
       ? String(def.handling[1]) : def.handling[0] + "-" + def.handling[1];
+    /* cellular: colour names are just codes (001, 002…), worthless as search
+       terms — so instead of one item per colour, one item per series ×
+       mechanism × TDBU, each at its real price (52 valid combinations) */
+    if (p.id === "cellular") {
+      const LIFTS = [["Cordless", "Cordless"], ["Cord loop", "Cord Loop"], ["Motorized", "Motorized"]];
+      for (const coll of colStep.options || []) {
+        const colours = (colStep.colours || {})[coll.id] || [];
+        const sw = (colStep.swatches || {})[coll.id] || {};
+        const s = (colours[0] && sw[colours[0]]) || {};
+        const img = s.lg || s.img || p.img;
+        const label = String(coll.label || "").replace(/\s*·\s*/g, " ");
+        const parts = String(coll.label || "").split("·");
+        const family = (parts[0] || "").trim();
+        const cell = (parts[1] || "").trim();
+        const cls = (p.cellClass || {})[coll.id];
+        for (const [driveVal, liftWord] of LIFTS) {
+          for (const tdbu of ["No", "Yes"]) {
+            const rule = (p.sizeRules || []).find((r) =>
+              r.drive === driveVal && r.tdbu === tdbu && (!r.cls || r.cls.includes(cls)));
+            if (rule && rule.na) continue;   // e.g. cordless TDBU on double-blackout/triple
+            const csel = feedDefaults(p, { drive: driveVal, tdbu });
+            const price = feedPrice("cellular", prices, coll, csel, w, h);
+            if (price == null) continue;
+            const tdbuWord = tdbu === "Yes" ? "Top-Down Bottom-Up " : "";
+            const title = `LUMIA ${liftWord} ${tdbuWord}Cellular Shade - ${label} - Custom Size`;
+            const desc = `Custom ${family.toLowerCase()} cellular (honeycomb) shade` +
+              (cell ? `, ${cell.toLowerCase()} construction` : "") +
+              `, ${liftWord.toLowerCase()} lift` +
+              (tdbu === "Yes" ? " with top-down bottom-up operation" : "") +
+              `. Available in ${colours.length} colours. Made to order to your exact size ` +
+              `(${p.width[0]}"-${p.width[1]}" wide, ${p.height[0]}"-${p.height[1]}" tall, to the ` +
+              `nearest 1/8"), insulating honeycomb construction, child-safe design. Sewn in our ` +
+              `own workshop and shipped factory-direct — no middleman. Free shipping within the ` +
+              `US; made and dispatched in ${hd} business days.`;
+            const link = `${SITE}/cellular.html?fabric=${encodeURIComponent(coll.id)}` +
+              `&drive=${encodeURIComponent(driveVal)}&tdbu=${tdbu}&w=${w}&h=${h}`;
+            items.push(
+              "<item>" +
+              `<g:id>${X(`LUM-CE-${slug(coll.id)}-${slug(driveVal)}${tdbu === "Yes" ? "-TDBU" : ""}`)}</g:id>` +
+              `<g:title>${X(title)}</g:title>` +
+              `<g:description>${X(desc)}</g:description>` +
+              `<g:link>${X(link)}</g:link>` +
+              `<g:image_link>${X(SITE + "/" + encodeURI(img))}</g:image_link>` +
+              (img !== p.img ? `<g:additional_image_link>${X(SITE + "/" + encodeURI(p.img))}</g:additional_image_link>` : "") +
+              `<g:price>${price.toFixed(2)} USD</g:price>` +
+              "<g:availability>in_stock</g:availability>" +
+              "<g:brand>LUMIA</g:brand>" +
+              "<g:identifier_exists>no</g:identifier_exists>" +
+              "<g:condition>new</g:condition>" +
+              `<g:google_product_category>${X(def.cat)}</g:google_product_category>` +
+              `<g:product_type>${X(def.ptype + " > " + family + (cell ? " > " + cell : ""))}</g:product_type>` +
+              `<g:custom_label_0>${X(family)}</g:custom_label_0>` +
+              `<g:custom_label_1>${X(liftWord + (tdbu === "Yes" ? " TDBU" : ""))}</g:custom_label_1>` +
+              `<g:product_highlight>${X("Available in " + colours.length + " colours — pick yours on the page")}</g:product_highlight>` +
+              "<g:product_highlight>Made to order in our own workshop — factory direct, no middleman</g:product_highlight>" +
+              "<g:product_highlight>Custom size, cut to the nearest 1/8 inch</g:product_highlight>" +
+              "<g:product_highlight>Insulating honeycomb construction, child-safe</g:product_highlight>" +
+              `<g:product_highlight>Free US shipping — made and dispatched in ${hd} business days</g:product_highlight>` +
+              "<g:shipping><g:country>US</g:country><g:service>Standard</g:service><g:price>0 USD</g:price></g:shipping>" +
+              `<g:min_handling_time>${def.handling[0]}</g:min_handling_time>` +
+              `<g:max_handling_time>${def.handling[1]}</g:max_handling_time>` +
+              "</item>"
+            );
+          }
+        }
+      }
+      continue;
+    }
     for (const coll of colStep.options || []) {
       const colours = (colStep.colours || {})[coll.id] || [];
       const sw = (colStep.swatches || {})[coll.id] || {};
