@@ -475,7 +475,8 @@
   /* ── query params: back from Stripe, a saved order, or a shared link ── */
   var q = location.search;
   var refQ = /[?&]ref=([^&]+)/.exec(q), payQ = /[?&]paysession=([^&]+)/.exec(q),
-      cancQ = /[?&]pay=cancelled/.test(q), savedQ = /[?&]saved=1/.test(q);
+      cancQ = /[?&]pay=cancelled/.test(q), savedQ = /[?&]saved=1/.test(q),
+      quoteQ = /[?&]quote=1/.test(q);
   var refFromQ = refQ ? decodeURIComponent(refQ[1]).toUpperCase() : '';
   if(q) history.replaceState(null, '', location.pathname);
 
@@ -567,7 +568,7 @@
           (l.w != null ? fmtIn(l.w) + '&Prime; &times; ' + fmtIn(l.h) + '&Prime; &middot; ' : '') +
           'Qty ' + (l.qty || 1) + '</div>' +
       '</div>' +
-      '<div class="cprice">' + (l.price == null ? '&mdash;' : '$' + (l.price * (l.qty || 1)).toFixed(2)) +
+      '<div class="cprice">' + (l.price == null ? 'Quote' : '$' + (l.price * (l.qty || 1)).toFixed(2)) +
         ((l.qty || 1) > 1 && l.price != null ? '<span class="cunit">$' + (+l.price).toFixed(2) + ' each</span>' : '') +
       '</div></div>';
   }
@@ -588,14 +589,17 @@
     $('statusempty').hidden = !!o;
     if(!o){ $('statusbody').innerHTML = ''; return; }
     var cancelled = o.status === 'Cancelled';
+    var quoting = !!o.quote && !o.priced && !o.paid;
     var html =
-      '<div class="ohead"><span class="ref">' + esc(o.ref) + '</span><span class="amt">' + esc(o.total || '') + '</span></div>' +
+      '<div class="ohead"><span class="ref">' + esc(o.ref) + '</span><span class="amt">' + esc(o.total || (quoting ? 'Quote' : '')) + '</span></div>' +
       '<p class="oname">Order for ' + esc(o.name || (ACCOUNT && ACCOUNT.name) || '') + ' &middot; ' +
         new Date(o.at).toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'}) + '</p>' +
       (cancelled ? '<div class="cancelnote">This order was cancelled. If that is unexpected, write to <a href="mailto:lumiashades@gmail.com">lumiashades@gmail.com</a>.</div>' : '') +
       (!cancelled ?
         '<div class="steps">' +
-        stepHTML('paid', 'Payment', o.paid ? 'Paid — thank you.' : 'Not completed yet.') +
+        stepHTML('paid', 'Payment', o.paid ? 'Paid — thank you.'
+          : quoting ? 'We are confirming your price — usually within one business day.'
+          : 'Not completed yet.') +
         stepHTML('review', 'Review', 'We check every order before production.') +
         stepHTML('prod', 'In production', 'Being made to your sizes.') +
         stepHTML('shipped', 'Shipped', 'On its way to you.') + '</div>' : '') +
@@ -615,6 +619,12 @@
       else { setStep('review', 'done'); setStep('prod', 'now'); }
     }
     $('warnbanner').classList.toggle('on', !cancelled && !o.paid);
+    if(quoting && !cancelled && !o.paid){
+      $('warntext').textContent = 'Your quote is being prepared — the price appears here and you pay from this page. No payment is needed yet.';
+      $('retrybtn').hidden = true;
+    } else {
+      $('retrybtn').hidden = false;
+    }
     var ask = $('askbtn');
     if(ask) ask.addEventListener('click', function(){
       showSec('messages');
@@ -627,7 +637,9 @@
   /* ── the saved / placed lists ── */
   function rowHTML(x, saved){
     var st, cls = '';
-    if(!x.paid && x.status !== 'Cancelled'){ st = 'Saved — not paid'; cls = ' unpaid'; }
+    var quoting = !!x.quote && !x.priced && !x.paid;
+    if(quoting && x.status !== 'Cancelled'){ st = 'Quote — price coming'; cls = ' unpaid'; }
+    else if(!x.paid && x.status !== 'Cancelled'){ st = 'Saved — not paid'; cls = ' unpaid'; }
     else if(x.status === 'Cancelled'){ st = 'Cancelled'; cls = ' unpaid'; }
     else { st = x.status; cls = ' paidok'; }
     return '<div class="orow">' +
@@ -636,7 +648,7 @@
       '<span class="ost' + cls + '">' + esc(st) + '</span>' +
       '<span class="oamt">' + esc(x.total || '') + '</span>' +
       '<button class="oview" type="button" data-ref="' + esc(x.ref) + '">View</button>' +
-      (saved ? '<button class="opay" type="button" data-ref="' + esc(x.ref) + '">Pay now</button>' : '') +
+      (saved && !quoting ? '<button class="opay" type="button" data-ref="' + esc(x.ref) + '">Pay now</button>' : '') +
       '</div>';
   }
   function renderLists(){
@@ -894,7 +906,7 @@
       loadThreads();
       /* an order link (or a fresh save / payment return) opens that order;
          otherwise the account lands on the profile */
-      showSec((refFromQ || savedQ || payQ || cancQ) && SEL ? 'status' : 'profile');
+      showSec((refFromQ || savedQ || payQ || cancQ || quoteQ) && SEL ? 'status' : 'profile');
     }).catch(function(){
       /* the account could not be opened server-side — fall back to the link form */
       $('acct').hidden = true;
@@ -930,7 +942,11 @@
       boot();
     }).catch(boot);
   } else {
-    if(savedQ){
+    if(quoteQ){
+      var ok2 = $('okbanner');
+      ok2.textContent = 'Quote request received — we confirm your price within one business day. It will appear on this page and you pay from here.';
+      ok2.classList.add('on');
+    } else if(savedQ){
       var ok = $('okbanner');
       ok.textContent = 'Order saved — pay whenever you are ready with the Pay now button.';
       ok.classList.add('on');

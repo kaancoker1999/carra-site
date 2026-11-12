@@ -150,6 +150,11 @@ function orderCents(o) {
   const total = (o.lines || []).reduce((a, l) => a + (l.price != null ? l.price * l.qty : 0), 0);
   return Math.round(total * 100);
 }
+/* a priced quote charges the admin-set total, not the (null) line prices */
+function orderTotalCents(o) {
+  if (o.priced) return Math.round(parseFloat(String(o.total).replace(/[^0-9.]/g, "")) * 100);
+  return orderCents(o);
+}
 /* the ship-to a home customer typed on Stripe's payment page */
 function shipFromSession(sess) {
   if (!sess) return null;
@@ -262,7 +267,8 @@ async function homeCheckout(order, origin, sk) {
     cancel_url: `${origin}/track.html?ref=${encodeURIComponent(order.ref)}&pay=cancelled`,
   });
   const lines = order.lines || [];
-  if (lines.length <= 20) {
+  const perLine = lines.length <= 20 && !order.priced && lines.every((l) => l.price != null);
+  if (perLine) {
     lines.forEach((l, i) => {
       // Stripe quantities are whole numbers; fractional ones (fabric yards) fold into the amount
       const whole = Number.isInteger(l.qty);
@@ -276,7 +282,7 @@ async function homeCheckout(order, origin, sk) {
   } else {
     form.set("line_items[0][quantity]", "1");
     form.set("line_items[0][price_data][currency]", "usd");
-    form.set("line_items[0][price_data][unit_amount]", String(orderCents(order)));
+    form.set("line_items[0][price_data][unit_amount]", String(orderTotalCents(order)));
     form.set("line_items[0][price_data][product_data][name]", `LUMIA order ${order.ref}`);
   }
   const r = await fetch("https://api.stripe.com/v1/checkout/sessions", {
@@ -427,6 +433,17 @@ function feedPrice(pid, prices, coll, sel, w, h) {
 }
 const SITE = "https://lumiashades.com";
 async function googleFeed(req) {
+  // prices went dealer-only on 2026-11-12 (owner's call) — an empty channel
+  // lets Merchant Center expire the listed items gracefully instead of
+  // flagging price mismatches. Flip PUBLIC_FEED when prices go public again.
+  const PUBLIC_FEED = false;
+  if (!PUBLIC_FEED) {
+    return new Response(
+      `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel>` +
+      `<title>LUMIA — Custom Window Treatments</title><link>${SITE}</link>` +
+      `<description>Custom roman shades, cellular shades and drapery, made to measure.</description></channel></rss>`,
+      { headers: { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" } });
+  }
   const origin = new URL(req.url).origin;
   const res = await fetch(origin + "/assets/shop-config.json").catch(() => null);
   const shop = res && res.ok ? await res.json().catch(() => null) : null;
@@ -1013,16 +1030,6 @@ export default async (req) => {
     return json({ ok: true, payment });
   }
 
-  // ── home customer: the retail price list is public — Google Merchant
-  //    (and ChatGPT Shopping) require prices visible without a login ──
-  if (path === "/api/home/prices" && req.method === "GET") {
-    const cfg = await consumerCfg();
-    if (cfg.active === false) return bad("The shop is closed right now.", 503);
-    const base = await store().get("prices", { type: "json" });
-    if (!base) return bad("prices not loaded yet", 503);
-    return json({ prices: scaled(base, () => cfg.mult) });
-  }
-
   // ── home customer: an account saves your details and tracks orders;
   //    repeat posts simply refresh the stored details ─────────────────
   if (path === "/api/home/register" && req.method === "POST") {
@@ -1056,7 +1063,7 @@ export default async (req) => {
     acct.at = (prev && prev.at) || new Date().toISOString();
     acct.lastSeen = new Date().toISOString();
     await s.setJSON(blobKey, acct);
-    return json({ prices: scaled(base, () => cfg.mult), key: acct.key });
+    return json({ ok: true, key: acct.key });   // prices are dealer-only
   }
 
   // ── home customer: log back in with e-mail + password. A matching
@@ -1090,7 +1097,7 @@ export default async (req) => {
     return json({
       customer: { name: acct.name, email, phone: acct.phone || "",
         address: acct.address || "", city: acct.city || "", state: acct.state || "", zip: acct.zip || "" },
-      prices: scaled(base, () => cfg.mult), key: acct.key,
+      key: acct.key,   // prices are dealer-only
     });
   }
 
@@ -1105,7 +1112,10 @@ export default async (req) => {
     if (!home) return bad("name and a valid e-mail are required");
     if (!Array.isArray(body.lines) || !body.lines.length) return bad("lines required");
     const lines = body.lines.slice(0, 60);
-    if (lines.some((l) => l.price == null || !(l.qty > 0))) return bad("every line needs a price");
+    if (lines.some((l) => !(l.qty > 0))) return bad("every line needs a quantity");
+    // prices are dealer-only: a consumer cart carries no prices, so it lands
+    // as a QUOTE REQUEST — visible to the admin at once, payable once priced
+    const isQuote = !!body.quote || lines.some((l) => l.price == null);
     const s = store();
     // the ref is made here, not in the browser — two customers can never collide
     let ref, tries = 0;
@@ -1122,10 +1132,18 @@ export default async (req) => {
       home, total: "", lines,
       status: { status: "Pending review", locked: false, note: "" },
       payment: null, test: false,
-      // every home order stays hidden from the admin until the payment lands —
-      // an abandoned checkout never clutters the panel (unpaid drafts purge after 45 days)
-      draft: true,
+      // a priced order stays hidden from the admin until the payment lands
+      // (abandoned checkouts purge after 45 days); a quote request is the
+      // opposite — the admin needs to see it right away to price it
+      draft: !isQuote,
+      quote: isQuote,
     };
+    if (isQuote) {
+      order.total = "";
+      await s.setJSON(`order:${ref}`, order);
+      try { await notifyOrder(order); } catch {}
+      return json({ ref, quote: true });
+    }
     const cents = orderCents(order);
     if (cents < 50) return bad("order total too small");
     order.total = "$" + (cents / 100).toFixed(2);
@@ -1148,6 +1166,8 @@ export default async (req) => {
     if (!o || !o.consumer || !o.home || o.home.email !== email) return bad("no such order", 404);
     if (o.payment && o.payment.paid) return bad("already paid", 409);
     if (o.status && o.status.status === "Cancelled") return bad("order was cancelled", 409);
+    if (o.quote && !o.priced)
+      return bad("We are preparing your quote — you can pay as soon as the price is confirmed.", 409);
     const sess = await homeCheckout(o, new URL(req.url).origin, sk);
     if (!sess) return bad("Could not start the payment.", 502);
     return json({ ref, url: sess.url });
@@ -1189,6 +1209,7 @@ export default async (req) => {
         note: (x.status && x.status.note) || "",
         paid: !!(x.payment && x.payment.paid),
         draft: !!x.draft, tracking: x.tracking || "",
+        quote: !!x.quote, priced: !!x.priced,
         total: x.total, lines: x.lines, name: x.home.name,
       }));
     return json({ name: acct.name, orders });
@@ -1279,7 +1300,7 @@ export default async (req) => {
         ref: x.ref, at: x.at,
         status: (x.status && x.status.status) || "Pending review",
         paid: !!(x.payment && x.payment.paid),
-        draft: !!x.draft, total: x.total,
+        draft: !!x.draft, total: x.total, quote: !!x.quote,
       }));
     return json({ order: {
       ref: o.ref, at: o.at,
@@ -1287,6 +1308,7 @@ export default async (req) => {
       note: (o.status && o.status.note) || "",
       paid: !!(o.payment && o.payment.paid),
       tracking: o.tracking || "",
+      quote: !!o.quote, priced: !!o.priced,
       name: o.home.name, lines: o.lines, total: o.total,
     }, others });
   }
@@ -1418,6 +1440,20 @@ export default async (req) => {
       }
       out.sort((x, y) => (x.lastSeen < y.lastSeen ? 1 : -1));
       return json({ accounts: out });
+    }
+
+    // price a quote request — the customer can then pay from their order page
+    if (path === "/api/admin/home-price" && req.method === "POST") {
+      const ref = String(body.ref || "").trim().toUpperCase().slice(0, 40);
+      const total = Number(body.total);
+      if (!ref || !isFinite(total) || total <= 0) return bad("ref and a sane total required");
+      const o = await s.get(`order:${ref}`, { type: "json" });
+      if (!o || !o.consumer) return bad("no such order", 404);
+      o.total = "$" + total.toFixed(2);
+      o.priced = true;
+      o.updatedAt = new Date().toISOString();
+      await s.setJSON(`order:${ref}`, o);
+      return json({ ok: true, total: o.total });
     }
 
     // permanently remove one home-shop account (e.g. a test signup) + its message threads

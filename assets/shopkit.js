@@ -20,20 +20,9 @@
   /* an admin signed in to the panel (same browser) gets the retail prices
      without a customer account, and orders are entered for customers */
   var ADMIN = null;
-  /* retail prices are public (Google Merchant requires it) — an account
-     only adds order tracking, saved details and messaging */
-  var PUBLIC = null;
-  function fetchPublicPrices(){
-    fetch('/api/home/prices')
-      .then(function(r){ if(!r.ok) throw new Error('no'); return r.json(); })
-      .then(function(d){
-        if(!d || !d.prices) return;
-        PUBLIC = { prices: d.prices };
-        if(P) renderSteps();
-        renderLines();
-        injectLD();
-      }).catch(function(){});
-  }
+  /* prices are dealer-only: customers configure and send a QUOTE REQUEST;
+     the price is confirmed by LUMIA and paid from the order page */
+  if(ACCOUNT && ACCOUNT.prices){ delete ACCOUNT.prices; setAccount(ACCOUNT); }
   function adminStoredKey(){
     try{ var v = sessionStorage.getItem('lumia_admin_key'); if(v) return v; }catch(e){}
     try{
@@ -106,8 +95,8 @@
     if(sw) setRegMode(sw.dataset.rmode);
   });
   /* accept the account the server hands back (sign-up or log-in) */
-  function acceptAccount(c, prices, key){
-    ACCOUNT = Object.assign({}, c, { prices: prices, key: key || (ACCOUNT && ACCOUNT.key) || '', at: Date.now() });
+  function acceptAccount(c, key){
+    ACCOUNT = Object.assign({}, c, { key: key || (ACCOUNT && ACCOUNT.key) || '', at: Date.now() });
     setAccount(ACCOUNT);
     syncAcct();
     loadContact();
@@ -132,8 +121,8 @@
     }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
     .then(function(x){
       btn.disabled = false; btn.innerHTML = 'Log in &rarr;';
-      if(!x.ok || !x.d.prices) throw new Error((x.d && x.d.error) || 'failed');
-      acceptAccount(x.d.customer || { email: email }, x.d.prices, x.d.key);
+      if(!x.ok || !x.d.key) throw new Error((x.d && x.d.error) || 'failed');
+      acceptAccount(x.d.customer || { email: email }, x.d.key);
     }).catch(function(e2){
       btn.disabled = false; btn.innerHTML = 'Log in &rarr;';
       err.textContent = String(e2.message || '') || 'Could not log in — please try again.';
@@ -168,8 +157,8 @@
     }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
     .then(function(x){
       btn.disabled = false; btn.innerHTML = REGMODE === 'profile' ? 'Save &rarr;' : 'Create account &rarr;';
-      if(!x.ok || !x.d.prices) throw new Error((x.d && x.d.error) || 'failed');
-      acceptAccount(c, x.d.prices, x.d.key);
+      if(!x.ok || !x.d.key) throw new Error((x.d && x.d.error) || 'failed');
+      acceptAccount(c, x.d.key);
     }).catch(function(e2){
       btn.disabled = false; btn.innerHTML = REGMODE === 'profile' ? 'Save &rarr;' : 'Create account &rarr;';
       var m = String(e2.message || '');
@@ -363,8 +352,8 @@
     return (r && !r.na) ? { w: r.w, h: r.h } : { w: P.width, h: P.height };
   }
 
-  function PRICES(){ return (ACCOUNT && ACCOUNT.prices) || (ADMIN && ADMIN.prices) || (PUBLIC && PUBLIC.prices) || {}; }
-  function hasPrices(){ return !!((ACCOUNT && ACCOUNT.prices) || (ADMIN && ADMIN.prices) || (PUBLIC && PUBLIC.prices)); }
+  function PRICES(){ return (ADMIN && ADMIN.prices) || {}; }
+  function hasPrices(){ return !!(ADMIN && ADMIN.prices); }
   function prodPrices(id){
     return (PRICES().products || []).filter(function(p){ return p.id === id; })[0] || null;
   }
@@ -782,7 +771,7 @@
   function syncBar(){
     var el = document.getElementById('wizprice');
     if(!hasPrices()){
-      el.innerHTML = '<span style="opacity:.5">&hellip;</span>';
+      el.innerHTML = '<span style="letter-spacing:.06em">Quote</span>';
     } else {
       var price = currentPrice();
       if(price == null){ el.innerHTML = '&mdash;'; }
@@ -874,7 +863,6 @@
 
   /* ── add to cart ── */
   function addToCart(){
-    if(!hasPrices()){ fail('Prices are still loading — give it a second and try again.'); return; }
     /* every choose-step needs an answer — open the ones still waiting */
     var missing = (P.steps || []).filter(function(st){
       return stepVisible(st) && isChoose(st) && !SEL[st.key];
@@ -988,7 +976,7 @@
           '<button class="clink" type="button" data-i="' + i + '" data-act="edit">Edit</button><span>&middot;</span>' +
           '<button class="clink danger" type="button" data-i="' + i + '" data-act="del">Remove</button></div>' +
       '</div>' +
-      '<div class="cprice">' + (l.price == null ? '&mdash;' : '$' + (l.price * l.qty).toFixed(2)) +
+      '<div class="cprice">' + (l.price == null ? 'Quote' : '$' + (l.price * l.qty).toFixed(2)) +
         (l.qty > 1 && l.price != null ? '<span class="cunit">$' + l.price.toFixed(2) + ' each</span>' : '') +
       '</div></div>';
   }
@@ -1003,11 +991,12 @@
     renderAcc();
     var at = accTotal();
     var grand = Math.round((t.total + at) * 100) / 100;
+    var hasQuote = lines.some(function(l){ return l.price == null; });
     count.innerHTML = lines.length
       ? '<div class="csubrow"><span>' + plural(lines.length, 'line') + ' &middot; ' + plural(t.units, 'unit') +
         (at > 0 ? ' &middot; accessories $' + at.toFixed(2) : '') +
-        '<span class="cst">Made to measure &middot; reviewed before production</span></span>' +
-        '<b>$' + grand.toFixed(2) + '</b></div>'
+        '<span class="cst">Made to measure &middot; ' + (hasQuote ? 'we confirm your price within one business day' : 'reviewed before production') + '</span></span>' +
+        '<b>' + (hasQuote ? 'Quote' : '$' + grand.toFixed(2)) + '</b></div>'
       : '';
     syncPay();
     syncSections();
@@ -1086,7 +1075,7 @@
   function renderAcc(){
     var block = document.getElementById('accblock');
     var n = motorCount();
-    if(!n){ ACC = {}; saveAcc(); block.hidden = true; return; }
+    if(!n || !hasPrices()){ ACC = {}; saveAcc(); block.hidden = true; return; }
     block.hidden = false;
     document.getElementById('acchint').textContent =
       'You have ' + n + ' motorized shade' + (n === 1 ? '' : 's') + ' in the cart. ' +
@@ -1114,11 +1103,15 @@
 
   /* ── checkout ── */
   var paybtn = document.getElementById('paybtn'), savebtn = document.getElementById('savebtn'),
-      ckerr = document.getElementById('ckerr');
+      quotebtn = document.getElementById('quotebtn'), ckerr = document.getElementById('ckerr');
   function syncPay(){
     var total = Math.round((orderTotals(lines).total + accTotal()) * 100) / 100;
+    var admin = hasPrices();
+    paybtn.hidden = !admin; savebtn.hidden = !admin;
+    if(quotebtn) quotebtn.hidden = admin;
     paybtn.disabled = !lines.length;
     savebtn.disabled = !lines.length;
+    if(quotebtn) quotebtn.disabled = !lines.length;
     paybtn.textContent = lines.length ? 'Pay $' + total.toFixed(2) : 'Pay';
   }
   function ckMsg(text){
@@ -1137,7 +1130,7 @@
   /* one submit path: pay right away, or save the order to pay later.
      The order carries the account's identity; address and phone are typed
      on Stripe's secure payment page and land on the order with the payment. */
-  function submitOrder(paylater){
+  function submitOrder(paylater, asQuote){
     ckMsg('');
     if(!lines.length) return;
     var c = {};
@@ -1173,40 +1166,48 @@
       c = { name: fn, email: fe, phone: '', address: '', city: '', state: '', zip: '' };
     }
     var notes = (document.getElementById('ck-notes').value || '').trim();
-    var btn = paylater ? savebtn : paybtn;
+    var btn = asQuote ? quotebtn : paylater ? savebtn : paybtn;
     var lbl = btn.innerHTML;
     paybtn.disabled = true; savebtn.disabled = true;
-    btn.textContent = paylater ? 'Saving…' : 'Opening secure checkout…';
+    if(quotebtn) quotebtn.disabled = true;
+    btn.textContent = asQuote ? 'Sending…' : paylater ? 'Saving…' : 'Opening secure checkout…';
     fetch('/api/home/order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lines: lines.concat(accLines()), customer: c, notes: notes, paylater: !!paylater })
+      body: JSON.stringify({ lines: lines.concat(accLines()), customer: c, notes: notes,
+        paylater: !!paylater, quote: !!asQuote })
     }).then(function(r){
       return r.json().then(function(d){ return { ok: r.ok, d: d }; });
     }).then(function(x){
-      if(!x.ok || !x.d.ref || (!paylater && !x.d.url)) throw new Error((x.d && x.d.error) || 'failed');
+      if(!x.ok || !x.d.ref || (!paylater && !asQuote && !x.d.url)) throw new Error((x.d && x.d.error) || 'failed');
       try{
         localStorage.setItem('lumia_home_last', JSON.stringify({ ref: x.d.ref, email: c.email, at: Date.now() }));
       }catch(e){}
       lines = []; saveLines();
       ACC = {}; saveAcc();
-      location.href = paylater
+      location.href = asQuote
+        ? 'track.html?ref=' + encodeURIComponent(x.d.ref) + '&quote=1'
+        : paylater
         ? 'track.html?ref=' + encodeURIComponent(x.d.ref) + '&saved=1'
         : x.d.url;
     }).catch(function(err){
       paybtn.disabled = false; savebtn.disabled = false;
+      if(quotebtn) quotebtn.disabled = false;
       btn.innerHTML = lbl;
       syncPay();
-      ckMsg(paylater
+      ckMsg(asQuote
+        ? 'Could not send the request — please try again, or write to lumiashades@gmail.com.'
+        : paylater
         ? 'Could not save the order — please try again, or write to lumiashades@gmail.com.'
         : 'Could not start the payment — please try again, or write to lumiashades@gmail.com.');
     });
   }
   paybtn.addEventListener('click', function(){ submitOrder(false); });
   savebtn.addEventListener('click', function(){ submitOrder(true); });
+  if(quotebtn) quotebtn.addEventListener('click', function(){ submitOrder(false, true); });
 
   /* ── boot ── */
-  /* a returning customer: quietly refresh the stored price list */
+  /* a returning customer: quietly confirm the stored session still opens */
   function refreshPrices(){
     if(!ACCOUNT || !ACCOUNT.key) return;
     var c = {};
@@ -1218,23 +1219,12 @@
       if(r.status === 401 || r.status === 409){
         /* the key no longer opens the account — sign this device out */
         setAccount(null); ACCOUNT = null; syncAcct();
-        if(P) renderSteps();
-        renderLines();
-        throw new Error('skip');
       }
-      if(!r.ok) throw new Error('skip');
-      return r.json();
-    })
-    .then(function(d){
-      ACCOUNT.prices = d.prices; setAccount(ACCOUNT);
-      if(P) renderSteps();
-      renderLines();
     }).catch(function(){});
   }
   function boot(){
     if(booted) return;
     booted = true;
-    fetchPublicPrices();
     refreshPrices();
     tryAdmin();
     loadContact();

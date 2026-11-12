@@ -115,19 +115,6 @@ def parse_workbook():
     # ── Roman: base grid expanded into one grid per fabric colour group ──
     rom = sheet_rows(wb["Roman"])
     rom_base = read_grid(rom, find_headers(rom)[0], 20)
-    # corded/motorized romans build up to 105″ wide × 120″ tall; the price book
-    # stops at 98×106, so the grid is extended at the same per-inch rate as its
-    # last printed steps (cordless never reaches these cells — sizeRules cap it)
-    _n = lambda s: float(str(s).rstrip("″"))
-    _w1, _w2 = _n(rom_base["cols"][-2]), _n(rom_base["cols"][-1])
-    for _r in rom_base["rows"]:
-        _r["vals"].append(round(_r["vals"][-1]
-                                + (_r["vals"][-1] - _r["vals"][-2]) / (_w2 - _w1) * (105 - _w2), 2))
-    rom_base["cols"].append("105″")
-    _h1, _h2 = _n(rom_base["rows"][-2]["label"]), _n(rom_base["rows"][-1]["label"])
-    _prev, _last = rom_base["rows"][-2]["vals"], rom_base["rows"][-1]["vals"]
-    rom_base["rows"].append({"label": "120″", "vals": [
-        round(l + (l - p) / (_h2 - _h1) * (120 - _h2), 2) for p, l in zip(_prev, _last)]})
     COLOUR_GROUPS = [("Colour group 1", 1.00), ("Colour group 2", 1.30),
                      ("Colour group 3", 1.55), ("Colour group 4", 1.80)]
     rom_grids = []

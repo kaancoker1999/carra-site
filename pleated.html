@@ -471,15 +471,16 @@
             <div class="cell span2" style="font-size:12.5px;color:var(--muted)">The order is saved under their e-mail &mdash; share the link of the page you land on and they review and pay there.</div>
           </div>
           <div class="paybar">
-            <button class="paybtn" id="paybtn" type="button" disabled>Pay</button>
-            <button class="paybtn ghost" id="savebtn" type="button" disabled>Save &mdash; pay later</button>
+            <button class="paybtn" id="quotebtn" type="button" disabled>Request a quote</button>
+            <button class="paybtn" id="paybtn" type="button" disabled hidden>Pay</button>
+            <button class="paybtn ghost" id="savebtn" type="button" disabled hidden>Save &mdash; pay later</button>
             <span class="secure">
               <svg width="14" height="16" viewBox="0 0 14 16" fill="none"><path d="M7 1 1.5 3v4c0 3.7 2.3 6.6 5.5 8 3.2-1.4 5.5-4.3 5.5-8V3L7 1Z" stroke="#767A7E" stroke-width="1.3"/></svg>
-              Secure checkout by Stripe &middot; your delivery address and phone are typed on the payment page
+              No payment now &mdash; we confirm your price first; you pay later on Stripe&rsquo;s secure page
             </span>
           </div>
           <div class="err" id="ckerr"></div>
-          <p class="paynote" style="margin:16px 0 0">After payment you get an order reference &mdash; follow it any time on the <a href="track.html" style="color:var(--bronze)">tracking page</a>. We review every order before production and contact you if anything needs a second look.</p>
+          <p class="paynote" style="margin:16px 0 0">We confirm your price within one business day &mdash; it appears on your <a href="track.html" style="color:var(--bronze)">order page</a> (and in your inbox), and you pay from there. Nothing goes to production before you approve.</p>
         </div>
       </div>
     </div>
@@ -535,7 +536,7 @@
   </div>
 </footer>
 
-<script src="assets/shopkit.js?v=15"></script>
+<script src="assets/shopkit.js?v=16"></script>
 <script src="assets/trade.js?v=23" defer></script>
 
 </body>

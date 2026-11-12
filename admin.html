@@ -1690,6 +1690,16 @@
             ? '<b>Ship to:</b> ' + esc(o.home.address) + ', ' + esc(o.home.city) + ', ' + esc(o.home.state) + ' ' + esc(o.home.zip)
             : '<span style="color:#8A6220">Delivery address not in yet &mdash; the customer enters it on Stripe\'s payment page and it appears here as soon as the order is paid.</span>') +
           '</div>' : '') +
+        /* a quote request: the consumer cart carries no prices — set the
+           total here and the customer pays from their order page */
+        (o.consumer && o.quote ? '<div style="font-size:12.5px;margin-top:10px;background:' + (o.priced ? '#EFF7EF' : '#FCF4E6') + ';border:1px solid ' + (o.priced ? '#BFDCC2' : '#E8D2AC') + ';border-radius:8px;padding:10px 14px">' +
+          '<b>Quote request.</b> ' + (o.priced
+            ? 'Priced at ' + esc(o.total || '') + ' — the customer can now pay from their order page.'
+            : 'No prices on this one yet — set the total below and the customer pays from their order page.') +
+          '<div class="row" style="gap:8px;margin-top:8px;align-items:center">' +
+            '<label class="fld"><span>Total (USD)</span><input type="number" min="1" step="0.01" class="q-price" data-ref="' + esc(o.ref) + '" value="' + esc(String(o.total || '').replace(/[^0-9.]/g, '')) + '" style="width:140px"></label>' +
+            '<button class="btn q-save" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 16px">' + (o.priced ? 'Update price' : 'Set price') + '</button>' +
+          '</div></div>' : '') +
         '<div style="font-family:\'Archivo\',sans-serif;font-weight:600;font-size:13px;text-align:right;margin-top:8px">Total $' + t.total.toFixed(2) + (t.unknown ? ' + ' + t.unknown + ' TBD' : '') + '</div>' +
         '<div class="octl">' +
           '<label class="fld"><span>Status</span>' + sel + '</label>' +
@@ -1754,6 +1764,19 @@
       productNo: find('.st-pno') ? find('.st-pno').value : undefined
     }).then(function(){ loadOrders().then(loadDealers); })
       .catch(function(){ b.disabled = false; b.textContent = 'Save'; note(b, 'Save failed — try again.'); });
+  });
+
+  /* quote pricing: one number, then the customer's Pay now comes alive */
+  $('orderrows').addEventListener('click', function(e){
+    var b = e.target.closest('.q-save'); if(!b) return;
+    var ref = b.dataset.ref;
+    var inp = [].slice.call(document.querySelectorAll('.q-price')).filter(function(x){ return x.dataset.ref === ref; })[0];
+    var total = inp ? parseFloat(inp.value) : NaN;
+    if(!isFinite(total) || total <= 0){ note(b, 'Enter the total first.'); return; }
+    b.disabled = true; b.textContent = 'Saving…';
+    api('/api/admin/home-price', 'POST', { ref: ref, total: total })
+      .then(function(){ loadOrders(); })
+      .catch(function(){ b.disabled = false; b.textContent = 'Set price'; note(b, 'Save failed — try again.'); });
   });
 
   /* ── dealers ── */
