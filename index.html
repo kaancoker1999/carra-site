@@ -819,7 +819,7 @@
   var ACCOUNT = getAccount();
   if(ACCOUNT && !ACCOUNT.key){ setAccount(null); ACCOUNT = null; }   /* pre-password session */
   var shoplogin = document.getElementById('shoplogin'), acctbtn = document.getElementById('acctbtn');
-  function syncAcct(){ shoplogin.hidden = !!ACCOUNT; acctbtn.hidden = !ACCOUNT; }
+  function syncAcct(){ shoplogin.hidden = true; acctbtn.hidden = !ACCOUNT; }
   syncAcct();
 
   function setRegMode(mode){

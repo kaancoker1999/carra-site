@@ -59,11 +59,13 @@
   /* signed out: just the log-in; signed in: one Account door (track.html
      carries Current status / Saved / Placed / Profile / Sign out) */
   function syncAcct(){
-    shoplogin.hidden = !!ACCOUNT;
+    shoplogin.hidden = true;   /* prices are public — the top bar stays quiet */
     acctbtn.hidden = !ACCOUNT;
   }
   syncAcct();
   shoplogin.addEventListener('click', function(){ openRegister('login'); });
+  var cklogin = document.getElementById('cklogin');
+  if(cklogin) cklogin.addEventListener('click', function(){ openRegister('login'); });
 
   /* ── sign-up / log-in overlay ── */
   var RG_FIELDS = ['name','email','phone','address','city','state','zip'];
@@ -1155,7 +1157,7 @@
       if(forgrid.hidden){
         forgrid.hidden = false;
         forother.textContent = 'Your order — updates go to this e-mail';
-        ckMsg('Enter your name and e-mail, then press the button again — or log in above if you have an account.');
+        ckMsg('Enter your name and e-mail, then press the button again — or log in if you have an account.');
         document.getElementById('fo-name').focus();
         return;
       }
