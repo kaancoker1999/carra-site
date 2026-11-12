@@ -143,7 +143,8 @@ def samplebooks_product():
         "steps": [
             {"key": "book", "label": "Book",
              "options": [SELECT, "Honeycomb book",
-                         "Fabric book — Roman & drapery (pre-order, ships from mid-December)"]},
+                         "Fabric book — Roman & drapery (pre-order, ships from mid-December)",
+                         "Old fabric book — lifetime 10% off all new books"]},
         ],
     }
 

@@ -607,6 +607,8 @@
     }
     if(pid === 'samplebooks'){
       pp = prodPrices('samplebooks'); if(!pp) return null;
+      /* the old fabric book has its own flat price and skips the tier discount */
+      if(/^old fabric book/i.test(sel.book || '')) return xt(pp, 'Old fabric book') || null;
       var sg = pp.grids[0];
       return sg && sg.rows[0] ? sg.rows[0].vals[0] : null; /* per book; retier() applies the quantity discount */
     }
@@ -623,12 +625,13 @@
      line list changes (tiers and prices come from the server) */
   function retier(){
     var pp = prodPrices('samplebooks'); if(!pp || !pp.grids[0]) return;
+    var tier = function(l){ return l.pid === 'samplebooks' && !/old fabric book/i.test(l.spec || ''); };
     var n = 0;
-    lines.forEach(function(l){ if(l.pid === 'samplebooks') n += (l.qty || 0); });
+    lines.forEach(function(l){ if(tier(l)) n += (l.qty || 0); });
     if(!n) return;
     var rows = pp.grids[0].rows, t = pp.tiers || { t25: 5, t35: 21 };
     var unit = n >= t.t35 ? rows[2].vals[0] : n >= t.t25 ? rows[1].vals[0] : rows[0].vals[0];
-    lines.forEach(function(l){ if(l.pid === 'samplebooks') l.price = unit; });
+    lines.forEach(function(l){ if(tier(l)) l.price = unit; });
   }
 
   function saveLines(){ retier(); sessionStorage.setItem('lumia_order', JSON.stringify(lines)); }

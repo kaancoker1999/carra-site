@@ -236,6 +236,7 @@ def fabric_only():
 # "tiers" are the combined-book-count thresholds order.html retier() uses.
 SAMPLE_BOOK_PRICE = 100
 SAMPLE_BOOK_TIERS = {"t25": 5, "t35": 21}   # 5+ books 25% off, 21+ books 35% off
+OLD_FABRIC_BOOK_PRICE = 150   # flat; outside the tier discount; lifetime 10% promise
 
 
 def sample_books():
@@ -253,11 +254,15 @@ def sample_books():
                 {"label": "21+ books (35% off)", "vals": [round(p * 0.65, 2)]},
             ],
         }],
-        "extras": [],
+        "extras": [
+            {"label": "Old fabric book", "usd": float(OLD_FABRIC_BOOK_PRICE)},
+        ],
         "notes": [
             "Same price for every account — price levels and promotions do not apply.",
             "All books in an order count together toward the quantity discount.",
             "Fabric book (Roman & drapery) is a pre-order — ships from mid-December.",
+            "Old fabric book: $150 flat — sold as-is, not part of the quantity discount.",
+            "Buy the old fabric book now and get 10% off every new sample book we release — for life.",
         ],
     }
 
