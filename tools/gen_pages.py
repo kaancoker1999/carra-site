@@ -36,12 +36,16 @@ PRODUCTS = {
         "desc": "Five fold styles across every fabric group — flat, back rods, front rods, relaxed and hobbled — with square hems and a consistent stack at any width. Lining and blackout backing are made in house.",
         "hLabel": "Height", "width": [18, 96], "height": [24, 96],
         "fabrics": True,
-        "heightRules": {"drive": "drive", "rules": {
-            "Cordless": [24, 96], "Continuous cord loop": [24, 120], "Motorized": [24, 120]}},
-        "widthRules": {"drive": "drive", "tdbu": "tdbu", "rules": {
-            "Cordless|No": [18, 96], "Cordless|Yes": [24, 96],
-            "Continuous cord loop|No": [18, 105], "Continuous cord loop|Yes": [24, 105],
-            "Motorized|No": [18, 105], "Motorized|Yes": [34, 105]}},
+        # factory build limits: cordless tops out at 96x96; a corded or
+        # motorized lift carries up to 105 wide x 120 tall
+        "sizeRules": [
+            {"drive": "Cordless", "tdbu": "No", "w": [18, 96], "h": [24, 96]},
+            {"drive": "Cordless", "tdbu": "Yes", "w": [24, 96], "h": [24, 96]},
+            {"drive": "Continuous cord loop", "tdbu": "No", "w": [18, 105], "h": [24, 120]},
+            {"drive": "Continuous cord loop", "tdbu": "Yes", "w": [24, 105], "h": [24, 120]},
+            {"drive": "Motorized", "tdbu": "No", "w": [18, 105], "h": [24, 120]},
+            {"drive": "Motorized", "tdbu": "Yes", "w": [34, 105], "h": [24, 120]},
+        ],
         "groups": [
             {"key": "fold", "label": "Fold style", "options": [
                 {"n": "Flat", "img": "assets/fold-back-rods.jpg"},

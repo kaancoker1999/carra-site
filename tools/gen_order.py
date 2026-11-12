@@ -211,7 +211,8 @@ def core_products():
         })
         if cfg.get("sizeRules"):
             products[-1]["sizeRules"] = cfg["sizeRules"]
-            products[-1]["cellClass"] = CELL_CLASS
+            if pid == "cellular":
+                products[-1]["cellClass"] = CELL_CLASS
     return products
 
 

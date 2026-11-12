@@ -539,7 +539,11 @@ async function googleFeed(req) {
         const over = { drive: driveVal, fold: foldVal, liner: linerVal, tdbu };
         const rsel = feedDefaults(p, over);
         if (rsel.drive !== driveVal || rsel.fold !== foldVal) continue;  // build rule says no
-        const price = feedPrice("roman", prices, coll, rsel, w, h);
+        // size limits follow the lift (motor+TDBU needs 34" min width, etc.)
+        const rrule = (p.sizeRules || []).find((r2) => r2.drive === driveVal && r2.tdbu === tdbu && !r2.cls);
+        const ew = rrule ? Math.max(rrule.w[0], Math.min(rrule.w[1], w)) : w;
+        const eh = rrule ? Math.max(rrule.h[0], Math.min(rrule.h[1], h)) : h;
+        const price = feedPrice("roman", prices, coll, rsel, ew, eh);
         if (price == null) continue;
         const tdbuWord = tdbu === "Yes" ? "Top-Down Bottom-Up " : "";
         const title = `LUMIA ${liftWord} ${tdbuWord}Roman Shade - ${foldWord}` +
@@ -554,7 +558,7 @@ async function googleFeed(req) {
           `Free shipping within the US; made and dispatched in ${hd} business days.`;
         const link = `${SITE}/roman.html?fold=${encodeURIComponent(foldVal)}` +
           `&drive=${encodeURIComponent(driveVal)}&liner=${encodeURIComponent(linerVal)}` +
-          `&tdbu=${tdbu}&w=${w}&h=${h}`;
+          `&tdbu=${tdbu}&w=${ew}&h=${eh}`;
         const id = `LUM-RO-${slug(driveVal)}-${slug(foldVal)}` +
           (linerVal === "Blackout liner" ? "-BLKOUT" : "") + (tdbu === "Yes" ? "-TDBU" : "");
         items.push(
