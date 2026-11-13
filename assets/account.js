@@ -38,8 +38,13 @@
     if(b == null) return a;
     return Math.min(a, b);
   }
-  /* payment opens once an order goes In production and is due PAY_DAYS later */
+  /* PREPAID: an order can be paid the moment it is sent (once every line has
+     a price) and goes into production when the payment arrives. Orders that
+     were already in production under the old terms keep their PAY_DAYS due
+     date — for everything else dueWed() is null, meaning "due now". */
   var PAY_DAYS = 20;
+  function priced(o){ var t = orderTotals(o.lines); return !t.unknown && t.total > 0; }
+  function claimedPaid(o){ return !isPaid(o) && !!(o.payment && o.payment.customerPaidAt); }
   function prodStart(o){
     if(o.productionAt) return o.productionAt;
     var st = (o.status && o.status.status) || 'Pending review';
@@ -55,9 +60,9 @@
   /* shown in Payments due while it is owed — and, once paid, for 2 more days */
   function payShow(o){
     var st = (o.status && o.status.status) || 'Pending review';
-    if(st === 'Cancelled' || !prodStart(o)) return false;
+    if(st === 'Cancelled') return false;
     if(isPaid(o)){ var pa = paidAt(o); return pa != null && (Date.now() - pa) < 2 * 86400000; }
-    return true;
+    return priced(o);
   }
   function payDue(o){ return payShow(o) && !isPaid(o) ? dueWed(o) : null; }
   function payable(o){ return payShow(o) && !isPaid(o); }   /* still owed */
@@ -163,6 +168,7 @@
     }
     var pdw = payDue(o);
     if(pdw) bits.push('payment due ' + fdate(pdw));
+    else if(payable(o)) bits.push('awaiting payment');
     if(isPaid(o)) bits.push('paid' + (o.payment.updatedAt ? ' ' + fdate(o.payment.updatedAt) : ''));
     var track = o.tracking
       ? '<div class="track"><i>📦</i><div><b>Shipped &middot; FedEx tracking</b><br><a class="tn" href="https://www.fedex.com/fedextrack/?trknbr=' + encodeURIComponent(o.tracking) + '" target="_blank" rel="noopener" title="Track on FedEx">' + esc(o.tracking) + '</a></div>' +
@@ -243,16 +249,17 @@
   function popDueHTML(orders){
     var groups = {}, today = startOfToday();
     orders.filter(payable).forEach(function(o){
-      var w = dueWed(o), k = w.getTime();
+      var w = dueWed(o), k = w ? w.getTime() : 0;
       (groups[k] = groups[k] || { due: w, orders: [], owed: 0 });
       groups[k].orders.push(o); groups[k].owed += orderTotals(o.lines).total;
     });
-    var keys = Object.keys(groups).sort();
+    var keys = Object.keys(groups).sort(function(a, b){ return a - b; });
     if(!keys.length) return '';
     return '<div class="popdue"><div class="pihead">Payments due</div>' + keys.map(function(k){
-      var g = groups[k], over = g.due.getTime() < today;
-      return '<div class="pdgrp' + (over ? ' over' : '') + '"><div class="pdtop"><span>Due ' +
-        g.due.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}) + (over ? ' · late' : '') +
+      var g = groups[k], over = !!g.due && g.due.getTime() < today;
+      return '<div class="pdgrp' + (over ? ' over' : '') + '"><div class="pdtop"><span>' +
+        (g.due ? 'Due ' + g.due.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}) + (over ? ' · late' : '')
+               : 'Pay to start production') +
         '</span><b>$' + g.owed.toFixed(2) + '</b></div>' +
         g.orders.map(function(o){
           var claimed = !!(o.payment && o.payment.customerPaidAt);
@@ -294,7 +301,8 @@
     orders.forEach(function(o){
       if(!payShow(o)) return;
       var w = dueWed(o);
-      var k = w.getFullYear() + '-' + ('0'+(w.getMonth()+1)).slice(-2) + '-' + ('0'+w.getDate()).slice(-2);
+      /* no due date = prepaid order waiting for its payment: listed first */
+      var k = w ? w.getFullYear() + '-' + ('0'+(w.getMonth()+1)).slice(-2) + '-' + ('0'+w.getDate()).slice(-2) : '0000-now';
       (groups[k] = groups[k] || { due: w, orders: [], owed: 0 });
       groups[k].orders.push(o);
       if(!isPaid(o)) groups[k].owed += orderTotals(o.lines).total;
@@ -311,10 +319,14 @@
       : '';
     LASTORDERS = orders;
     var payableN = orders.filter(function(o){ return payable(o); }).length;
-    var allbtn = payableN > 1 ? '<div style="display:flex;justify-content:flex-end;margin:0 0 10px"><button class="paybtn" data-stripepayall="1" type="button" style="padding:9px 16px">Pay all</button></div>' : '';
-    document.getElementById('paydue').innerHTML = warn + allbtn + keys.map(function(k){
-      var g = groups[k], over = g.due.getTime() < today && g.owed > 0;
-      var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+    var bankbtn = PAYINFO && payableN ? '<button class="paybtn ghost" data-act="paypop" type="button" style="padding:9px 16px">Pay by bank transfer</button>' : '';
+    var allbtn = (bankbtn || payableN > 1) ? '<div style="display:flex;justify-content:flex-end;gap:8px;margin:0 0 10px">' + bankbtn +
+      (payableN > 1 ? '<button class="paybtn" data-stripepayall="1" type="button" style="padding:9px 16px">Pay all</button>' : '') + '</div>' : '';
+    var sentNote = SENT ? '<div class="paywarn" style="background:#F1F6EE;border-color:#BFD8B4;color:#27501C">✓ <b>Order ' + esc(SENT) + ' sent.</b> It goes into production as soon as it is paid — pay by card below, or by bank transfer.</div>' : '';
+    document.getElementById('paydue').innerHTML = sentNote + warn + allbtn + keys.map(function(k){
+      var g = groups[k], over = !!g.due && g.due.getTime() < today && g.owed > 0;
+      var when = g.due ? 'Due ' + g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'})
+                       : 'Pay now — production starts when your payment arrives';
       var rows = g.orders.map(function(o){
         var paid = isPaid(o), t = orderTotals(o.lines).total;
         var claimed = !!(o.payment && o.payment.customerPaidAt && !paid);
@@ -330,7 +342,7 @@
           '<div class="por"><div class="poamt' + (paid ? ' done' : '') + '">$' + t.toFixed(2) + '</div>' + action + '</div></div>';
       }).join('');
       return '<div class="paybox' + (over ? ' over' : '') + '">' +
-        '<div class="paytop"><div class="pdue">Due ' + when + '</div>' +
+        '<div class="paytop"><div class="pdue">' + when + '</div>' +
         '<div class="pamt">$' + g.owed.toFixed(2) + '</div></div>' +
         '<div class="payorows">' + rows + '</div></div>';
     }).join('');
@@ -338,12 +350,12 @@
 
   function render(orders){
     LASTORDERS = orders;
-    var purch = 0, due = 0, shipped = 0, prod = 0, pend = 0;
+    var purch = 0, due = 0, shipped = 0, prod = 0, pend = 0, awaitPay = 0;
     orders.forEach(function(o){
       var st = (o.status && o.status.status) || 'Pending review';
       if(st === 'Shipped') shipped++;
       if(st === 'In production') prod++;
-      if(st === 'Pending review') pend++;
+      if(st === 'Pending review'){ if(isPaid(o)) pend++; else awaitPay++; }
       if(st !== 'Cancelled'){
         var t = orderTotals(o.lines).total;
         purch += t;
@@ -357,6 +369,7 @@
       document.getElementById('summary').innerHTML =
         '<div class="sumpanel" id="sum-orders"><div class="sumhead">Orders</div><div class="sumrow">' +
           tile(orders.length, 'Orders placed', '', '', 'orders.html') +
+          tile(awaitPay, 'Awaiting payment', awaitPay ? 'due' : '', '', 'orders.html#payment') +
           tile(pend, 'Awaiting review', '', '', 'orders.html#awaiting') +
           tile(prod, 'In production', '', '', 'orders.html#production') +
           tile(shipped, 'Shipped', '', '', 'orders.html#shipped') +
@@ -427,7 +440,14 @@
     var when = new Date(o.at);
     var payBadge = isPaid(o)
       ? '<span class="status paid">Paid</span>'
-      : (!pendSt && st.status !== 'Cancelled' ? '<span class="status unpaid">Unpaid</span>' : '&mdash;');
+      : (cancelled ? '&mdash;'
+        : claimedPaid(o) ? '<span class="status unpaid">Awaiting confirmation</span>'
+        : '<span class="status unpaid">Unpaid</span>');
+    /* prepaid: until the payment is in, the order just waits */
+    var stLabel = !pendSt || isPaid(o) ? st.status
+                : claimedPaid(o) ? 'Payment reported'
+                : priced(o) ? 'Awaiting payment' : 'Price being confirmed';
+    var canPay = !cancelled && !isPaid(o) && !claimedPaid(o) && priced(o);
     /* a shipped order that is paid is finished — shown dimmed */
     var finished = st.status === 'Shipped' && isPaid(o);
     return '<tr class="ord' + (finished ? ' done' : '') + '" data-ref="' + esc(o.ref) + '" title="Click for line items">' +
@@ -436,13 +456,14 @@
       '<td><span class="ref">' + esc(o.ref) + '</span></td>' +
       '<td>' + (o.lines || []).length + '</td>' +
       '<td class="num">$' + t.total.toFixed(2) + (t.unknown ? ' <span class="mono" style="font-size:9px">+' + t.unknown + ' TBD</span>' : '') + '</td>' +
-      '<td><span class="status ' + stCls + (st.locked ? ' lock' : '') + '">' + esc(st.status) + '</span>' +
+      '<td><span class="status ' + stCls + (st.locked ? ' lock' : '') + '">' + esc(stLabel) + '</span>' +
         (done ? ' <span class="status acc">Completed</span>' : '') +
         (chatUnread(o.ref) ? ' <span class="status newmsg">' + chatUnread(o.ref) + ' new message' + (chatUnread(o.ref) === 1 ? '' : 's') + '</span>' : '') +
         (st.note ? '<div class="lnote">LUMIA: ' + esc(st.note) + '</div>' : '') + '</td>' +
       '<td>' + payBadge + '</td>' +
-      '<td>' + (pendSt
-        ? '<button class="rbtn" type="button" data-cancel="' + esc(o.ref) + '">Cancel order</button>'
+      '<td>' + (canPay ? '<button class="paybtn" type="button" data-rowpay="' + esc(o.ref) + '" style="padding:8px 14px;margin:0 6px 4px 0">Pay now</button>' : '') +
+        (pendSt
+        ? (isPaid(o) ? '' : '<button class="rbtn" type="button" data-cancel="' + esc(o.ref) + '">Cancel order</button>')
         : (st.status === 'Shipped' && !rc.dealerAt
           ? '<button class="gbtn" type="button" data-received="' + esc(o.ref) + '">Order completed</button>'
           : '')) + '</td>' +
@@ -456,8 +477,10 @@
     var box = document.getElementById('osections'); if(!box) return;
     function statusOf(o){ return (o.status && o.status.status) || 'Pending review'; }
     var SECS = [
+      { id: 'payment', title: 'Awaiting payment', empty: 'Nothing waiting for payment.',
+        list: orders.filter(function(o){ return statusOf(o) === 'Pending review' && !isPaid(o); }) },
       { id: 'awaiting', title: 'Awaiting review', empty: 'Nothing waiting for review.',
-        list: orders.filter(function(o){ var s = statusOf(o); return s === 'Pending review' || s === 'On hold'; }) },
+        list: orders.filter(function(o){ var s = statusOf(o); return (s === 'Pending review' && isPaid(o)) || s === 'On hold'; }) },
       { id: 'production', title: 'In production', empty: 'Nothing in production right now.',
         list: orders.filter(function(o){ return statusOf(o) === 'In production'; }) },
       { id: 'shipped', title: 'Shipped', empty: 'No shipped orders yet.',
@@ -549,6 +572,26 @@
     });
   });
 
+  /* open Stripe's payment page for one order (or all payable ones) */
+  function startPay(btn, payload){
+    var lbl = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Opening…';
+    fetch('/api/pay', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-dealer-code': SESSION.code || '' },
+      body: JSON.stringify(payload) })
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return { ok: r.ok, d: d }; }); })
+      .then(function(x){
+        if(x.ok && x.d.url){ location.href = x.d.url; return; }
+        btn.disabled = false; btn.textContent = lbl;
+        note(btn, (x.d && x.d.error) || 'Card payments are not available right now.');
+      })
+      .catch(function(){ btn.disabled = false; btn.textContent = lbl; });
+  }
+  /* "Pay now" on an order row (account page and Orders page) */
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-rowpay]'); if(!b) return;
+    startPay(b, { ref: b.getAttribute('data-rowpay') });
+  });
   function claimPaid(ref, claim){
     return fetch('/api/order/paid-claim', {
       method: 'POST',
@@ -560,18 +603,7 @@
   (document.getElementById('paydue') || document.createElement('div')).addEventListener('click', function(e){
     var sp = e.target.closest('[data-stripepay],[data-stripepayall]');
     if(sp){
-      var isAll = sp.hasAttribute('data-stripepayall'), lbl = sp.textContent;
-      sp.disabled = true; sp.textContent = 'Opening…';
-      fetch('/api/pay', { method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-dealer-code': SESSION.code || '' },
-        body: JSON.stringify(isAll ? { all: true } : { ref: sp.getAttribute('data-stripepay') }) })
-        .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return { ok: r.ok, d: d }; }); })
-        .then(function(x){
-          if(x.ok && x.d.url){ location.href = x.d.url; return; }
-          sp.disabled = false; sp.textContent = lbl;
-          note(sp, (x.d && x.d.error) || 'Card payments are not available right now.');
-        })
-        .catch(function(){ sp.disabled = false; sp.textContent = lbl; });
+      startPay(sp, sp.hasAttribute('data-stripepayall') ? { all: true } : { ref: sp.getAttribute('data-stripepay') });
       return;
     }
     var all = e.target.closest('[data-payallclaim]');
@@ -613,6 +645,10 @@
     })
     .catch(function(){ render([]); });
   }
+  /* straight from "Send order" without paying yet: flag the order */
+  var sentQ = /[?&]sent=([^&]+)/.exec(location.search);
+  var SENT = sentQ ? decodeURIComponent(sentQ[1]) : '';
+  if(sentQ) history.replaceState(null, '', location.pathname);
   /* back from Stripe Checkout: verify the session server-side, then load */
   var pays = /[?&]paysession=([^&]+)/.exec(location.search);
   if(pays){

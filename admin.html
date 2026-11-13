@@ -1391,9 +1391,16 @@
   function daysLate(o){ var d = payDue(o); return d ? Math.round((startOfToday() - d.getTime()) / 86400000) : 0; }
   function isLate(o){ return !!payDue(o) && daysLate(o) > 0; }
 
+  /* prepaid: sent, fully priced, not paid and not in production yet — the
+     payment has to be confirmed here before the order can go into production */
+  function awaitingPay(o){
+    if(o.test || statusOf(o) === 'Cancelled' || isPaid(o) || prodStart(o)) return false;
+    var t = orderTotals(o.lines);
+    return !t.unknown && t.total > 0;
+  }
   var payFilter = '';   /* '' = all customers, else a dealer code */
   function renderPayments(){
-    var payables = allOrders.filter(function(o){ return payDue(o); });
+    var payables = allOrders.filter(function(o){ return payDue(o) || awaitingPay(o); });
     /* customer filter dropdown — every (non-test) customer, with what they owe */
     var names = {}, owe = {};
     dealersCache.forEach(function(d){ if(!d.test) names[d.code] = d.name || d.code; });
@@ -1419,24 +1426,26 @@
       : '';
     var groups = {};
     shown.forEach(function(o){
-      var k = ymd(payDue(o));
-      (groups[k] = groups[k] || { due: payDue(o), orders: [], total: 0 });
+      var due = payDue(o);
+      var k = due ? ymd(due) : '0000-now';   /* awaiting prepayment sorts first */
+      (groups[k] = groups[k] || { due: due, orders: [], total: 0 });
       groups[k].orders.push(o);
       groups[k].total += orderTotals(o.lines).total;
     });
     var keys = Object.keys(groups).sort();
     var today = startOfToday(), overdue = 0, grand = 0, n = 0;
-    keys.forEach(function(k){ var g = groups[k]; grand += g.total; n += g.orders.length; if(g.due.getTime() < today) overdue += g.total; });
+    keys.forEach(function(k){ var g = groups[k]; grand += g.total; n += g.orders.length; if(g.due && g.due.getTime() < today) overdue += g.total; });
     function kpi(v, k, cls){ return '<div class="ovkpi' + (cls ? ' ' + cls : '') + '"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>'; }
     $('paykpi').innerHTML =
       kpi('$' + overdue.toFixed(2), 'Late (past ' + PAY_DAYS + ' days)', overdue > 0 ? 'due' : '') +
       kpi('$' + grand.toFixed(2), 'Total outstanding', grand > 0 ? 'due' : '') +
       kpi(n, 'Orders awaiting payment');
 
-    if(!keys.length){ $('paybody').innerHTML = '<div class="ovempty">' + (payFilter ? 'This customer has nothing due.' : 'Nothing due — orders appear here once they go into production, until they are marked paid.') + '</div>'; return; }
+    if(!keys.length){ $('paybody').innerHTML = '<div class="ovempty">' + (payFilter ? 'This customer has nothing due.' : 'Nothing due — orders appear here as soon as they are sent, until they are marked paid.') + '</div>'; return; }
     $('paybody').innerHTML = keys.map(function(k){
-      var g = groups[k], over = g.due.getTime() < today;
-      var when = g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+      var g = groups[k], over = !!g.due && g.due.getTime() < today;
+      var when = g.due ? g.due.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'})
+                       : 'Awaiting payment — not in production yet';
       var rows = g.orders.slice().sort(function(a,b){
         var ca = a.payment && a.payment.customerPaidAt, cb = b.payment && b.payment.customerPaidAt;
         if(!!ca !== !!cb) return ca ? -1 : 1;   /* customer-claimed first */
@@ -1446,7 +1455,8 @@
         var claimed = !!(o.payment && o.payment.customerPaidAt && !(o.payment && o.payment.paid));
         var claimDate = claimed ? new Date(o.payment.customerPaidAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
         return '<div class="payrow' + (claimed ? ' claimed' : '') + '"><div class="pd"><b>' + esc(o.dealer) + '</b> <code>' + esc(o.ref) + '</code>' +
-          '<span class="mono" style="margin-left:8px">in production ' + prod + '</span>' +
+          '<span class="mono" style="margin-left:8px">' + (prodStart(o) ? 'in production ' + prod
+            : 'sent ' + new Date(o.at).toLocaleDateString('en-US', {month:'short', day:'numeric'})) + '</span>' +
           (o.customer ? '<span class="mono" style="margin-left:8px">' + esc(o.customer) + '</span>' : '') +
           (isLate(o) ? ' <span class="status st-canc">⚠ late · ' + daysLate(o) + ' day' + (daysLate(o) === 1 ? '' : 's') + '</span>' : '') +
           (claimed ? '<div class="mono" style="margin-top:3px;color:#2F5D25">✓ customer marked paid ' + claimDate + '</div>' : '') + '</div>' +
@@ -1658,7 +1668,12 @@
       var when = new Date(o.at);
       var t = orderTotals(o.lines);
       var stCls = st.status === 'Pending review' ? 'st-pend' : (st.status === 'Cancelled' ? 'st-canc' : 'st-acc');
-      var badges = '<span class="status ' + stCls + '">' + (st.locked ? '🔒 ' : '') + esc(st.status) + '</span>' +
+      /* prepaid: an unpaid order that has not started production just waits */
+      var stText = st.status !== 'Pending review' || paid ? st.status
+        : (o.payment && o.payment.customerPaidAt) ? 'Payment reported — confirm it'
+        : (o.quote && !o.priced) ? 'Quote — set the price'
+        : 'Awaiting payment';
+      var badges = '<span class="status ' + stCls + '">' + (st.locked ? '🔒 ' : '') + esc(stText) + '</span>' +
         (done ? ' <span class="status st-acc">Completed</span>' : '') +
         (o.test ? '' : ' <span class="status ' + (paid ? 'pay-paid' : 'pay-un') + '">' + (paid ? 'Paid' : 'Unpaid') + '</span>') +
         (orderUnread(o.ref) ? ' <span class="status st-new">' + orderUnread(o.ref) + ' new message' + (orderUnread(o.ref) === 1 ? '' : 's') + '</span>' : '') +
@@ -1762,7 +1777,10 @@
       note: find('.st-note') ? find('.st-note').value : '',
       tracking: find('.st-track') ? find('.st-track').value : '',
       productNo: find('.st-pno') ? find('.st-pno').value : undefined
-    }).then(function(){ loadOrders().then(loadDealers); })
+    }).then(function(d){
+        if(d && d.error){ b.disabled = false; b.textContent = 'Save'; note(b, d.error); return; }
+        loadOrders().then(loadDealers);
+      })
       .catch(function(){ b.disabled = false; b.textContent = 'Save'; note(b, 'Save failed — try again.'); });
   });
 

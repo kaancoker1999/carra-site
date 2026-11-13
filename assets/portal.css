@@ -113,13 +113,14 @@
   .xpanel .xsub a{color:var(--bronze)}
   .xpanel .paybox{background:var(--paper)}
   .sumrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  #sum-orders .sumrow{grid-template-columns:repeat(5,minmax(0,1fr))}
   #sum-balance .sumrow{grid-template-columns:repeat(3,minmax(0,1fr))}
   .sumrow .sum{padding:16px 14px}
   .sumrow .sum .v{font-size:22px;white-space:nowrap}
   .sum .go{display:block;white-space:nowrap}
   @media(max-width:1060px){ #summary{grid-template-columns:1fr} }
   @media(max-width:560px){
-    .sumrow{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .sumrow,#sum-orders .sumrow{grid-template-columns:repeat(2,minmax(0,1fr))}
     #sum-balance .sumrow{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
   }
   .sum .v{font-family:'Archivo',sans-serif;font-weight:600;font-size:26px;line-height:1.1}

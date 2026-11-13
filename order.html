@@ -6,7 +6,7 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-34CW2GXYJ2"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-34CW2GXYJ2');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="assets/i18n.js?v=12"></script>
+<script src="assets/i18n.js?v=13"></script>
 <title>LUMIA — Place an order</title>
 <meta name="robots" content="noindex">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -287,7 +287,7 @@
 </form>
 
 <script src="assets/trade.js?v=23"></script>
-<script src="assets/tour.js?v=17"></script>
+<script src="assets/tour.js?v=18"></script>
 <script src="assets/support.js?v=4"></script>
 <script src="assets/invoice.js?v=3"></script>
 <script>
@@ -1233,7 +1233,7 @@
         customer: customer, notes: notes, total: totalText, lines: sentLines })
     }).then(function(r){
       if(r.status === 423){
-        sendMsg('LUMIA has locked this order, so it can no longer be changed — write to lumiashades@gmail.com and we will update it for you.');
+        sendMsg('This order is locked (in production or already paid), so it can no longer be changed here — write to lumiashades@gmail.com and we will update it for you.');
         throw new Error('locked');
       }
       if(!r.ok) throw new Error('api unavailable');
@@ -1252,6 +1252,21 @@
         }).catch(function(){});
       }
       finishOk();
+      /* 3: orders are prepaid — straight on to the payment page. Coming back
+         without paying lands on the account page, where the order waits with
+         "Pay now" and the bank-transfer details. */
+      if(data && data.payable){
+        sendbtn.disabled = true; sendbtn.textContent = 'Opening payment…';
+        fetch('/api/pay', {
+          method: 'POST',
+          headers: apiHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ ref: ref, fresh: true })
+        }).then(function(r){ return r.json().catch(function(){ return {}; }); })
+          .then(function(p){ location.href = (p && p.url) ? p.url : 'account.html?sent=' + encodeURIComponent(ref); })
+          .catch(function(){ location.href = 'account.html?sent=' + encodeURIComponent(ref); });
+      } else {
+        sendMsg('Order sent. It includes items priced on request — we confirm the price first, then payment opens on your account page.');
+      }
     }).catch(function(err){
       if(String(err.message) === 'locked'){ sendbtn.textContent = 'Send order'; sendbtn.disabled = false; return; }
       mailtoFallback();

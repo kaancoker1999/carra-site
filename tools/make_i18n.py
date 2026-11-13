@@ -24,6 +24,7 @@ PATTERNS = [
     (r"^Height \(in\) (.+)$", "Alto (pulg.) $1", "Hauteur (po) $1"),
     (r"^Drop \(in\) (.+)$", "Caída (pulg.) $1", "Hauteur (po) $1"),
     (r"^Step (\d+)$", "Paso $1", "Étape $1"),
+    (r"^Order (\S+) sent\.$", "Pedido $1 enviado.", "Commande $1 envoyée."),
     (r"^1 new$", "1 nuevo", "1 nouveau"),
     (r"^(\d+) new$", "$1 nuevos", "$1 nouveaux"),
     (r"^1 new message$", "1 mensaje nuevo", "1 nouveau message"),

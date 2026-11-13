@@ -150,6 +150,15 @@ function orderCents(o) {
   const total = (o.lines || []).reduce((a, l) => a + (l.price != null ? l.price * l.qty : 0), 0);
   return Math.round(total * 100);
 }
+/* orders are PREPAID (2026-11-12): payable the moment they are sent, as long
+   as every line carries a price; production only starts once paid */
+function fullyPriced(o) {
+  return (o.lines || []).length > 0 && (o.lines || []).every((l) => l.price != null) && orderCents(o) > 0;
+}
+function dealerPayable(o) {
+  const st = (o.status && o.status.status) || "Pending review";
+  return !(o.payment && o.payment.paid) && st !== "Cancelled" && fullyPriced(o);
+}
 /* a priced quote charges the admin-set total, not the (null) line prices */
 function orderTotalCents(o) {
   if (o.priced) return Math.round(parseFloat(String(o.total).replace(/[^0-9.]/g, "")) * 100);
@@ -883,6 +892,9 @@ export default async (req) => {
     if (existing) {
       if (existing.code !== d.code) return bad("ref already in use", 409);
       if (existing.status && existing.status.locked) return bad("order is locked", 423);
+      // paid (or reported paid) — the amount is settled, so the lines are frozen
+      const ep = existing.payment || {};
+      if (ep.paid || ep.customerPaidAt) return bad("order is paid and locked", 423);
     }
     const order = {
       ref,
@@ -902,7 +914,7 @@ export default async (req) => {
     await s.setJSON(key, order);
     // e-mail the owner when a real (non-test) order lands — best effort
     if (!order.test) await notifyOrder(order);
-    return json({ ok: true, ref, kind: order.kind, test: !!d.test });
+    return json({ ok: true, ref, kind: order.kind, test: !!d.test, payable: dealerPayable(order) });
   }
 
   // ── dealer: cancel an order still awaiting review ─────────────
@@ -916,6 +928,7 @@ export default async (req) => {
     const st = o.status || {};
     if ((st.status || "Pending review") !== "Pending review")
       return bad("already accepted — contact us to cancel", 409);
+    if (o.payment && o.payment.paid) return bad("already paid — contact us to cancel", 409);
     o.status = {
       status: "Cancelled",
       locked: true,
@@ -966,10 +979,7 @@ export default async (req) => {
     if (!d) return bad("unauthorized", 401);
     const sk = process.env.STRIPE_SECRET_KEY;
     if (!sk) return bad("Card payments are not set up yet.", 503);
-    const payable = (o) => {
-      const st = (o.status && o.status.status) || "Pending review";
-      return !(o.payment && o.payment.paid) && st !== "Pending review" && st !== "Cancelled" && orderCents(o) > 0;
-    };
+    const payable = dealerPayable;
     let targets;
     if (body.all) {
       // one session for every payable order (metadata holds the refs, so all are marked paid together)
@@ -991,7 +1001,9 @@ export default async (req) => {
       "metadata[refs]": targets.map((o) => o.ref).join(","),
       "metadata[code]": d.code,
       success_url: `${origin}/account.html?paysession={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/account.html`,
+      // straight from "Send order": coming back unpaid lands on the account
+      // page with the order flagged, where card and bank transfer both wait
+      cancel_url: body.fresh ? `${origin}/account.html?sent=${encodeURIComponent(targets[0].ref)}` : `${origin}/account.html`,
     });
     targets.forEach((o, i) => {
       form.set(`line_items[${i}][quantity]`, "1");
@@ -1828,6 +1840,12 @@ export default async (req) => {
       const o = await s.get(key, { type: "json" });
       if (!o) return bad("no such order", 404);
       const status = String(body.status || "Pending review").slice(0, 60);
+      // prepaid: an order ENTERS production (or ships) only once it is paid.
+      // Orders already there keep working — notes and tracking still save.
+      const wasSt = (o.status && o.status.status) || "Pending review";
+      const inProd = (x) => x === "In production" || x === "Shipped";
+      if (inProd(status) && !inProd(wasSt) && !(o.payment && o.payment.paid))
+        return bad("Not paid yet — an order goes into production only after the payment arrives. Confirm the payment first.", 409);
       // every status other than "Pending review" locks the order (the customer
       // can only edit or withdraw it while it is still awaiting review)
       const autoLock = status !== "Pending review";
