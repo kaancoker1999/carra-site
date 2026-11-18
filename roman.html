@@ -495,7 +495,19 @@
   <div class="regcard">
     <button id="regclose" type="button" aria-label="Close">&times;</button>
 
-    <!-- returning customer: e-mail + the phone on file (no password) -->
+    <!-- the price code LUMIA e-mails with a quote -->
+    <div id="rcode" hidden>
+      <h2>Enter your price code</h2>
+      <p class="regsub">We e-mail the code with your quote. Type it here to see prices and order online &mdash; create an account afterwards and the prices stay with your account on any device.</p>
+      <div class="ckgrid">
+        <div class="cell span2"><label for="pc-code">Price code *</label><input id="pc-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+      </div>
+      <button class="paybtn" id="pcbtn" type="button" style="margin-top:20px">Unlock prices &rarr;</button>
+      <div class="err" id="pcerr"></div>
+      <p class="regswap">No code yet? Configure what you need and press <b>Request a quote</b> &mdash; we answer within one business day.</p>
+    </div>
+
+    <!-- returning customer: e-mail + password -->
     <div id="rlogin" hidden>
       <h2>Log in</h2>
       <p class="regsub">Welcome back &mdash; your details and prices come right back. Forgot the password? Write to <a href="mailto:lumiashades@gmail.com" style="color:var(--bronze)">lumiashades@gmail.com</a>.</p>
@@ -537,7 +549,7 @@
   </div>
 </footer>
 
-<script src="assets/shopkit.js?v=17"></script>
+<script src="assets/shopkit.js?v=18"></script>
 <script src="assets/trade.js?v=24" defer></script>
 
 </body>

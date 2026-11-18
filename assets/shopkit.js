@@ -24,6 +24,9 @@
      and sends a QUOTE REQUEST that LUMIA prices afterwards */
   if(ACCOUNT && ACCOUNT.prices){ delete ACCOUNT.prices; setAccount(ACCOUNT); }
   var HOME = null;
+  /* an account that has used the price code keeps price access for good —
+     the list comes back with every log-in / visit, never from storage */
+  var ACCT_PRICES = null;
   function homeCode(){
     try{ var o = JSON.parse(localStorage.getItem('lumia_home') || 'null'); return (o && o.code) || ''; }catch(e){ return ''; }
   }
@@ -86,7 +89,9 @@
     REGMODE = mode;
     var isP = mode === 'profile';
     document.getElementById('rlogin').hidden = mode !== 'login';
-    document.getElementById('rnew').hidden = mode === 'login';
+    document.getElementById('rnew').hidden = mode === 'login' || mode === 'code';
+    var rc = document.getElementById('rcode');
+    if(rc) rc.hidden = mode !== 'code';
     document.getElementById('rnew-title').textContent = isP ? 'Your profile' : 'Create your account';
     document.getElementById('rnew-sub').textContent = isP
       ? 'Your details prefill checkout and help us with delivery — update them whenever you like.'
@@ -95,7 +100,8 @@
     document.getElementById('rnew-swap').hidden = isP;
     document.getElementById('rg-email').readOnly = isP;   /* the e-mail IS the account */
     setTimeout(function(){
-      document.getElementById(mode === 'login' ? 'li-email' : 'rg-name').focus();
+      var f = document.getElementById(mode === 'login' ? 'li-email' : mode === 'code' ? 'pc-code' : 'rg-name');
+      if(f) f.focus();
     }, 50);
   }
   function openRegister(mode){
@@ -109,8 +115,26 @@
     });
     document.getElementById('regerr').classList.remove('on');
     document.getElementById('lierr').classList.remove('on');
+    var pe = document.getElementById('pcerr'); if(pe) pe.classList.remove('on');
     document.getElementById('regveil').hidden = false;
-    setRegMode(mode === 'login' || mode === 'profile' ? mode : 'new');
+    setRegMode(mode === 'login' || mode === 'profile' || mode === 'code' ? mode : 'new');
+  }
+  /* the price code LUMIA e-mails with a quote: unlocks prices on this
+     browser, and — once the customer has an account — for that account */
+  function unlockWithCode(code, done){
+    fetch('/api/home/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code })
+    }).then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if(!d || !d.prices){ done(false); return; }
+      try{ localStorage.setItem('lumia_home', JSON.stringify({ code: String(code).trim().toUpperCase(), at: Date.now() })); }catch(e){}
+      HOME = { prices: d.prices };
+      refreshPrices();          /* a signed-in account keeps the access from now on */
+      if(P) renderSteps();
+      renderLines();
+      done(true);
+    }).catch(function(){ done(false); });
   }
   function closeRegister(){ document.getElementById('regveil').hidden = true; }
   document.getElementById('regveil').addEventListener('click', function(e){
@@ -118,7 +142,8 @@
     if(sw) setRegMode(sw.dataset.rmode);
   });
   /* accept the account the server hands back (sign-up or log-in) */
-  function acceptAccount(c, key){
+  function acceptAccount(c, key, prices){
+    ACCT_PRICES = prices || null;
     ACCOUNT = Object.assign({}, c, { key: key || (ACCOUNT && ACCOUNT.key) || '', at: Date.now() });
     setAccount(ACCOUNT);
     syncAcct();
@@ -140,15 +165,29 @@
     btn.disabled = true; btn.textContent = 'One moment…';
     fetch('/api/home/signin', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: pw })
+      body: JSON.stringify({ email: email, password: pw, code: homeCode() })
     }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
     .then(function(x){
       btn.disabled = false; btn.innerHTML = 'Log in &rarr;';
       if(!x.ok || !x.d.key) throw new Error((x.d && x.d.error) || 'failed');
-      acceptAccount(x.d.customer || { email: email }, x.d.key);
+      acceptAccount(x.d.customer || { email: email }, x.d.key, x.d.prices);
     }).catch(function(e2){
       btn.disabled = false; btn.innerHTML = 'Log in &rarr;';
       err.textContent = String(e2.message || '') || 'Could not log in — please try again.';
+      err.classList.add('on');
+    });
+  });
+  var pcbtn = document.getElementById('pcbtn');
+  if(pcbtn) pcbtn.addEventListener('click', function(){
+    var inp = document.getElementById('pc-code'), err = document.getElementById('pcerr');
+    var code = (inp.value || '').trim();
+    err.classList.remove('on');
+    if(!code){ inp.focus(); return; }
+    pcbtn.disabled = true; pcbtn.textContent = 'Checking…';
+    unlockWithCode(code, function(ok){
+      pcbtn.disabled = false; pcbtn.innerHTML = 'Unlock prices &rarr;';
+      if(ok){ inp.value = ''; closeRegister(); return; }
+      err.textContent = 'That code was not recognized — check the e-mail we sent with your quote and try again.';
       err.classList.add('on');
     });
   });
@@ -176,12 +215,12 @@
     fetch('/api/home/register', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ customer: c, password: pw,
-        key: (ACCOUNT && ACCOUNT.key) || '' })
+        key: (ACCOUNT && ACCOUNT.key) || '', code: homeCode() })
     }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
     .then(function(x){
       btn.disabled = false; btn.innerHTML = REGMODE === 'profile' ? 'Save &rarr;' : 'Create account &rarr;';
       if(!x.ok || !x.d.key) throw new Error((x.d && x.d.error) || 'failed');
-      acceptAccount(c, x.d.key);
+      acceptAccount(c, x.d.key, x.d.prices);
     }).catch(function(e2){
       btn.disabled = false; btn.innerHTML = REGMODE === 'profile' ? 'Save &rarr;' : 'Create account &rarr;';
       var m = String(e2.message || '');
@@ -375,8 +414,8 @@
     return (r && !r.na) ? { w: r.w, h: r.h } : { w: P.width, h: P.height };
   }
 
-  function PRICES(){ return (ADMIN && ADMIN.prices) || (HOME && HOME.prices) || {}; }
-  function hasPrices(){ return !!((ADMIN && ADMIN.prices) || (HOME && HOME.prices)); }
+  function PRICES(){ return (ADMIN && ADMIN.prices) || ACCT_PRICES || (HOME && HOME.prices) || {}; }
+  function hasPrices(){ return !!((ADMIN && ADMIN.prices) || ACCT_PRICES || (HOME && HOME.prices)); }
   function prodPrices(id){
     return (PRICES().products || []).filter(function(p){ return p.id === id; })[0] || null;
   }
@@ -794,7 +833,8 @@
   function syncBar(){
     var el = document.getElementById('wizprice');
     if(!hasPrices()){
-      el.innerHTML = '<span style="letter-spacing:.06em">Quote</span>';
+      el.innerHTML = '<span style="letter-spacing:.06em">Quote</span> ' +
+        '<button class="lockcta" type="button" id="pricecta" style="margin-left:8px">Have a price code?</button>';
     } else {
       var price = currentPrice();
       if(price == null){ el.innerHTML = '&mdash;'; }
@@ -806,7 +846,7 @@
       editIdx == null ? 'Add to cart &rarr;' : 'Update line &rarr;';
   }
   document.getElementById('wizbar').addEventListener('click', function(e){
-    if(e.target.closest('#pricecta')) openRegister();
+    if(e.target.closest('#pricecta')) openRegister('code');
   });
 
   /* step interactions */
@@ -1251,12 +1291,21 @@
     RG_FIELDS.forEach(function(k){ c[k] = ACCOUNT[k] || ''; });
     fetch('/api/home/register', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ customer: c, key: ACCOUNT.key })
+      body: JSON.stringify({ customer: c, key: ACCOUNT.key, code: homeCode() })
     }).then(function(r){
       if(r.status === 401 || r.status === 409){
         /* the key no longer opens the account — sign this device out */
-        setAccount(null); ACCOUNT = null; syncAcct();
+        setAccount(null); ACCOUNT = null; ACCT_PRICES = null; syncAcct();
+        if(P) renderSteps();
+        renderLines();
+        throw new Error('skip');
       }
+      if(!r.ok) throw new Error('skip');
+      return r.json();
+    }).then(function(d){
+      ACCT_PRICES = (d && d.prices) || null;
+      if(P) renderSteps();
+      renderLines();
     }).catch(function(){});
   }
   function boot(){

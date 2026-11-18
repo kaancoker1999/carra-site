@@ -474,6 +474,11 @@
           <button class="btn" id="hs-save" type="button">Save</button>
         </div>
         <div class="msg" id="hsmsg"></div>
+        <!-- LUMIA Home accounts: end customers with their own e-mail + password.
+             Separate from the dealer accounts (access codes) listed below. -->
+        <h3 style="font-size:14px;margin:22px 0 4px">LUMIA Home accounts</h3>
+        <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px">End customers who created an account with their own e-mail and password &mdash; not dealers. An account gets <b>price access</b> the moment it uses the price code, and keeps it; switch it off or on per account here.</p>
+        <div id="hs-accounts" class="ordwrap"></div>
       </div>
       <div class="card ordwrap" id="dlist">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -1714,6 +1719,7 @@
           '<b>Quote request.</b> ' + (o.priced
             ? 'Priced at ' + esc(o.total || '') + ' — the customer can now pay from their order page.'
             : 'No prices on this one yet — set the total below and the customer pays from their order page.') +
+          (HS_CODE ? '<div style="margin-top:6px;color:#4A4E52">Or e-mail them the price code <code>' + esc(HS_CODE) + '</code> — with it they see prices on the site, order by themselves and can open a LUMIA Home account.</div>' : '') +
           '<div class="row" style="gap:8px;margin-top:8px;align-items:center">' +
             '<label class="fld"><span>Total (USD)</span><input type="number" min="1" step="0.01" class="q-price" data-ref="' + esc(o.ref) + '" value="' + esc(String(o.total || '').replace(/[^0-9.]/g, '')) + '" style="width:140px"></label>' +
             '<button class="btn q-save" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 16px">' + (o.priced ? 'Update price' : 'Set price') + '</button>' +
@@ -1885,8 +1891,36 @@
       if(c.mult != null) sel.value = String(c.mult);
       $('hs-active').value = c.active === false ? '0' : '1';
       $('hs-code').value = c.code || '';
+      HS_CODE = c.code || '';
+    }).catch(function(){});
+    loadHomeAccounts();
+  }
+  /* LUMIA Home accounts (end customers) — kept apart from the dealer list */
+  var HS_CODE = '';
+  function loadHomeAccounts(){
+    api('/api/admin/home-accounts').then(function(d){
+      var list = (d && d.accounts) || [];
+      var day = function(x){ return x ? new Date(x).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '—'; };
+      $('hs-accounts').innerHTML = list.length
+        ? '<table class="oli"><thead><tr><th>Name</th><th>E-mail</th><th>Phone</th><th>Since</th><th>Last seen</th><th>Password</th><th>Price access</th></tr></thead><tbody>' +
+          list.map(function(a){
+            return '<tr><td>' + esc(a.name || '—') + '</td>' +
+              '<td><a href="mailto:' + esc(a.email) + '">' + esc(a.email) + '</a></td>' +
+              '<td>' + esc(a.phone || '—') + '</td><td>' + day(a.at) + '</td><td>' + day(a.lastSeen) + '</td>' +
+              '<td>' + (a.pass ? 'set' : '<span style="color:var(--muted)">not set</span>') + '</td>' +
+              '<td><span class="status ' + (a.unlocked ? 'pay-paid' : 'st-pend') + '">' + (a.unlocked ? 'Sees prices' : 'Quote only') + '</span> ' +
+                '<button class="btn ghost hs-access" data-email="' + esc(a.email) + '" data-on="' + (a.unlocked ? '1' : '0') + '" type="button" style="padding:5px 10px;font-size:11px">' +
+                (a.unlocked ? 'Remove access' : 'Give access') + '</button></td></tr>';
+          }).join('') + '</tbody></table>'
+        : '<div class="ovempty">No LUMIA Home accounts yet.</div>';
     }).catch(function(){});
   }
+  $('hs-accounts').addEventListener('click', function(e){
+    var b = e.target.closest('.hs-access'); if(!b) return;
+    b.disabled = true;
+    api('/api/admin/home-account-access', 'POST', { email: b.dataset.email, unlocked: b.dataset.on !== '1' })
+      .then(loadHomeAccounts).catch(function(){ b.disabled = false; });
+  });
   $('hs-save').addEventListener('click', function(){
     var b = this; b.disabled = true; b.textContent = 'Saving…';
     api('/api/admin/consumer', 'POST', {

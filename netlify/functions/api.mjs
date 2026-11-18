@@ -1090,8 +1090,13 @@ export default async (req) => {
     }
     acct.at = (prev && prev.at) || new Date().toISOString();
     acct.lastSeen = new Date().toISOString();
+    // the price code is the invitation; once an account has used it the
+    // access stays with the ACCOUNT (any device, own password) — LUMIA can
+    // still switch it off per account in the admin panel
+    if (homeOk(cfg, body.code)) acct.unlocked = true;
     await s.setJSON(blobKey, acct);
-    return json({ ok: true, key: acct.key });   // prices are dealer-only
+    return json({ ok: true, key: acct.key,
+      prices: acct.unlocked ? scaled(base, () => cfg.mult) : null });
   }
 
   // ── home customer: log back in with e-mail + password. A matching
@@ -1119,13 +1124,15 @@ export default async (req) => {
     delete acct.fails;
     if (!acct.key) acct.key = randomBytes(16).toString("hex");
     acct.lastSeen = new Date().toISOString();
+    if (homeOk(cfg, body.code)) acct.unlocked = true;   // logged in on a browser that holds the price code
     await s.setJSON(`homeacct:${email}`, acct);
     const base = await s.get("prices", { type: "json" });
     if (!base) return bad("prices not loaded yet", 503);
     return json({
       customer: { name: acct.name, email, phone: acct.phone || "",
         address: acct.address || "", city: acct.city || "", state: acct.state || "", zip: acct.zip || "" },
-      key: acct.key,   // prices are dealer-only
+      key: acct.key,
+      prices: acct.unlocked ? scaled(base, () => cfg.mult) : null,   // only with price access
     });
   }
 
@@ -1464,10 +1471,21 @@ export default async (req) => {
       for (const b of blobs) {
         const a = await s.get(b.key, { type: "json" });
         if (a) out.push({ email: b.key.slice("homeacct:".length), name: a.name || "",
-          phone: a.phone || "", at: a.at || "", lastSeen: a.lastSeen || "", pass: !!a.pass });
+          phone: a.phone || "", at: a.at || "", lastSeen: a.lastSeen || "", pass: !!a.pass,
+          unlocked: !!a.unlocked });
       }
       out.sort((x, y) => (x.lastSeen < y.lastSeen ? 1 : -1));
       return json({ accounts: out });
+    }
+
+    // give or take away one home account's price access (independent of the shared code)
+    if (path === "/api/admin/home-account-access" && req.method === "POST") {
+      const email = String(body.email || "").trim().toLowerCase();
+      const a = email ? await s.get(`homeacct:${email}`, { type: "json" }) : null;
+      if (!a) return bad("no such account", 404);
+      if (body.unlocked) a.unlocked = true; else delete a.unlocked;
+      await s.setJSON(`homeacct:${email}`, a);
+      return json({ ok: true, unlocked: !!a.unlocked });
     }
 
     // price a quote request — the customer can then pay from their order page
