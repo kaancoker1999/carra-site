@@ -479,6 +479,17 @@
         <h3 style="font-size:14px;margin:22px 0 4px">LUMIA Home accounts</h3>
         <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px">End customers who created an account with their own e-mail and password &mdash; not dealers. An account gets <b>price access</b> the moment it uses the price code, and keeps it; switch it off or on per account here.</p>
         <div id="hs-accounts" class="ordwrap"></div>
+        <!-- a customer got in touch by e-mail/phone: open their account here.
+             It has price access right away; they choose their own password. -->
+        <h3 style="font-size:14px;margin:20px 0 4px">Open an account for a customer</h3>
+        <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px">For someone who contacted you. The account gets price access immediately; the customer then goes to the site, chooses <b>Create account</b> with this same e-mail and sets their own password.</p>
+        <div class="row">
+          <div><label>Customer name</label><input id="ha-name" type="text" autocomplete="off" style="width:200px"></div>
+          <div><label>E-mail</label><input id="ha-email" type="email" autocomplete="off" style="width:240px"></div>
+          <div><label>Phone (optional)</label><input id="ha-phone" type="text" autocomplete="off" style="width:150px"></div>
+          <button class="btn" id="ha-save" type="button">Open account</button>
+        </div>
+        <div class="msg" id="hamsg"></div>
       </div>
       <div class="card ordwrap" id="dlist">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -1920,6 +1931,23 @@
     b.disabled = true;
     api('/api/admin/home-account-access', 'POST', { email: b.dataset.email, unlocked: b.dataset.on !== '1' })
       .then(loadHomeAccounts).catch(function(){ b.disabled = false; });
+  });
+  $('ha-save').addEventListener('click', function(){
+    var b = this, name = $('ha-name').value.trim(), email = $('ha-email').value.trim();
+    if(!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){
+      $('hamsg').className = 'msg err'; $('hamsg').textContent = 'Enter the customer\'s name and a valid e-mail.'; return;
+    }
+    b.disabled = true;
+    api('/api/admin/home-account', 'POST', { name: name, email: email, phone: $('ha-phone').value.trim() }).then(function(d){
+      b.disabled = false;
+      if(d && d.error){ $('hamsg').className = 'msg err'; $('hamsg').textContent = d.error; return; }
+      $('hamsg').className = 'msg ok';
+      $('hamsg').textContent = (d.created ? 'Account opened' : 'Account updated') + ' with price access for ' + email + '. ' +
+        (d.pass ? 'They already have a password — they just log in.'
+                : 'Tell them: go to lumiashades.com, open any product, press "Have an account? Log in" → "Create a free account", use this e-mail and choose a password.');
+      $('ha-name').value = ''; $('ha-email').value = ''; $('ha-phone').value = '';
+      loadHomeAccounts();
+    }).catch(function(){ b.disabled = false; $('hamsg').className = 'msg err'; $('hamsg').textContent = 'Could not save — try again.'; });
   });
   $('hs-save').addEventListener('click', function(){
     var b = this; b.disabled = true; b.textContent = 'Saving…';

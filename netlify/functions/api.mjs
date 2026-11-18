@@ -1478,6 +1478,28 @@ export default async (req) => {
       return json({ accounts: out });
     }
 
+    // LUMIA opens a home account for a customer who got in touch (e-mail, phone):
+    // it has price access from the start. No password yet — the customer picks
+    // their own with "Create account" on the site, using this same e-mail.
+    if (path === "/api/admin/home-account" && req.method === "POST") {
+      const email = String(body.email || "").trim().toLowerCase().slice(0, 160);
+      const name = String(body.name || "").trim().slice(0, 120);
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return bad("a valid e-mail is required");
+      const prev = await s.get(`homeacct:${email}`, { type: "json" });
+      if (!prev && !name) return bad("the customer's name is required");
+      const a = { ...(prev || {}) };
+      if (name) a.name = name;
+      const phone = String(body.phone || "").trim().slice(0, 40);
+      if (phone) a.phone = phone;
+      a.email = email;
+      a.unlocked = true;
+      a.at = a.at || new Date().toISOString();
+      a.lastSeen = a.lastSeen || a.at;
+      a.byAdmin = a.byAdmin || admin.name || "admin";
+      await s.setJSON(`homeacct:${email}`, a);
+      return json({ ok: true, created: !prev, pass: !!a.pass });
+    }
+
     // give or take away one home account's price access (independent of the shared code)
     if (path === "/api/admin/home-account-access" && req.method === "POST") {
       const email = String(body.email || "").trim().toLowerCase();
