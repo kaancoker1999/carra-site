@@ -45,6 +45,7 @@
     }).then(function(d){
       if(!d || !d.prices) return;
       HOME = { prices: d.prices };
+      syncAcct();
       if(P) renderSteps();
       renderLines();
     }).catch(function(){});
@@ -74,11 +75,15 @@
   /* signed out: just the log-in; signed in: one Account door (track.html
      carries Current status / Saved / Placed / Profile / Sign out) */
   function syncAcct(){
-    shoplogin.hidden = true;   /* prices are public — the top bar stays quiet */
+    /* quiet top bar — except for a visitor who unlocked prices with the code
+       and has no account yet: that is the moment to offer one */
+    var offer = !ACCOUNT && !!(HOME && HOME.prices);
+    shoplogin.hidden = !offer;
+    if(offer) shoplogin.textContent = 'Create account';
     acctbtn.hidden = !ACCOUNT;
   }
   syncAcct();
-  shoplogin.addEventListener('click', function(){ openRegister('login'); });
+  shoplogin.addEventListener('click', function(){ openRegister('new'); });
   var cklogin = document.getElementById('cklogin');
   if(cklogin) cklogin.addEventListener('click', function(){ openRegister('login'); });
 
@@ -130,6 +135,7 @@
       if(!d || !d.prices){ done(false); return; }
       try{ localStorage.setItem('lumia_home', JSON.stringify({ code: String(code).trim().toUpperCase(), at: Date.now() })); }catch(e){}
       HOME = { prices: d.prices };
+      syncAcct();
       refreshPrices();          /* a signed-in account keeps the access from now on */
       if(P) renderSteps();
       renderLines();
@@ -186,7 +192,15 @@
     pcbtn.disabled = true; pcbtn.textContent = 'Checking…';
     unlockWithCode(code, function(ok){
       pcbtn.disabled = false; pcbtn.innerHTML = 'Unlock prices &rarr;';
-      if(ok){ inp.value = ''; closeRegister(); return; }
+      if(ok){
+        inp.value = '';
+        if(ACCOUNT){ closeRegister(); return; }
+        /* prices are open — now make them stick: an account with their own password */
+        setRegMode('new');
+        document.getElementById('rnew-title').textContent = 'Prices unlocked — create your account';
+        document.getElementById('rnew-sub').textContent = 'Choose your own password and the prices stay with your account on any device — no code needed again. You can also track orders and message us. Or close this window and keep browsing.';
+        return;
+      }
       err.textContent = 'That code was not recognized — check the e-mail we sent with your quote and try again.';
       err.classList.add('on');
     });
