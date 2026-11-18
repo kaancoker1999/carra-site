@@ -206,7 +206,6 @@ LUMIA_I18N_DATA({
 "Dealers and integrators get their own price list, sample support and a technical contact who answers in the same working day.":"Les revendeurs et les intégrateurs disposent de leur propre liste de prix, d’un service d’échantillons et d’un interlocuteur technique qui répond le jour ouvré même.",
 "Designer":"Décorateur",
 "Designer Prints":"Designer Prints",
-"Designer Prints and Sheer Woven arches are priced as the cordless cellular shade of the same fabric and size — see those grids under Cellular Shades.":"Les arches en Designer Prints et Sheer Woven sont au prix du store alvéolaire sans cordon du même tissu et de la même taille — voir ces grilles dans Stores alvéolaires.",
 "Designer colours":"Couleurs designer",
 "Distributor":"Distributeur",
 "Done":"Terminé",
