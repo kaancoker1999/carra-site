@@ -75,11 +75,9 @@
   /* signed out: just the log-in; signed in: one Account door (track.html
      carries Current status / Saved / Placed / Profile / Sign out) */
   function syncAcct(){
-    /* quiet top bar — except for a visitor who unlocked prices with the code
-       and has no account yet: that is the moment to offer one */
-    var offer = !ACCOUNT && !!(HOME && HOME.prices);
-    shoplogin.hidden = !offer;
-    if(offer) shoplogin.textContent = 'Create account';
+    /* the top bar only ever shows "Account" (signed in). "Create an account"
+       lives in the menu drawer alone — trade.js puts it where Log in sits */
+    shoplogin.hidden = true;
     acctbtn.hidden = !ACCOUNT;
   }
   syncAcct();
