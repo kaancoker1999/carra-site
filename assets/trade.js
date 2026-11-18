@@ -107,7 +107,8 @@
       '#dlogin input:focus{outline:none;border-color:#14171A}' +
       '#dlogin-err{margin:9px 0 0;font-size:12.5px;color:#8A2620}' +
       '#dlogin:not([hidden])+.dcta{margin-top:12px}' +
-      '#navdrawer .ddealer{display:block;margin-top:12px;text-align:center;font-family:\'IBM Plex Mono\',monospace;' +
+      '#navdrawer .ddealer{display:block;width:100%;margin-top:12px;padding:6px 0;text-align:center;background:none;border:0;' +
+      'cursor:pointer;font-family:\'IBM Plex Mono\',monospace;' +
       'font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#8A8D90;text-decoration:none}' +
       '#navdrawer .ddealer:hover{color:#14171A}' +
       'header nav{display:none!important}header{position:sticky}';
@@ -159,14 +160,15 @@
       });
       /* a LUMIA Home customer gets their own door where "Log in" would be:
          signed in → Account; prices unlocked with the code but no account
-         yet → Create an account. Dealers keep a small log-in link below. */
+         yet → Create an account. "Log out" below ends the home session
+         (account and price code) and brings the plain Log in back. */
       var isHome = false;
       if (cta && /trade\.html/.test(cta) && (homeAccount() || homeUnlocked())) {
         isHome = true;
         cta = (homeAccount()
           ? '<a class="dcta dhome" href="track.html">Account</a>'
           : '<a class="dcta dhome" data-create="1" href="roman.html?account=new">Create an account</a>') +
-          '<a class="ddealer" href="trade.html">Dealer log in</a>';
+          '<button class="ddealer" id="dlogout" type="button">Log out</button>';
       }
       /* logged out: the Log in button opens a code box right here in the drawer */
       if (!isHome && cta && /trade\.html/.test(cta)) {
@@ -217,6 +219,13 @@
       if (e.target.closest('#navclose')) { setOpen(false); return; }
       var gh = e.target.closest('.dghead');
       if (gh) { gh.parentNode.classList.toggle('open'); return; }
+      if (e.target.closest('#dlogout')) {
+        /* leave LUMIA Home on this browser: the account session and the price code */
+        try { localStorage.removeItem('lumia_home_acct'); localStorage.removeItem(HOME_KEY); } catch (err) {}
+        if (/track\.html$/.test(location.pathname)) location.href = 'index.html#products';
+        else location.reload();
+        return;
+      }
       var cta = e.target.closest('.dcta');
       if (cta && cta.classList.contains('dhome')) {
         /* on a product page the sign-up opens right here; elsewhere the link
