@@ -143,6 +143,8 @@
     }).catch(function(){ done(false); });
   }
   function closeRegister(){ document.getElementById('regveil').hidden = true; }
+  /* the menu's "Create an account" opens the sign-up here */
+  window.LUMIA_SHOP = { openAccount: function(){ openRegister(ACCOUNT ? 'profile' : 'new'); } };
   document.getElementById('regveil').addEventListener('click', function(e){
     var sw = e.target.closest('.swaplink');
     if(sw) setRegMode(sw.dataset.rmode);
@@ -1335,6 +1337,11 @@
         CFG = cfg;
         renderLines();
         applyHash();
+        /* arrived from the menu's "Create an account" on another page */
+        if(/[?&]account=new/.test(location.search)){
+          history.replaceState(null, '', location.pathname);
+          if(!ACCOUNT) openRegister('new');
+        }
         /* a cart line sent over from another product's page */
         var pe = null;
         try{

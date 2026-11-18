@@ -41,6 +41,10 @@
     }).catch(function () { return false; });
   }
   function homeUnlocked() { try { return !!localStorage.getItem(HOME_KEY); } catch (e) { return false; } }
+  /* a LUMIA Home customer signed in on this browser (own e-mail + password) */
+  function homeAccount() {
+    try { var a = JSON.parse(localStorage.getItem('lumia_home_acct') || 'null'); return a && a.key ? a : null; } catch (e) { return null; }
+  }
   /* after the price code: stay on a product page, else go to the products */
   function goShop() {
     if (document.body && document.body.getAttribute('data-shop')) location.reload();
@@ -103,6 +107,9 @@
       '#dlogin input:focus{outline:none;border-color:#14171A}' +
       '#dlogin-err{margin:9px 0 0;font-size:12.5px;color:#8A2620}' +
       '#dlogin:not([hidden])+.dcta{margin-top:12px}' +
+      '#navdrawer .ddealer{display:block;margin-top:12px;text-align:center;font-family:\'IBM Plex Mono\',monospace;' +
+      'font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#8A8D90;text-decoration:none}' +
+      '#navdrawer .ddealer:hover{color:#14171A}' +
       'header nav{display:none!important}header{position:sticky}';
     document.head.appendChild(css);
 
@@ -150,8 +157,19 @@
         if (isPublic && /(?:^|\/)tdbu(?:\.html)?$/.test(href)) return; /* lives inside the Products group */
         html += '<a class="dlink' + (a.hasAttribute('style') ? ' on' : '') + '" href="' + href + '">' + label + '</a>';
       });
+      /* a LUMIA Home customer gets their own door where "Log in" would be:
+         signed in → Account; prices unlocked with the code but no account
+         yet → Create an account. Dealers keep a small log-in link below. */
+      var isHome = false;
+      if (cta && /trade\.html/.test(cta) && (homeAccount() || homeUnlocked())) {
+        isHome = true;
+        cta = (homeAccount()
+          ? '<a class="dcta dhome" href="track.html">Account</a>'
+          : '<a class="dcta dhome" data-create="1" href="roman.html?account=new">Create an account</a>') +
+          '<a class="ddealer" href="trade.html">Dealer log in</a>';
+      }
       /* logged out: the Log in button opens a code box right here in the drawer */
-      if (cta && /trade\.html/.test(cta)) {
+      if (!isHome && cta && /trade\.html/.test(cta)) {
         cta = '<div id="dlogin" hidden><label for="dlogin-code">Access code</label>' +
           '<input id="dlogin-code" type="text" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Your LUMIA code">' +
           '<div id="dlogin-err" hidden>That code was not recognized &mdash; check it and try again.</div></div>' + cta;
@@ -200,6 +218,14 @@
       var gh = e.target.closest('.dghead');
       if (gh) { gh.parentNode.classList.toggle('open'); return; }
       var cta = e.target.closest('.dcta');
+      if (cta && cta.classList.contains('dhome')) {
+        /* on a product page the sign-up opens right here; elsewhere the link
+           leads to a product page that opens it */
+        if (cta.hasAttribute('data-create') && window.LUMIA_SHOP) {
+          e.preventDefault(); setOpen(false); window.LUMIA_SHOP.openAccount();
+        } else { setOpen(false); }
+        return;
+      }
       if (cta) {
         var orig = nav.querySelector('a.partner');
         var loggedOut = orig && /trade\.html$/.test(orig.getAttribute('href') || '');
@@ -299,6 +325,7 @@
     login: login,
     homeLogin: homeLogin,
     homeUnlocked: homeUnlocked,
+    homeAccount: homeAccount,
     goShop: goShop,
     require: function () {
       var s = getSession();
