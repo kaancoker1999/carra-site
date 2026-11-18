@@ -39,7 +39,7 @@ PRODUCTS = {
         # factory build limits: cordless tops out at 96x96; a corded or
         # motorized lift carries up to 105 wide x 120 tall
         "sizeRules": [
-            {"drive": "Cordless", "tdbu": "No", "w": [18, 96], "h": [24, 96]},
+            {"drive": "Cordless", "tdbu": "No", "w": [12, 96], "h": [24, 96]},   # narrow cordless from 12″ (not with TDBU)
             {"drive": "Cordless", "tdbu": "Yes", "w": [24, 96], "h": [24, 96]},
             {"drive": "Continuous cord loop", "tdbu": "No", "w": [18, 105], "h": [24, 120]},
             {"drive": "Continuous cord loop", "tdbu": "Yes", "w": [24, 105], "h": [24, 120]},
@@ -78,8 +78,8 @@ PRODUCTS = {
         # Cell classes: S = single cell (any opacity), DLF = double light-filtering,
         # DBO = double blackout, T = triple. First matching rule wins; na = not offered.
         "sizeRules": [
-            {"drive": "Cordless", "tdbu": "No", "cls": ["S", "DLF"], "w": [19, 96], "h": [20, 96]},
-            {"drive": "Cordless", "tdbu": "No", "cls": ["DBO", "T"], "w": [19, 84], "h": [20, 84]},
+            {"drive": "Cordless", "tdbu": "No", "cls": ["S", "DLF"], "w": [12, 96], "h": [20, 96]},   # narrow cordless from 12″ (not with TDBU)
+            {"drive": "Cordless", "tdbu": "No", "cls": ["DBO", "T"], "w": [12, 84], "h": [20, 84]},
             {"drive": "Cordless", "tdbu": "Yes", "cls": ["S"], "w": [24, 84], "h": [20, 84]},
             {"drive": "Cordless", "tdbu": "Yes", "cls": ["DLF"], "w": [24, 72], "h": [20, 72]},
             {"drive": "Cordless", "tdbu": "Yes", "cls": ["DBO", "T"], "na": True},
@@ -106,6 +106,11 @@ PRODUCTS = {
         "desc": "Single-layer pleated fabric in plain and crashed finishes, with a crisp, evenly held fold and the slimmest stack in the range — the shallowest option when the reveal is tight.",
         "hLabel": "Height", "width": [18, 105], "height": [24, 120],
         "sizeRange": 'W 18" – 105" · H 24" – 120"',
+        # only rule: plain cordless goes down to 12″ wide; every other
+        # combination (TDBU, cord loop, motor) keeps the product's own limits
+        "sizeRules": [
+            {"drive": "Cordless", "tdbu": "No", "w": [12, 120], "h": [24, 137]},
+        ],
         "groups": [
             {"key": "fabric", "label": "Fabric", "options": ["Plain", "Crashed"]},
             {"key": "opacity", "label": "Opacity", "options": ["Light-filtering"]},
