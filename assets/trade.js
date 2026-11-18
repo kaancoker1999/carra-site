@@ -25,6 +25,28 @@
     });
   }
 
+  /* the shared price code of the home shop: not a dealer account — it just
+     unlocks the retail prices on the product pages (shopkit re-checks it on
+     every visit, so a changed code locks old browsers out) */
+  var HOME_KEY = 'lumia_home';
+  function homeLogin(code) {
+    return fetch('/api/home/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: String(code || '').trim() })
+    }).then(function (r) {
+      if (!r.ok) return false;
+      try { localStorage.setItem(HOME_KEY, JSON.stringify({ code: String(code).trim().toUpperCase(), at: Date.now() })); } catch (e) {}
+      return true;
+    }).catch(function () { return false; });
+  }
+  function homeUnlocked() { try { return !!localStorage.getItem(HOME_KEY); } catch (e) { return false; } }
+  /* after the price code: stay on a product page, else go to the products */
+  function goShop() {
+    if (document.body && document.body.getAttribute('data-shop')) location.reload();
+    else location.href = 'index.html#products';
+  }
+
   /* ── drawer menu (all pages load this file) ──
      At every width the header links give way to a hamburger that slides a
      full-height white panel in from the right over a dimmed page:
@@ -149,9 +171,13 @@
       cta.textContent = 'Checking…';
       login(code).then(function (prices) {
         if (prices) { location.href = 'account.html'; return; }
-        err.hidden = false;
-        cta.textContent = old;
-        inp.focus();
+        /* not a dealer code — maybe the home shop's price code */
+        return homeLogin(code).then(function (ok) {
+          if (ok) { goShop(); return; }
+          err.hidden = false;
+          cta.textContent = old;
+          inp.focus();
+        });
       }).catch(function () {
         err.hidden = false;
         cta.textContent = old;
@@ -271,6 +297,9 @@
     getSession: getSession,
     clearSession: clearSession,
     login: login,
+    homeLogin: homeLogin,
+    homeUnlocked: homeUnlocked,
+    goShop: goShop,
     require: function () {
       var s = getSession();
       /* re-login daily so price updates reach every dealer within a day */

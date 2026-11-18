@@ -12,7 +12,6 @@
   function setAccount(a){
     try{ if(a){ localStorage.setItem('lumia_home_acct', JSON.stringify(a)); } else { localStorage.removeItem('lumia_home_acct'); } }catch(e){}
   }
-  try{ localStorage.removeItem('lumia_home'); }catch(e){}   /* the old code-gate session */
   var ACCOUNT = getAccount();
   if(ACCOUNT && !ACCOUNT.key){ setAccount(null); ACCOUNT = null; }   /* pre-password session */
   var shoplogin = document.getElementById('shoplogin');
@@ -20,9 +19,33 @@
   /* an admin signed in to the panel (same browser) gets the retail prices
      without a customer account, and orders are entered for customers */
   var ADMIN = null;
-  /* prices are dealer-only: customers configure and send a QUOTE REQUEST;
-     the price is confirmed by LUMIA and paid from the order page */
+  /* prices are not public: a customer either holds the shop's price code
+     (typed at the log-in — sees prices and pays right away) or configures
+     and sends a QUOTE REQUEST that LUMIA prices afterwards */
   if(ACCOUNT && ACCOUNT.prices){ delete ACCOUNT.prices; setAccount(ACCOUNT); }
+  var HOME = null;
+  function homeCode(){
+    try{ var o = JSON.parse(localStorage.getItem('lumia_home') || 'null'); return (o && o.code) || ''; }catch(e){ return ''; }
+  }
+  /* the stored code is re-checked on every visit, so prices stay current and
+     a code LUMIA has changed stops working */
+  function tryHome(){
+    var code = homeCode();
+    if(!code) return;
+    fetch('/api/home/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code })
+    }).then(function(r){
+      if(r.status === 401){ try{ localStorage.removeItem('lumia_home'); }catch(e){} throw new Error('locked'); }
+      if(!r.ok) throw new Error('skip');
+      return r.json();
+    }).then(function(d){
+      if(!d || !d.prices) return;
+      HOME = { prices: d.prices };
+      if(P) renderSteps();
+      renderLines();
+    }).catch(function(){});
+  }
   function adminStoredKey(){
     try{ var v = sessionStorage.getItem('lumia_admin_key'); if(v) return v; }catch(e){}
     try{
@@ -352,8 +375,8 @@
     return (r && !r.na) ? { w: r.w, h: r.h } : { w: P.width, h: P.height };
   }
 
-  function PRICES(){ return (ADMIN && ADMIN.prices) || {}; }
-  function hasPrices(){ return !!(ADMIN && ADMIN.prices); }
+  function PRICES(){ return (ADMIN && ADMIN.prices) || (HOME && HOME.prices) || {}; }
+  function hasPrices(){ return !!((ADMIN && ADMIN.prices) || (HOME && HOME.prices)); }
   function prodPrices(id){
     return (PRICES().products || []).filter(function(p){ return p.id === id; })[0] || null;
   }
@@ -1106,9 +1129,18 @@
       quotebtn = document.getElementById('quotebtn'), ckerr = document.getElementById('ckerr');
   function syncPay(){
     var total = Math.round((orderTotals(lines).total + accTotal()) * 100) / 100;
-    var admin = hasPrices();
+    /* pay right away only when every line carries a price (a line added
+       before the code was entered has none — that cart asks for a quote) */
+    var admin = hasPrices() && !lines.some(function(l){ return l.price == null; });
     paybtn.hidden = !admin; savebtn.hidden = !admin;
     if(quotebtn) quotebtn.hidden = admin;
+    var sec = document.getElementById('securetxt'), pn = document.getElementById('paynote');
+    if(sec) sec.textContent = admin
+      ? 'Secure checkout by Stripe · your delivery address and phone are typed on the payment page'
+      : 'No payment now — we confirm your price first; you pay later on Stripe’s secure page';
+    if(pn) pn.hidden = admin;
+    var hl = document.getElementById('homelock');
+    if(hl) hl.hidden = !(HOME && HOME.prices);
     paybtn.disabled = !lines.length;
     savebtn.disabled = !lines.length;
     if(quotebtn) quotebtn.disabled = !lines.length;
@@ -1202,6 +1234,11 @@
         : 'Could not start the payment — please try again, or write to lumiashades@gmail.com.');
     });
   }
+  var homelock = document.getElementById('homelock');
+  if(homelock) homelock.addEventListener('click', function(){
+    try{ localStorage.removeItem('lumia_home'); }catch(e){}
+    location.reload();
+  });
   paybtn.addEventListener('click', function(){ submitOrder(false); });
   savebtn.addEventListener('click', function(){ submitOrder(true); });
   if(quotebtn) quotebtn.addEventListener('click', function(){ submitOrder(false, true); });
@@ -1225,6 +1262,7 @@
   function boot(){
     if(booted) return;
     booted = true;
+    tryHome();
     refreshPrices();
     tryAdmin();
     loadContact();

@@ -465,6 +465,7 @@
                its link belong to THEM, not to the signed-in account -->
           <button class="forlink" id="forother" type="button">Ordering for someone else?</button>
           <button class="forlink" id="cklogin" type="button" style="margin-left:14px">Have an account? Log in</button>
+          <button class="forlink" id="homelock" type="button" style="margin-left:14px" hidden>Hide prices</button>
           <div class="ckgrid" id="forgrid" hidden style="margin-top:12px">
             <div class="cell"><label for="fo-name">Their full name *</label><input id="fo-name" type="text" autocomplete="off"></div>
             <div class="cell"><label for="fo-email">Their e-mail *</label><input id="fo-email" type="email" autocomplete="off"></div>
@@ -476,11 +477,11 @@
             <button class="paybtn ghost" id="savebtn" type="button" disabled hidden>Save &mdash; pay later</button>
             <span class="secure">
               <svg width="14" height="16" viewBox="0 0 14 16" fill="none"><path d="M7 1 1.5 3v4c0 3.7 2.3 6.6 5.5 8 3.2-1.4 5.5-4.3 5.5-8V3L7 1Z" stroke="#767A7E" stroke-width="1.3"/></svg>
-              No payment now &mdash; we confirm your price first; you pay later on Stripe&rsquo;s secure page
+              <span id="securetxt">No payment now &mdash; we confirm your price first; you pay later on Stripe&rsquo;s secure page</span>
             </span>
           </div>
           <div class="err" id="ckerr"></div>
-          <p class="paynote" style="margin:16px 0 0">We confirm your price within one business day &mdash; it appears on your <a href="track.html" style="color:var(--bronze)">order page</a> (and in your inbox), and you pay from there. Nothing goes to production before you approve.</p>
+          <p class="paynote" id="paynote" style="margin:16px 0 0">We confirm your price within one business day &mdash; it appears on your <a href="track.html" style="color:var(--bronze)">order page</a> (and in your inbox), and you pay from there. Nothing goes to production before you approve.</p>
         </div>
       </div>
     </div>
@@ -536,8 +537,8 @@
   </div>
 </footer>
 
-<script src="assets/shopkit.js?v=16"></script>
-<script src="assets/trade.js?v=23" defer></script>
+<script src="assets/shopkit.js?v=17"></script>
+<script src="assets/trade.js?v=24" defer></script>
 
 </body>
 </html>

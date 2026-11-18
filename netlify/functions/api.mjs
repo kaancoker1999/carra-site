@@ -246,6 +246,13 @@ async function consumerCfg() {
   const c = await store().get("consumer", { type: "json" });
   return { mult: 1.4, active: true, ...(c || {}) };
 }
+/* the shared price code (e.g. handed to a customer by LUMIA): typing it at
+   the log-in unlocks the retail prices in the shop. It lives in the
+   "consumer" blob only — never in the repo. No code set = no unlock. */
+function homeOk(cfg, raw) {
+  const code = String(cfg.code || "").trim().toUpperCase();
+  return cfg.active !== false && !!code && String(raw || "").trim().toUpperCase() === code;
+}
 function homeContact(c, opts) {
   const home = {
     name: String((c || {}).name || "").trim().slice(0, 120),
@@ -1042,6 +1049,15 @@ export default async (req) => {
     return json({ ok: true, payment });
   }
 
+  // ── home customer: the shared price code unlocks the retail price list ──
+  if (path === "/api/home/login" && req.method === "POST") {
+    const cfg = await consumerCfg();
+    if (!homeOk(cfg, body.code)) return bad("invalid code", 401);
+    const base = await store().get("prices", { type: "json" });
+    if (!base) return bad("prices not loaded yet", 503);
+    return json({ prices: scaled(base, () => cfg.mult) });
+  }
+
   // ── home customer: an account saves your details and tracks orders;
   //    repeat posts simply refresh the stored details ─────────────────
   if (path === "/api/home/register" && req.method === "POST") {
@@ -1715,7 +1731,16 @@ export default async (req) => {
     }
     if (path === "/api/admin/consumer" && req.method === "POST") {
       const cfg = await consumerCfg();
-      delete cfg.code;   // the shop is public now — no shared code
+      if (body.code != null) {
+        const code = String(body.code).trim().toUpperCase().slice(0, 40);
+        if (code === "") delete cfg.code;   // empty = nobody can unlock prices
+        else {
+          if (!/^[A-Z0-9-]{4,40}$/.test(code)) return bad("bad code");
+          const dealers = await getDealers();
+          if (dealers[code]) return bad("that code belongs to a dealer");
+          cfg.code = code;
+        }
+      }
       if (body.mult != null) {
         const m = Number(body.mult);
         if (!isFinite(m) || m < 1 || m > 10) return bad("bad multiplier");

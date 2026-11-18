@@ -84,7 +84,7 @@
   </div>
 </footer>
 
-<script src="assets/trade.js?v=23"></script>
+<script src="assets/trade.js?v=24"></script>
 <script>
 (function(){
   if(LUMIA_TRADE.getSession()){ location.href = 'account.html'; return; }
@@ -96,11 +96,15 @@
     if(!raw) return;
     err.classList.remove('on');
     btn.disabled = true; btn.textContent = 'Checking…';
-    /* dealer access codes only — the shop itself is public at shop.html */
+    /* a dealer access code opens the portal; the home shop's price code
+       unlocks the retail prices on the product pages */
     LUMIA_TRADE.login(raw).then(function(prices){
       if(prices){ location.href = 'account.html'; return; }
-      err.classList.add('on');
-      btn.disabled = false; btn.textContent = 'Log in';
+      return LUMIA_TRADE.homeLogin(raw).then(function(ok){
+        if(ok){ LUMIA_TRADE.goShop(); return; }
+        err.classList.add('on');
+        btn.disabled = false; btn.textContent = 'Log in';
+      });
     }).catch(function(){
       err.classList.add('on');
       btn.disabled = false; btn.textContent = 'Log in';
