@@ -6,7 +6,7 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-34CW2GXYJ2"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-34CW2GXYJ2');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="assets/i18n.js?v=14"></script>
+<script src="assets/i18n.js?v=15"></script>
 <title>LUMIA — Place an order</title>
 <meta name="robots" content="noindex">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -589,7 +589,16 @@
       /* sel.gridName carries "arch|<grid>|<cell row>" via the option id */
       var parts = (sel.archKey || '').split('|');
       var ag = pp.grids.filter(function(x){ return x.name === parts[1]; })[0];
-      if(!ag) return null;
+      if(!ag){
+        /* Designer Prints / Sheer Woven have no arch grid: an arch in these
+           fabrics costs what the cordless shade of the same fabric and size
+           costs (heights under the first grid row use that row) */
+        var cp = prodPrices('cellular');
+        var cg = cp ? cp.grids.filter(function(x){ return x.name === parts[1] + ' · ' + parts[2]; })[0] : null;
+        if(!cg) return null;
+        base = gridPrice(cg, w, h);
+        return base == null ? null : Math.round(base * 100) / 100;
+      }
       var row = ag.rows.filter(function(r){ return r.label === parts[2]; })[0];
       if(!row) return null;
       var ci = -1;
