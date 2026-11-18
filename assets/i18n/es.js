@@ -561,6 +561,7 @@ LUMIA_I18N_DATA({
 "Since 1999":"Desde 1999",
 "Single":"Sencilla",
 "Single Cell":"Celda sencilla",
+"Single Cell 3/4″":"Celda sencilla 3/4″",
 "Single layer, light-filtering":"Una capa, filtra la luz",
 "Single panel":"Panel sencillo",
 "Single pinch pleat":"Pliegue pinza sencillo",

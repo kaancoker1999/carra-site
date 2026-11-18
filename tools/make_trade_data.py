@@ -193,6 +193,18 @@ def parse_workbook():
         arch_grid(arc_headers[0], "Light Filtering", 3),
         arch_grid(arc_headers[1], "Blackout", 2),
     ]
+    # Designer Prints and Sheer Woven arches are not on the price sheet. They
+    # follow Light Filtering Single Cell at the same fixed ratio these fabrics
+    # carry in the cellular grids (×1.40 and ×1.75 as of 2026-11), read live
+    # from those grids so the two always move together.
+    _cel = {g["name"]: g for g in cel_grids}
+    _lf_arch = next(r for r in arch_grids[0]["rows"] if r["label"] == "Single Cell")
+    for _name in ("Designer Prints", "Sheer Woven"):
+        _ratio = round(_cel[_name + " · Single Cell 3/4″"]["rows"][0]["vals"][0]
+                       / _cel["Light Filtering · Single Cell"]["rows"][0]["vals"][0], 2)
+        arch_grids.append({"name": _name, "cols": list(arch_grids[0]["cols"]), "corner": "Cell / W ▸",
+                           "rows": [{"label": "Single Cell 3/4″",
+                                     "vals": [round(v * _ratio, 2) for v in _lf_arch["vals"]]}]})
 
     products = [
         {"id": "cellular", "name": "Cellular Shades", "grids": cel_grids,

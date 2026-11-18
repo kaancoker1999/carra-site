@@ -561,6 +561,7 @@ LUMIA_I18N_DATA({
 "Since 1999":"Depuis 1999",
 "Single":"Simple",
 "Single Cell":"Alvéole simple",
+"Single Cell 3/4″":"Alvéole simple 3/4″",
 "Single layer, light-filtering":"Simple épaisseur, tamisant",
 "Single panel":"Panneau simple",
 "Single pinch pleat":"Pli pincé simple",

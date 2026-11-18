@@ -85,6 +85,8 @@ ARCH_STYLES = [
     ("Light Filtering · Triple Cell", "Light Filtering", "Triple Cell"),
     ("Blackout · Single Cell", "Blackout", "Single Cell"),
     ("Blackout · Double Cell", "Blackout", "Double Cell"),
+    ("Designer Prints · Single Cell 3/4″", "Designer Prints", "Single Cell 3/4″"),
+    ("Sheer Woven · Single Cell 3/4″", "Sheer Woven", "Single Cell 3/4″"),
 ]
 
 
@@ -94,6 +96,8 @@ ARCH_SERIES = {
     ("Light Filtering", "Triple Cell"): "TH",
     ("Blackout", "Single Cell"): "BHBO",
     ("Blackout", "Double Cell"): "CHBO",
+    ("Designer Prints", "Single Cell 3/4″"): "DH",
+    ("Sheer Woven", "Single Cell 3/4″"): "SH",
 }
 
 
