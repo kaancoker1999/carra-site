@@ -98,7 +98,8 @@
   .hn-prev:hover,.hn-next:hover{opacity:.85}
   .heronames.out span{transform:translateX(-52px);opacity:0}
   .heronames.jump span{transition:none;transform:translateX(52px);opacity:0}
-  @media(max-width:560px){.hn-prev,.hn-next{display:none}}
+  /* phones show the current name only — centred, not parked in the left column */
+  @media(max-width:560px){.hn-prev,.hn-next{display:none} .heronames{grid-template-columns:1fr;justify-items:center}}
   .scrollcue::after{content:"";position:absolute;left:-1px;top:0;width:3px;height:14px;border-radius:2px;
     background:#fff;box-shadow:0 1px 6px rgba(20,23,26,.35);animation:scue 2.1s cubic-bezier(.4,0,.4,1) infinite}
   @keyframes scue{0%{top:-8%;opacity:0}15%{opacity:1}70%{opacity:1}100%{top:84%;opacity:0}}

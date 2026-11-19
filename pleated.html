@@ -377,6 +377,31 @@
   #regclose{position:absolute;top:12px;right:14px;font-size:26px;line-height:1;background:none;
     border:0;cursor:pointer;color:var(--muted);padding:6px 8px}
   #regclose:hover{color:var(--ink)}
+
+  /* ── phones: nothing in the bar is clipped, step headers stay on one line,
+        the cart line gets its full width for the specification ── */
+  @media(max-width:560px){
+    #wizbar{gap:8px;padding:11px 12px}
+    #wizbar .wizmid{min-width:0}
+    #wizbar .wizprice{font-size:16px;line-height:1.2}
+    #wizbar .qtyrow{flex:none}
+    #wizbar .qbtn{width:32px;height:44px}
+    #wizbar .qnum{min-width:30px;font-size:16px}
+    #wiznext{flex:none;padding:16px 13px;font-size:11px;letter-spacing:.12em}
+    .grphead{gap:10px;padding:17px 16px}
+    .grphead .gdash{display:none}
+    .grphead .gtitle{font-size:12.5px;letter-spacing:.1em;flex:1;min-width:0}
+    .grphead .cur{flex:none;max-width:46%;margin-left:0}
+    .xcard{padding:22px 18px 24px}
+    .cline{flex-wrap:wrap;gap:0 12px;align-items:center}
+    .cinfo{display:contents}
+    .cthumb{width:52px;height:52px;order:0}
+    .cname{order:1;flex:1;min-width:0}
+    .cprice{order:2}
+    .ckv{order:3;flex:0 0 100%;max-width:none;margin-top:12px}
+    .cspec{order:4;flex:0 0 100%}
+    .cacts{order:5;flex:0 0 100%}
+  }
 </style>
 </head>
 <body data-shop="pleated">
