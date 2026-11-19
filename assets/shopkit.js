@@ -899,11 +899,9 @@
       fail('Choose ' + missing.map(function(st){ return st.label.toLowerCase(); }).join(', ') + ' before adding this line.');
       return;
     }
+    /* no price is fine: visitors without price access — and sizes outside
+       the price grid — go into the cart as quote lines */
     var price = currentPrice();
-    if(price == null){
-      fail('That combination is not available online — write to lumiashades@gmail.com and we will quote it for you.');
-      return;
-    }
     var parts = [], pairs = [], main = '';
     (P.steps || []).forEach(function(st){
       if(!stepVisible(st)) return;
