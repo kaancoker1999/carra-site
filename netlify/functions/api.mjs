@@ -1462,7 +1462,10 @@ export default async (req) => {
         const a = await s.get(b.key, { type: "json" });
         if (a) out.push({ email: b.key.slice("homeacct:".length), name: a.name || "",
           phone: a.phone || "", at: a.at || "", lastSeen: a.lastSeen || "", pass: !!a.pass,
-          unlocked: !!a.unlocked });
+          // every account sees prices unless LUMIA switched it off — an account
+          // made under an older rule gets its flag on its next visit, so the
+          // list reports what the customer will actually get
+          unlocked: !a.locked });
       }
       out.sort((x, y) => (x.lastSeen < y.lastSeen ? 1 : -1));
       return json({ accounts: out });
