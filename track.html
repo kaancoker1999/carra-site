@@ -590,7 +590,18 @@
     if(!o){ $('statusbody').innerHTML = ''; return; }
     var cancelled = o.status === 'Cancelled';
     var quoting = !!o.quote && !o.priced && !o.paid;
-    var html =
+    /* a guest with a request on file: the account that shows the prices is
+       one step away — sign-up opens on the product page they came from */
+    var back = '';
+    try{ back = sessionStorage.getItem('lumia_home_back') || ''; }catch(e){}
+    if(!/^(roman|cellular|pleated|drapery)\.html$/.test(back)) back = 'roman.html';
+    var acctCta = ACCOUNT ? '' :
+      '<div style="margin:0 0 22px;border:1px solid #8A6220;background:#FCF9F2;border-radius:12px;padding:18px 20px">' +
+        '<div style="font-family:\'Archivo\',sans-serif;font-weight:600;font-size:16px;margin-bottom:6px">Create an account to see prices</div>' +
+        '<div style="font-size:14px;color:#4A4E52">Your request is in. Create an account with the same e-mail and the prices appear across the site &mdash; you can then order directly, without waiting for a quote.</div>' +
+        '<a href="' + back + '?account=new" style="display:inline-block;margin-top:12px;background:#14171A;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase">Create an account &rarr;</a>' +
+      '</div>';
+    var html = acctCta +
       '<div class="ohead"><span class="ref">' + esc(o.ref) + '</span><span class="amt">' + esc(o.total || (quoting ? 'Quote' : '')) + '</span></div>' +
       '<p class="oname">Order for ' + esc(o.name || (ACCOUNT && ACCOUNT.name) || '') + ' &middot; ' +
         new Date(o.at).toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'}) + '</p>' +
@@ -868,7 +879,7 @@
     .then(function(d){
       lookbtn.disabled = false; lookbtn.textContent = 'Open';
       EMAIL = email;
-      try{ localStorage.setItem('lumia_home_last', JSON.stringify({ ref: ref, email: email, at: Date.now() })); }catch(e){}
+      try{ localStorage.setItem('lumia_home_last', JSON.stringify({ ref: ref, email: email, name: (d.order && d.order.name) || '', at: Date.now() })); }catch(e){}
       ORDERS = [];
       putOrder(d.order);
       (d.others || []).forEach(putOrder);
@@ -944,7 +955,7 @@
   } else {
     if(quoteQ){
       var ok2 = $('okbanner');
-      ok2.textContent = 'Quote request received — we confirm your price within one business day. It will appear on this page and you pay from here.';
+      ok2.textContent = 'Quote request received — we confirm your price within one business day. Want prices right away? Create an account below.';
       ok2.classList.add('on');
     } else if(savedQ){
       var ok = $('okbanner');

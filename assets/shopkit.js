@@ -19,36 +19,17 @@
   /* an admin signed in to the panel (same browser) gets the retail prices
      without a customer account, and orders are entered for customers */
   var ADMIN = null;
-  /* prices are not public: a customer either holds the shop's price code
-     (typed at the log-in — sees prices and pays right away) or configures
-     and sends a QUOTE REQUEST that LUMIA prices afterwards */
+  /* prices are not public. A visitor configures and asks for a quote; once
+     they have sent one they can create an account, and an account whose
+     e-mail has a quote / order on file sees the prices (LUMIA can also give
+     or remove that per account in the admin panel). */
   if(ACCOUNT && ACCOUNT.prices){ delete ACCOUNT.prices; setAccount(ACCOUNT); }
-  var HOME = null;
-  /* an account that has used the price code keeps price access for good —
-     the list comes back with every log-in / visit, never from storage */
+  try{ localStorage.removeItem('lumia_home'); }catch(e){}   /* the retired price-code session */
+  /* the list comes back with every log-in / visit, never from storage */
   var ACCT_PRICES = null;
-  function homeCode(){
-    try{ var o = JSON.parse(localStorage.getItem('lumia_home') || 'null'); return (o && o.code) || ''; }catch(e){ return ''; }
-  }
-  /* the stored code is re-checked on every visit, so prices stay current and
-     a code LUMIA has changed stops working */
-  function tryHome(){
-    var code = homeCode();
-    if(!code) return;
-    fetch('/api/home/login', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: code })
-    }).then(function(r){
-      if(r.status === 401){ try{ localStorage.removeItem('lumia_home'); }catch(e){} throw new Error('locked'); }
-      if(!r.ok) throw new Error('skip');
-      return r.json();
-    }).then(function(d){
-      if(!d || !d.prices) return;
-      HOME = { prices: d.prices };
-      syncAcct();
-      if(P) renderSteps();
-      renderLines();
-    }).catch(function(){});
+  /* this browser has already sent a quote request / order: {ref, email, name} */
+  function lastOrder(){
+    try{ return JSON.parse(localStorage.getItem('lumia_home_last') || 'null'); }catch(e){ return null; }
   }
   function adminStoredKey(){
     try{ var v = sessionStorage.getItem('lumia_admin_key'); if(v) return v; }catch(e){}
@@ -92,23 +73,26 @@
     REGMODE = mode;
     var isP = mode === 'profile';
     document.getElementById('rlogin').hidden = mode !== 'login';
-    document.getElementById('rnew').hidden = mode === 'login' || mode === 'code';
-    var rc = document.getElementById('rcode');
-    if(rc) rc.hidden = mode !== 'code';
-    document.getElementById('rnew-title').textContent = isP ? 'Your profile' : 'Create your account';
+    document.getElementById('rnew').hidden = mode === 'login';
+    var sent = !isP && !!lastOrder();   /* a quote is already on file: the account opens the prices */
+    document.getElementById('rnew-title').textContent = isP ? 'Your profile'
+      : sent ? 'Create an account to see prices' : 'Create your account';
     document.getElementById('rnew-sub').textContent = isP
       ? 'Your details prefill checkout and help us with delivery — update them whenever you like.'
-      : 'A free account keeps your orders in one place: track production and shipping, message us about any order, and check out faster next time. Only your name, e-mail and a password are needed.';
+      : sent ? 'Your quote request is in. Create your account with the same e-mail and the prices appear across the site — you can then order directly, track everything and message us.'
+      : 'A free account keeps your orders in one place: track production and shipping and message us about any order. Prices appear in your account once you have sent us a quote request.';
     document.getElementById('regbtn').innerHTML = isP ? 'Save &rarr;' : 'Create account &rarr;';
     document.getElementById('rnew-swap').hidden = isP;
     document.getElementById('rg-email').readOnly = isP;   /* the e-mail IS the account */
     setTimeout(function(){
-      var f = document.getElementById(mode === 'login' ? 'li-email' : mode === 'code' ? 'pc-code' : 'rg-name');
+      var f = document.getElementById(mode === 'login' ? 'li-email' : 'rg-name');
       if(f) f.focus();
     }, 50);
   }
   function openRegister(mode){
     var a = ACCOUNT || {};
+    /* signing up after a quote request: start from the name and e-mail on it */
+    if(!ACCOUNT && mode !== 'login'){ var lo = lastOrder() || {}; a = { name: lo.name || '', email: lo.email || '' }; }
     RG_FIELDS.forEach(function(k){
       var el = document.getElementById('rg-' + k);
       if(!el) return;
@@ -118,31 +102,15 @@
     });
     document.getElementById('regerr').classList.remove('on');
     document.getElementById('lierr').classList.remove('on');
-    var pe = document.getElementById('pcerr'); if(pe) pe.classList.remove('on');
     document.getElementById('regveil').hidden = false;
-    setRegMode(mode === 'login' || mode === 'profile' || mode === 'code' ? mode : 'new');
-  }
-  /* the price code LUMIA e-mails with a quote: unlocks prices on this
-     browser, and — once the customer has an account — for that account */
-  function unlockWithCode(code, done){
-    fetch('/api/home/login', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: code })
-    }).then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(d){
-      if(!d || !d.prices){ done(false); return; }
-      try{ localStorage.setItem('lumia_home', JSON.stringify({ code: String(code).trim().toUpperCase(), at: Date.now() })); }catch(e){}
-      HOME = { prices: d.prices };
-      syncAcct();
-      refreshPrices();          /* a signed-in account keeps the access from now on */
-      if(P) renderSteps();
-      renderLines();
-      done(true);
-    }).catch(function(){ done(false); });
+    setRegMode(mode === 'login' || mode === 'profile' ? mode : 'new');
   }
   function closeRegister(){ document.getElementById('regveil').hidden = true; }
   /* the menu's "Create an account" opens the sign-up here */
-  window.LUMIA_SHOP = { openAccount: function(){ openRegister(ACCOUNT ? 'profile' : 'new'); } };
+  window.LUMIA_SHOP = {
+    openAccount: function(){ openRegister(ACCOUNT ? 'profile' : 'new'); },
+    openLogin: function(){ openRegister(ACCOUNT ? 'profile' : 'login'); }
+  };
   document.getElementById('regveil').addEventListener('click', function(e){
     var sw = e.target.closest('.swaplink');
     if(sw) setRegMode(sw.dataset.rmode);
@@ -171,7 +139,7 @@
     btn.disabled = true; btn.textContent = 'One moment…';
     fetch('/api/home/signin', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: pw, code: homeCode() })
+      body: JSON.stringify({ email: email, password: pw })
     }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
     .then(function(x){
       btn.disabled = false; btn.innerHTML = 'Log in &rarr;';
@@ -180,28 +148,6 @@
     }).catch(function(e2){
       btn.disabled = false; btn.innerHTML = 'Log in &rarr;';
       err.textContent = String(e2.message || '') || 'Could not log in — please try again.';
-      err.classList.add('on');
-    });
-  });
-  var pcbtn = document.getElementById('pcbtn');
-  if(pcbtn) pcbtn.addEventListener('click', function(){
-    var inp = document.getElementById('pc-code'), err = document.getElementById('pcerr');
-    var code = (inp.value || '').trim();
-    err.classList.remove('on');
-    if(!code){ inp.focus(); return; }
-    pcbtn.disabled = true; pcbtn.textContent = 'Checking…';
-    unlockWithCode(code, function(ok){
-      pcbtn.disabled = false; pcbtn.innerHTML = 'Unlock prices &rarr;';
-      if(ok){
-        inp.value = '';
-        if(ACCOUNT){ closeRegister(); return; }
-        /* prices are open — now make them stick: an account with their own password */
-        setRegMode('new');
-        document.getElementById('rnew-title').textContent = 'Prices unlocked — create your account';
-        document.getElementById('rnew-sub').textContent = 'Choose your own password and the prices stay with your account on any device — no code needed again. You can also track orders and message us. Or close this window and keep browsing.';
-        return;
-      }
-      err.textContent = 'That code was not recognized — check the e-mail we sent with your quote and try again.';
       err.classList.add('on');
     });
   });
@@ -229,7 +175,7 @@
     fetch('/api/home/register', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ customer: c, password: pw,
-        key: (ACCOUNT && ACCOUNT.key) || '', code: homeCode() })
+        key: (ACCOUNT && ACCOUNT.key) || '' })
     }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
     .then(function(x){
       btn.disabled = false; btn.innerHTML = REGMODE === 'profile' ? 'Save &rarr;' : 'Create account &rarr;';
@@ -428,8 +374,8 @@
     return (r && !r.na) ? { w: r.w, h: r.h } : { w: P.width, h: P.height };
   }
 
-  function PRICES(){ return (ADMIN && ADMIN.prices) || ACCT_PRICES || (HOME && HOME.prices) || {}; }
-  function hasPrices(){ return !!((ADMIN && ADMIN.prices) || ACCT_PRICES || (HOME && HOME.prices)); }
+  function PRICES(){ return (ADMIN && ADMIN.prices) || ACCT_PRICES || {}; }
+  function hasPrices(){ return !!((ADMIN && ADMIN.prices) || ACCT_PRICES); }
   function prodPrices(id){
     return (PRICES().products || []).filter(function(p){ return p.id === id; })[0] || null;
   }
@@ -847,8 +793,11 @@
   function syncBar(){
     var el = document.getElementById('wizprice');
     if(!hasPrices()){
-      el.innerHTML = '<span style="letter-spacing:.06em">Quote</span> ' +
-        '<button class="lockcta" type="button" id="pricecta" style="margin-left:8px">Have a price code?</button>';
+      /* until a quote request exists: "Get a quote"; once one has been sent
+         from this browser, the account that shows the prices is on offer */
+      el.innerHTML = (!ACCOUNT && lastOrder())
+        ? '<button class="lockcta" type="button" id="pricecta">Create an account to see prices</button>'
+        : '<span style="letter-spacing:.04em">Get a quote</span>';
     } else {
       var price = currentPrice();
       if(price == null){ el.innerHTML = '&mdash;'; }
@@ -860,7 +809,7 @@
       editIdx == null ? 'Add to cart &rarr;' : 'Update line &rarr;';
   }
   document.getElementById('wizbar').addEventListener('click', function(e){
-    if(e.target.closest('#pricecta')) openRegister('code');
+    if(e.target.closest('#pricecta')) openRegister('new');
   });
 
   /* step interactions */
@@ -1193,8 +1142,7 @@
       ? 'Secure checkout by Stripe · your delivery address and phone are typed on the payment page'
       : 'No payment now — we confirm your price first; you pay later on Stripe’s secure page';
     if(pn) pn.hidden = admin;
-    var hl = document.getElementById('homelock');
-    if(hl) hl.hidden = !(HOME && HOME.prices);
+
     paybtn.disabled = !lines.length;
     savebtn.disabled = !lines.length;
     if(quotebtn) quotebtn.disabled = !lines.length;
@@ -1267,7 +1215,8 @@
     }).then(function(x){
       if(!x.ok || !x.d.ref || (!paylater && !asQuote && !x.d.url)) throw new Error((x.d && x.d.error) || 'failed');
       try{
-        localStorage.setItem('lumia_home_last', JSON.stringify({ ref: x.d.ref, email: c.email, at: Date.now() }));
+        localStorage.setItem('lumia_home_last', JSON.stringify({ ref: x.d.ref, email: c.email, name: c.name, at: Date.now() }));
+        sessionStorage.setItem('lumia_home_back', location.pathname.split('/').pop() || 'roman.html');
       }catch(e){}
       lines = []; saveLines();
       ACC = {}; saveAcc();
@@ -1288,11 +1237,6 @@
         : 'Could not start the payment — please try again, or write to lumiashades@gmail.com.');
     });
   }
-  var homelock = document.getElementById('homelock');
-  if(homelock) homelock.addEventListener('click', function(){
-    try{ localStorage.removeItem('lumia_home'); }catch(e){}
-    location.reload();
-  });
   paybtn.addEventListener('click', function(){ submitOrder(false); });
   savebtn.addEventListener('click', function(){ submitOrder(true); });
   if(quotebtn) quotebtn.addEventListener('click', function(){ submitOrder(false, true); });
@@ -1305,7 +1249,7 @@
     RG_FIELDS.forEach(function(k){ c[k] = ACCOUNT[k] || ''; });
     fetch('/api/home/register', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ customer: c, key: ACCOUNT.key, code: homeCode() })
+      body: JSON.stringify({ customer: c, key: ACCOUNT.key })
     }).then(function(r){
       if(r.status === 401 || r.status === 409){
         /* the key no longer opens the account — sign this device out */
@@ -1325,7 +1269,6 @@
   function boot(){
     if(booted) return;
     booted = true;
-    tryHome();
     refreshPrices();
     tryAdmin();
     loadContact();
@@ -1336,9 +1279,10 @@
         renderLines();
         applyHash();
         /* arrived from the menu's "Create an account" on another page */
-        if(/[?&]account=new/.test(location.search)){
+        var am = /[?&]account=(new|login)/.exec(location.search);
+        if(am){
           history.replaceState(null, '', location.pathname);
-          if(!ACCOUNT) openRegister('new');
+          if(!ACCOUNT) openRegister(am[1]);
         }
         /* a cart line sent over from another product's page */
         var pe = null;

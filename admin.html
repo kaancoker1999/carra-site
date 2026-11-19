@@ -454,12 +454,10 @@
         <h2 style="font-size:18px;margin-bottom:6px">Home shop — end customers</h2>
         <p style="font-size:13px;color:var(--muted);margin:0 0 14px">
           The shop lives on the public product pages (<a href="roman.html" target="_blank" rel="noopener">roman</a>, cellular, pleated, drapery):
-          anyone can configure and request a quote. Prices stay hidden unless the visitor types the
-          <b>price code</b> below into the site's Log in box — then they see retail prices and pay right away.
-          Leave the code empty and nobody can unlock prices. Orders land under <b>Home orders</b>.</p>
+          anyone can configure and <b>get a quote</b>. Prices stay hidden until the visitor has sent a quote request
+          and created an account &mdash; from then on that account sees retail prices and orders directly.
+          Requests and orders land under <b>Home orders</b>.</p>
         <div class="row">
-          <div><label>Price code</label>
-            <input id="hs-code" type="text" autocomplete="off" spellcheck="false" placeholder="none" style="width:170px;text-transform:uppercase"></div>
           <div><label>Retail level (× base list)</label>
             <select id="hs-mult">
               <option value="1.3">+30% (×1.30)</option>
@@ -477,7 +475,7 @@
         <!-- LUMIA Home accounts: end customers with their own e-mail + password.
              Separate from the dealer accounts (access codes) listed below. -->
         <h3 style="font-size:14px;margin:22px 0 4px">LUMIA Home accounts</h3>
-        <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px">End customers who created an account with their own e-mail and password &mdash; not dealers. An account gets <b>price access</b> the moment it uses the price code, and keeps it; switch it off or on per account here.</p>
+        <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px">End customers who created an account with their own e-mail and password &mdash; not dealers. An account gets <b>price access</b> once its e-mail has sent a quote request (or when you open the account yourself below); switch it off or on per account here.</p>
         <div id="hs-accounts" class="ordwrap"></div>
         <!-- a customer got in touch by e-mail/phone: open their account here.
              It has price access right away; they choose their own password. -->
@@ -1730,7 +1728,7 @@
           '<b>Quote request.</b> ' + (o.priced
             ? 'Priced at ' + esc(o.total || '') + ' — the customer can now pay from their order page.'
             : 'No prices on this one yet — set the total below and the customer pays from their order page.') +
-          (HS_CODE ? '<div style="margin-top:6px;color:#4A4E52">Or e-mail them the price code <code>' + esc(HS_CODE) + '</code> — with it they see prices on the site, order by themselves and can open a LUMIA Home account.</div>' : '') +
+          '<div style="margin-top:6px;color:#4A4E52">Having sent this request, the customer can also create an account on the site and see the prices themselves.</div>' +
           '<div class="row" style="gap:8px;margin-top:8px;align-items:center">' +
             '<label class="fld"><span>Total (USD)</span><input type="number" min="1" step="0.01" class="q-price" data-ref="' + esc(o.ref) + '" value="' + esc(String(o.total || '').replace(/[^0-9.]/g, '')) + '" style="width:140px"></label>' +
             '<button class="btn q-save" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 16px">' + (o.priced ? 'Update price' : 'Set price') + '</button>' +
@@ -1901,13 +1899,10 @@
       }
       if(c.mult != null) sel.value = String(c.mult);
       $('hs-active').value = c.active === false ? '0' : '1';
-      $('hs-code').value = c.code || '';
-      HS_CODE = c.code || '';
     }).catch(function(){});
     loadHomeAccounts();
   }
   /* LUMIA Home accounts (end customers) — kept apart from the dealer list */
-  var HS_CODE = '';
   function loadHomeAccounts(){
     api('/api/admin/home-accounts').then(function(d){
       var list = (d && d.accounts) || [];
@@ -1952,15 +1947,14 @@
   $('hs-save').addEventListener('click', function(){
     var b = this; b.disabled = true; b.textContent = 'Saving…';
     api('/api/admin/consumer', 'POST', {
-      code: $('hs-code').value.trim(),
       mult: parseFloat($('hs-mult').value),
       active: $('hs-active').value === '1'
     }).then(function(d){
       b.disabled = false; b.textContent = 'Save';
-      if(d && d.error){ $('hsmsg').className = 'msg err'; $('hsmsg').textContent = d.error === 'bad code' ? 'The code needs 4–40 letters, digits or dashes.' : d.error; return; }
+      if(d && d.error){ $('hsmsg').className = 'msg err'; $('hsmsg').textContent = d.error; return; }
       var c = d.consumer || {};
       $('hsmsg').className = 'msg ok';
-      $('hsmsg').textContent = 'Saved — ' + (c.code ? 'price code ' + c.code : 'no price code') + ', retail ×' + c.mult + (c.active === false ? ', shop closed.' : ', shop open.');
+      $('hsmsg').textContent = 'Saved — retail ×' + c.mult + (c.active === false ? ', shop closed.' : ', shop open.');
       loadConsumer();
     }).catch(function(e){
       b.disabled = false; b.textContent = 'Save';

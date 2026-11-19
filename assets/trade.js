@@ -25,32 +25,12 @@
     });
   }
 
-  /* the shared price code of the home shop: not a dealer account — it just
-     unlocks the retail prices on the product pages (shopkit re-checks it on
-     every visit, so a changed code locks old browsers out) */
-  var HOME_KEY = 'lumia_home';
-  function homeLogin(code) {
-    return fetch('/api/home/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: String(code || '').trim() })
-    }).then(function (r) {
-      if (!r.ok) return false;
-      try { localStorage.setItem(HOME_KEY, JSON.stringify({ code: String(code).trim().toUpperCase(), at: Date.now() })); } catch (e) {}
-      return true;
-    }).catch(function () { return false; });
-  }
-  function homeUnlocked() { try { return !!localStorage.getItem(HOME_KEY); } catch (e) { return false; } }
+  /* LUMIA Home (end customers): this browser has sent a quote request / order */
+  function homeQuoted() { try { return !!localStorage.getItem('lumia_home_last'); } catch (e) { return false; } }
   /* a LUMIA Home customer signed in on this browser (own e-mail + password) */
   function homeAccount() {
     try { var a = JSON.parse(localStorage.getItem('lumia_home_acct') || 'null'); return a && a.key ? a : null; } catch (e) { return null; }
   }
-  /* after the price code: stay on a product page, else go to the products */
-  function goShop() {
-    if (document.body && document.body.getAttribute('data-shop')) location.reload();
-    else location.href = 'index.html#products';
-  }
-
   /* ── drawer menu (all pages load this file) ──
      At every width the header links give way to a hamburger that slides a
      full-height white panel in from the right over a dimmed page:
@@ -159,16 +139,15 @@
         html += '<a class="dlink' + (a.hasAttribute('style') ? ' on' : '') + '" href="' + href + '">' + label + '</a>';
       });
       /* a LUMIA Home customer gets their own door where "Log in" would be:
-         signed in → Account; prices unlocked with the code but no account
-         yet → Create an account. "Log out" below ends the home session
-         (account and price code) and brings the plain Log in back. */
+         signed in → Account (+ Log out); has sent a quote request but has no
+         account yet → Create an account (that is what shows the prices) */
       var isHome = false;
-      if (cta && /trade\.html/.test(cta) && (homeAccount() || homeUnlocked())) {
+      if (cta && /trade\.html/.test(cta) && (homeAccount() || homeQuoted())) {
         isHome = true;
-        cta = (homeAccount()
-          ? '<a class="dcta dhome" href="track.html">Account</a>'
-          : '<a class="dcta dhome" data-create="1" href="roman.html?account=new">Create an account</a>') +
-          '<button class="ddealer" id="dlogout" type="button">Log out</button>';
+        cta = homeAccount()
+          ? '<a class="dcta dhome" href="track.html">Account</a>' +
+            '<button class="ddealer" id="dlogout" type="button">Log out</button>'
+          : '<a class="dcta dhome" data-create="1" href="roman.html?account=new">Create an account</a>';
       }
       /* logged out: the Log in button opens a code box right here in the drawer */
       if (!isHome && cta && /trade\.html/.test(cta)) {
@@ -191,13 +170,9 @@
       cta.textContent = 'Checking…';
       login(code).then(function (prices) {
         if (prices) { location.href = 'account.html'; return; }
-        /* not a dealer code — maybe the home shop's price code */
-        return homeLogin(code).then(function (ok) {
-          if (ok) { goShop(); return; }
-          err.hidden = false;
-          cta.textContent = old;
-          inp.focus();
-        });
+        err.hidden = false;
+        cta.textContent = old;
+        inp.focus();
       }).catch(function () {
         err.hidden = false;
         cta.textContent = old;
@@ -220,8 +195,8 @@
       var gh = e.target.closest('.dghead');
       if (gh) { gh.parentNode.classList.toggle('open'); return; }
       if (e.target.closest('#dlogout')) {
-        /* leave LUMIA Home on this browser: the account session and the price code */
-        try { localStorage.removeItem('lumia_home_acct'); localStorage.removeItem(HOME_KEY); } catch (err) {}
+        /* leave the LUMIA Home account on this browser */
+        try { localStorage.removeItem('lumia_home_acct'); localStorage.removeItem('lumia_home'); } catch (err) {}
         if (/track\.html$/.test(location.pathname)) location.href = 'index.html#products';
         else location.reload();
         return;
@@ -332,10 +307,8 @@
     getSession: getSession,
     clearSession: clearSession,
     login: login,
-    homeLogin: homeLogin,
-    homeUnlocked: homeUnlocked,
     homeAccount: homeAccount,
-    goShop: goShop,
+    homeQuoted: homeQuoted,
     require: function () {
       var s = getSession();
       /* re-login daily so price updates reach every dealer within a day */

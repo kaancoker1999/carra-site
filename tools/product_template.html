@@ -465,14 +465,13 @@
                its link belong to THEM, not to the signed-in account -->
           <button class="forlink" id="forother" type="button">Ordering for someone else?</button>
           <button class="forlink" id="cklogin" type="button" style="margin-left:14px">Have an account? Log in</button>
-          <button class="forlink" id="homelock" type="button" style="margin-left:14px" hidden>Hide prices</button>
           <div class="ckgrid" id="forgrid" hidden style="margin-top:12px">
             <div class="cell"><label for="fo-name">Their full name *</label><input id="fo-name" type="text" autocomplete="off"></div>
             <div class="cell"><label for="fo-email">Their e-mail *</label><input id="fo-email" type="email" autocomplete="off"></div>
             <div class="cell span2" style="font-size:12.5px;color:var(--muted)">The order is saved under their e-mail &mdash; share the link of the page you land on and they review and pay there.</div>
           </div>
           <div class="paybar">
-            <button class="paybtn" id="quotebtn" type="button" disabled>Request a quote</button>
+            <button class="paybtn" id="quotebtn" type="button" disabled>Get a quote</button>
             <button class="paybtn" id="paybtn" type="button" disabled hidden>Pay</button>
             <button class="paybtn ghost" id="savebtn" type="button" disabled hidden>Save &mdash; pay later</button>
             <span class="secure">
@@ -494,18 +493,6 @@
 <div id="regveil" hidden>
   <div class="regcard">
     <button id="regclose" type="button" aria-label="Close">&times;</button>
-
-    <!-- the price code LUMIA e-mails with a quote -->
-    <div id="rcode" hidden>
-      <h2>Enter your price code</h2>
-      <p class="regsub">We e-mail the code with your quote. Type it here to see prices and order online &mdash; create an account afterwards and the prices stay with your account on any device.</p>
-      <div class="ckgrid">
-        <div class="cell span2"><label for="pc-code">Price code *</label><input id="pc-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
-      </div>
-      <button class="paybtn" id="pcbtn" type="button" style="margin-top:20px">Unlock prices &rarr;</button>
-      <div class="err" id="pcerr"></div>
-      <p class="regswap">No code yet? Configure what you need and press <b>Request a quote</b> &mdash; we answer within one business day.</p>
-    </div>
 
     <!-- returning customer: e-mail + password -->
     <div id="rlogin" hidden>
@@ -549,8 +536,8 @@
   </div>
 </footer>
 
-<script src="assets/shopkit.js?v=21"></script>
-<script src="assets/trade.js?v=26" defer></script>
+<script src="assets/shopkit.js?v=22"></script>
+<script src="assets/trade.js?v=27" defer></script>
 
 </body>
 </html>

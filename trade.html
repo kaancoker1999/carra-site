@@ -74,6 +74,7 @@
       <div class="err" id="err">That code was not recognized. Check it and try again, or contact us for access.</div>
     </form>
     <p class="apply">No code yet? <a href="index.html#contact">Apply for trade access</a> &mdash; dealers, integrators and distributors welcome.</p>
+    <p class="apply">Not a dealer? LUMIA Home customers <a href="roman.html?account=login">log in with their e-mail and password</a>.</p>
   </div>
 </main>
 
@@ -84,7 +85,7 @@
   </div>
 </footer>
 
-<script src="assets/trade.js?v=26"></script>
+<script src="assets/trade.js?v=27"></script>
 <script>
 (function(){
   if(LUMIA_TRADE.getSession()){ location.href = 'account.html'; return; }
@@ -96,15 +97,12 @@
     if(!raw) return;
     err.classList.remove('on');
     btn.disabled = true; btn.textContent = 'Checking…';
-    /* a dealer access code opens the portal; the home shop's price code
-       unlocks the retail prices on the product pages */
+    /* dealer access codes only — LUMIA Home customers log in with their
+       e-mail and password on the product pages (link below the form) */
     LUMIA_TRADE.login(raw).then(function(prices){
       if(prices){ location.href = 'account.html'; return; }
-      return LUMIA_TRADE.homeLogin(raw).then(function(ok){
-        if(ok){ LUMIA_TRADE.goShop(); return; }
-        err.classList.add('on');
-        btn.disabled = false; btn.textContent = 'Log in';
-      });
+      err.classList.add('on');
+      btn.disabled = false; btn.textContent = 'Log in';
     }).catch(function(){
       err.classList.add('on');
       btn.disabled = false; btn.textContent = 'Log in';

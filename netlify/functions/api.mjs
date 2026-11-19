@@ -246,12 +246,24 @@ async function consumerCfg() {
   const c = await store().get("consumer", { type: "json" });
   return { mult: 1.4, active: true, ...(c || {}) };
 }
-/* the shared price code (e.g. handed to a customer by LUMIA): typing it at
-   the log-in unlocks the retail prices in the shop. It lives in the
-   "consumer" blob only — never in the repo. No code set = no unlock. */
-function homeOk(cfg, raw) {
-  const code = String(cfg.code || "").trim().toUpperCase();
-  return cfg.active !== false && !!code && String(raw || "").trim().toUpperCase() === code;
+/* price access: prices are not public, but a customer who has sent a quote
+   request (or any order) may see them once they have an account. So an
+   account is "unlocked" when its e-mail has an order on file — or when
+   LUMIA opened/granted it in the admin panel. */
+async function emailHasOrder(email) {
+  const s = store();
+  const { blobs } = await s.list({ prefix: "order:HOME-" });
+  for (const b of blobs) {
+    const o = await s.get(b.key, { type: "json" });
+    if (o && o.home && o.home.email === email) return true;
+  }
+  return false;
+}
+async function unlockAccountFor(email) {
+  const s = store();
+  const a = await s.get(`homeacct:${email}`, { type: "json" });
+  // `locked` = LUMIA switched this account's access off by hand — leave it off
+  if (a && !a.unlocked && !a.locked) { a.unlocked = true; await s.setJSON(`homeacct:${email}`, a); }
 }
 function homeContact(c, opts) {
   const home = {
@@ -1049,15 +1061,6 @@ export default async (req) => {
     return json({ ok: true, payment });
   }
 
-  // ── home customer: the shared price code unlocks the retail price list ──
-  if (path === "/api/home/login" && req.method === "POST") {
-    const cfg = await consumerCfg();
-    if (!homeOk(cfg, body.code)) return bad("invalid code", 401);
-    const base = await store().get("prices", { type: "json" });
-    if (!base) return bad("prices not loaded yet", 503);
-    return json({ prices: scaled(base, () => cfg.mult) });
-  }
-
   // ── home customer: an account saves your details and tracks orders;
   //    repeat posts simply refresh the stored details ─────────────────
   if (path === "/api/home/register" && req.method === "POST") {
@@ -1090,10 +1093,9 @@ export default async (req) => {
     }
     acct.at = (prev && prev.at) || new Date().toISOString();
     acct.lastSeen = new Date().toISOString();
-    // the price code is the invitation; once an account has used it the
-    // access stays with the ACCOUNT (any device, own password) — LUMIA can
-    // still switch it off per account in the admin panel
-    if (homeOk(cfg, body.code)) acct.unlocked = true;
+    // an e-mail that has sent a quote request / order gets price access
+    // with its account (LUMIA can still switch it off or on per account)
+    if (!acct.unlocked && !acct.locked && await emailHasOrder(home.email)) acct.unlocked = true;
     await s.setJSON(blobKey, acct);
     return json({ ok: true, key: acct.key,
       prices: acct.unlocked ? scaled(base, () => cfg.mult) : null });
@@ -1124,7 +1126,7 @@ export default async (req) => {
     delete acct.fails;
     if (!acct.key) acct.key = randomBytes(16).toString("hex");
     acct.lastSeen = new Date().toISOString();
-    if (homeOk(cfg, body.code)) acct.unlocked = true;   // logged in on a browser that holds the price code
+    if (!acct.unlocked && !acct.locked && await emailHasOrder(email)) acct.unlocked = true;
     await s.setJSON(`homeacct:${email}`, acct);
     const base = await s.get("prices", { type: "json" });
     if (!base) return bad("prices not loaded yet", 503);
@@ -1176,6 +1178,7 @@ export default async (req) => {
     if (isQuote) {
       order.total = "";
       await s.setJSON(`order:${ref}`, order);
+      await unlockAccountFor(home.email);   // an existing account now sees prices
       try { await notifyOrder(order); } catch {}
       return json({ ref, quote: true });
     }
@@ -1183,6 +1186,7 @@ export default async (req) => {
     if (cents < 50) return bad("order total too small");
     order.total = "$" + (cents / 100).toFixed(2);
     await s.setJSON(`order:${ref}`, order);
+    await unlockAccountFor(home.email);
     // the admin is notified when the payment lands (markStripePaid), not before
     if (body.paylater) return json({ ref });
     const sess = await homeCheckout(order, new URL(req.url).origin, sk);
@@ -1505,7 +1509,8 @@ export default async (req) => {
       const email = String(body.email || "").trim().toLowerCase();
       const a = email ? await s.get(`homeacct:${email}`, { type: "json" }) : null;
       if (!a) return bad("no such account", 404);
-      if (body.unlocked) a.unlocked = true; else delete a.unlocked;
+      if (body.unlocked) { a.unlocked = true; delete a.locked; }
+      else { delete a.unlocked; a.locked = true; }   // stays off even if they send another quote
       await s.setJSON(`homeacct:${email}`, a);
       return json({ ok: true, unlocked: !!a.unlocked });
     }
@@ -1771,16 +1776,7 @@ export default async (req) => {
     }
     if (path === "/api/admin/consumer" && req.method === "POST") {
       const cfg = await consumerCfg();
-      if (body.code != null) {
-        const code = String(body.code).trim().toUpperCase().slice(0, 40);
-        if (code === "") delete cfg.code;   // empty = nobody can unlock prices
-        else {
-          if (!/^[A-Z0-9-]{4,40}$/.test(code)) return bad("bad code");
-          const dealers = await getDealers();
-          if (dealers[code]) return bad("that code belongs to a dealer");
-          cfg.code = code;
-        }
-      }
+      delete cfg.code;   // the shared price code is retired
       if (body.mult != null) {
         const m = Number(body.mult);
         if (!isFinite(m) || m < 1 || m > 10) return bad("bad multiplier");
