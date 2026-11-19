@@ -246,25 +246,10 @@ async function consumerCfg() {
   const c = await store().get("consumer", { type: "json" });
   return { mult: 1.4, active: true, ...(c || {}) };
 }
-/* price access: prices are not public, but a customer who has sent a quote
-   request (or any order) may see them once they have an account. So an
-   account is "unlocked" when its e-mail has an order on file — or when
-   LUMIA opened/granted it in the admin panel. */
-async function emailHasOrder(email) {
-  const s = store();
-  const { blobs } = await s.list({ prefix: "order:HOME-" });
-  for (const b of blobs) {
-    const o = await s.get(b.key, { type: "json" });
-    if (o && o.home && o.home.email === email) return true;
-  }
-  return false;
-}
-async function unlockAccountFor(email) {
-  const s = store();
-  const a = await s.get(`homeacct:${email}`, { type: "json" });
-  // `locked` = LUMIA switched this account's access off by hand — leave it off
-  if (a && !a.unlocked && !a.locked) { a.unlocked = true; await s.setJSON(`homeacct:${email}`, a); }
-}
+/* price access: prices are not shown to anonymous visitors, but creating a
+   LUMIA Home account (name, e-mail, own password) opens them — that sign-up
+   is the gate. LUMIA can switch one account off in the admin panel
+   (`locked`), and such an account stays off. */
 function homeContact(c, opts) {
   const home = {
     name: String((c || {}).name || "").trim().slice(0, 120),
@@ -1093,9 +1078,8 @@ export default async (req) => {
     }
     acct.at = (prev && prev.at) || new Date().toISOString();
     acct.lastSeen = new Date().toISOString();
-    // an e-mail that has sent a quote request / order gets price access
-    // with its account (LUMIA can still switch it off or on per account)
-    if (!acct.unlocked && !acct.locked && await emailHasOrder(home.email)) acct.unlocked = true;
+    // an account sees the prices from the start, unless LUMIA switched it off
+    if (!acct.locked) acct.unlocked = true;
     await s.setJSON(blobKey, acct);
     return json({ ok: true, key: acct.key,
       prices: acct.unlocked ? scaled(base, () => cfg.mult) : null });
@@ -1126,7 +1110,7 @@ export default async (req) => {
     delete acct.fails;
     if (!acct.key) acct.key = randomBytes(16).toString("hex");
     acct.lastSeen = new Date().toISOString();
-    if (!acct.unlocked && !acct.locked && await emailHasOrder(email)) acct.unlocked = true;
+    if (!acct.locked) acct.unlocked = true;
     await s.setJSON(`homeacct:${email}`, acct);
     const base = await s.get("prices", { type: "json" });
     if (!base) return bad("prices not loaded yet", 503);
@@ -1178,7 +1162,6 @@ export default async (req) => {
     if (isQuote) {
       order.total = "";
       await s.setJSON(`order:${ref}`, order);
-      await unlockAccountFor(home.email);   // an existing account now sees prices
       try { await notifyOrder(order); } catch {}
       return json({ ref, quote: true });
     }
@@ -1186,7 +1169,6 @@ export default async (req) => {
     if (cents < 50) return bad("order total too small");
     order.total = "$" + (cents / 100).toFixed(2);
     await s.setJSON(`order:${ref}`, order);
-    await unlockAccountFor(home.email);
     // the admin is notified when the payment lands (markStripePaid), not before
     if (body.paylater) return json({ ref });
     const sess = await homeCheckout(order, new URL(req.url).origin, sk);

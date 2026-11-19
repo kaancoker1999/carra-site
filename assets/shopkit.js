@@ -63,8 +63,9 @@
   }
   syncAcct();
   shoplogin.addEventListener('click', function(){ openRegister('new'); });
-  var cklogin = document.getElementById('cklogin');
-  if(cklogin) cklogin.addEventListener('click', function(){ openRegister('login'); });
+  /* the black banner in the cart's payment block: an account shows the price */
+  var acctcta = document.getElementById('acctcta');
+  if(acctcta) acctcta.addEventListener('click', function(){ openRegister('new'); });
 
   /* ── sign-up / log-in overlay ── */
   var RG_FIELDS = ['name','email','phone','address','city','state','zip'];
@@ -74,13 +75,10 @@
     var isP = mode === 'profile';
     document.getElementById('rlogin').hidden = mode !== 'login';
     document.getElementById('rnew').hidden = mode === 'login';
-    var sent = !isP && !!lastOrder();   /* a quote is already on file: the account opens the prices */
-    document.getElementById('rnew-title').textContent = isP ? 'Your profile'
-      : sent ? 'Create an account to see prices' : 'Create your account';
+    document.getElementById('rnew-title').textContent = isP ? 'Your profile' : 'Create an account to see the price';
     document.getElementById('rnew-sub').textContent = isP
       ? 'Your details prefill checkout and help us with delivery — update them whenever you like.'
-      : sent ? 'Your quote request is in. Create your account with the same e-mail and the prices appear across the site — you can then order directly, track everything and message us.'
-      : 'A free account keeps your orders in one place: track production and shipping and message us about any order. Prices appear in your account once you have sent us a quote request.';
+      : 'A free account shows you the prices right away and lets you order directly. It also keeps your orders in one place: track production and shipping and message us about any order.';
     document.getElementById('regbtn').innerHTML = isP ? 'Save &rarr;' : 'Create account &rarr;';
     document.getElementById('rnew-swap').hidden = isP;
     document.getElementById('rg-email').readOnly = isP;   /* the e-mail IS the account */
@@ -123,6 +121,14 @@
     syncAcct();
     loadContact();
     closeRegister();
+    /* the order now runs under the account — fold the guest name/e-mail away */
+    var fg = document.getElementById('forgrid');
+    if(fg && !fg.hidden && !ADMIN){
+      fg.hidden = true;
+      document.getElementById('fo-name').value = '';
+      document.getElementById('fo-email').value = '';
+    }
+    ckMsg('');
     if(P) renderSteps();
     renderLines();
   }
@@ -793,11 +799,8 @@
   function syncBar(){
     var el = document.getElementById('wizprice');
     if(!hasPrices()){
-      /* until a quote request exists: "Get a quote"; once one has been sent
-         from this browser, the account that shows the prices is on offer */
-      el.innerHTML = (!ACCOUNT && lastOrder())
-        ? '<button class="lockcta" type="button" id="pricecta">Create an account to see prices</button>'
-        : '<span style="letter-spacing:.04em">Get a quote</span>';
+      /* no prices here — the account banner lives in the cart's payment block */
+      el.innerHTML = '<span style="letter-spacing:.04em">Get a quote</span>';
     } else {
       var price = currentPrice();
       if(price == null){ el.innerHTML = '&mdash;'; }
@@ -808,9 +811,6 @@
     document.getElementById('wiznext').innerHTML =
       editIdx == null ? 'Add to cart &rarr;' : 'Update line &rarr;';
   }
-  document.getElementById('wizbar').addEventListener('click', function(e){
-    if(e.target.closest('#pricecta')) openRegister('new');
-  });
 
   /* step interactions */
   stepsBox.addEventListener('click', function(e){
@@ -1006,7 +1006,25 @@
   }
   function plural(n, w){ return n + ' ' + w + (n === 1 ? '' : 's'); }
 
+  /* a line added while the prices were hidden carries none; as soon as the
+     account brings the prices, price it from its stored configuration */
+  function repriceLines(){
+    if(!hasPrices() || !CFG) return;
+    var keepP = P, keepSEL = SEL, changed = false;
+    lines.forEach(function(l){
+      if(l.price != null || l.w == null || !l.pick || !l.pick.sel) return;
+      var prod = (CFG.products || []).filter(function(x){ return x.id === l.pid; })[0];
+      if(!prod) return;
+      var v = null;
+      try{ P = prod; SEL = l.pick.sel; v = priceLine(prod.id, pricingSel(), l.w, l.h); }catch(e){ v = null; }
+      if(v != null){ l.price = v; changed = true; }
+    });
+    P = keepP; SEL = keepSEL;
+    if(changed) saveLines();
+  }
+
   function renderLines(){
+    repriceLines();
     linesBox.hidden = lines.length === 0;
     empty.style.display = lines.length ? 'none' : '';
     linesBox.innerHTML = lines.map(cartRow).join('');
@@ -1128,6 +1146,7 @@
   /* ── checkout ── */
   var paybtn = document.getElementById('paybtn'), savebtn = document.getElementById('savebtn'),
       quotebtn = document.getElementById('quotebtn'), ckerr = document.getElementById('ckerr');
+  var forother = document.getElementById('forother'), forgrid = document.getElementById('forgrid');
   function syncPay(){
     var total = Math.round((orderTotals(lines).total + accTotal()) * 100) / 100;
     /* pay right away only when every line carries a price (a line added
@@ -1135,6 +1154,16 @@
     var admin = hasPrices() && !lines.some(function(l){ return l.price == null; });
     paybtn.hidden = !admin; savebtn.hidden = !admin;
     if(quotebtn) quotebtn.hidden = admin;
+    /* no account yet: the black banner offers one (it shows the price);
+       "Get a quote" stays underneath as the no-account way */
+    var guest = !ACCOUNT && !ADMIN;
+    if(acctcta) acctcta.hidden = !guest;
+    if(quotebtn) quotebtn.classList.toggle('ghost', guest);
+    /* "Ordering for someone else?" only means something to a signed-in account */
+    forother.hidden = guest;
+    document.getElementById('fo-name-l').textContent = guest ? 'Your full name *' : 'Their full name *';
+    document.getElementById('fo-email-l').textContent = guest ? 'Your e-mail *' : 'Their e-mail *';
+    document.getElementById('fo-hint').hidden = guest;
     var sec = document.getElementById('securetxt'), pn = document.getElementById('paynote');
     if(sec) sec.textContent = admin
       ? 'Secure checkout by Stripe · your delivery address and phone are typed on the payment page'
@@ -1153,7 +1182,6 @@
   var CK_FIELDS = ['name','email','phone','address','city','state','zip'];
   function loadContact(){ /* the checkout form is gone — Stripe's page collects the ship-to */ }
   /* "Ordering for someone else?" — the order goes under THEIR name + e-mail */
-  var forother = document.getElementById('forother'), forgrid = document.getElementById('forgrid');
   forother.addEventListener('click', function(){
     forgrid.hidden = !forgrid.hidden;
     forother.textContent = forgrid.hidden ? 'Ordering for someone else?' : 'No — this order is mine';
@@ -1181,8 +1209,7 @@
          is typed on Stripe's payment page, tracking works by ref + e-mail */
       if(forgrid.hidden){
         forgrid.hidden = false;
-        forother.textContent = 'Your order — updates go to this e-mail';
-        ckMsg('Enter your name and e-mail, then press the button again — or log in if you have an account.');
+        ckMsg('Enter your name and e-mail, then press Get a quote again.');
         document.getElementById('fo-name').focus();
         return;
       }
@@ -1192,7 +1219,8 @@
       var fn = (document.getElementById('fo-name').value || '').trim();
       var fe = (document.getElementById('fo-email').value || '').trim().toLowerCase();
       if(!fn || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fe)){
-        ckMsg('Ordering for someone else: please fill in their name and a valid e-mail.');
+        ckMsg((!ACCOUNT && !ADMIN) ? 'Please fill in your name and a valid e-mail.'
+          : 'Ordering for someone else: please fill in their name and a valid e-mail.');
         return;
       }
       c = { name: fn, email: fe, phone: '', address: '', city: '', state: '', zip: '' };

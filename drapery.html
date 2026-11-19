@@ -337,6 +337,13 @@
     text-transform:uppercase;color:var(--bronze);background:none;border:0;cursor:pointer;padding:0;
     text-decoration:underline;text-underline-offset:3px}
   #forgrid[hidden]{display:none}
+  .forlink[hidden],#fo-hint[hidden]{display:none}
+  /* the black banner in the payment block: an account shows the price */
+  .acctcta{display:block;width:100%;margin-top:22px;background:#0E0F10;color:#fff;border:0;border-radius:10px;
+    padding:21px 24px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.18em;
+    text-transform:uppercase;text-align:center;cursor:pointer;transition:background .25s}
+  .acctcta:hover{background:var(--bronze)}
+  .acctcta[hidden]{display:none}
   .paybtn{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
     background:var(--ink);color:#fff;border:0;border-radius:10px;padding:17px 34px;cursor:pointer;transition:.25s}
   .paybtn:hover{background:var(--bronze)}
@@ -370,10 +377,6 @@
   #regclose{position:absolute;top:12px;right:14px;font-size:26px;line-height:1;background:none;
     border:0;cursor:pointer;color:var(--muted);padding:6px 8px}
   #regclose:hover{color:var(--ink)}
-  /* locked price in the bar reads as an invitation */
-  .wizmid .wizprice .lockcta{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;
-    text-transform:uppercase;color:var(--bronze);cursor:pointer;background:none;border:0;padding:0;
-    text-decoration:underline;text-underline-offset:3px}
 </style>
 </head>
 <body data-shop="drapery">
@@ -463,12 +466,13 @@
           </div>
           <!-- a phone/e-mail order entered on a customer's behalf: the order and
                its link belong to THEM, not to the signed-in account -->
-          <button class="forlink" id="forother" type="button">Ordering for someone else?</button>
-          <button class="forlink" id="cklogin" type="button" style="margin-left:14px">Have an account? Log in</button>
-          <div class="ckgrid" id="forgrid" hidden style="margin-top:12px">
-            <div class="cell"><label for="fo-name">Their full name *</label><input id="fo-name" type="text" autocomplete="off"></div>
-            <div class="cell"><label for="fo-email">Their e-mail *</label><input id="fo-email" type="email" autocomplete="off"></div>
-            <div class="cell span2" style="font-size:12.5px;color:var(--muted)">The order is saved under their e-mail &mdash; share the link of the page you land on and they review and pay there.</div>
+          <!-- no account yet: the account is what shows the price -->
+          <button class="acctcta" id="acctcta" type="button" hidden>Create an account to see the price</button>
+          <button class="forlink" id="forother" type="button" hidden>Ordering for someone else?</button>
+          <div class="ckgrid" id="forgrid" hidden style="margin-top:14px">
+            <div class="cell"><label for="fo-name" id="fo-name-l">Their full name *</label><input id="fo-name" type="text" autocomplete="off"></div>
+            <div class="cell"><label for="fo-email" id="fo-email-l">Their e-mail *</label><input id="fo-email" type="email" autocomplete="off"></div>
+            <div class="cell span2" id="fo-hint" style="font-size:12.5px;color:var(--muted)">The order is saved under their e-mail &mdash; share the link of the page you land on and they review and pay there.</div>
           </div>
           <div class="paybar">
             <button class="paybtn" id="quotebtn" type="button" disabled>Get a quote</button>
@@ -489,7 +493,7 @@
 </div>
 </main>
 
-<!-- free no-password sign-up: unlocks every price -->
+<!-- free sign-up (name, e-mail, own password): the account shows the prices -->
 <div id="regveil" hidden>
   <div class="regcard">
     <button id="regclose" type="button" aria-label="Close">&times;</button>
@@ -509,8 +513,8 @@
 
     <!-- first visit: the free no-password sign-up -->
     <div id="rnew">
-      <h2 id="rnew-title">Create your account</h2>
-      <p class="regsub" id="rnew-sub">A free account keeps your orders in one place: track production and shipping, message us about any order, and check out faster next time. Only your name, e-mail and a password are needed.</p>
+      <h2 id="rnew-title">Create an account to see the price</h2>
+      <p class="regsub" id="rnew-sub">A free account shows you the prices right away and lets you order directly. It also keeps your orders in one place: track production and shipping and message us about any order.</p>
       <div class="ckgrid">
         <div class="cell span2"><label for="rg-name">Full name *</label><input id="rg-name" type="text" autocomplete="name"></div>
         <div class="cell"><label for="rg-email">E-mail *</label><input id="rg-email" type="email" autocomplete="email"></div>
@@ -536,7 +540,7 @@
   </div>
 </footer>
 
-<script src="assets/shopkit.js?v=23"></script>
+<script src="assets/shopkit.js?v=24"></script>
 <script src="assets/trade.js?v=27" defer></script>
 
 </body>
