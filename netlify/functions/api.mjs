@@ -122,6 +122,8 @@ const NEEDS = {
   "/api/admin/dealers:POST": "dealers", "/api/admin/dealer-contact": "dealers", "/api/admin/dealer-mult": "dealers",
   "/api/admin/dealer-promo": "dealers", "/api/admin/dealer-active": "dealers", "/api/admin/dealer-test": "dealers",
   "/api/admin/dealer-delete": "admins", "/api/admin/dealer-recode": "dealers",
+  "/api/admin/home-account-delete": "admins",
+  "/api/admin/home-account": "dealers", "/api/admin/home-account-access": "dealers",
   "/api/admin/consumer": "dealers",
   "/api/admin/prices": "admins", "/api/admin/backup": "admins",
   "/api/admin/admins": "accounts", "/api/admin/admin-update": "accounts", "/api/admin/admin-delete": "accounts", "/api/admin/admin-password": "accounts",
@@ -1060,6 +1062,8 @@ export default async (req) => {
     const prev = await s.get(blobKey, { type: "json" });
     const tok = String((body || {}).key || "");
     const owner = !!(prev && prev.key && tok === prev.key);
+    // a stored session whose account was deleted: sign that device out
+    if (!prev && tok && !(body || {}).password) return bad("This account no longer exists.", 401);
     if (prev && prev.pass && !owner) {
       // the e-mail already belongs to a password-protected account
       return bad("This e-mail already has an account — please log in.", 409);
@@ -1511,10 +1515,12 @@ export default async (req) => {
       return json({ ok: true, total: o.total });
     }
 
-    // permanently remove one home-shop account (e.g. a test signup) + its message threads
+    // permanently remove one home-shop account + its message threads.
+    // Their orders are kept (they stay under Home orders).
     if (path === "/api/admin/home-account-delete" && req.method === "POST") {
       const email = String(body.email || "").trim().toLowerCase();
       if (!email) return bad("email required");
+      if (!(await s.get(`homeacct:${email}`, { type: "json" }))) return bad("no such account", 404);
       await s.delete(`homeacct:${email}`);
       const { blobs: tb } = await s.list({ prefix: "thread:" });
       for (const b of tb) {

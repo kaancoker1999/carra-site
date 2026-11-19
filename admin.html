@@ -94,9 +94,9 @@
   /* what an admin can't change is simply not offered (the server refuses it too) */
   body.no-orders .octl, body.no-orders .trackwrap, body.no-orders .st-save, body.no-orders .o-del, body.no-orders #cancelbar{display:none!important}
   body.no-payments .pay-mark, body.no-payments .pay-all, body.no-payments #payall{display:none!important}
-  body.no-dealers #dcreate, body.no-dealers #homeshop, body.no-dealers [class*=" e-"], body.no-dealers [data-act="newcustomer"]{display:none!important}
+  body.no-dealers #dcreate, body.no-dealers #homeshop, body.no-dealers #homeopen, body.no-dealers .hs-access, body.no-dealers [class*=" e-"], body.no-dealers [data-act="newcustomer"]{display:none!important}
   body.no-messages #msgcust .treply, body.no-messages .o-msg{display:none!important}
-  body.no-admins #backupbtn, body.no-admins [data-act="backup"], body.no-admins .e-delete{display:none!important}
+  body.no-admins #backupbtn, body.no-admins [data-act="backup"], body.no-admins .e-delete, body.no-admins .hs-del{display:none!important}
   .ronly{display:none;font-size:12.5px;color:var(--muted);margin-top:10px}
   body.no-orders .ronly.r-orders, body.no-messages .ronly.r-messages{display:block}
   .arow{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid var(--line)}
@@ -308,6 +308,7 @@
     <div class="tabs">
       <button class="tab on" data-tab="overview" type="button">Overview</button>
       <button class="tab" data-tab="dealers" type="button">Customers</button>
+      <button class="tab" data-tab="homecust" type="button">Home customers</button>
       <button class="tab" data-tab="orders" type="button">Orders</button>
       <button class="tab" data-tab="homeorders" type="button">Home orders</button>
       <button class="tab" data-tab="payments" type="button">Payments</button>
@@ -426,6 +427,55 @@
     </div>
 
     <!-- ── dealers ── -->
+    <!-- LUMIA Home (end customers): their own page, apart from the dealers -->
+    <div id="tab-homecust" hidden>
+      <div class="card ordwrap" id="homeaccts">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+          <h2 style="font-size:18px">Home customers</h2>
+          <button class="btn ghost" id="refreshhome" type="button">Refresh</button>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 14px">End customers who created a LUMIA Home account with their own e-mail and password &mdash; not dealers.
+          Every account has <b>price access</b> from the moment it is created; switch it off (or back on) per account here.
+          Their requests and orders are under <b>Home orders</b>.</p>
+        <div id="hs-accounts"></div>
+      </div>
+      <!-- a customer got in touch by e-mail/phone: open their account here.
+           It has price access right away; they choose their own password. -->
+      <div class="card" id="homeopen">
+        <h2 style="font-size:18px;margin-bottom:6px">Open an account for a customer</h2>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 14px">For someone who contacted you. The account gets price access immediately; the customer then opens the sign-up on the site with this same e-mail and sets their own password.</p>
+        <div class="row">
+          <div><label>Customer name</label><input id="ha-name" type="text" autocomplete="off" style="width:200px"></div>
+          <div><label>E-mail</label><input id="ha-email" type="email" autocomplete="off" style="width:240px"></div>
+          <div><label>Phone (optional)</label><input id="ha-phone" type="text" autocomplete="off" style="width:150px"></div>
+          <button class="btn" id="ha-save" type="button">Open account</button>
+        </div>
+        <div class="msg" id="hamsg"></div>
+      </div>
+      <div class="card" id="homeshop">
+        <h2 style="font-size:18px;margin-bottom:6px">Home shop settings</h2>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 14px">
+          The shop lives on the public product pages (<a href="roman.html" target="_blank" rel="noopener">roman</a>, cellular, pleated, drapery):
+          anyone can configure and <b>get a quote</b>. Prices stay hidden from visitors; whoever <b>creates an account</b>
+          (name, e-mail, own password) sees retail prices right away and orders directly.</p>
+        <div class="row">
+          <div><label>Retail level (× base list)</label>
+            <select id="hs-mult">
+              <option value="1.3">+30% (×1.30)</option>
+              <option value="1.4">+40% (×1.40)</option>
+              <option value="1.5">+50% (×1.50)</option>
+              <option value="1.75">+75% (×1.75)</option>
+              <option value="2">Double (×2.00)</option>
+              <option value="2.5">×2.50</option>
+            </select></div>
+          <div><label>Shop</label>
+            <select id="hs-active"><option value="1">Open</option><option value="0">Closed</option></select></div>
+          <button class="btn" id="hs-save" type="button">Save</button>
+        </div>
+        <div class="msg" id="hsmsg"></div>
+      </div>
+    </div>
+
     <div id="tab-dealers" hidden>
       <!-- one customer, seen the way they see themselves -->
       <div class="card" id="dpreview" hidden></div>
@@ -448,46 +498,6 @@
         </div>
         <div class="newcode" id="newcode"></div>
         <div class="msg" id="dmsg"></div>
-      </div>
-      <!-- the consumer shop: ONE shared code for every end customer -->
-      <div class="card" id="homeshop">
-        <h2 style="font-size:18px;margin-bottom:6px">Home shop — end customers</h2>
-        <p style="font-size:13px;color:var(--muted);margin:0 0 14px">
-          The shop lives on the public product pages (<a href="roman.html" target="_blank" rel="noopener">roman</a>, cellular, pleated, drapery):
-          anyone can configure and <b>get a quote</b>. Prices stay hidden from visitors; whoever <b>creates an account</b>
-          (name, e-mail, own password) sees retail prices right away and orders directly.
-          Requests and orders land under <b>Home orders</b>.</p>
-        <div class="row">
-          <div><label>Retail level (× base list)</label>
-            <select id="hs-mult">
-              <option value="1.3">+30% (×1.30)</option>
-              <option value="1.4">+40% (×1.40)</option>
-              <option value="1.5">+50% (×1.50)</option>
-              <option value="1.75">+75% (×1.75)</option>
-              <option value="2">Double (×2.00)</option>
-              <option value="2.5">×2.50</option>
-            </select></div>
-          <div><label>Shop</label>
-            <select id="hs-active"><option value="1">Open</option><option value="0">Closed</option></select></div>
-          <button class="btn" id="hs-save" type="button">Save</button>
-        </div>
-        <div class="msg" id="hsmsg"></div>
-        <!-- LUMIA Home accounts: end customers with their own e-mail + password.
-             Separate from the dealer accounts (access codes) listed below. -->
-        <h3 style="font-size:14px;margin:22px 0 4px">LUMIA Home accounts</h3>
-        <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px">End customers who created an account with their own e-mail and password &mdash; not dealers. Every account has <b>price access</b> from the moment it is created; switch it off (or back on) per account here.</p>
-        <div id="hs-accounts" class="ordwrap"></div>
-        <!-- a customer got in touch by e-mail/phone: open their account here.
-             It has price access right away; they choose their own password. -->
-        <h3 style="font-size:14px;margin:20px 0 4px">Open an account for a customer</h3>
-        <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px">For someone who contacted you. The account gets price access immediately; the customer then goes to the site, chooses <b>Create account</b> with this same e-mail and sets their own password.</p>
-        <div class="row">
-          <div><label>Customer name</label><input id="ha-name" type="text" autocomplete="off" style="width:200px"></div>
-          <div><label>E-mail</label><input id="ha-email" type="email" autocomplete="off" style="width:240px"></div>
-          <div><label>Phone (optional)</label><input id="ha-phone" type="text" autocomplete="off" style="width:150px"></div>
-          <button class="btn" id="ha-save" type="button">Open account</button>
-        </div>
-        <div class="msg" id="hamsg"></div>
       </div>
       <div class="card ordwrap" id="dlist">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -656,6 +666,8 @@
         renderCalendar();
       }
       $('tab-dealers').hidden = t.dataset.tab !== 'dealers';
+      $('tab-homecust').hidden = t.dataset.tab !== 'homecust';
+      if(t.dataset.tab === 'homecust') loadConsumer();
       $('tab-payments').hidden = t.dataset.tab !== 'payments';
       $('tab-messages').hidden = t.dataset.tab !== 'messages';
       $('tab-admins').hidden = t.dataset.tab !== 'admins';
@@ -1908,7 +1920,7 @@
       var list = (d && d.accounts) || [];
       var day = function(x){ return x ? new Date(x).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '—'; };
       $('hs-accounts').innerHTML = list.length
-        ? '<table class="oli"><thead><tr><th>Name</th><th>E-mail</th><th>Phone</th><th>Since</th><th>Last seen</th><th>Password</th><th>Price access</th></tr></thead><tbody>' +
+        ? '<table class="oli"><thead><tr><th>Name</th><th>E-mail</th><th>Phone</th><th>Since</th><th>Last seen</th><th>Password</th><th>Price access</th><th></th></tr></thead><tbody>' +
           list.map(function(a){
             return '<tr><td>' + esc(a.name || '—') + '</td>' +
               '<td><a href="mailto:' + esc(a.email) + '">' + esc(a.email) + '</a></td>' +
@@ -1916,17 +1928,31 @@
               '<td>' + (a.pass ? 'set' : '<span style="color:var(--muted)">not set</span>') + '</td>' +
               '<td><span class="status ' + (a.unlocked ? 'pay-paid' : 'st-pend') + '">' + (a.unlocked ? 'Sees prices' : 'Quote only') + '</span> ' +
                 '<button class="btn ghost hs-access" data-email="' + esc(a.email) + '" data-on="' + (a.unlocked ? '1' : '0') + '" type="button" style="padding:5px 10px;font-size:11px">' +
-                (a.unlocked ? 'Remove access' : 'Give access') + '</button></td></tr>';
+                (a.unlocked ? 'Remove access' : 'Give access') + '</button></td>' +
+              '<td><button class="btn ghost hs-del" data-email="' + esc(a.email) + '" data-name="' + esc(a.name || a.email) + '" type="button" style="padding:5px 10px;font-size:11px;color:#8A2620;border-color:#D9B8B4">Delete</button></td></tr>';
           }).join('') + '</tbody></table>'
         : '<div class="ovempty">No LUMIA Home accounts yet.</div>';
     }).catch(function(){});
   }
   $('hs-accounts').addEventListener('click', function(e){
+    var del = e.target.closest('.hs-del');
+    if(del){
+      armConfirm(del, 'This DELETES the account of ' + del.dataset.name + ' — they can no longer log in and their messages are removed. ' +
+        'Their orders are kept. The same e-mail can sign up again; to only hide prices, use Remove access instead.', function(){
+        del.disabled = true;
+        api('/api/admin/home-account-delete', 'POST', { email: del.dataset.email }).then(function(d){
+          if(d && d.error){ del.disabled = false; note(del, d.error); return; }
+          loadHomeAccounts();
+        }).catch(function(){ del.disabled = false; note(del, 'Failed — try again.'); });
+      });
+      return;
+    }
     var b = e.target.closest('.hs-access'); if(!b) return;
     b.disabled = true;
     api('/api/admin/home-account-access', 'POST', { email: b.dataset.email, unlocked: b.dataset.on !== '1' })
       .then(loadHomeAccounts).catch(function(){ b.disabled = false; });
   });
+  $('refreshhome').addEventListener('click', loadHomeAccounts);
   $('ha-save').addEventListener('click', function(){
     var b = this, name = $('ha-name').value.trim(), email = $('ha-email').value.trim();
     if(!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){
@@ -1939,7 +1965,7 @@
       $('hamsg').className = 'msg ok';
       $('hamsg').textContent = (d.created ? 'Account opened' : 'Account updated') + ' with price access for ' + email + '. ' +
         (d.pass ? 'They already have a password — they just log in.'
-                : 'Tell them: go to lumiashades.com, open any product, press "Have an account? Log in" → "Create a free account", use this e-mail and choose a password.');
+                : 'Tell them: open lumiashades.com/roman.html?account=new, use this same e-mail and choose a password.');
       $('ha-name').value = ''; $('ha-email').value = ''; $('ha-phone').value = '';
       loadHomeAccounts();
     }).catch(function(){ b.disabled = false; $('hamsg').className = 'msg err'; $('hamsg').textContent = 'Could not save — try again.'; });
