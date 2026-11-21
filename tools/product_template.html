@@ -150,6 +150,10 @@
   .bigcard:hover{border-color:var(--ink)}
   .bigcard.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);background:#F3F1EA}
   .bigcard:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through}
+  /* off because of the size on screen: dimmed, and it says why in plain sight */
+  .bigcard.sizeoff:disabled{opacity:1;text-decoration:none}
+  .bigcard.sizeoff:disabled > *{opacity:.3}
+  .bigcard.sizeoff:disabled > .bcwhy{opacity:1;color:#8A2620;font-weight:500}
   .bigcard img{width:100%;aspect-ratio:1/1;object-fit:contain;display:block;background:#fff;padding:10px 10px 0}
   .bigcard .bcart{display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;padding:8px 8px 0;color:#3A3D40}
   .bigcard.on .bcart{color:var(--ink)}
@@ -566,7 +570,7 @@
   </div>
 </footer>
 
-<script src="assets/shopkit.js?v=25"></script>
+<script src="assets/shopkit.js?v=26"></script>
 <script src="assets/trade.js?v=28" defer></script>
 
 </body>

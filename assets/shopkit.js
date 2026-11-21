@@ -379,6 +379,25 @@
     var r = P.sizeRules ? sizeRule(SEL.drive, SEL.tdbu) : null;
     return (r && !r.na) ? { w: r.w, h: r.h } : { w: P.width, h: P.height };
   }
+  /* a mechanism (or TDBU) the size on screen cannot be built with is switched
+     off and says why — e.g. cordless above 96″. Choosing it used to shrink
+     the size silently, which is how a wrong size gets ordered. */
+  function sizeBlocked(st){
+    var m = {};
+    if(!P.sizeRules || (st.key !== 'drive' && st.key !== 'tdbu')) return m;
+    plainOpts(st).forEach(function(o){
+      if(o === SEL[st.key]) return;
+      var r = st.key === 'drive' ? sizeRule(o, SEL.tdbu) : sizeRule(SEL.drive, o);
+      if(!r || r.na) return;
+      var why = [];
+      if(W > r.w[1]) why.push('up to ' + r.w[1] + '″ wide');
+      else if(W < r.w[0]) why.push('from ' + r.w[0] + '″ wide');
+      if(H > r.h[1]) why.push('up to ' + r.h[1] + '″ tall');
+      else if(H < r.h[0]) why.push('from ' + r.h[0] + '″ tall');
+      if(why.length){ var t = why.join(' · '); m[o] = t.charAt(0).toUpperCase() + t.slice(1); }
+    });
+    return m;
+  }
 
   function PRICES(){ return (ADMIN && ADMIN.prices) || ACCT_PRICES || {}; }
   function hasPrices(){ return !!((ADMIN && ADMIN.prices) || ACCT_PRICES); }
@@ -618,6 +637,7 @@
 
   function optBody(st){
     var dis = disabledOf(st);
+    var blk = sizeBlocked(st);
     var opts = plainOpts(st);
     var colors = OPT_COLORS[st.key] || null;
     if(colors){
@@ -644,12 +664,15 @@
       var visual = st.imgs && st.imgs[o]
         ? '<img src="' + esc(st.imgs[o]) + '" alt="" loading="lazy">'
         : (artMap && artMap[o]) || '';
-      return '<button class="bigcard' + (visual ? '' : ' noimg') + (on ? ' on' : '') +
+      var off = !dis[o] && blk[o];   /* this size cannot be built with it */
+      return '<button class="bigcard' + (visual ? '' : ' noimg') + (on ? ' on' : '') + (off ? ' sizeoff' : '') +
         '" type="button" data-step="' + esc(st.key) + '" data-val="' + esc(o) + '"' +
-        (dis[o] ? ' disabled title="Not with ' + esc(SEL[dis[o]]) + '"' : '') + '>' +
+        (dis[o] ? ' disabled title="Not with ' + esc(SEL[dis[o]]) + '"'
+          : off ? ' disabled title="' + esc(off) + '"' : '') + '>' +
         visual +
         '<span class="bcname">' + esc(o) + '</span>' +
-        (OPT_SUB[st.key] && OPT_SUB[st.key][o]
+        (off ? '<span class="bcsub bcwhy">' + esc(off) + '</span>'
+          : OPT_SUB[st.key] && OPT_SUB[st.key][o]
           ? '<span class="bcsub">' + esc(OPT_SUB[st.key][o]) + '</span>' : '') +
         chk() + '</button>';
     }).join('');
@@ -744,8 +767,23 @@
     var lim = sizeLimits();
     W = clamp(W, lim.w[0], lim.w[1]);
     H = clamp(H, lim.h[0], lim.h[1]);
+    /* the largest any mechanism allows for this fabric — if the chosen one
+       stops earlier, say so (the size cannot go past it otherwise) */
+    var bigger = '';
+    var ds = P.sizeRules ? stepByKey('drive') : null;
+    if(ds && SEL.drive){
+      var mw = lim.w[1], mh = lim.h[1], dd = disabledOf(ds);
+      plainOpts(ds).forEach(function(o){
+        var r = dd[o] ? null : sizeRule(o, SEL.tdbu);
+        if(r && !r.na){ mw = Math.max(mw, r.w[1]); mh = Math.max(mh, r.h[1]); }
+      });
+      if(mw > lim.w[1] || mh > lim.h[1]){
+        bigger = '<p class="stepnote">' + esc(SEL.drive) + ' goes up to ' + lim.w[1] + '&Prime; &times; ' + lim.h[1] +
+          '&Prime;. For a larger size (up to ' + mw + '&Prime; &times; ' + mh + '&Prime;) choose another mechanism first.</p>';
+      }
+    }
     return sizeBlock('w', 'Width', lim.w, W) +
-      sizeBlock('h', P.hLabel || 'Height', lim.h, H) +
+      sizeBlock('h', P.hLabel || 'Height', lim.h, H) + bigger +
       '<p class="stepnote">Measure to the nearest 1/8&Prime;. We make the ' + esc(P.name.toLowerCase()) + ' to this exact size.</p>';
   }
 
@@ -848,6 +886,13 @@
     }
     if((b = e.target.closest('[data-step]')) && !b.disabled){
       clearFail();
+      var bst = stepByKey(b.dataset.step);
+      var why = bst ? sizeBlocked(bst)[b.dataset.val] : null;
+      if(why){
+        renderSteps();
+        fail(b.dataset.val + ' is not available at this size (' + why.toLowerCase() + '). Change the size first.');
+        return;
+      }
       SEL[b.dataset.step] = b.dataset.val;
       renderSteps();
       return;
