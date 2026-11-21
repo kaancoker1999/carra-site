@@ -1000,7 +1000,7 @@
           '<button class="clink" type="button" data-i="' + i + '" data-act="edit">Edit</button><span>&middot;</span>' +
           '<button class="clink danger" type="button" data-i="' + i + '" data-act="del">Remove</button></div>' +
       '</div>' +
-      '<div class="cprice">' + (l.price == null ? 'Quote' : '$' + (l.price * l.qty).toFixed(2)) +
+      '<div class="cprice">' + (l.price == null ? ((!ACCOUNT && !ADMIN) ? '' : 'Quote') : '$' + (l.price * l.qty).toFixed(2)) +
         (l.qty > 1 && l.price != null ? '<span class="cunit">$' + l.price.toFixed(2) + ' each</span>' : '') +
       '</div></div>';
   }
@@ -1034,11 +1034,12 @@
     var at = accTotal();
     var grand = Math.round((t.total + at) * 100) / 100;
     var hasQuote = lines.some(function(l){ return l.price == null; });
+    var noAcct = !ACCOUNT && !ADMIN;   /* prices come with the account */
     count.innerHTML = lines.length
       ? '<div class="csubrow"><span>' + plural(lines.length, 'line') + ' &middot; ' + plural(t.units, 'unit') +
         (at > 0 ? ' &middot; accessories $' + at.toFixed(2) : '') +
-        '<span class="cst">Made to measure &middot; ' + (hasQuote ? 'we confirm your price within one business day' : 'reviewed before production') + '</span></span>' +
-        '<b>' + (hasQuote ? 'Quote' : '$' + grand.toFixed(2)) + '</b></div>'
+        '<span class="cst">Made to measure &middot; ' + (hasQuote && !noAcct ? 'we confirm your price within one business day' : 'reviewed before production') + '</span></span>' +
+        '<b>' + (noAcct ? '' : hasQuote ? 'Quote' : '$' + grand.toFixed(2)) + '</b></div>'
       : '';
     syncPay();
     syncSections();
@@ -1153,22 +1154,23 @@
        before the code was entered has none — that cart asks for a quote) */
     var admin = hasPrices() && !lines.some(function(l){ return l.price == null; });
     paybtn.hidden = !admin; savebtn.hidden = !admin;
-    if(quotebtn) quotebtn.hidden = admin;
-    /* no account yet: the black banner offers one (it shows the price);
-       "Get a quote" stays underneath as the no-account way */
+    /* no account yet: buying starts with one. The black banner is the only
+       way forward — no quote request without an account. "Get a quote" is
+       kept for an ACCOUNT whose cart cannot be priced (a size outside the
+       price grid, or an account LUMIA switched to quote-only). */
     var guest = !ACCOUNT && !ADMIN;
     if(acctcta) acctcta.hidden = !guest;
-    if(quotebtn) quotebtn.classList.toggle('ghost', guest);
+    if(quotebtn) quotebtn.hidden = admin || guest;
     /* "Ordering for someone else?" only means something to a signed-in account */
     forother.hidden = guest;
-    document.getElementById('fo-name-l').textContent = guest ? 'Your full name *' : 'Their full name *';
-    document.getElementById('fo-email-l').textContent = guest ? 'Your e-mail *' : 'Their e-mail *';
-    document.getElementById('fo-hint').hidden = guest;
+    if(guest) forgrid.hidden = true;
     var sec = document.getElementById('securetxt'), pn = document.getElementById('paynote');
+    var secwrap = document.getElementById('securewrap');
+    if(secwrap) secwrap.hidden = guest;
     if(sec) sec.textContent = admin
       ? 'Secure checkout by Stripe · your delivery address and phone are typed on the payment page'
       : 'No payment now — we confirm your price first; you pay later on Stripe’s secure page';
-    if(pn) pn.hidden = admin;
+    if(pn) pn.hidden = admin || guest;
 
     paybtn.disabled = !lines.length;
     savebtn.disabled = !lines.length;
@@ -1205,22 +1207,16 @@
         return;
       }
     } else {
-      /* guest checkout: a name and an e-mail are all we need — the ship-to
-         is typed on Stripe's payment page, tracking works by ref + e-mail */
-      if(forgrid.hidden){
-        forgrid.hidden = false;
-        ckMsg('Enter your name and e-mail, then press Get a quote again.');
-        document.getElementById('fo-name').focus();
-        return;
-      }
+      /* no account: nothing is sent — the sign-up comes first */
+      openRegister('new');
+      return;
     }
     if(!forgrid.hidden){
       /* entered on a customer's behalf: their identity, none of our details */
       var fn = (document.getElementById('fo-name').value || '').trim();
       var fe = (document.getElementById('fo-email').value || '').trim().toLowerCase();
       if(!fn || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fe)){
-        ckMsg((!ACCOUNT && !ADMIN) ? 'Please fill in your name and a valid e-mail.'
-          : 'Ordering for someone else: please fill in their name and a valid e-mail.');
+        ckMsg('Ordering for someone else: please fill in their name and a valid e-mail.');
         return;
       }
       c = { name: fn, email: fe, phone: '', address: '', city: '', state: '', zip: '' };
