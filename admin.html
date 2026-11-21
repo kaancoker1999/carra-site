@@ -108,6 +108,8 @@
   .apw{display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex-basis:100%}
   .apw input{min-width:170px;padding:8px 10px}
   .apst{font-size:12px;color:var(--muted);flex-basis:100%}
+  @keyframes rowflash{0%,60%{box-shadow:inset 0 0 0 2px #C79A45;background:#FCF4E2}100%{box-shadow:inset 0 0 0 2px transparent}}
+  .flash{animation:rowflash 2.6s ease-out}
   /* notifications bell + messages */
   .bellwrap{position:relative}
   #bellbtn{position:relative;padding-left:14px;padding-right:14px}
@@ -844,10 +846,21 @@
     allOrders.forEach(function(o){
       if(o.test) return;
       if(statusOf(o) === 'Pending review'){
-        n.push({ cls: 'o', icon: 'inbox', at: o.updatedAt || o.at, title: 'New order — ' + (o.dealer || ''), sub: o.ref + ' · $' + orderTotals(o.lines).total.toFixed(2), go: 'orders' });
+        if(o.consumer){
+          /* LUMIA Home: named after the person, and it opens under Home orders */
+          var who = o.customer || (o.home && o.home.name) || 'Home customer';
+          if(o.quote && !o.priced){
+            n.push({ cls: 'o', icon: 'inbox', at: o.updatedAt || o.at, title: 'Quote request — ' + who, sub: o.ref + ' · set the price', go: 'order', ref: o.ref });
+          } else if(isPaid(o)){
+            n.push({ cls: 'o', icon: 'inbox', at: o.updatedAt || o.at, title: 'New home order — ' + who, sub: o.ref + ' · ' + (o.total || '') + ' · paid', go: 'order', ref: o.ref });
+          }
+          /* priced but not paid yet: the customer's move, nothing for an admin */
+        } else {
+          n.push({ cls: 'o', icon: 'inbox', at: o.updatedAt || o.at, title: 'New order — ' + (o.dealer || ''), sub: o.ref + ' · $' + orderTotals(o.lines).total.toFixed(2), go: 'order', ref: o.ref });
+        }
       }
       if(o.payment && o.payment.customerPaidAt && !o.payment.paid && statusOf(o) !== 'Cancelled'){
-        n.push({ cls: 'p', icon: 'cash', at: o.payment.customerPaidAt, title: 'Payment reported — ' + (o.dealer || ''), sub: o.ref + ' · $' + orderTotals(o.lines).total.toFixed(2) + ' · confirm it arrived', go: 'payments' });
+        n.push({ cls: 'p', icon: 'cash', at: o.payment.customerPaidAt, title: 'Payment reported — ' + (o.dealer || ''), sub: o.ref + ' · $' + orderTotals(o.lines).total.toFixed(2) + ' · confirm it arrived', go: 'payment', ref: o.ref });
       }
     });
     custThreads().forEach(function(t){
@@ -888,6 +901,8 @@
       var x = bellItems[+it.dataset.n];
       $('bellmenu').hidden = true;
       if(x){
+        if(x.go === 'order'){ openOrder(x.ref); return; }
+        if(x.go === 'payment'){ openPayment(x.ref); return; }
         if(x.thread){ msgView = 'cust'; msgOpen = x.thread; msgFilter = 'all'; msgCust = ''; }
         if(x.dm){ msgView = 'team'; dmWith = x.dm; }
         gotoTab(x.go);
@@ -970,10 +985,24 @@
   /* open an order (Orders tab, right group, expanded) or a customer account */
   function openOrder(ref){
     var o = findOrder(ref); if(!o) return;
+    gotoTab(o.consumer ? 'homeorders' : 'orders');
     calSel = { mode: 'all', key: '' }; stageSel = mainGroupOf(o);
-    gotoTab('orders'); renderCalendar();
+    renderCalendar();
     var row = [].filter.call(document.querySelectorAll('#orderrows tr.ordrow'), function(r){ return r.dataset.ref === o.ref; })[0];
-    if(row){ if(row.nextElementSibling && row.nextElementSibling.hidden) row.click(); row.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    if(row){ if(row.nextElementSibling && row.nextElementSibling.hidden) row.click(); row.scrollIntoView({ behavior: 'smooth', block: 'center' }); flash(row); }
+  }
+  /* a reported payment: the Payments tab, on that order's row */
+  function openPayment(ref){
+    payFilter = '';
+    gotoTab('payments'); renderPayments();
+    var btn = [].filter.call(document.querySelectorAll('#paybody .pay-mark'), function(b){ return b.dataset.ref === ref; })[0];
+    var row = btn && btn.closest('.payrow');
+    if(row){ row.scrollIntoView({ behavior: 'smooth', block: 'center' }); flash(row); }
+  }
+  /* a short highlight so the eye lands on the row the click was about */
+  function flash(el){
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+    setTimeout(function(){ el.classList.remove('flash'); }, 2600);
   }
   document.addEventListener('click', function(e){
     var go = e.target.closest('[data-goorder]');
