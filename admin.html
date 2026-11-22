@@ -416,7 +416,7 @@
             <button class="btn ghost" id="refreshorders" type="button">Refresh</button>
           </div>
         </div>
-        <div id="homehint" hidden style="font-size:12.5px;color:var(--muted);background:#FAF5EA;border:1px solid #E4E3DE;border-radius:8px;padding:10px 14px;margin:0 0 12px">Orders from the shop land here <b>once they are paid</b> — a customer’s unpaid save never shows up. To enter an order for someone who called or wrote: open a product page <b>with the links below</b> (they carry your admin session into the new tab, so the prices unlock on their own — ticking “keep me signed in” at log-in does the same for any tab), configure their lines, and at checkout fill in the customer’s name and e-mail (the fields are already open for you). Choose <b>Save &mdash; pay later</b> and send them the link of the page you land on — they open it with their e-mail and pay there; the order then appears here with its shipping address.<br><span style="display:inline-block;margin-top:6px">Start on a product page:&nbsp;<a href="roman.html" target="_blank" rel="noopener">Roman</a> &middot; <a href="cellular.html" target="_blank" rel="noopener">Cellular</a> &middot; <a href="pleated.html" target="_blank" rel="noopener">Pleated</a> &middot; <a href="drapery.html" target="_blank" rel="noopener">Drapery</a></span></div>
+        <div id="homehint" hidden style="font-size:12.5px;color:var(--muted);background:#FAF5EA;border:1px solid #E4E3DE;border-radius:8px;padding:10px 14px;margin:0 0 12px">Orders from the shop land here <b>once they are paid</b> — a customer’s unpaid save never shows up; a priced quote that is still unpaid waits under <b>Not paid</b>. To enter an order for someone who called or wrote: open a product page <b>with the links below</b> (they carry your admin session into the new tab, so the prices unlock on their own — ticking “keep me signed in” at log-in does the same for any tab), configure their lines, and at checkout fill in the customer’s name and e-mail (the fields are already open for you). Choose <b>Save &mdash; pay later</b> and send them the link of the page you land on — they open it with their e-mail and pay there; the order then appears here with its shipping address.<br><span style="display:inline-block;margin-top:6px">Start on a product page:&nbsp;<a href="roman.html" target="_blank" rel="noopener">Roman</a> &middot; <a href="cellular.html" target="_blank" rel="noopener">Cellular</a> &middot; <a href="pleated.html" target="_blank" rel="noopener">Pleated</a> &middot; <a href="drapery.html" target="_blank" rel="noopener">Drapery</a></span></div>
         <div class="pvtabs" id="stagetabs" style="margin-bottom:14px"></div>
         <div id="cancelbar" style="margin:0 0 12px"></div>
         <div class="cal" id="cal"></div>
@@ -689,6 +689,7 @@
      go to their own bucket so they don't clutter the working list */
   var MAIN_GROUPS = [
     { key: 'orders',    label: 'Orders' },
+    { key: 'unpaid',    label: 'Not paid', home: true },   /* Home orders tab only */
     { key: 'past',      label: 'Past orders' },
     { key: 'cancelled', label: 'Cancelled' },
     { key: 'test',      label: 'Test' },
@@ -698,7 +699,12 @@
     if(o.test) return 'test';                   /* test accounts never mix with real orders */
     if(st === 'Cancelled') return 'cancelled';
     /* home orders are paid up front — done means shipped, not paid */
-    if(o.consumer) return st === 'Shipped' ? 'past' : 'orders';
+    if(o.consumer){
+      /* not paid yet (a priced quote the customer has not paid): kept apart,
+         it moves to Orders by itself the moment the payment lands */
+      if(!(o.payment && o.payment.paid)) return 'unpaid';
+      return st === 'Shipped' ? 'past' : 'orders';
+    }
     if(o.payment && o.payment.paid) return 'past';
     return 'orders';
   }
@@ -1640,11 +1646,11 @@
     $('cal').innerHTML = head + grid + '</div>';
 
     var list = selectedOrders();
-    var byGroup = { orders: [], past: [], cancelled: [], test: [] };
+    var byGroup = { orders: [], unpaid: [], past: [], cancelled: [], test: [] };
     list.forEach(function(o){ byGroup[mainGroupOf(o)].push(o); });
-    if(!byGroup[stageSel]) stageSel = 'orders';
+    if(!byGroup[stageSel] || (stageSel === 'unpaid' && !homeMode)) stageSel = 'orders';
     $('stagetabs').innerHTML =
-      MAIN_GROUPS.map(function(x){
+      MAIN_GROUPS.filter(function(x){ return !x.home || homeMode; }).map(function(x){
         return '<button type="button" class="pvtab' + (x.key === stageSel ? ' on' : '') + '" data-stage="' + x.key + '">' +
           x.label + '<span class="n">' + byGroup[x.key].length + '</span></button>';
       }).join('');
@@ -1656,7 +1662,9 @@
       ? '<button class="btn ghost o-del-all" type="button" style="padding:8px 14px;color:#8A2620;border-color:#E0B7B3">' +
         'Delete all cancelled (' + allCancelled.length + ')</button>' +
         '<span class="mono" style="margin-left:12px">removes them permanently</span>'
-      : '';
+      : stageSel === 'unpaid'
+        ? '<span class="mono">Waiting for the customer’s payment — an order moves to Orders by itself once it is paid.</span>'
+        : '';
     var when = calSel.mode === 'day'
       ? prettyDay(calSel.key, {weekday:'long', month:'long', day:'numeric', year:'numeric'})
       : calSel.mode === 'range'
@@ -1791,7 +1799,7 @@
           /* invoice only once the FedEx tracking number is saved on the order */
           (o.tracking ? '<button class="btn ghost o-inv" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px">Invoice</button>' : '') +
           '<button class="btn ghost o-msg" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px">' + 'Message customer' + (orderThreads(o.ref).length ? ' (' + orderThreads(o.ref).length + ')' : '') + '</button>' +
-          ((o.test || st.status === 'Cancelled') ? '<button class="btn ghost o-del" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px;color:#8A2620">Delete</button>' : '') +
+          ((o.test || st.status === 'Cancelled' || (o.consumer && !paid)) ? '<button class="btn ghost o-del" data-ref="' + esc(o.ref) + '" type="button" style="padding:8px 14px;color:#8A2620">Delete</button>' : '') +
           '<span style="font-size:11px;color:var(--muted)">Any status other than “Pending review” locks the order automatically.</span>' +
         '</div>';
 
