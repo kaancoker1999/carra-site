@@ -399,8 +399,11 @@
     return m;
   }
 
-  function PRICES(){ return (ADMIN && ADMIN.prices) || ACCT_PRICES || {}; }
-  function hasPrices(){ return !!((ADMIN && ADMIN.prices) || ACCT_PRICES); }
+  /* LOCAL PREVIEW ONLY: the trial on localhost shows the retail prices without
+     an account (see boot()). It stays null everywhere else. */
+  var PREVIEW_PRICES = null;
+  function PRICES(){ return (ADMIN && ADMIN.prices) || ACCT_PRICES || PREVIEW_PRICES || {}; }
+  function hasPrices(){ return !!((ADMIN && ADMIN.prices) || ACCT_PRICES || PREVIEW_PRICES); }
   function prodPrices(id){
     return (PRICES().products || []).filter(function(p){ return p.id === id; })[0] || null;
   }
@@ -832,6 +835,7 @@
     });
     stepsBox.innerHTML = html;
     syncBar();
+    notifyHelper();
   }
 
   function syncBar(){
@@ -944,6 +948,21 @@
       fail('Choose ' + missing.map(function(st){ return st.label.toLowerCase(); }).join(', ') + ' before adding this line.');
       return;
     }
+    var line = buildLine();
+    if(editIdx == null){
+      lines.push(line);
+    } else {
+      lines[editIdx] = line;
+      editIdx = null;
+    }
+    saveLines(); renderLines();
+    var nx = document.getElementById('wiznext');
+    nx.innerHTML = 'Added &check;';
+    setTimeout(function(){ syncBar(); }, 1400);
+    document.getElementById('cartsec').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  /* the cart line for the configuration on screen */
+  function buildLine(){
     /* no price is fine: visitors without price access — and sizes outside
        the price grid — go into the cart as quote lines */
     var price = currentPrice();
@@ -965,21 +984,120 @@
     });
     var label = (SEL._room === 'Other' ? (SEL._roomText || '') : (SEL._room || '')).trim();
     var pick = { product: P.id, sel: JSON.parse(JSON.stringify(SEL)) };
-    var line = { label: label, product: P.name, pid: P.id, spec: parts.join(' · '), specs: pairs,
-                 desc: (main || '').trim(), pick: pick,
-                 w: W, h: H, qty: QTY, price: price };
-    if(editIdx == null){
-      lines.push(line);
-    } else {
-      lines[editIdx] = line;
-      editIdx = null;
-    }
-    saveLines(); renderLines();
-    var nx = document.getElementById('wiznext');
-    nx.innerHTML = 'Added &check;';
-    setTimeout(function(){ syncBar(); }, 1400);
-    document.getElementById('cartsec').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return { label: label, product: P.name, pid: P.id, spec: parts.join(' · '), specs: pairs,
+             desc: (main || '').trim(), pick: pick,
+             w: W, h: H, qty: QTY, price: price };
   }
+
+  /* ── hooks for the page helper (assets/mira.js, "Ask Mira") ──
+     It reads the configurator, sets it the way a tap would, and adds lines
+     to the cart. Nothing here loosens a rule: values are checked again. */
+  function missingSteps(){
+    return (P.steps || []).filter(function(st){ return stepVisible(st) && isChoose(st) && !SEL[st.key]; });
+  }
+  function notifyHelper(){
+    if(window.LUMIA_SHOP.onchange){ try{ window.LUMIA_SHOP.onchange(); }catch(e){} }
+  }
+  window.LUMIA_SHOP.snapshot = function(){
+    if(!P) return null;
+    var t = orderTotals(lines), priced = hasPrices();
+    return { pid: P.id, sel: JSON.parse(JSON.stringify(SEL)), w: W, h: H, qty: QTY,
+      prices: priced, price: priced ? currentPrice() : null,
+      account: !!ACCOUNT, admin: !!ADMIN,
+      missing: missingSteps().map(function(st){ return st.key; }),
+      cart: lines.map(function(l){ return { label: l.label, pid: l.pid, w: l.w, h: l.h, qty: l.qty, price: priced ? l.price : null }; }),
+      cartUnits: t.units, cartTotal: priced && !lines.some(function(l){ return l.price == null; }) ? t.total : null };
+  };
+  /* the helper is for people with an account (an admin signed in to the panel
+     counts too, so the team can see it). Known before the product has loaded. */
+  window.LUMIA_SHOP.signedIn = function(){ return !!(ACCOUNT || ADMIN); };
+  /* the shop's configuration once it has loaded (null before) — the helper reads it instead of fetching it again */
+  window.LUMIA_SHOP.config = function(){ return CFG; };
+  /* a message to the team from the helper's "Talk to a person" form: it becomes a conversation in the
+     customer's account (Messages) and in the admin panel's Messages tab — the same route the account page uses */
+  window.LUMIA_SHOP.sendMessage = function(subject, text){
+    if(!ACCOUNT || !ACCOUNT.key) return Promise.reject(new Error('no account'));
+    return fetch('/api/home/thread', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: ACCOUNT.email, key: ACCOUNT.key, subject: String(subject || '').slice(0, 120), text: String(text || '').slice(0, 2000) })
+    }).then(function(r){ return r.json().then(function(d){ if(!r.ok || !d || !d.ok) throw new Error((d && d.error) || 'failed'); return d; }); });
+  };
+  /* {sel:{key:value…}, w, h, qty, open:'stepKey'} */
+  window.LUMIA_SHOP.configure = function(c){
+    if(!P || !c) return false;
+    clearFail();
+    var cs = c.sel || {};
+    Object.keys(cs).forEach(function(k){
+      if(k === 'collection' || k === 'colour' || k === '_room' || k === '_roomText'){ SEL[k] = cs[k]; return; }
+      var st = stepByKey(k);
+      if(st && plainOpts(st).indexOf(cs[k]) !== -1 && !disabledOf(st)[cs[k]]) SEL[k] = cs[k];
+    });
+    /* never let the colour-group filter hide the fabric that was just chosen */
+    if(cs.collection && stepByKey('cgroup')) SEL.cgroup = stepByKey('cgroup').options[0];
+    ensureDefaults();
+    var lim = sizeLimits();
+    if(isFinite(c.w)) W = clamp(Math.round(c.w * 8) / 8, lim.w[0], lim.w[1]);
+    if(isFinite(c.h)) H = clamp(Math.round(c.h * 8) / 8, lim.h[0], lim.h[1]);
+    if(isFinite(c.qty)) QTY = clamp(Math.round(c.qty), 1, 50);
+    if(c.open){ OPEN = {}; OPEN[c.open] = true; }
+    renderSteps();
+    return true;
+  };
+  /* [{label, qty, sel?, w?, h?}] → one cart line each, starting from the
+     configuration on screen. Returns how many lines were added. */
+  window.LUMIA_SHOP.addLines = function(items){
+    if(!P || !items || !items.length) return 0;
+    var keep = { sel: SEL, w: W, h: H, q: QTY }, n = 0;
+    items.forEach(function(it){
+      SEL = JSON.parse(JSON.stringify(keep.sel));
+      var is = it.sel || {};
+      Object.keys(is).forEach(function(k){
+        if(k === 'collection' || k === 'colour'){ SEL[k] = is[k]; return; }
+        var st = stepByKey(k);
+        if(st && plainOpts(st).indexOf(is[k]) !== -1) SEL[k] = is[k];
+      });
+      ensureDefaults();
+      if(missingSteps().length) return;
+      var lim = sizeLimits();
+      W = clamp(isFinite(it.w) ? it.w : keep.w, lim.w[0], lim.w[1]);
+      H = clamp(isFinite(it.h) ? it.h : keep.h, lim.h[0], lim.h[1]);
+      QTY = clamp(Math.round(it.qty || 1), 1, 50);
+      var name = String(it.label || '').trim();
+      if(name){
+        if(ROOMS.indexOf(name) !== -1 && name !== 'Other'){ SEL._room = name; delete SEL._roomText; }
+        else { SEL._room = 'Other'; SEL._roomText = name; }
+      }
+      lines.push(buildLine()); n++;
+    });
+    SEL = keep.sel; W = keep.w; H = keep.h; QTY = keep.q;
+    saveLines(); renderLines(); renderSteps();
+    return n;
+  };
+  /* [{sel?, w?, h?}] → the unit price of each, or null — null for all of them
+     whenever this page is not showing prices (so the helper cannot leak one) */
+  window.LUMIA_SHOP.quote = function(items){
+    if(!P || !hasPrices()) return (items || []).map(function(){ return null; });
+    var keep = { sel: SEL, w: W, h: H };
+    var out = (items || []).map(function(it){
+      SEL = JSON.parse(JSON.stringify(keep.sel));
+      var is = it.sel || {};
+      Object.keys(is).forEach(function(k){
+        if(k === 'collection' || k === 'colour'){ SEL[k] = is[k]; return; }
+        var st = stepByKey(k);
+        if(st && plainOpts(st).indexOf(is[k]) !== -1) SEL[k] = is[k];
+      });
+      ensureDefaults();
+      W = isFinite(it.w) ? it.w : keep.w; H = isFinite(it.h) ? it.h : keep.h;
+      var v = null;
+      try{ v = currentPrice(); }catch(e){ v = null; }
+      return v;
+    });
+    SEL = keep.sel; W = keep.w; H = keep.h;
+    return out;
+  };
+  window.LUMIA_SHOP.showCart = function(){
+    document.getElementById('cartsec').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   /* ── cart lines ── */
   var linesBox = document.getElementById('lines'),
@@ -1079,7 +1197,7 @@
     var at = accTotal();
     var grand = Math.round((t.total + at) * 100) / 100;
     var hasQuote = lines.some(function(l){ return l.price == null; });
-    var noAcct = !ACCOUNT && !ADMIN;   /* prices come with the account */
+    var noAcct = !ACCOUNT && !ADMIN && !PREVIEW_PRICES;   /* prices come with the account (or the local preview) */
     count.innerHTML = lines.length
       ? '<div class="csubrow"><span>' + plural(lines.length, 'line') + ' &middot; ' + plural(t.units, 'unit') +
         (at > 0 ? ' &middot; accessories $' + at.toFixed(2) : '') +
@@ -1088,6 +1206,7 @@
       : '';
     syncPay();
     syncSections();
+    notifyHelper();
   }
 
   linesBox.addEventListener('click', function(e){
@@ -1205,6 +1324,11 @@
        price grid, or an account LUMIA switched to quote-only). */
     var guest = !ACCOUNT && !ADMIN;
     if(acctcta) acctcta.hidden = !guest;
+    if(guest && PREVIEW_PRICES){
+      /* local preview: the price is on screen, but buying still starts with an account */
+      paybtn.hidden = true; savebtn.hidden = true;
+      if(acctcta) acctcta.textContent = 'Create an account to check out';
+    }
     if(quotebtn) quotebtn.hidden = admin || guest;
     /* "Ordering for someone else?" only means something to a signed-in account */
     forother.hidden = guest;
@@ -1339,6 +1463,17 @@
     refreshPrices();
     tryAdmin();
     loadContact();
+    /* LOCAL PREVIEW ONLY (tools/design_chat_server.mjs on localhost): show the
+       retail prices straight away, no account needed. The live site is never
+       asked — the host check keeps this off anything but this computer. */
+    if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)){
+      fetch('/api/design-chat/config').then(function(r){ return r.ok ? r.json() : null; }).then(function(c){
+        if(!c || !c.preview || !c.prices) return null;
+        return fetch('/api/design-chat/prices').then(function(r){ return r.ok ? r.json() : null; });
+      }).then(function(d){
+        if(d && d.prices){ PREVIEW_PRICES = d.prices; if(P) renderSteps(); renderLines(); }
+      }).catch(function(){});
+    }
     fetch('assets/shop-config.json?v=' + Date.now())
       .then(function(r){ return r.json(); })
       .then(function(cfg){

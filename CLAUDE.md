@@ -64,6 +64,19 @@ Excels (`tools/*.local.*` are gitignored for exactly that reason).
   `LUMIA_I18N.missing()` in the console lists what a page still lacks.
 - Never make page logic depend on visible text (it changes with the language) — use ids/classes/values.
 
+## Ask Mira (helper on the product pages)
+- `assets/mira.js` (module) + `assets/design-chat-core.js` (catalogue, size rules) + `assets/design-chat-brain.js`
+  (how typed messages are read). Loaded by the four product pages after shopkit.js; it drives the shop only through
+  the `window.LUMIA_SHOP` hooks in shopkit.js (snapshot / configure / addLines / quote / signedIn / config / sendMessage).
+- Shown only to people with an account (or an admin signed in to the panel): `gate()` in mira.js.
+- Replies are written rules — there is no AI route on the live site. "Talk to a person" posts to
+  `/api/home/thread` (a conversation in the account's Messages and in the admin Messages tab).
+- Its own language packs (EN / ES / FR: `UI`, `SAY` in mira.js; `VAL_*`, `ANSWERS` and the word lists in
+  design-chat-brain.js). Its elements are `data-noi18n`, so tools/i18n.json does not apply — new text needs all three.
+- Version stamps: `mira.js?v=N` in tools/product_template.html + the four pages; the `?v=` on the two imports in
+  mira.js and on the import in design-chat-brain.js are bumped together (same URL everywhere, or the module loads twice).
+- Owner's rule: Mira never picks a fabric or colour for the customer — it asks and filters.
+
 ## Pricing
 - Base (group-1) prices parsed from gitignored local Excels by `tools/make_trade_data.py`
   (roman/cellular/pleated/arches from pricing.local.xlsx, drapery from drapery-pricing.local.xlsx).

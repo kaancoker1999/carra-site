@@ -2,3 +2,5 @@ tools/dealers.local.json
 tools/pricing.local.xlsx
 tools/drapery-pricing.local.xlsx
 _*_test.html
+tools/retail-prices.local.json
+.env
