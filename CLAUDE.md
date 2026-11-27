@@ -76,6 +76,16 @@ Excels (`tools/*.local.*` are gitignored for exactly that reason).
 - Version stamps: `mira.js?v=N` in tools/product_template.html + the four pages; the `?v=` on the two imports in
   mira.js and on the import in design-chat-brain.js are bumped together (same URL everywhere, or the module loads twice).
 - Owner's rule: Mira never picks a fabric or colour for the customer — it asks and filters.
+- Open, it covers the whole page: the chat, and a narrow column with what has been chosen (`renderSide`; under
+  900px that column is the bar under the header instead).
+- Roman + drapery open with "What can I do for you?" and three ways in (`startGuide`): Help me choose a fabric
+  (the rooms first, then range / light / colours — for all rooms or room by room — then sizes and options),
+  Quick quote (size + count → where each range starts), I have a question. Cellular and pleated keep the older
+  first screen and questions.
+- The fabric data behind those questions is the owner's own mapping, in mira.js: `TIER_OF` (Budget friendly /
+  Classic / Premium — not the price groups), `OP_ORDER` + `LINEN` (the light question), `HIDDEN` (fabrics Mira
+  never lists: Hesperia), `FAM_FIX` (which colour filters a colour shows under).
+- Roman: inside / outside mount is chosen beside each size in the room list (`mountInRow`), not asked on its own.
 
 ## Pricing
 - Base (group-1) prices parsed from gitignored local Excels by `tools/make_trade_data.py`

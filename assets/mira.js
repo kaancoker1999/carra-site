@@ -33,6 +33,8 @@ const M = {
   undo: null,             /* {before, sizeSaid} — what the newest change card can take back */
   decided: {},            /* what the customer has actually chosen (colour, mount, drive …) — defaults are not shown as choices */
   fromPicker: false,
+  guide: null,            /* the guided start on the Roman and drapery pages: {step: 'fabric' | 'rooms' | 'quote' | 'ask'} */
+  guideSet: null,         /* the three answers given there (range, light, colours), kept for the room-by-room card */
 };
 try { const lg = localStorage.getItem('lumia_lang'); if(lg === 'es' || lg === 'fr') M.lang = lg; } catch(e){}
 const tv = (v) => B.tv(M.lang, v);
@@ -47,6 +49,9 @@ const UI = {
     foot: 'A person checks every order before it is cut.',
     cardT: 'Not sure where to start?',
     cardP: 'Tell Mira which room it is and what you need there. She suggests a fabric and fills in the options below for you.',
+    cardPG: 'Three quick choices — the range, the light and the color — and Mira shows you every fabric that matches. She fills in the options below for you.',
+    sideT: 'Your selection', sideTot: 'Total',
+    ph0G: 'Ask a question, or type a size',
     example: 'example size', priceAcct: 'Price with a free account', priceBox: 'Your price shows with a free account.', priceBtn: 'See my price',
     undo: 'Undo', undone: 'Undone',
     hTitle: 'Talk to a person', hText: 'Write to our team. We answer within one business day, and your chat with Mira goes along, so you won’t have to repeat yourself.',
@@ -64,6 +69,9 @@ const UI = {
     foot: 'Una persona revisa cada pedido antes del corte.',
     cardT: '¿No sabes por dónde empezar?',
     cardP: 'Dile a Mira qué habitación es y qué necesitas ahí. Ella sugiere una tela y completa las opciones de abajo por ti.',
+    cardPG: 'Tres pasos rápidos (la gama, la luz y el color) y Mira te muestra todas las telas que coinciden. Ella completa las opciones de abajo por ti.',
+    sideT: 'Tu selección', sideTot: 'Total',
+    ph0G: 'Haz una pregunta o escribe una medida',
     example: 'medida de ejemplo', priceAcct: 'Precio con una cuenta gratis', priceBox: 'Tu precio aparece con una cuenta gratis.', priceBtn: 'Ver mi precio',
     undo: 'Deshacer', undone: 'Deshecho',
     hTitle: 'Hablar con una persona', hText: 'Escríbele a nuestro equipo. Respondemos en un día hábil, y tu conversación con Mira va incluida para que no tengas que repetir nada.',
@@ -81,6 +89,9 @@ const UI = {
     foot: 'Une personne vérifie chaque commande avant la coupe.',
     cardT: 'Vous ne savez pas par où commencer ?',
     cardP: 'Dites à Mira de quelle pièce il s’agit et ce qu’il vous y faut. Elle propose un tissu et remplit les options ci-dessous pour vous.',
+    cardPG: 'Trois choix rapides (la gamme, la lumière et la couleur) et Mira vous montre tous les tissus qui correspondent. Elle remplit les options ci-dessous pour vous.',
+    sideT: 'Votre sélection', sideTot: 'Total',
+    ph0G: 'Posez une question ou indiquez des dimensions',
     example: 'dimensions d’exemple', priceAcct: 'Prix avec un compte gratuit', priceBox: 'Votre prix s’affiche avec un compte gratuit.', priceBtn: 'Voir mon prix',
     undo: 'Annuler', undone: 'Annulé',
     hTitle: 'Parler à une personne', hText: 'Écrivez à notre équipe. Nous répondons sous un jour ouvrable, et votre conversation avec Mira est jointe : vous n’aurez rien à répéter.',
@@ -98,6 +109,25 @@ const t = (k) => UI[M.lang][k] || UI.en[k] || k;
 const SAY = {
   en: {
     hello: v => `Hi, I’m Mira. Give me your window size and I’ll set ${v} up for you, or pick one below. I only change what you ask.`,
+    helloG: 'Hi, I’m Mira. What can I do for you?',
+    /* the first screen on the Roman and drapery pages (Kaan, 2026-11-26): a fabric, a price, a question */
+    startersG: ['Help me choose a fabric', 'Quick quote', 'I have a question'],
+    guide: {
+      fabricQ: 'Happy to. Three quick choices: the range, how much light comes through, and the colors you’d like to see. I’ll show you everything that matches — the choice is yours.',
+      need: 'Pick a color first.',
+      roomsFirst: 'Happy to. First the rooms: which ones is it for, and how many windows in each? Tick them below — one window is fine too. Or type your own list (“living room 3, bedroom 2”).',
+      roomsQ: 'Which rooms is it for, and how many windows in each? Tick them below — one window is fine too. Or type your own list (“living room 3, bedroom 2”).',
+      roomsGo: 'Continue',
+      got: (r, n) => n === 1 ? 'Got it — one window.' : r === 1 ? `Got it — ${n} windows in one room.` : `Got it — ${r} rooms, ${n} windows in all.`,
+      sameQ: (v, s) => `Every room has ${v} for now. Press Continue to keep it — or tap “${s}” to give a room its own fabric.`,
+      quoteQ: 'Happy to. What size is the window, and how many do you need? If the sizes differ, start with the largest.',
+      qSize: 'Window size', qCount: 'How many windows?', qGo: 'Show prices', qNeed: 'Enter the width and the height.',
+      quoteA: n => `Here is where each range starts at that size${n > 1 ? `, for ${n} windows` : ''} — with the options as they are on the page, and free shipping. Tap a range to see its fabrics.`,
+      quoteSize: 'Tell me the width and the height and I’ll show you where each range starts.',
+      each: 'each', forN: (v, n) => `${v} for ${n}`,
+      askQ: 'Of course — ask me anything. Here is what people ask most:',
+      topics: ['How long does delivery take?', 'What does the guarantee cover?', 'How do I measure?', 'Can I get free swatches?', 'What is the difference between inside and outside mount?'],
+    },
     noun: { roman: 'this shade', cellular: 'this shade', pleated: 'this shade', drapery: 'this drapery' },
     thanks: 'My pleasure.',
     lost: 'I can set the size, fabric, color, mount and mechanism on this page, add windows to your cart room by room, or answer questions about delivery, measuring and our guarantee. What would you like to do?',
@@ -122,7 +152,7 @@ const SAY = {
       soft: 'For soft daylight a light-filtering weave is the one: it glows without glare.',
       privacy: 'For privacy, a light-filtering fabric hides the room by day. At night with the lights on, a liner or top-down bottom-up keeps you covered.',
       privacyF: 'For privacy I’d add the white liner: nobody can see in, and it softens the light a little. Sheer fabrics are see-through at night, so I leave them out.',
-      softF: 'For soft daylight I leave out room darkening and blackout — everything else lets the light in.',
+      softF: 'For soft daylight I leave out blackout — everything else lets the light in.',
       heatC: 'For heat and cold, double cell is the best insulator we make, so I’ve set it.',
       heat: 'For heat and cold, cellular shades insulate best, and they have their own page. On this one, a liner helps.',
       wet: 'For a kitchen or bathroom I’d pick something slim that sits close to the glass: pleated or cellular shades.',
@@ -150,14 +180,15 @@ const SAY = {
       fabricFirst: ['Choose the fabric first', 'The sizes come right after, and the prices with them.', 'The sizes come right after.'],
       sizeQ: 'Now the sizes. Type them into the list — one per room, or one per window — or tell me one size if they are all the same.',
       sizeMiss: n => n === 1 ? 'One window still needs a size.' : `${n} windows still need a size.`, sizesIn: 'The sizes are in.', sizeOk: 'Every window has its size — press Continue in the list.',
+      mountMiss: 'Choose inside or outside mount for each size first.', sizeMount: 'Beside each size, choose inside or outside mount.',
       colourQ: 'First the color — which one would you like?',
-      fabricQ: 'First the fabric and its color, in three quick choices: the kind of fabric, how much light it lets through, and the colors you’d like to see. I’ll show you everything that matches — the choice is yours.',
+      fabricQ: 'First the fabric and its color, in three quick choices: the range, how much light it lets through, and the colors you’d like to see. I’ll show you everything that matches — the choice is yours.',
       darkOne: 'For a dark room I’d add the blackout liner: it goes behind any fabric you like, so the fabric and the color stay your choice. Three quick choices and I’ll show you what we have.',
       kindSaid: 'Here you go — two more quick choices and I’ll show you what we have.',
       famSaid: v => `Two quick choices and I’ll show you the ${v} we have.`, famSet: v => `Done — the color filter now shows ${v}.`,
       famNone: v => `No ${v} in this kind of fabric — try another kind, or pick from the colors below.`,
       hidePrivacy: v => `Sheers are left out for ${v}: at night, with the lights on, people can see through them.`,
-      hideSoft: v => `Room darkening and blackout are left out for ${v}, where you want soft daylight.`,
+      hideSoft: v => `Blackout is left out for ${v}, where you want soft daylight.`,
       boHint: 'A blackout liner goes behind the fabric you choose — the prices here include it.', boSheer: 'Behind a sheer fabric the liner takes away the see-through look.',
       privacyLiner: v => `For ${v} I’d add the white liner, so nobody can see in.`,
       heatLiner: v => `For ${v} a liner helps keep heat and cold out; if that matters most, our cellular shades insulate best.`,
@@ -165,18 +196,18 @@ const SAY = {
       linerHas: (v, n, rest) => `${v} already ${n > 1 ? 'have their' : 'has its'} blackout liner from the fabric step, so this is for ${rest}.`,
       thisWindow: 'this window', and: 'and',
       wordSaid: 'Three quick choices and I’ll show you what we have — the color is yours to pick.', wordPending: 'The color is yours to pick — you’ll see everything that matches in the color step.',
-      kindQ: 'What kind of fabric?', opQ: 'How much light should come through?', famQ: 'Which colors would you like to see?',
-      kind: { budget: ['Budget friendly', 'Our best prices'], solid: ['Solids', 'Plain colors'], wool: ['Wool blend', 'Woven with wool'], linen: ['Linen', 'Linen and linen blends'], luxury: ['Luxury', 'Our finest fabrics'],
+      kindQ: 'Which range?', opQ: 'How much light should come through?', famQ: 'Which colors would you like to see?',
+      kind: { budget: ['Budget friendly', 'Our best prices'], classic: ['Classic', 'Mid-range prices'], solid: ['Solids', 'Plain colors'], wool: ['Wool blend', 'Woven with wool'], linen: ['Linen', 'Linen and linen blends'], premium: ['Premium', 'Our finest fabrics'],
         pattern: ['Patterned', 'Stripes and woven motifs'], any: ['Not sure yet', 'Show me all of them'] },
       op: { sheer: ['Sheer', 'The most daylight. At night, with the lights on, people can see in.'], semi: ['Semi-transparent', 'Daylight comes in. At night only shapes show from outside.'], filter: ['Light filtering', 'A soft glow. Nobody can see in, day or night.'],
-        dim: ['Room darkening', 'Blocks most of the light; the room stays dim, not fully dark.'], blackout: ['Blackout', 'Any fabric here, with a blackout liner behind it.'], any: ['Any', 'Show them all'] },
-      from: v => `from ${v}`, change: 'Change', kindA: 'Fabric', opA: 'Light', otherFabrics: 'See other fabrics',
+        linen: ['Linen', 'Linen and linen blends.'], dim: ['Room darkening', 'Blocks most of the light; the room stays dim, not fully dark.'], blackout: ['Blackout', 'Any fabric here, with a blackout liner behind it.'], any: ['Any', 'Show them all'] },
+      from: v => `from ${v}`, change: 'Change', kindA: 'Range', opA: 'Light', otherFabrics: 'See other fabrics',
       darkHint: v => `${v} should be dark: choose any color you like here — the blackout liner comes up in a moment.`,
       darkLiner: v => `For ${v} I’d add the blackout liner, so the room is properly dark.`,
       darkOnly: v => [`Blackout liner in ${v} only`, 'No liner in the other rooms.'],
       linerMix: (d, p, rest) => [[d ? `Blackout liner in ${d}` : '', p ? `${d ? 'white' : 'White'} liner in ${p}` : ''].filter(Boolean).join(', '), rest ? 'No liner in the other rooms.' : ''],
       fam: { white: 'Whites & creams', beige: 'Beiges & sands', grey: 'Greys', dark: 'Dark tones', blue: 'Blues', green: 'Greens', warm: 'Warm tones', pink: 'Pinks & purples', all: 'Show everything' },
-      scopeAll: 'One color for all', scopeRoom: 'A color per room', famFirst: 'Pick a color family above to see the fabrics.', none: 'Nothing in that color — try another.',
+      scopeAll: 'Same for all rooms', scopeRoom: 'Different for each room', famFirst: 'Pick a color family above to see the fabrics.', none: 'Nothing in that color — try another.',
       more: n => `Show all ${n}`, allRooms: 'All rooms',
       colourOne: 'The color is yours to choose — here is what it comes in.',
       colourAll: n => `All ${n} colors`, cont: 'Continue', colourNeed: 'Pick a color for each one first.', pick: 'color to choose',
@@ -231,6 +262,24 @@ const SAY = {
   },
   es: {
     hello: v => `Hola, soy Mira. Dame la medida de tu ventana y preparo ${v} por ti, o elige una opción abajo. Solo cambio lo que me pidas.`,
+    helloG: 'Hola, soy Mira. ¿En qué puedo ayudarte?',
+    startersG: ['Ayúdame a elegir una tela', 'Cotización rápida', 'Tengo una pregunta'],
+    guide: {
+      fabricQ: 'Con gusto. Tres pasos rápidos: la gama, cuánta luz deja pasar y los colores que te gustaría ver. Te muestro todo lo que coincide; tú eliges.',
+      need: 'Elige primero un color.',
+      roomsFirst: 'Con gusto. Primero las habitaciones: ¿para cuáles es y cuántas ventanas tiene cada una? Márcalas abajo; una sola ventana también vale. O escribe tu propia lista (“sala 3, dormitorio 2”).',
+      roomsQ: '¿Para qué habitaciones es y cuántas ventanas tiene cada una? Márcalas abajo; una sola ventana también vale. O escribe tu propia lista (“sala 3, dormitorio 2”).',
+      roomsGo: 'Continuar',
+      got: (r, n) => n === 1 ? 'Entendido: una ventana.' : r === 1 ? `Entendido: ${n} ventanas en una habitación.` : `Entendido: ${r} habitaciones, ${n} ventanas en total.`,
+      sameQ: (v, s) => `Por ahora todas las habitaciones llevan ${v}. Pulsa Continuar para dejarlo así, o toca “${s}” para darle a una su propia tela.`,
+      quoteQ: 'Con gusto. ¿Qué medida tiene la ventana y cuántas necesitas? Si las medidas son distintas, empieza por la más grande.',
+      qSize: 'Medida de la ventana', qCount: '¿Cuántas ventanas?', qGo: 'Ver precios', qNeed: 'Escribe el ancho y el alto.',
+      quoteA: n => `Aquí tienes desde cuánto empieza cada gama en esa medida${n > 1 ? `, para ${n} ventanas` : ''}: con las opciones tal como están en la página y envío gratis. Toca una gama para ver sus telas.`,
+      quoteSize: 'Dime el ancho y el alto y te muestro desde cuánto empieza cada gama.',
+      each: 'c/u', forN: (v, n) => `${v} por ${n}`,
+      askQ: 'Claro, pregúntame lo que quieras. Esto es lo que más nos preguntan:',
+      topics: ['¿Cuánto tarda la entrega?', '¿Qué cubre la garantía?', '¿Cómo mido la ventana?', '¿Puedo pedir muestras gratis?', '¿Qué diferencia hay entre montaje interior y exterior?'],
+    },
     noun: { roman: 'esta cortina', cellular: 'esta cortina', pleated: 'esta cortina', drapery: 'este cortinaje' },
     thanks: 'Con mucho gusto.',
     lost: 'Puedo poner la medida, la tela, el color, el montaje y el mecanismo en esta página, agregar ventanas a tu carrito habitación por habitación, o responder dudas sobre entrega, medición y garantía. ¿Qué te gustaría hacer?',
@@ -255,7 +304,7 @@ const SAY = {
       soft: 'Para luz suave, lo indicado es un tejido que filtra la luz: ilumina sin deslumbrar.',
       privacy: 'Para privacidad, una tela que filtra la luz oculta la habitación de día. De noche, con las luces encendidas, un forro o la apertura superior e inferior te mantiene cubierto.',
       privacyF: 'Para privacidad yo agregaría el forro blanco: nadie ve hacia adentro y suaviza un poco la luz. Las telas traslúcidas se transparentan de noche, así que las dejo fuera.',
-      softF: 'Para luz suave dejo fuera las que oscurecen y el blackout; todas las demás dejan pasar la luz.',
+      softF: 'Para luz suave dejo fuera el blackout; todas las demás dejan pasar la luz.',
       heatC: 'Para el calor y el frío, la celda doble es el mejor aislante que fabricamos, así que la dejé puesta.',
       heat: 'Para el calor y el frío, las cortinas celulares aíslan mejor y tienen su propia página. En esta, un forro ayuda.',
       wet: 'Para una cocina o un baño yo elegiría algo delgado que quede pegado al vidrio: cortinas plisadas o celulares.',
@@ -283,14 +332,15 @@ const SAY = {
       fabricFirst: ['Elegir primero la tela', 'Las medidas vienen justo después, y con ellas los precios.', 'Las medidas vienen justo después.'],
       sizeQ: 'Ahora las medidas. Escríbelas en la lista (una por habitación o una por ventana), o dime una sola medida si todas son iguales.',
       sizeMiss: n => n === 1 ? 'A una ventana todavía le falta la medida.' : `A ${n} ventanas todavía les falta la medida.`, sizesIn: 'Las medidas ya están.', sizeOk: 'Todas las ventanas tienen medida: pulsa Continuar en la lista.',
+      mountMiss: 'Elige primero montaje interior o exterior para cada medida.', sizeMount: 'Junto a cada medida, elige montaje interior o exterior.',
       colourQ: 'Primero el color: ¿cuál te gustaría?',
-      fabricQ: 'Primero la tela y su color, en tres pasos rápidos: el tipo de tela, cuánta luz deja pasar y los colores que te gustaría ver. Te muestro todo lo que coincide; tú eliges.',
+      fabricQ: 'Primero la tela y su color, en tres pasos rápidos: la gama, cuánta luz deja pasar y los colores que te gustaría ver. Te muestro todo lo que coincide; tú eliges.',
       darkOne: 'Para una habitación oscura yo agregaría el forro blackout: va detrás de la tela que te guste, así que la tela y el color los eliges tú. Tres pasos rápidos y te muestro lo que hay.',
       kindSaid: 'Aquí tienes: dos pasos más y te muestro lo que tenemos.',
       famSaid: v => `Dos pasos rápidos y te muestro lo que tenemos en ${v}.`, famSet: v => `Listo: el filtro de color ahora muestra ${v}.`,
       famNone: v => `No hay ${v} en este tipo de tela; prueba con otro tipo o elige entre los colores de abajo.`,
       hidePrivacy: v => `Dejo fuera las traslúcidas para ${v}: de noche, con las luces encendidas, se ve a través de ellas.`,
-      hideSoft: v => `Dejo fuera las que oscurecen y el blackout para ${v}, donde quieres luz suave.`,
+      hideSoft: v => `Dejo fuera el blackout para ${v}, donde quieres luz suave.`,
       boHint: 'Detrás de la tela que elijas va un forro blackout; los precios de aquí ya lo incluyen.', boSheer: 'Detrás de una tela traslúcida, el forro le quita la transparencia.',
       privacyLiner: v => `Para ${v} yo agregaría el forro blanco, para que nadie vea hacia adentro.`,
       heatLiner: v => `Para ${v} un forro ayuda contra el calor y el frío; si eso es lo más importante, nuestras cortinas celulares son las que mejor aíslan.`,
@@ -298,18 +348,18 @@ const SAY = {
       linerHas: (v, n, rest) => `${v} ya ${n > 1 ? 'tienen' : 'tiene'} su forro blackout desde el paso de la tela, así que esto es para ${rest}.`,
       thisWindow: 'esta ventana', and: 'y',
       wordSaid: 'Tres pasos rápidos y te muestro lo que hay; el color lo eliges tú.', wordPending: 'El color lo eliges tú: en el paso del color verás todo lo que coincide.',
-      kindQ: '¿Qué tipo de tela?', opQ: '¿Cuánta luz debe pasar?', famQ: '¿Qué colores te gustaría ver?',
-      kind: { budget: ['Económicas', 'Nuestros mejores precios'], solid: ['Lisas', 'Colores lisos'], wool: ['Mezcla de lana', 'Tejida con lana'], linen: ['Lino', 'Lino y mezclas de lino'], luxury: ['De lujo', 'Nuestras telas más finas'],
+      kindQ: '¿Qué gama?', opQ: '¿Cuánta luz debe pasar?', famQ: '¿Qué colores te gustaría ver?',
+      kind: { budget: ['Económicas', 'Nuestros mejores precios'], classic: ['Clásicas', 'Precios intermedios'], solid: ['Lisas', 'Colores lisos'], wool: ['Mezcla de lana', 'Tejida con lana'], linen: ['Lino', 'Lino y mezclas de lino'], premium: ['Premium', 'Nuestras telas más finas'],
         pattern: ['Con diseño', 'Rayas y motivos tejidos'], any: ['Aún no lo sé', 'Muéstramelas todas'] },
       op: { sheer: ['Traslúcida', 'La mayor luz. De noche, con las luces encendidas, se ve hacia adentro.'], semi: ['Semitransparente', 'Entra la luz. De noche, desde afuera solo se ven siluetas.'], filter: ['Filtra la luz', 'Un resplandor suave. Nadie ve hacia adentro, ni de día ni de noche.'],
-        dim: ['Oscurece', 'Bloquea casi toda la luz; la habitación queda en penumbra, no a oscuras.'], blackout: ['Blackout', 'Cualquier tela de aquí, con un forro blackout detrás.'], any: ['Cualquiera', 'Muéstralas todas'] },
-      from: v => `desde ${v}`, change: 'Cambiar', kindA: 'Tela', opA: 'Luz', otherFabrics: 'Ver otras telas',
+        linen: ['Lino', 'Lino y mezclas de lino.'], dim: ['Oscurece', 'Bloquea casi toda la luz; la habitación queda en penumbra, no a oscuras.'], blackout: ['Blackout', 'Cualquier tela de aquí, con un forro blackout detrás.'], any: ['Cualquiera', 'Muéstralas todas'] },
+      from: v => `desde ${v}`, change: 'Cambiar', kindA: 'Gama', opA: 'Luz', otherFabrics: 'Ver otras telas',
       darkHint: v => `${v} debe quedar a oscuras: elige aquí el color que quieras; el forro blackout aparece en un momento.`,
       darkLiner: v => `Para ${v} yo agregaría el forro blackout, para que quede realmente a oscuras.`,
       darkOnly: v => [`Forro blackout solo en ${v}`, 'Sin forro en las demás habitaciones.'],
       linerMix: (d, p, rest) => [[d ? `Forro blackout en ${d}` : '', p ? `${d ? 'forro' : 'Forro'} blanco en ${p}` : ''].filter(Boolean).join(', '), rest ? 'Sin forro en las demás habitaciones.' : ''],
       fam: { white: 'Blancos y cremas', beige: 'Beiges y arenas', grey: 'Grises', dark: 'Tonos oscuros', blue: 'Azules', green: 'Verdes', warm: 'Tonos cálidos', pink: 'Rosas y morados', all: 'Ver todo' },
-      scopeAll: 'Un color para todas', scopeRoom: 'Color por habitación', famFirst: 'Elige arriba una familia de color para ver las telas.', none: 'No hay nada en ese color; prueba con otro.',
+      scopeAll: 'Igual en todas', scopeRoom: 'Distinto por habitación', famFirst: 'Elige arriba una familia de color para ver las telas.', none: 'No hay nada en ese color; prueba con otro.',
       more: n => `Ver los ${n}`, allRooms: 'Todas las habitaciones',
       colourOne: 'El color lo eliges tú; estos son los que hay.',
       colourAll: n => `Los ${n} colores`, cont: 'Continuar', colourNeed: 'Elige primero un color para cada una.', pick: 'color por elegir',
@@ -363,6 +413,24 @@ const SAY = {
   },
   fr: {
     hello: v => `Bonjour, je suis Mira. Donnez-moi les dimensions de votre fenêtre et je prépare ${v} pour vous, ou choisissez une option ci-dessous. Je ne modifie que ce que vous demandez.`,
+    helloG: 'Bonjour, je suis Mira. Que puis-je faire pour vous ?',
+    startersG: ['Aidez-moi à choisir un tissu', 'Devis rapide', 'J’ai une question'],
+    guide: {
+      fabricQ: 'Volontiers. Trois choix rapides : la gamme, la quantité de lumière qui passe et les couleurs que vous aimeriez voir. Je vous montre tout ce qui correspond. Le choix vous appartient.',
+      need: 'Choisissez d’abord une couleur.',
+      roomsFirst: 'Volontiers. D’abord les pièces : lesquelles, et combien de fenêtres dans chacune ? Cochez-les ci-dessous. Une seule fenêtre convient aussi. Ou écrivez votre propre liste (« salon 3, chambre 2 »).',
+      roomsQ: 'Pour quelles pièces, et combien de fenêtres dans chacune ? Cochez-les ci-dessous. Une seule fenêtre convient aussi. Ou écrivez votre propre liste (« salon 3, chambre 2 »).',
+      roomsGo: 'Continuer',
+      got: (r, n) => n === 1 ? 'C’est noté : une fenêtre.' : r === 1 ? `C’est noté : ${n} fenêtres dans une pièce.` : `C’est noté : ${r} pièces, ${n} fenêtres en tout.`,
+      sameQ: (v, s) => `Pour l’instant, toutes les pièces ont ${v}. Appuyez sur Continuer pour le garder, ou touchez « ${s} » pour donner à une pièce son propre tissu.`,
+      quoteQ: 'Volontiers. Quelles sont les dimensions de la fenêtre, et combien vous en faut-il ? Si les dimensions diffèrent, commencez par la plus grande.',
+      qSize: 'Dimensions de la fenêtre', qCount: 'Combien de fenêtres ?', qGo: 'Voir les prix', qNeed: 'Indiquez la largeur et la hauteur.',
+      quoteA: n => `Voici à partir de combien commence chaque gamme pour ces dimensions${n > 1 ? `, pour ${n} fenêtres` : ''} : avec les options telles qu’elles sont sur la page, livraison gratuite. Touchez une gamme pour voir ses tissus.`,
+      quoteSize: 'Indiquez-moi la largeur et la hauteur et je vous montre à partir de combien commence chaque gamme.',
+      each: 'l’unité', forN: (v, n) => `${v} pour ${n}`,
+      askQ: 'Bien sûr, posez-moi vos questions. Voici ce qu’on nous demande le plus :',
+      topics: ['Quel est le délai de livraison ?', 'Que couvre la garantie ?', 'Comment prendre les mesures ?', 'Puis-je recevoir des échantillons gratuits ?', 'Quelle est la différence entre pose intérieure et extérieure ?'],
+    },
     noun: { roman: 'ce store', cellular: 'ce store', pleated: 'ce store', drapery: 'ces rideaux' },
     thanks: 'Avec plaisir.',
     lost: 'Je peux régler les dimensions, le tissu, la couleur, la pose et le mécanisme sur cette page, ajouter des fenêtres à votre panier pièce par pièce, ou répondre à vos questions sur la livraison, la prise de mesures et notre garantie. Que souhaitez-vous faire ?',
@@ -387,7 +455,7 @@ const SAY = {
       soft: 'Pour une lumière douce, un tissage tamisant est idéal : une belle clarté, sans éblouir.',
       privacy: 'Pour l’intimité, un tissu tamisant cache la pièce de jour. Le soir, lumières allumées, une doublure ou l’ouverture haut-bas vous protège des regards.',
       privacyF: 'Pour l’intimité, j’ajouterais la doublure blanche : personne ne voit à l’intérieur, et la lumière est un peu adoucie. Les voilages sont transparents le soir, je les laisse donc de côté.',
-      softF: 'Pour une lumière douce, je laisse de côté l’obscurcissant et l’occultant. Tout le reste laisse entrer la lumière.',
+      softF: 'Pour une lumière douce, je laisse de côté l’occultant. Tout le reste laisse entrer la lumière.',
       heatC: 'Contre la chaleur et le froid, l’alvéole double est le meilleur isolant que nous fabriquons. Je l’ai donc réglée.',
       heat: 'Contre la chaleur et le froid, les stores alvéolaires isolent le mieux, et ils ont leur propre page. Ici, une doublure aide.',
       wet: 'Pour une cuisine ou une salle de bain, je choisirais quelque chose de fin, près de la vitre : des stores plissés ou alvéolaires.',
@@ -415,14 +483,15 @@ const SAY = {
       fabricFirst: ['Choisir d’abord le tissu', 'Les dimensions viennent juste après, et les prix avec.', 'Les dimensions viennent juste après.'],
       sizeQ: 'Maintenant, les dimensions. Saisissez-les dans la liste (une par pièce, ou une par fenêtre), ou donnez-moi une seule dimension si elles sont toutes identiques.',
       sizeMiss: n => n === 1 ? 'Il manque encore les dimensions d’une fenêtre.' : `Il manque encore les dimensions de ${n} fenêtres.`, sizesIn: 'Les dimensions sont saisies.', sizeOk: 'Chaque fenêtre a ses dimensions : appuyez sur Continuer dans la liste.',
+      mountMiss: 'Choisissez d’abord la pose intérieure ou extérieure pour chaque dimension.', sizeMount: 'À côté de chaque dimension, choisissez la pose intérieure ou extérieure.',
       colourQ: 'D’abord la couleur : laquelle souhaitez-vous ?',
-      fabricQ: 'D’abord le tissu et sa couleur, en trois choix rapides : le type de tissu, la quantité de lumière qu’il laisse passer et les couleurs que vous aimeriez voir. Je vous montre tout ce qui correspond. Le choix vous appartient.',
+      fabricQ: 'D’abord le tissu et sa couleur, en trois choix rapides : la gamme, la quantité de lumière qu’il laisse passer et les couleurs que vous aimeriez voir. Je vous montre tout ce qui correspond. Le choix vous appartient.',
       darkOne: 'Pour une pièce sombre, j’ajouterais la doublure occultante : elle se place derrière le tissu de votre choix, le tissu et la couleur restent donc les vôtres. Trois choix rapides et je vous montre ce que nous avons.',
       kindSaid: 'Voici : encore deux choix rapides et je vous montre ce que nous avons.',
       famSaid: v => `Deux choix rapides et je vous montre ce que nous avons en ${v}.`, famSet: v => `C’est fait : le filtre de couleur affiche maintenant ${v}.`,
       famNone: v => `Rien en ${v} dans ce type de tissu. Essayez un autre type, ou choisissez parmi les couleurs ci-dessous.`,
       hidePrivacy: v => `Les voilages sont écartés pour ${v} : le soir, lumières allumées, on voit à travers.`,
-      hideSoft: v => `L’obscurcissant et l’occultant sont écartés pour ${v}, où vous voulez une lumière douce.`,
+      hideSoft: v => `L’occultant est écarté pour ${v}, où vous voulez une lumière douce.`,
       boHint: 'Une doublure occultante se place derrière le tissu choisi. Les prix affichés ici l’incluent.', boSheer: 'Derrière un voilage, la doublure supprime l’effet de transparence.',
       privacyLiner: v => `Pour ${v}, j’ajouterais la doublure blanche, afin que personne ne voie à l’intérieur.`,
       heatLiner: v => `Pour ${v}, une doublure aide à garder la chaleur et le froid dehors. Si c’est le plus important, nos stores alvéolaires isolent le mieux.`,
@@ -430,18 +499,18 @@ const SAY = {
       linerHas: (v, n, rest) => `${v} ${n > 1 ? 'ont déjà leur' : 'a déjà sa'} doublure occultante depuis l’étape du tissu. Ceci concerne donc ${rest}.`,
       thisWindow: 'cette fenêtre', and: 'et',
       wordSaid: 'Trois choix rapides et je vous montre ce que nous avons. La couleur, c’est vous qui la choisissez.', wordPending: 'La couleur, c’est vous qui la choisissez : vous verrez tout ce qui correspond à l’étape de la couleur.',
-      kindQ: 'Quel type de tissu ?', opQ: 'Quelle quantité de lumière doit passer ?', famQ: 'Quelles couleurs aimeriez-vous voir ?',
-      kind: { budget: ['Petit budget', 'Nos meilleurs prix'], solid: ['Unis', 'Couleurs unies'], wool: ['Mélange de laine', 'Tissé avec de la laine'], linen: ['Lin', 'Lin et mélanges de lin'], luxury: ['Luxe', 'Nos plus beaux tissus'],
+      kindQ: 'Quelle gamme ?', opQ: 'Quelle quantité de lumière doit passer ?', famQ: 'Quelles couleurs aimeriez-vous voir ?',
+      kind: { budget: ['Petit budget', 'Nos meilleurs prix'], classic: ['Classiques', 'Prix intermédiaires'], solid: ['Unis', 'Couleurs unies'], wool: ['Mélange de laine', 'Tissé avec de la laine'], linen: ['Lin', 'Lin et mélanges de lin'], premium: ['Premium', 'Nos plus beaux tissus'],
         pattern: ['À motifs', 'Rayures et motifs tissés'], any: ['Pas encore décidé', 'Tout me montrer'] },
       op: { sheer: ['Voilage', 'Le plus de lumière. Le soir, lumières allumées, on voit à l’intérieur.'], semi: ['Semi-transparent', 'La lumière du jour entre. Le soir, on ne distingue que des silhouettes de l’extérieur.'], filter: ['Tamisant', 'Une lumière douce. Personne ne voit à l’intérieur, de jour comme de nuit.'],
-        dim: ['Obscurcissant', 'Bloque la plus grande partie de la lumière. La pièce reste sombre, sans être dans le noir complet.'], blackout: ['Occultant', 'N’importe quel tissu, avec une doublure occultante derrière.'], any: ['Tous', 'Tout afficher'] },
-      from: v => `à partir de ${v}`, change: 'Modifier', kindA: 'Tissu', opA: 'Lumière', otherFabrics: 'Voir d’autres tissus',
+        linen: ['Lin', 'Lin et mélanges de lin.'], dim: ['Obscurcissant', 'Bloque la plus grande partie de la lumière. La pièce reste sombre, sans être dans le noir complet.'], blackout: ['Occultant', 'N’importe quel tissu, avec une doublure occultante derrière.'], any: ['Tous', 'Tout afficher'] },
+      from: v => `à partir de ${v}`, change: 'Modifier', kindA: 'Gamme', opA: 'Lumière', otherFabrics: 'Voir d’autres tissus',
       darkHint: v => `${v} doit être sombre : choisissez ici la couleur que vous voulez. La doublure occultante arrive dans un instant.`,
       darkLiner: v => `Pour ${v}, j’ajouterais la doublure occultante, pour que la pièce soit vraiment sombre.`,
       darkOnly: v => [`Doublure occultante dans ${v} seulement`, 'Pas de doublure dans les autres pièces.'],
       linerMix: (d, p, rest) => [[d ? `Doublure occultante dans ${d}` : '', p ? `${d ? 'doublure' : 'Doublure'} blanche dans ${p}` : ''].filter(Boolean).join(', '), rest ? 'Pas de doublure dans les autres pièces.' : ''],
       fam: { white: 'Blancs et crèmes', beige: 'Beiges et sables', grey: 'Gris', dark: 'Tons sombres', blue: 'Bleus', green: 'Verts', warm: 'Tons chauds', pink: 'Roses et violets', all: 'Tout afficher' },
-      scopeAll: 'Une couleur pour tout', scopeRoom: 'Une couleur par pièce', famFirst: 'Choisissez une famille de couleurs ci-dessus pour voir les tissus.', none: 'Rien dans cette couleur. Essayez-en une autre.',
+      scopeAll: 'Le même partout', scopeRoom: 'Différent par pièce', famFirst: 'Choisissez une famille de couleurs ci-dessus pour voir les tissus.', none: 'Rien dans cette couleur. Essayez-en une autre.',
       more: n => `Afficher les ${n}`, allRooms: 'Toutes les pièces',
       colourOne: 'La couleur, c’est vous qui la choisissez. Voici ce qui existe.',
       colourAll: n => `Les ${n} couleurs`, cont: 'Continuer', colourNeed: 'Choisissez d’abord une couleur pour chacune.', pick: 'couleur à choisir',
@@ -511,6 +580,12 @@ const STARTER_ICON = [
   '<path d="M12 3l2.4 5.6L20 9.3l-4.3 3.9 1.3 5.8L12 16l-5 3 1.3-5.8L4 9.3l5.6-.7z"/>',                 /* choose */
   '<path d="M4 12V5h7l9 9-7 7z"/><circle cx="8.5" cy="8.5" r="1.3"/>',                                    /* cost */
   '<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>', /* several */
+];
+/* the guided start: a fabric, a price, a question */
+const STARTER_ICON_G = [
+  '<path d="M4 7c3-2.2 5 2.2 8 0s5-2.2 8 0v10c-3-2.2-5 2.2-8 0s-5-2.2-8 0z"/>',
+  STARTER_ICON[1],
+  '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2 1-1.2 1.9"/><path d="M12 16.9v.1"/>',
 ];
 
 /* ════════ the shop, seen as a design ════════ */
@@ -603,7 +678,7 @@ function shareLink(){
 function projectUnits(){ return M.project.rooms.reduce((n, r) => n + r.qty, 0); }
 /* a room = the page's configuration plus that room's own changes */
 function roomDesign(base, r){ return Object.keys(r.patch).length ? core.applyPatch(M.cat, base, r.patch).design : base; }
-function newRoom(label, qty, need, patch){ return { label, qty, need: need || null, patch: patch || {}, split: false, sizes: Array(qty).fill(null), colourChosen: false }; }
+function newRoom(label, qty, need, patch){ return { label, qty, need: need || null, patch: patch || {}, split: false, sizes: Array(qty).fill(null), mounts: Array(qty).fill(null), colourChosen: false }; }
 function newProject(rooms){ return { rooms, added: false, setup: { at: -1, done: false, opts: null, key: '' } }; }
 /* every window of every room. A window with no size of its own takes the page's size once
    the customer has given one; `design` is what would be built (the size checked against the rules) */
@@ -614,7 +689,8 @@ function projectWindows(base){
     for(let k = 0; k < r.qty; k++){
       const sz = r.sizes[k] || (M.sizeSaid ? { w: base.w, h: base.h } : null);
       if(!sz){ out.push({ i, k, design: null, notes: [] }); continue; }
-      const o = core.applyPatch(M.cat, rd, { w: sz.w, h: sz.h });
+      const mt = r.mounts && r.mounts[k];                  /* the mount chosen beside this size */
+      const o = core.applyPatch(M.cat, rd, mt ? { w: sz.w, h: sz.h, mount: mt } : { w: sz.w, h: sz.h });
       out.push({ i, k, design: o.design, notes: o.notes });
     }
   });
@@ -634,6 +710,16 @@ function roomItems(base){
   return items;
 }
 function unsized(){ return projectWindows(designOf(SHOP.snapshot())).filter(x => !x.design).length; }
+/* Roman shades: inside or outside mount is asked beside each size (Kaan, 2026-11-27), not as a question of its own.
+   A window's mount is its own row's answer — or what was said for its room, or for all of them. */
+const mountInRow = (pid) => pid === 'roman';
+function mountOf(r, k, base){ return (r.mounts && r.mounts[k]) || r.patch.mount || (M.decided.mount ? base.mount : null) || null; }
+function unmounted(){
+  const snap = SHOP.snapshot(); if(!M.project || !mountInRow(snap.pid)) return 0;
+  const base = designOf(snap); let n = 0;
+  M.project.rooms.forEach(r => { for(let k = 0; k < r.qty; k++) if(!mountOf(r, k, base)) n++; });
+  return n;
+}
 function missingLabel(snap){
   const p = M.cat[snap.pid];
   return snap.missing.map(k => (p.steps[k] ? tv(p.steps[k].label) + ' (' + core.options(M.cat, snap.pid, k).map(o => tv(o).toLowerCase()).join(' / ') + ')' : k)).join(', ');
@@ -648,7 +734,7 @@ function setupSteps(){
   /* the sizes may wait until the fabric is chosen (Kaan): they are asked right after it, if any are still missing —
      before the options, so that each option can say what it costs */
   const order = pid === 'drapery' ? ['colour', 'size', 'heading', 'panel', 'liner', 'track'] : ['colour', 'size', 'mount', 'fold', 'drive', 'tdbu', 'liner', 'banding'];
-  return order.filter(k => k === 'colour' || k === 'size' ? true : k === 'track' ? !!p.trackopt : !!p[k]);
+  return order.filter(k => k === 'colour' || k === 'size' ? true : k === 'track' ? !!p.trackopt : k === 'mount' && mountInRow(pid) ? false : !!p[k]);
 }
 /* what the whole list costs — as it is, or with one thing changed for every window; null where the page shows no prices */
 function totalWith(over){
@@ -795,17 +881,26 @@ const PATTERNED = {
 };
 /* which kinds a fabric is shown under, and how much light it lets through: Kaan's answers, fabric by fabric
    (quiz of 2026-11-24). A fabric with no kind (Obscura, Umberto) is found under "Not sure yet" only. */
-const KIND_ORDER = ['budget', 'solid', 'wool', 'linen', 'luxury', 'pattern'];
-const KIND_OF = {
-  outlander: ['budget', 'solid'], marlow: ['linen', 'solid'], soho: ['budget'], lazuli: ['solid'], piero: ['wool'], lucetta: [], obscura: [],
-  carillo: ['solid'], nomad: [], umberto: [], arrow: ['luxury'], periscope: ['linen', 'luxury'], atmosphere: ['linen', 'luxury'], hesperia: ['luxury'],
+/* Kaan's mapping of 2026-11-26. The first question is the range — Budget friendly, Classic, Premium — and each
+   fabric is in exactly one (his own answers; a fabric that is not listed here goes by its price group). */
+const TIER_ORDER = ['budget', 'classic', 'premium'];
+const TIER_OF = {
+  outlander: 'budget', soho: 'budget',
+  marlow: 'classic', lazuli: 'classic', piero: 'classic', lucetta: 'classic', obscura: 'classic', carillo: 'classic', nomad: 'classic', umberto: 'classic',
+  arrow: 'premium', periscope: 'premium', atmosphere: 'premium', hesperia: 'premium',
 };
+/* what a typed word can still narrow by ("solids", "wool", "something striped") — these are not offered as cards */
+const TAGS_OF = { outlander: ['solid'], marlow: ['solid'], lazuli: ['solid'], carillo: ['solid'], piero: ['wool'] };
 const PLAIN_AS_SOLID = ['lucetta', 'nomad'];                               /* patterned fabrics: their few plain colours count as solids */
 const LIGHT_OF = { periscope: 'semi' };                                    /* where the site's own label does not say */
-const OP_ORDER = ['sheer', 'semi', 'filter', 'dim', 'blackout'];           /* from the most light to none */
+/* the second question, in his order. "Linen" is the linen fabrics whatever light they let through — they are found under their light level too. */
+const OP_ORDER = ['filter', 'blackout', 'sheer', 'semi', 'linen'];
+const LINEN = ['marlow', 'periscope', 'atmosphere'];
+/* fabrics Mira never lists (Kaan: Hesperia). A customer can still choose one on the page, or ask for it by name. */
+const HIDDEN = ['hesperia'];
 const KIND_WORDS = [
   ['pattern', /pattern|stripe|striped|print|motif|con diseno|estampad|rayas|desenli|a motifs|rayures|imprime/], ['linen', /\blinen\b|\blino\b|keten|\blin\b/], ['wool', /\bwool|\blana\b|yunlu|\blaine\b/],
-  ['budget', /budget|cheap|affordable|inexpensive|economic|barat|ucuz|pas cher|abordable|economique/], ['luxury', /luxur|premium|finest|de lujo|\blujo\b|luks|\bluxe\b|haut de gamme/], ['solid', /\bsolids?\b|plain colou?r|\blisas?\b|duz renk|\bunie?s?\b/],
+  ['budget', /budget|cheap|affordable|inexpensive|economic|barat|ucuz|pas cher|abordable|economique/], ['classic', /\bclassic|\bclasic|\bclassique|\bklasik/], ['premium', /luxur|premium|finest|de lujo|\blujo\b|luks|\bluxe\b|haut de gamme/], ['solid', /\bsolids?\b|plain colou?r|\blisas?\b|duz renk|\bunie?s?\b/],
 ];
 /* what a colour word opens in the colour filter: Kaan's answers for the less obvious words (quiz 3), the plain ones as they read.
    Matched against the normalised message (lower case, accents off). */
@@ -864,10 +959,10 @@ function colourList(pid){
     const sw = core.swatch(M.cat, pid, c.id, code), name = cleanName(sw.name), byName = FAM_NAME.filter(f => f[1].test(name))[0];
     const g = c.group || 0, pat = PATTERNED[c.id] === true || (PATTERNED[c.id] || []).indexOf(name) !== -1;
     /* a fabric that is not in the list yet goes by its price group */
-    const kinds = (KIND_OF[c.id] || (g === 1 ? ['budget', 'solid'] : g >= 4 ? ['luxury'] : ['solid'])).slice();
+    const kinds = [TIER_OF[c.id] || (g === 1 ? 'budget' : g >= 4 ? 'premium' : 'classic')].concat(TAGS_OF[c.id] || []);
     if(pat) kinds.push('pattern');
     else if(PLAIN_AS_SOLID.indexOf(c.id) !== -1) kinds.push('solid');
-    items.push({ coll: c.id, label: c.label, code, name, img: sw.img, group: g, kinds, op: opacityOf(c.id, c.meta), fam: FAM_FIX[c.id + '/' + code] || (byName ? [byName[0]] : []) });
+    items.push({ coll: c.id, label: c.label, code, name, img: sw.img, group: g, kinds, op: opacityOf(c.id, c.meta), linen: LINEN.indexOf(c.id) !== -1, hidden: HIDDEN.indexOf(c.id) !== -1, fam: FAM_FIX[c.id + '/' + code] || (byName ? [byName[0]] : []) });
   }));
   items.sort((a, b) => a.group - b.group);               /* the gentler prices first */
   M.colList = { pid, items, seen: false };
@@ -908,13 +1003,14 @@ function colState(){
 }
 /* the fabrics left after the first two choices */
 function colourPool(pid, kind, op){
-  let list = colourList(pid);
+  let list = colourList(pid).filter(x => !x.hidden);                 /* a hidden fabric is never in a list of Mira's own */
   const hide = hiddenLevels();
   if(op && hide.indexOf(op) !== -1) return [];
   if(hide.length) list = list.filter(x => hide.indexOf(x.op) === -1);
   if(kind && kind !== 'any') list = list.filter(x => x.kinds.indexOf(kind) !== -1);
   /* "Blackout" is every fabric: a blackout liner goes behind the one chosen (Kaan, quiz 3) */
-  if(op && op !== 'any' && op !== 'blackout') list = list.filter(x => x.op === op);
+  if(op === 'linen') list = list.filter(x => x.linen);
+  else if(op && op !== 'any' && op !== 'blackout') list = list.filter(x => x.op === op);
   return list;
 }
 function opOfColl(pid, coll){ return (colourList(pid).filter(x => x.coll === coll)[0] || {}).op || ''; }
@@ -943,6 +1039,8 @@ function colourBody(){
     return '<div class="scope"><button type="button" class="md' + (C.mode === 'all' ? ' on' : '') + '" data-mode="all">' + esc(L.scopeAll) + '</button>' +
       '<button type="button" class="md' + (C.mode === 'room' ? ' on' : '') + '" data-mode="room">' + esc(L.scopeRoom) + '</button></div>' +
       (C.mode === 'room' ? '<div class="rts">' + P.rooms.map((r, i) => '<button type="button" class="rt' + (i === C.room ? ' on' : '') + (r.colourChosen ? ' ok' : '') + '" data-room="' + i + '">' + esc(roomName(r.label)) + '</button>').join('') + '</div>' : ''); };
+  /* several rooms: "the same for all" or "different for each room" stands above the three questions (Kaan) */
+  if(named && P && P.rooms.length > 1) h += scope();
   if(named){
     const all = colourList(pid);
     /* a choice the rooms in question rule out (a need hides some light levels) is asked again */
@@ -974,14 +1072,14 @@ function colourBody(){
       items = all.filter(x => x.coll === C.only);
     } else {
       /* rooms that need different things are offered different fabrics, so that choice comes first */
-      if(P && P.rooms.some(r => NEED_HIDES[r.need])) h += scope();
+      if(!scoped && P && P.rooms.some(r => NEED_HIDES[r.need])) h += scope();
       /* what a room's need leaves out, said up front */
       const hid = hiddenLevels(), sn = scopeNeeds(), who = (need) => sn.filter(x => x[0] === need).map(x => x[1]).join(', ');
       if(hid.indexOf('sheer') !== -1) h += hint(L.hidePrivacy(who('privacy')));
       if(hid.indexOf('blackout') !== -1) h += hint(L.hideSoft(who('soft')));
       /* 1 — the kind of fabric (only the kinds that still have a fabric) */
       if(C.kind && C.edit !== 'kind') h += said('kind', L.kindA, L.kind[C.kind][0]);
-      else h += head(1, L.kindQ) + '<div class="ks">' + KIND_ORDER.concat(['any']).filter(k => k === 'any' || colourPool(pid, k, '').length).map(k => {
+      else h += head(1, L.kindQ) + '<div class="ks">' + TIER_ORDER.concat(['any']).filter(k => k === 'any' || colourPool(pid, k, '').length).map(k => {
         const f = k === 'any' ? '' : from(colourPool(pid, k, ''));
         return card('kind', k, L.kind[k], f, C.kind === k);
       }).join('') + '</div>';
@@ -1031,6 +1129,8 @@ function colourBody(){
     h += '<div class="sum">' + P.rooms.map((r, i) => '<span' + (r.colourChosen ? ' class="ok"' : '') + '>' + esc(roomName(r.label)) + colon() + esc(r.colourChosen ? roomColourName(i) : '—') + '</span>').join('') + '</div>' +
       '<p class="er" hidden>' + esc(L.colourNeed) + '</p><button type="button" class="go">' + esc(L.cont) + '</button>';
   }
+  /* the guided start, before any room is listed: on to the rooms once a colour is chosen */
+  else if(!P && open && M.guide && M.guide.step === 'fabric') h += '<p class="er" hidden>' + esc(S().guide.need) + '</p><button type="button" class="go">' + esc(L.cont) + '</button>';
   return h;
 }
 function roomColourName(i){
@@ -1062,14 +1162,18 @@ function askStep(prefix){
   const P = M.project; if(!P || P.added) return;
   const steps = setupSteps(), L = S().setup;
   /* nothing left to ask: every room has its colour — or its liner, taken with "Blackout" in the fabric step */
-  while(P.setup.at < steps.length && ((steps[P.setup.at] === 'colour' && P.rooms.every(r => r.colourChosen)) || (steps[P.setup.at] === 'size' && !unsized()) || (steps[P.setup.at] === 'liner' && P.rooms.every(r => r.linerChosen)))) P.setup.at++;
+  while(P.setup.at < steps.length && ((steps[P.setup.at] === 'colour' && !P.confirmColour && P.rooms.every(r => r.colourChosen)) || (steps[P.setup.at] === 'size' && !unsized() && !unmounted()) || (steps[P.setup.at] === 'liner' && P.rooms.every(r => r.linerChosen)))) P.setup.at++;
   lockCards(); lockPlans();
   let text, extras = {};
   if(P.setup.at >= steps.length){ P.setup.done = true; text = L.done; extras.plan = planCard(); setChips([]); }
   else {
     const key = steps[P.setup.at];
-    if(key === 'colour'){ const pid = SHOP.snapshot().pid; M.col = null; text = pid === 'roman' || pid === 'drapery' ? L.fabricQ : L.colourQ; extras.colours = true; }
-    else if(key === 'size'){ text = L.sizeQ; extras.plan = planCard(); }             /* the list itself, with a Continue button */
+    if(key === 'colour'){
+      const pid = SHOP.snapshot().pid; M.col = null; text = pid === 'roman' || pid === 'drapery' ? L.fabricQ : L.colourQ; extras.colours = true;
+      /* after the guided start every room has the fabric chosen there: keep it, or go room by room */
+      if(P.confirmColour){ text = S().guide.sameQ(fabricLabel(designOf(SHOP.snapshot())), L.scopeRoom); if(M.guideSet) Object.assign(colState(), M.guideSet); }
+    }
+    else if(key === 'size'){ text = L.sizeQ + (mountInRow(SHOP.snapshot().pid) ? ' ' + L.sizeMount : ''); extras.plan = planCard(); }             /* the list itself, with a Continue button */
     else { const opts = stepOptions(key); P.setup.opts = opts; P.setup.key = key; text = stepQuestion(key, opts); extras.opts = opts; }
     setChips([]);
   }
@@ -1081,7 +1185,7 @@ function askStep(prefix){
 function beginSetup(){
   const P = M.project; if(!P || P.added) return;
   P.setup.at = 0; P.setup.done = false; P.setup.asking = false;
-  askStep(S().setup.intro + (unsized() ? ' ' + S().setup.sizesLater : ''));
+  askStep(P.fromGuide ? (projectUnits() > 1 ? S().setup.intro : '') : S().setup.intro + (unsized() ? ' ' + S().setup.sizesLater : ''));
 }
 /* an answer: said back in the customer's own bubble, applied to every window, then the next question */
 /* the two ways to go on from a list that has no sizes yet */
@@ -1124,7 +1228,7 @@ function answerColours(el){
   const same = names.every(n => n === names[0]);
   const said = same && P.rooms.length > 1 ? L.allRooms + colon() + names[0] : P.rooms.map((r, i) => roomName(r.label) + colon() + names[i]).join('; ');
   addMsg('y', said); M.history.push({ role: 'user', text: said });
-  M.decided.colour = true; M.col = null;
+  M.decided.colour = true; M.col = null; P.confirmColour = false;
   P.setup.at++;
   lockCards();
   setTimeout(() => askStep(''), 380);
@@ -1152,11 +1256,18 @@ function colourTap(col, e){
     else { C.fam = C.fam.filter(x => x !== 'all'); if(at === -1) C.fam.push(k); else C.fam = C.fam.filter(x => x !== k); }
     C.limit = 18; redraw(); return;
   }
-  if((b = e.target.closest('.md'))){ C.mode = b.dataset.mode; redraw(); return; }
-  const leave = () => { if(C.op === 'blackout'){ C.op = ''; C.opAuto = false; } };          /* "Blackout" brings a liner: that is one room's choice, not the next one's */
-  if((b = e.target.closest('.rt'))){ if(+b.dataset.room !== C.room) leave(); C.room = +b.dataset.room; C.limit = 18; redraw(); return; }
+  if((b = e.target.closest('.md'))){ if(b.dataset.mode !== C.mode){ C.per = {}; C.mode = b.dataset.mode; } redraw(); return; }
+  /* room by room, every room has its own three answers: they are put away when another room is opened,
+     and a room that has not been asked yet starts blank */
+  const turn = (i) => {
+    C.per = C.per || {};
+    C.per[C.room] = { kind: C.kind, op: C.op, opAuto: !!C.opAuto, fam: C.fam.slice(), only: C.only };
+    const a = C.per[i] || { kind: '', op: '', opAuto: false, fam: [], only: '' };
+    C.kind = a.kind; C.op = a.op; C.opAuto = a.opAuto; C.fam = a.fam.slice(); C.only = a.only; C.edit = ''; C.room = i; C.limit = 18;
+  };
+  if((b = e.target.closest('.rt'))){ if(+b.dataset.room !== C.room) turn(+b.dataset.room); redraw(); return; }
   if(e.target.closest('.all')){ C.limit = 999; redraw(); return; }
-  if(e.target.closest('.go')){ answerColours(col); return; }
+  if(e.target.closest('.go')){ if(P) answerColours(col); else guideFabricDone(col); return; }
   if(!(b = e.target.closest('.sw'))) return;
   const coll = b.dataset.coll, code = b.dataset.code, name = b.querySelector('em').textContent;
   /* "Blackout" in the light step: the blackout liner comes with the colour (a blackout fabric needs none) */
@@ -1170,6 +1281,7 @@ function colourTap(col, e){
     M.decided.colour = true; redraw(); renderNow();
     return;
   }
+  const pageLiner = designOf(snap).liner;
   (C.mode === 'room' ? [C.room] : P.rooms.map((r, i) => i)).forEach(i => {
     const r = P.rooms[i];
     if(pid === 'cellular'){
@@ -1178,12 +1290,14 @@ function colourTap(col, e){
       if(!hit) return;
       r.patch.colour = hit;
     } else { if(coll) r.patch.collection = coll; r.patch.colour = code; }
-    if(byLight){ if(boLiner) r.patch.liner = 'Blackout liner'; else delete r.patch.liner; r.linerChosen = true; }
-    else if(named && r.linerChosen){ delete r.patch.liner; r.linerChosen = false; }
+    /* after the guided start the page itself may carry the blackout liner: a room without one then says so */
+    const noLiner = () => { if(pageLiner === 'Blackout liner') r.patch.liner = 'Unlined'; else delete r.patch.liner; };
+    if(byLight){ if(!boLiner) noLiner(); else if(pageLiner === 'Blackout liner') delete r.patch.liner; else r.patch.liner = 'Blackout liner'; r.linerChosen = true; }
+    else if(named && r.linerChosen){ noLiner(); r.linerChosen = false; }
     r.colourChosen = true;
   });
   /* room by room: on to the next room that still has no colour */
-  if(C.mode === 'room'){ const next = P.rooms.findIndex((r, i) => i > C.room && !r.colourChosen); if(next !== -1){ leave(); C.room = next; } }
+  if(C.mode === 'room'){ const next = P.rooms.findIndex((r, i) => i > C.room && !r.colourChosen); if(next !== -1) turn(next); }
   redraw(); renderNow();
 }
 function roomFabric(r, rd){
@@ -1191,6 +1305,129 @@ function roomFabric(r, rd){
   if(rd.product === 'pleated') return S().setup.pick;
   const c = core.collectionOf(M.cat, rd.product, rd.collection);
   return tv(c ? c.label : rd.collection) + ' · ' + S().setup.pick;
+}
+
+/* ════════ the guided start (Roman shades and drapery) ════════
+   Kaan's mapping of 2026-11-26. Mira opens with "What can I do for you?" and three ways in:
+   · "Help me choose a fabric" — the rooms and their windows first, then three choices in one card (the range, the
+     light, the colours) for all of them or room by room, then the sizes and the options one by one;
+   · "Quick quote" — a size and a number of windows, answered with where each range starts;
+   · "I have a question" — what she can answer, as quick replies.
+   Cellular and pleated shades keep the first screen they had. */
+const GUIDED = (pid) => pid === 'roman' || pid === 'drapery';
+const pagePid = () => { const s = SHOP.snapshot && SHOP.snapshot(); return (s && s.pid) || (location.pathname.match(/roman|cellular|pleated|drapery/) || [''])[0]; };
+const kindSet = (k) => k === 'linen' ? { op: 'linen' } : { kind: k };          /* "linen" answers the light question */
+function say(text, extras){ addMsg('m', text, extras); M.history.push({ role: 'assistant', text }); }
+function startGuide(i){
+  if(M.busy || !M.ready) return;
+  const L = S();
+  openPanel(); if(!hand.hidden) closeHandoff();
+  const starts = thread.querySelector('.mira-starts'); if(starts) starts.remove();
+  input.placeholder = t('ph');
+  addMsg('y', L.startersG[i]); M.history.push({ role: 'user', text: L.startersG[i] });
+  lockCards(); setChips([]);
+  setTimeout(() => { if(i === 0) guideRooms(); else if(i === 1) guideQuote(); else guideQuestions(); }, 380);
+}
+/* 1 — a fabric: the rooms come first (Kaan), then the three choices — for all of them, or room by room */
+function guideRooms(){
+  /* a list of rooms is already open: straight to its fabric step */
+  if(M.project && !M.project.added){ beginSetup(); return; }
+  M.guide = { step: 'rooms' }; M.guideSet = null;
+  say(S().guide.roomsFirst, { picker: true });
+  setChips([]);
+}
+/* the three choices before any room is listed: after a quick quote, where the size and the number of windows are known */
+function guideFabric(set){
+  /* a list of rooms is already open: its own fabric step does this */
+  if(M.project && !M.project.added){ beginSetup(); return; }
+  M.guide = { step: 'fabric' }; M.guideSet = null;
+  M.col = null; retireColourCards();
+  if(set) Object.assign(colState(), set);
+  M.decided.colour = false;
+  say(set && set.kind ? S().setup.kindSaid : S().guide.fabricQ, { colours: true });
+  setChips([]); renderNow();
+}
+function keepGuideSet(){ const C = M.col; M.guideSet = C ? { kind: C.kind, op: C.op, fam: C.fam.slice(), only: C.only } : null; }
+/* "Continue" under the three choices: on to the rooms */
+function guideFabricDone(el){
+  const L = S(), d = designOf(SHOP.snapshot());
+  if(M.decided.colour !== true){ el.querySelector('.er').hidden = false; return; }
+  const said = fabricLabel(d) + (M.linerAuto && d.liner === 'Blackout liner' ? ' · ' + tv(d.liner).toLowerCase() : '');
+  addMsg('y', said); M.history.push({ role: 'user', text: said });
+  keepGuideSet(); M.col = null;
+  lockCards();
+  M.guide = { step: 'rooms' };
+  setTimeout(() => { say(L.guide.roomsQ, { picker: true }); setChips([]); }, 380);
+}
+/* a list of rooms made in the guided start: the fabric step follows at once. Where the fabric was chosen before
+   the rooms (after a quick quote), every room starts with that fabric */
+function adoptGuide(){
+  const P = M.project;
+  P.fromGuide = true;
+  if(M.decided.colour === true && (M.guide.step === 'fabric' || M.guideSet)){
+    if(M.guide.step === 'fabric') keepGuideSet();
+    const G = M.guideSet || {};
+    P.rooms.forEach(r => { r.colourChosen = true; if(G.op === 'blackout') r.linerChosen = true; });
+    P.confirmColour = P.rooms.length > 1;
+  }
+  M.guide = null; M.col = null;
+  lockCards();
+}
+/* 2 — a quick quote: the size and the number of windows, then where each range starts */
+function guideQuote(){
+  M.guide = { step: 'quote', n: 1 };
+  say(S().guide.quoteQ, { quoteForm: true });
+  setChips([]);
+}
+function quoteFormHTML(){
+  const L = S(), G = L.guide;
+  return '<div class="mira-pick qf"><div class="sz first"><span>' + esc(G.qSize) + '</span><div><input class="pw" type="number" inputmode="decimal" step="0.125" min="8" placeholder="' + esc(L.pick.w) + '" aria-label="' + esc(L.pick.w) + '"><i>×</i>' +
+    '<input class="ph" type="number" inputmode="decimal" step="0.125" min="8" placeholder="' + esc(L.pick.h) + '" aria-label="' + esc(L.pick.h) + '"></div></div>' +
+    '<div class="pk on"><span class="ql">' + esc(G.qCount) + '</span><span class="qt"><button type="button" data-q="-1" aria-label="−">−</button><b>1</b><button type="button" data-q="1" aria-label="+">+</button></span></div>' +
+    '<p class="er" hidden>' + esc(G.qNeed) + '</p><button type="button" class="go">' + esc(G.qGo) + '</button></div>';
+}
+function submitQuote(pk){
+  const w = parseFloat(pk.querySelector('.pw').value), h = parseFloat(pk.querySelector('.ph').value);
+  if(!(w > 0 && h > 0)){ pk.querySelector('.er').hidden = false; return; }
+  pk.classList.add('done'); pk.querySelectorAll('button, input').forEach(x => { x.disabled = true; });
+  M.guide = { step: 'quote', n: Math.max(1, +pk.querySelector('.qt b').textContent || 1) };
+  send(w + ' x ' + h);
+}
+/* the lowest price in each range at the size on the page, with the page's own options; null where the page shows no prices */
+function tierPrices(n){
+  const snap = SHOP.snapshot(), pid = snap.pid, base = designOf(snap), L = S();
+  if(!SHOP.quote || !snap.prices) return null;
+  const list = colourList(pid).filter(x => !x.hidden), colls = [];
+  list.forEach(x => { if(colls.indexOf(x.coll) === -1) colls.push(x.coll); });
+  const q = SHOP.quote(colls.map(id => ({ sel: { collection: id, colour: core.colours(M.cat, pid, id)[0] }, w: base.w, h: base.h }))) || [];
+  return TIER_ORDER.map(k => {
+    let m = null;
+    colls.forEach((id, i) => { if(q[i] != null && (m == null || q[i] < m) && list.some(x => x.coll === id && x.kinds.indexOf(k) !== -1)) m = q[i]; });
+    return m == null ? null : { k, label: L.setup.kind[k][0], desc: L.setup.kind[k][1], price: L.setup.from(money(m)) + (n > 1 ? ' ' + L.guide.each : ''), sub: n > 1 ? L.guide.forN(money(Math.round(m * n * 100) / 100), n) : '' };
+  }).filter(Boolean);
+}
+function tiersHTML(list){
+  return '<div class="mira-opts mira-tiers">' + list.map(o => '<button type="button" class="mira-opt" data-tier="' + o.k + '"><span class="tx"><b>' + esc(o.label) + '</b><small>' + esc(o.desc) + '</small></span>' +
+    '<span class="pz">' + esc(o.price) + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '') + '</span></button>').join('') + '</div>';
+}
+/* a range tapped under a quote: its fabrics, with that first choice made */
+function pickTier(k){
+  const label = S().setup.kind[k][0];
+  addMsg('y', label); M.history.push({ role: 'user', text: label });
+  lockCards(); setChips([]);
+  setTimeout(() => guideFabric({ kind: k }), 380);
+}
+/* 3 — questions: what Mira can answer, as quick replies; the other two ways in stay at hand */
+function guideQuestions(){
+  M.guide = { step: 'ask', asked: [] };
+  say(S().guide.askQ);
+  setChips(guideTopics(''));
+}
+function guideTopics(asked){
+  const L = S(), pid = SHOP.snapshot().pid, G = M.guide;
+  if(asked) G.asked = (G.asked || []).concat([asked]);
+  return L.guide.topics.filter((x, i) => (i !== 4 || pid !== 'drapery') && (G.asked || []).indexOf(x) === -1)     /* drapery has no inside / outside mount */
+    .concat([0, 1].map(i => ({ label: L.startersG[i], act: 'guide', value: String(i) })));
 }
 
 /* the rooms offered in the picker, each with the need most people have there */
@@ -1225,13 +1462,13 @@ function planCard(){
   let total = 0, all = wins.length > 0;
   const rooms = M.project.rooms.map((r, i) => {
     const rd = roomDesign(base, r);
-    const extra = ['drive', 'liner', 'tdbu', 'mount', 'fold', 'heading'].filter(k => rd[k] !== base[k] && rd[k] != null).map(k => k === 'tdbu' ? 'TDBU' : tv(rd[k]).toLowerCase());
+    const extra = ['drive', 'liner', 'tdbu', 'mount', 'fold', 'heading'].filter(k => rd[k] !== base[k] && rd[k] != null && !(k === 'mount' && mountInRow(snap.pid))).map(k => k === 'tdbu' ? 'TDBU' : tv(rd[k]).toLowerCase());
     const mine = [];
     wins.forEach((x, n) => {
       if(x.i !== i) return;
       const pr = x.design ? quoted[n] : null;
       if(pr == null) all = false; else total += pr;
-      mine.push({ k: x.k, w: x.design ? x.design.w : '', h: x.design ? x.design.h : '', price: pr != null ? money(pr) : '',
+      mine.push({ k: x.k, w: x.design ? x.design.w : '', h: x.design ? x.design.h : '', price: pr != null ? money(pr) : '', num: pr, mount: mountOf(r, x.k, base),
         msg: x.notes.filter(n => n.code !== 'size_clamped').map(n => B.noteText(M.lang, n)).filter(Boolean).join(' ') });
     });
     return { i, name: roomName(r.label), qty: r.qty, split: !!r.split, flash: r.flash || '', wins: mine,
@@ -1239,7 +1476,7 @@ function planCard(){
   });
   const units = projectUnits();
   const st = M.project.setup;
-  return { rooms, units, live: !M.project.added, next: !st.done, noNext: !!st.asking && wins.some(x => !x.design), sizeStep: st.at >= 0 && !st.done && setupSteps()[st.at] === 'size', missing: wins.filter(x => !x.design).length,
+  return { rooms, units, mounts: mountInRow(snap.pid), sum: all ? Math.round(total * 100) / 100 : null, live: !M.project.added, next: !st.done, noNext: !!st.asking && wins.some(x => !x.design), sizeStep: st.at >= 0 && !st.done && setupSteps()[st.at] === 'size', missing: wins.filter(x => !x.design).length,
     note: all ? S().planTotal({ units, total: money(Math.round(total * 100) / 100) }) : (snap.prices ? S().planNoSize : '') };
 }
 function planHTML(pl){
@@ -1248,7 +1485,9 @@ function planHTML(pl){
     '<input class="zw" type="number" inputmode="decimal" step="0.125" min="8" value="' + esc(w.w) + '" placeholder="' + esc(P.w) + '" aria-label="' + esc(label + ' ' + P.w) + '"' + dis + '><i>×</i>' +
     '<input class="zh" type="number" inputmode="decimal" step="0.125" min="8" value="' + esc(w.h) + '" placeholder="' + esc(P.h) + '" aria-label="' + esc(label + ' ' + P.h) + '"' + dis + '>' +
     '<span class="pr">' + esc(w.price ? w.price + (k === 'all' ? ' ' + P.each : '') : '') + '</span></div>' +
-    '<p class="zm"' + (w.msg ? '' : ' hidden') + '>' + esc(w.msg || '') + '</p>';
+    '<p class="zm"' + (w.msg ? '' : ' hidden') + '>' + esc(w.msg || '') + '</p>' +
+    (pl.mounts ? '<div class="zt" data-k="' + k + '"><label>' + esc(t('row').mount) + '</label><span class="mt">' + ['Inside', 'Outside'].map(v =>
+      '<button type="button" data-mt="' + v + '"' + (w.mount === v ? ' class="on"' : '') + dis + '>' + esc(tv(v)) + '</button>').join('') + '</span></div>' : '');
   return '<div class="mira-plan' + (pl.live ? ' live' : '') + '">' + pl.rooms.map(r =>
     '<div class="p" data-i="' + r.i + '"><div class="a"><b>' + esc(r.name) + '</b>' +
       '<span class="qt"><button type="button" data-pq="-1" aria-label="−"' + dis + '>−</button><b>' + r.qty + '</b><button type="button" data-pq="1" aria-label="+"' + dis + '>+</button></span></div>' +
@@ -1295,23 +1534,24 @@ function redrawPlan(){
   if(!M.project.rooms.length){ M.project = null; el.remove(); return; }
   const tmp = document.createElement('div'); tmp.innerHTML = planHTML(planCard());
   el.replaceWith(tmp.firstChild);
-  fitPlan();
+  fitPlan(); renderNow();
 }
 function pickerHTML(){
-  const L = S();
-  return '<div class="mira-pick">' + PICK.map(([room, need]) =>
+  const L = S(), g = !!(M.guide && M.guide.step === 'rooms');      /* the guided start: the light is already chosen, so no need is asked */
+  return '<div class="mira-pick' + (g ? ' g' : '') + '">' + PICK.map(([room, need]) =>
     '<div class="pk" data-room="' + room + '"><button type="button" class="rm" aria-pressed="false">' + esc(roomName(room)) + '</button>' +
       '<select class="nd" hidden aria-label="' + esc(roomName(room)) + '">' + ['dark', 'soft', 'privacy', 'heat'].map(n => '<option value="' + n + '"' + (n === need ? ' selected' : '') + '>' + esc(L.needPick[n]) + '</option>').join('') + '</select>' +
       '<span class="qt" hidden><button type="button" data-q="-1" aria-label="−">−</button><b>1</b><button type="button" data-q="1" aria-label="+">+</button></span></div>').join('') +
     '<div class="sz"><span>' + esc(L.pick.size) + '</span><div><input class="pw" type="number" inputmode="decimal" step="0.125" min="8" placeholder="' + esc(L.pick.w) + '" aria-label="' + esc(L.pick.w) + '"><i>×</i>' +
       '<input class="ph" type="number" inputmode="decimal" step="0.125" min="8" placeholder="' + esc(L.pick.h) + '" aria-label="' + esc(L.pick.h) + '"></div></div>' +
-    '<p class="er" hidden>' + esc(L.pick.none) + '</p><button type="button" class="go">' + esc(L.pick.go) + '</button></div>';
+    '<p class="er" hidden>' + esc(L.pick.none) + '</p><button type="button" class="go">' + esc(g ? L.guide.roomsGo : L.pick.go) + '</button></div>';
 }
 /* the picker's choices become one ordinary message, so the list reads back in the chat */
 function submitPicker(pk){
   const L = S(), rows = [].slice.call(pk.querySelectorAll('.pk.on'));
   if(!rows.length){ pk.querySelector('.er').hidden = false; return; }
-  const list = rows.map(r => roomName(r.dataset.room) + ' × ' + r.querySelector('.qt b').textContent + ' — ' + L.need[r.querySelector('.nd').value].toLowerCase());
+  const g = pk.classList.contains('g');
+  const list = rows.map(r => roomName(r.dataset.room) + ' × ' + r.querySelector('.qt b').textContent + (g ? '' : ' — ' + L.need[r.querySelector('.nd').value].toLowerCase()));
   const w = parseFloat(pk.querySelector('.pw').value), h = parseFloat(pk.querySelector('.ph').value);
   pk.classList.add('done');
   pk.querySelectorAll('button, select, input').forEach(x => { x.disabled = true; });
@@ -1350,7 +1590,7 @@ function advise(r, snap, before){
 function mockReply(text){
   const L = S(), snap = SHOP.snapshot(), before = designOf(snap);
   const r = B.understand(M.cat, before, text), a = r.ask, parts = [];
-  let chips = null, priceBox = false, plan = false, tail = '', picker = false, startSetup = false, colourFor = false, colourSet = null;
+  let chips = null, priceBox = false, plan = false, tail = '', picker = false, startSetup = false, colourFor = false, colourSet = null, tiers = false;
   const drapery = snap.pid === 'drapery';
 
   /* another product: that is another page */
@@ -1362,6 +1602,10 @@ function mockReply(text){
   delete r.patch.product;
   if(a.human) return { reply: L.human, handoff: true };
   const namedPage = snap.pid === 'roman' || snap.pid === 'drapery';
+  if(namedPage && /\bquote\b|cotiza|presupuesto|\bdevis\b/.test(B.norm(text))) a.price = true;
+  /* a size given while a quick quote is open is answered with where each range starts; the number of windows is for the sum only */
+  const quoting = namedPage && !!(M.guide && M.guide.step === 'quote') && (r.patch.w != null || r.patch.h != null) && !(M.project && !M.project.added);
+  if(quoting && r.patch.qty){ M.guide.n = r.patch.qty; delete r.patch.qty; }
   /* a plain colour word ("blue", "something beige") is not the choice of a colour: on these pages nothing is
      picked for the customer — the fabric choices open instead. A colour called by its own name is still taken. */
   const nm = r.said.colourName;
@@ -1398,6 +1642,7 @@ function mockReply(text){
     isNew = true;
     if(snap.pid === 'pleated' && rn.some(x => x.need === 'dark')) r.said.noBlackout = true;
   } else if(r.rooms){ M.project = newProject(r.rooms.map(x => newRoom(x.label, x.qty))); isNew = true; }
+  if(isNew && namedPage && M.guide && (M.guide.step === 'rooms' || M.guide.step === 'fabric')) adoptGuide();
   const pending = M.project && !M.project.added;
   /* one window on its own: the need last said decides which light levels the fabric choices leave out */
   if(namedPage && !pending){ if(r.need.privacy) M.pageNeed = 'privacy'; else if(r.need.soft) M.pageNeed = 'soft'; else if(darkAsk || r.need.sheer) M.pageNeed = null; }
@@ -1436,7 +1681,7 @@ function mockReply(text){
     if(r.said.colour) M.decided.colour = true;
     /* a need changed the kind of fabric but no colour was named: the colour stays the customer's to pick */
     if(!pending && r.patch.collection && !r.said.colour){ colourFor = true; M.decided.colour = false; colourSet = { only: r.patch.collection }; }
-    if(!pending && wordAsk && !colourFor){ colourFor = true; M.decided.colour = false; colourSet = withFam(kindWord ? { kind: kindWord[0] } : {}); }
+    if(!pending && wordAsk && !colourFor){ colourFor = true; M.decided.colour = false; colourSet = withFam(kindWord ? kindSet(kindWord[0]) : {}); }
     if(!pending && sheerAsk && !colourFor){ colourFor = true; M.decided.colour = false; colourSet = withFam({ op: 'sheer' }); }
     if(!pending && adv.open && !colourFor){ colourFor = true; M.decided.colour = false; }
     const out = core.applyPatch(M.cat, before, r.patch);
@@ -1509,7 +1754,7 @@ function mockReply(text){
   } else if(pending){
     /* the project as it stands — a card, room by room — then the one question that moves it on */
     const rooms = M.project.rooms.length, units = projectUnits();
-    if(isNew) parts.push(L.rooms({ rooms, units, unit, size: M.sizeSaid ? sizeLabel(cur) : '' }));
+    if(isNew) parts.push(M.project.fromGuide ? L.guide.got(rooms, units) : L.rooms({ rooms, units, unit, size: M.sizeSaid ? sizeLabel(cur) : '' }));
     else if(wordAsk && !roomDone && !hasPatch && !parts.length){
       /* a colour word while the list is open: nothing is picked for the rooms. If the colour question is the open one,
          its card comes back with the filter set; otherwise the colour waits for its step */
@@ -1519,7 +1764,8 @@ function mockReply(text){
     }
     else if(!roomDone && !hasPatch && !parts.length) parts.push(L.roomsStill({ rooms, units, unit }));
     plan = isNew || hasPatch || roomDone;
-    if(colourKeep){ tail = ''; chips = []; }
+    if(isNew && M.project.fromGuide){ plan = false; startSetup = true; chips = []; }      /* the fabric is chosen: straight on to the sizes and the options */
+    else if(colourKeep){ tail = ''; chips = []; }
     else if(M.project.setup.at >= 0 && !M.project.setup.done && setupSteps()[M.project.setup.at] === 'size'){
       tail = unsized() ? L.planFill : L.setup.sizeOk; chips = unsized() ? (drapery ? L.chips.sizeD : L.chips.size).slice() : [];
     }
@@ -1536,6 +1782,9 @@ function mockReply(text){
     }
   } else if(a.several && !hasPatch){
     parts.push(L.several); chips = L.chips.several.slice();
+  } else if(a.choose && !adv.lines.length && !hasPatch && namedPage){
+    /* Roman shades and drapery: the rooms first, then the three fabric choices (Kaan's mapping) */
+    M.guide = { step: 'rooms' }; M.guideSet = null; parts.push(L.guide.roomsFirst); picker = true; chips = [];
   } else if(a.choose && !adv.lines.length && !hasPatch){
     /* several rooms can be chosen at once: a picker, not a one-room question */
     parts.push(L.chooseAsk); picker = true; chips = [];
@@ -1544,35 +1793,38 @@ function mockReply(text){
     parts.push(L.fabricsOpen);
   } else if(hasPatch){
     offerPrice(false);                                     /* a visible price rides in the change card */
-    if(darkAsk){ parts.push(L.setup.darkOne); colourFor = true; M.decided.colour = false; }
+    if(quoting && priced && M.sizeSaid){ parts.push(L.guide.quoteA(M.guide.n || 1)); tiers = true; }
+    else if(darkAsk){ parts.push(L.setup.darkOne); colourFor = true; M.decided.colour = false; }
     else if(colourFor){ const line = colourSet && (colourSet.kind || colourSet.op) ? L.setup.kindSaid : colourSet && colourSet.fam ? L.setup.famSaid(famText(famSaid)) : wordAsk && !colourSet ? L.setup.wordSaid : adv.open ? '' : L.setup.colourOne; if(line) parts.push(line); }
     else if(!M.sizeSaid) parts.push(drapery ? L.q.sizeD : L.q.size);
     else { parts.push(L.askAdd); M.askedAdd = true; }
-    chips = darkAsk ? [L.chips.liner] : adv.chips.length ? adv.chips.concat(L.chips.cfg.slice(0, 1)) : L.chips.cfg.slice();
+    chips = tiers ? [] : darkAsk ? [L.chips.liner] : adv.chips.length ? adv.chips.concat(L.chips.cfg.slice(0, 1)) : L.chips.cfg.slice();
   } else {
     if(a.price){
-      if(priced) parts.push(M.sizeSaid ? L.price({ price: money(now.price), qty: now.qty, total: money(now.price * now.qty) }) : L.priceNeedSize);
+      if(priced) parts.push(M.sizeSaid ? L.price({ price: money(now.price), qty: now.qty, total: money(now.price * now.qty) }) : namedPage ? L.guide.quoteSize : L.priceNeedSize);
       else { offerPrice(true); if(!M.sizeSaid) parts.push(L.priceSizeFirst); }
       if(!M.sizeSaid) chips = (drapery ? L.chips.sizeD : L.chips.size).slice();
+      if(namedPage && !M.sizeSaid) M.guide = { step: 'quote', n: 1 };                 /* the size that follows gets the three ranges */
     }
     if(adv.chips.length) chips = adv.chips.slice();
     if(darkAsk && !pending){ parts.push(L.setup.darkOne); colourFor = true; M.decided.colour = false; chips = [L.chips.liner]; }
     /* "something patterned", "linen", "your cheapest": the fabric choices open with that one made */
     const kindSaid = namedPage && !pending && !parts.length && !priceBox ? KIND_WORDS.filter(k => k[1].test(B.norm(text)))[0] : null;
-    if(kindSaid){ parts.push(L.setup.kindSaid); colourFor = true; M.decided.colour = false; colourSet = withFam({ kind: kindSaid[0] }); chips = []; }
+    if(kindSaid){ parts.push(L.setup.kindSaid); colourFor = true; M.decided.colour = false; colourSet = withFam(kindSet(kindSaid[0])); chips = []; }
     else if(wordAsk && !parts.length && !priceBox){
       if(pending) parts.push(L.setup.wordPending);
       else { parts.push(famSaid.length ? L.setup.famSaid(famText(famSaid)) : L.setup.wordSaid); colourFor = true; M.decided.colour = false; colourSet = withFam({}); chips = []; }
     }
     else if(sheerAsk && !pending && !colourFor){ if(!parts.length) parts.push(L.setup.kindSaid); colourFor = true; M.decided.colour = false; colourSet = withFam({ op: 'sheer' }); chips = []; }
     else if(adv.open && !pending && !colourFor){ colourFor = true; M.decided.colour = false; chips = []; }
-    if(!parts.length && !priceBox) parts.push(a.thanks ? L.thanks : a.hello ? L.hello(L.noun[snap.pid]) : L.lost);
+    if(!parts.length && !priceBox) parts.push(a.thanks ? L.thanks : a.hello ? (namedPage ? L.helloG : L.hello(L.noun[snap.pid])) : L.lost);
   }
+  if(!chips && namedPage && M.guide && M.guide.step === 'ask' && !pending) chips = guideTopics(text);      /* still asking: what is left to ask */
   if(!chips) chips = M.sizeSaid ? L.chips.cfg.slice() : (drapery ? L.chips.sizeD : L.chips.size).slice();
   adv.links.forEach(pid => { if(pid !== now.pid) chips.push({ label: L.open(prodName(pid)), go: core.PRODUCT_PAGE[pid], carry: text }); });
   /* a dark room and a colour in one breath: the choices open with that colour ticked */
   if(colourFor && !pending && famSaid.length && !(colourSet && (colourSet.only || colourSet.fam))) colourSet = withFam(colourSet || {});
-  return { reply: parts.join('\n\n'), chips, priceBox, plan, tail, picker, startSetup, colourFor, colourSet, colourKeep, sizeAsk };
+  return { reply: parts.join('\n\n'), chips, priceBox, plan, tail, picker, startSetup, colourFor, colourSet, colourKeep, sizeAsk, tiers };
 }
 
 /* ════════ the live advisor (only when the preview server has a key) ════════ */
@@ -1618,9 +1870,23 @@ const css = `
   .mira-card button{border:0;cursor:pointer;background:#14171A;color:#fff;border-radius:12px;padding:17px 24px;white-space:nowrap;
     font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;transition:background .2s}
   .mira-card button:hover{background:#8A6220}
-  .mira-panel{position:fixed;z-index:80;right:0;top:0;bottom:0;width:400px;max-width:100vw;background:#fff;border-left:1px solid #E4E3DE;
-    display:flex;flex-direction:column;transform:translateX(102%);transition:transform .45s cubic-bezier(.2,.75,.2,1);
-    box-shadow:-18px 0 50px rgba(20,23,26,.12);font-family:'IBM Plex Sans',system-ui,sans-serif;color:#14171A}
+  /* the helper covers the whole page while it is open (Kaan): the chat, and a narrow column for what has been chosen */
+  .mira-panel{position:fixed;z-index:80;left:0;right:0;top:0;bottom:0;background:#fff;display:flex;flex-direction:column;
+    transform:translateX(102%);transition:transform .45s cubic-bezier(.2,.75,.2,1);font-family:'IBM Plex Sans',system-ui,sans-serif;color:#14171A}
+  .mira-body{flex:1 1 auto;min-height:0;display:flex}
+  .mira-main{flex:1 1 auto;min-width:0;min-height:0;display:flex;flex-direction:column}
+  .mira-main>.mira-hand{padding-left:max(18px,calc(50% - 380px));padding-right:max(18px,calc(50% - 380px))}
+  .mira-side{flex:0 0 clamp(250px,23vw,320px);border-left:1px solid #E4E3DE;background:#FAF5EA;overflow-y:auto;overscroll-behavior:contain;padding:18px 16px 24px}
+  .mira-side .hd{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8A6220;margin:0 0 6px}
+  .mira-side .it{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-top:1px solid #EADFC8}
+  .mira-side .hd + .it{border-top:0}
+  .mira-side .th{flex:none;width:44px;height:44px;border-radius:10px;overflow:hidden;background:#F3ECDD;border:1px solid #E4E3DE}
+  .mira-side .th img{width:100%;height:100%;object-fit:cover;display:block}
+  .mira-side .tx{flex:1;min-width:0;font-size:12.5px;line-height:1.4;color:#4A4E52}
+  .mira-side .tx b{display:block;font-family:'Archivo',sans-serif;font-weight:600;font-size:13.5px;color:#14171A}
+  .mira-side .tx span{display:block;overflow-wrap:anywhere}
+  .mira-side .pr{flex:none;font-family:'Archivo',sans-serif;font-weight:600;font-size:13.5px;white-space:nowrap}
+  .mira-side .tot{display:flex;justify-content:space-between;gap:12px;margin-top:4px;padding-top:12px;border-top:1px solid #D9C9A6;font-family:'Archivo',sans-serif;font-weight:600;font-size:15px}
   body.mira-open .mira-panel{transform:none}
   .mira-head{flex:none;display:flex;align-items:center;gap:9px;padding:14px 12px 14px 18px;border-bottom:1px solid #E4E3DE}
   .mira-head b{font-family:'Fraunces',serif;font-weight:560;font-size:21px;letter-spacing:-.01em;line-height:1}
@@ -1643,7 +1909,7 @@ const css = `
   .mira-now .pr small{display:block;font-family:'IBM Plex Sans',sans-serif;font-weight:400;font-size:11.5px;color:#767A7E}
   .mira-now .pr button{border:0;background:transparent;padding:0;cursor:pointer;font:inherit;font-family:'IBM Plex Sans',sans-serif;font-weight:500;font-size:12.5px;color:#8A6220;
     text-decoration:underline;text-underline-offset:2px}
-  .mira-thread{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;padding:18px 18px 8px}
+  .mira-thread{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;padding:18px max(18px,calc(50% - 380px)) 8px}
   .mira-msg{margin:0 0 18px;max-width:96%;animation:mira-rise .35s cubic-bezier(.2,.7,.2,1) both}
   @keyframes mira-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   .mira-msg.m .who{font-size:12px;color:#8C8472;margin-bottom:4px}
@@ -1782,13 +2048,26 @@ const css = `
   .mira-col .go{margin-top:12px;width:100%;border:0;cursor:pointer;background:#14171A;color:#fff;border-radius:10px;padding:13px 16px;font:inherit;font-size:15px}
   .mira-col .go:hover{background:#8A6220}
   .mira-col [hidden]{display:none!important}
+  .mira-col.done .go,.mira-col.done .er{display:none}
+  .mira-pick .sz.first{margin:0;padding-top:0;border-top:0}
+  .mira-pick.qf .pk{margin-top:10px;padding-top:10px;border-top:1px solid #EEEDE8;justify-content:space-between}
+  .mira-pick .ql{font-size:13.5px;color:#4A4E52}
+  .mira-opt .pz small{display:block;font-weight:400;font-size:11.5px;color:#767A7E;margin-top:2px}
+  .mira-opt.on .pz small{color:rgba(255,255,255,.75)}
+  .mira-plan .zt{display:flex;align-items:center;gap:7px;margin-top:7px;font-size:13.5px}
+  .mira-plan .zt label{flex:0 1 68px;min-width:40px;color:#5A5E62;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mira-plan .mt{display:inline-flex;border:1px solid #D3D2CC;border-radius:8px;overflow:hidden}
+  .mira-plan .mt button{border:0;background:#fff;padding:7px 13px;cursor:pointer;font:inherit;font-size:13.5px;color:#14171A}
+  .mira-plan .mt button + button{border-left:1px solid #D3D2CC}
+  .mira-plan .mt button.on{background:#14171A;color:#fff}
+  .mira-plan .mt button:disabled{cursor:default}
   .mira-col.done .go,.mira-col.done .all{display:none}
   .mira-col.done .sw:not(.on){opacity:.35}
   .mira-dots{display:inline-flex;gap:5px;padding:5px 0}
   .mira-dots i{width:6px;height:6px;border-radius:50%;background:#B9B4A6;animation:mira-dot 1.1s infinite ease-in-out}
   .mira-dots i:nth-child(2){animation-delay:.15s}.mira-dots i:nth-child(3){animation-delay:.3s}
   @keyframes mira-dot{0%,80%,100%{transform:translateY(0);opacity:.45}40%{transform:translateY(-4px);opacity:1}}
-  .mira-foot{flex:none;padding:6px 18px 12px}
+  .mira-foot{flex:none;padding:6px max(18px,calc(50% - 380px)) 12px}
   .mira-chips{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 10px}
   .mira-chip{border:1px solid #D3D2CC;background:#fff;border-radius:999px;padding:7px 13px;cursor:pointer;font:inherit;font-size:13.5px;line-height:1.3;color:#33383C;text-align:left}
   .mira-chip:hover{border-color:#14171A}
@@ -1816,20 +2095,14 @@ const css = `
   .mira-hand a{color:#8A6220}
   .grphead.mira-flash{animation:mira-flash 1.8s ease}
   @keyframes mira-flash{0%,60%{background:#FCF4E6;box-shadow:inset 3px 0 0 #C79A45}100%{background:transparent;box-shadow:inset 0 0 0 transparent}}
-  /* wide screens: the helper sits beside the configurator, which makes room for it */
-  @media(min-width:1100px){
-    body{transition:padding-right .45s cubic-bezier(.2,.75,.2,1)}
-    body.mira-open{padding-right:400px}
-    body.mira-open #wizbar{right:400px}
-    body.mira-open #langsw{right:414px}
-  }
-  @media(max-width:1099px){
-    body.mira-open #langsw{display:none}
-  }
-  /* phones: a sheet from the bottom, over the price bar */
+  /* open, the helper is the whole screen: the page behind it does not scroll */
+  body.mira-open{overflow:hidden}
+  body.mira-open #langsw{display:none}
+  /* the selection has its own column on wide screens; on narrow ones it is the bar under the header */
+  @media(min-width:900px){ .mira-now{display:none} }
+  @media(max-width:899px){ .mira-side{display:none} }
+  /* phones */
   @media(max-width:700px){
-    .mira-panel{left:0;right:0;top:auto;bottom:0;width:auto;height:min(82dvh,680px);border-left:0;border-top:1px solid #D3D2CC;border-radius:20px 20px 0 0;
-      transform:translateY(104%);box-shadow:0 -18px 50px rgba(20,23,26,.22)}
     .mira-card{grid-template-columns:1fr;padding:18px 16px;margin-bottom:22px}
     .mira-card h3{font-size:21px}
     .mira-card button{width:100%;white-space:normal}
@@ -1848,7 +2121,7 @@ const css = `
   @media(prefers-reduced-motion:reduce){ .mira-panel,.mira-msg,body{transition:none!important;animation:none!important} }
 `;
 
-let panel, thread, chipsBox, input, sendBtn, nowBox, launch, card, foot, hand;
+let panel, thread, chipsBox, input, sendBtn, nowBox, launch, card, foot, hand, sideBox;
 const svg = (d, n) => '<svg width="' + (n || 20) + '" height="' + (n || 20) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
 function build(){
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
@@ -1864,17 +2137,17 @@ function build(){
     '<div class="mira-head"><b>' + esc(t('title')) + '</b><span class="mira-ai">' + esc(t('ai')) + '</span>' +
       '<button class="mira-human" type="button">' + svg('<path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/><path d="M20 19a4 4 0 0 1-4 3h-3"/>', 17) + '<span>' + esc(t('human')) + '</span></button>' +
       '<button class="mira-x" type="button" aria-label="' + esc(t('close')) + '">&times;</button></div>' +
-    '<div class="mira-now"></div>' +
+    '<div class="mira-body"><div class="mira-main"><div class="mira-now"></div>' +
     '<div class="mira-thread" aria-live="polite"></div>' +
     '<div class="mira-hand" hidden></div>' +
     '<div class="mira-foot"><div class="mira-chips"></div>' +
       '<form class="mira-form" autocomplete="off"><textarea rows="1" placeholder="' + esc(t('ph0')) + '" aria-label="' + esc(t('send')) + '"></textarea>' +
       '<button type="submit" aria-label="' + esc(t('send')) + '">' + svg('<path d="M12 19V5"/><path d="M5 12l7-7 7 7"/>', 17) + '</button></form>' +
-      '<p class="mira-footline">' + esc(t('foot')) + '</p></div>';
+      '<p class="mira-footline">' + esc(t('foot')) + '</p></div></div><div class="mira-side"></div></div>';
   document.body.appendChild(panel);
   thread = panel.querySelector('.mira-thread'); chipsBox = panel.querySelector('.mira-chips'); foot = panel.querySelector('.mira-foot');
   input = panel.querySelector('.mira-form textarea'); sendBtn = panel.querySelector('.mira-form button'); nowBox = panel.querySelector('.mira-now');
-  hand = panel.querySelector('.mira-hand');
+  hand = panel.querySelector('.mira-hand'); sideBox = panel.querySelector('.mira-side');
 
   /* the way in, right above the first step */
   const steps = document.getElementById('steps');
@@ -1882,10 +2155,11 @@ function build(){
     card = document.createElement('div');
     card.className = 'mira-card'; card.setAttribute('data-noi18n', '1');
     /* no text box here: one button that starts "help me choose" in the panel */
-    card.innerHTML = '<div><h3>' + esc(t('cardT')) + '</h3><p>' + esc(t('cardP')) + '</p></div>' +
-      '<button type="button">' + esc(S().starters[0]) + '</button>';
+    const g = GUIDED(pagePid());
+    card.innerHTML = '<div><h3>' + esc(t('cardT')) + '</h3><p>' + esc(t(g ? 'cardPG' : 'cardP')) + '</p></div>' +
+      '<button type="button">' + esc(g ? S().startersG[0] : S().starters[0]) + '</button>';
     steps.parentNode.insertBefore(card, steps);
-    card.querySelector('button').addEventListener('click', () => { openPanel(); send(S().starters[0]); });
+    card.querySelector('button').addEventListener('click', () => { openPanel(); if(g) startGuide(0); else send(S().starters[0]); });
   }
 
   launch.addEventListener('click', () => openPanel());
@@ -1898,6 +2172,7 @@ function build(){
   chipsBox.addEventListener('click', (e) => {
     const c = e.target.closest('.mira-chip'); if(!c) return;
     if(c.dataset.act === 'account'){ SHOP.openAccount(); return; }
+    if(c.dataset.act === 'guide'){ startGuide(+c.dataset.value); return; }
     if(c.dataset.act === 'copy'){
       const done = () => { c.textContent = t('copied'); };
       if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(c.dataset.value).then(done, done); else done();
@@ -1911,21 +2186,23 @@ function build(){
     send(c.textContent);
   });
   thread.addEventListener('click', (e) => {
-    const s = e.target.closest('.mira-start'); if(s){ send(s.textContent); return; }
+    const s = e.target.closest('.mira-start'); if(s){ if(s.dataset.g != null) startGuide(+s.dataset.g); else send(s.textContent); return; }
     const pk = e.target.closest('.mira-pick');
     if(pk && !pk.classList.contains('done')){
       const rm = e.target.closest('.rm');
       if(rm){
         const row = rm.parentNode, on = rm.getAttribute('aria-pressed') !== 'true';
         rm.setAttribute('aria-pressed', String(on)); row.classList.toggle('on', on);
-        row.querySelector('.nd').hidden = !on; row.querySelector('.qt').hidden = !on;
+        row.querySelector('.nd').hidden = !on || pk.classList.contains('g'); row.querySelector('.qt').hidden = !on;
         pk.querySelector('.er').hidden = true;
         return;
       }
       const q = e.target.closest('.qt button');
       if(q){ const b = q.parentNode.querySelector('b'); b.textContent = Math.max(1, Math.min(20, (+b.textContent) + (+q.dataset.q))); return; }
-      if(e.target.closest('.go')){ submitPicker(pk); return; }
+      if(e.target.closest('.go')){ if(pk.classList.contains('qf')) submitQuote(pk); else submitPicker(pk); return; }
     }
+    const tr = e.target.closest('.mira-tiers:not(.done) .mira-opt');
+    if(tr){ if(!M.busy){ tr.classList.add('on'); pickTier(tr.dataset.tier); } return; }
     const op = e.target.closest('.mira-opts:not(.done) .mira-opt');
     if(op && M.project && !M.busy){ op.classList.add('on'); answerStep(M.project.setup.opts[+op.dataset.i]); return; }
     const col = e.target.closest('.mira-col:not(.done)');
@@ -1938,17 +2215,27 @@ function build(){
         const n = Math.max(1, Math.min(50, room.qty + (+q.dataset.pq)));
         while(room.sizes.length < n) room.sizes.push(room.sizes.length ? room.sizes[room.sizes.length - 1] : null);
         room.sizes.length = n; room.qty = n; if(n === 1) room.split = false;
+        if(room.mounts){ while(room.mounts.length < n) room.mounts.push(room.mounts.length ? room.mounts[room.mounts.length - 1] : null); room.mounts.length = n; }
         redrawPlan(); return;
+      }
+      const mt = e.target.closest('[data-mt]');
+      if(mt && room){                                        /* inside or outside, beside a size */
+        const zt = mt.closest('.zt'), k = zt.dataset.k;
+        if(!room.mounts) room.mounts = Array(room.qty).fill(null);
+        if(k === 'all') room.mounts = room.mounts.map(() => mt.dataset.mt); else room.mounts[+k] = mt.dataset.mt;
+        zt.querySelectorAll('[data-mt]').forEach(b => b.classList.toggle('on', b === mt));
+        renderNow(); return;
       }
       if(e.target.closest('.sp') && room){
         room.split = !room.split;
-        if(!room.split) room.sizes = room.sizes.map(() => room.sizes[0]);       /* back to one size: the first window's */
+        if(!room.split){ room.sizes = room.sizes.map(() => room.sizes[0]); if(room.mounts) room.mounts = room.mounts.map(() => room.mounts[0]); }       /* back to one size: the first window's */
         redrawPlan(); return;
       }
       if(e.target.closest('.rv') && room){ M.project.rooms.splice(+row.dataset.i, 1); redrawPlan(); if(!M.project) setChips(S().chips.size.slice()); return; }
       if(e.target.closest('.sizego')){
         const left = unsized(), L = S().setup;
         if(left){ addMsg('m', L.sizeMiss(left)); return; }
+        if(unmounted()){ addMsg('m', L.mountMiss); return; }
         addMsg('y', L.sizesIn); M.history.push({ role: 'user', text: L.sizesIn });
         M.project.setup.at++; askStep(''); return;
       }
@@ -1973,7 +2260,7 @@ function build(){
     } else if(w > 0 || h > 0) return;                    /* the other half is still to come */
     if(z.dataset.k === 'all') room.sizes = room.sizes.map(() => (sz ? { w: sz.w, h: sz.h } : null));
     else room.sizes[+z.dataset.k] = sz;
-    syncPlan();
+    syncPlan(); renderNow();
   });
   nowBox.addEventListener('click', (e) => { if(e.target.closest('button')) SHOP.openAccount(); });
   hand.addEventListener('click', (e) => {
@@ -2022,6 +2309,8 @@ function addMsg(kind, text, extras){
   if(x.picker) h += pickerHTML();
   if(x.opts) h += optsHTML(x.opts);
   if(x.colours) h += coloursHTML();
+  if(x.tiers && x.tiers.length) h += tiersHTML(x.tiers);
+  if(x.quoteForm) h += quoteFormHTML();
   el.innerHTML = h;
   /* only the newest change can be taken back */
   if(x.rows && x.rows.length) thread.querySelectorAll('.mira-undo').forEach(b => { b.disabled = true; });
@@ -2055,9 +2344,44 @@ function setChips(list){
     : '<button class="mira-chip act" type="button"' + (c.act ? ' data-act="' + esc(c.act) + '"' : '') + (c.value ? ' data-value="' + esc(c.value) + '"' : '') +
       (c.go ? ' data-go="' + esc(c.go) + '" data-carry="' + esc(c.carry || '') + '"' : '') + '>' + esc(c.label) + '</button>').join('');
 }
+/* what has been chosen so far, in the narrow column beside the chat: one entry per room — or the one shade on the page */
+function renderSide(snap){
+  if(!sideBox) return;
+  const base = designOf(snap), P = M.project && !M.project.added ? M.project : null, U = t('row');
+  const th = (d, ok) => { const sw = ok ? core.swatch(M.cat, d.product, d.collection, d.colour) : null;
+    return '<span class="th"' + (sw && sw.hex && !sw.img ? ' style="background:' + sw.hex + '"' : '') + '>' + (sw && sw.img ? '<img src="' + esc(sw.img) + '" alt="">' : '') + '</span>'; };
+  /* the options that were really chosen: a default is not shown as a choice */
+  const opts = (d, noMount) => ['mount', 'fold', 'heading', 'panel', 'drive'].filter(k => !(k === 'mount' && noMount) && d[k] != null && (M.decided[k] || d[k] !== base[k])).map(k => tv(d[k]))
+    .concat(d.tdbu === 'Yes' ? ['TDBU'] : []).concat(d.liner && d.liner !== 'Unlined' ? [tv(d.liner)] : []).concat(d.banding && d.banding !== 'None' ? [U.banding + colon() + tv(d.banding)] : []).join(' · ');
+  const item = (thumb, title, lines, price) => '<div class="it">' + thumb + '<div class="tx"><b>' + esc(title) + '</b>' + lines.filter(Boolean).map(x => '<span>' + esc(x) + '</span>').join('') + '</div>' +
+    (price ? '<span class="pr">' + esc(price) + '</span>' : '') + '</div>';
+  let h = '<div class="hd">' + esc(t('sideT')) + '</div>';
+  if(P){
+    const pl = planCard();
+    pl.rooms.forEach(r => {
+      const room = P.rooms[r.i], rd = roomDesign(base, room), sizes = [];
+      r.wins.forEach(w => {
+        const s = [w.w !== '' ? core.fmtIn(w.w) + ' × ' + core.fmtIn(w.h) : '', pl.mounts && w.mount ? tv(w.mount) : ''].filter(Boolean).join(' · ');
+        if(s && sizes.indexOf(s) === -1) sizes.push(s);
+      });
+      const sum = r.wins.length && r.wins.every(w => w.num != null) ? r.wins.reduce((n, w) => n + w.num, 0) : null;
+      h += item(th(rd, room.colourChosen), r.name + ' × ' + r.qty,
+        [roomFabric(room, rd)].concat(sizes.slice(0, 3)).concat(sizes.length > 3 ? ['+ ' + (sizes.length - 3)] : []).concat([opts(rd, pl.mounts)]),
+        sum != null ? money(Math.round(sum * 100) / 100) : '');
+    });
+    if(pl.sum != null) h += '<div class="tot"><span>' + esc(t('sideTot')) + '</span><span>' + esc(money(pl.sum)) + '</span></div>';
+  } else {
+    const chosen = M.decided.colour !== false;
+    h += item(th(base, chosen), prodName(snap.pid) + (snap.qty > 1 ? ' × ' + snap.qty : ''),
+      [chosen ? fabricLabel(base) : roomFabric({ colourChosen: false }, base), sizeLabel(base) + (M.sizeSaid ? '' : ' (' + t('example') + ')'), opts(base, false)],
+      snap.prices && snap.price != null ? money(snap.price * snap.qty) : '');
+  }
+  sideBox.innerHTML = h;
+}
 function renderNow(){
   if(!nowBox || !M.cat) return;
   const snap = SHOP.snapshot(); if(!snap) return;
+  renderSide(snap);
   if(M.project && !M.project.added){
     const total = unsized() ? null : totalWith(null);
     nowBox.innerHTML = '<span class="tx"><b>' + esc(prodName(snap.pid)) + '</b>' + esc(S().setup.hdr(M.project.rooms.length, projectUnits())) + '</span>' +
@@ -2092,14 +2416,15 @@ function openPanel(){
   renderNow();
   if(!M.greeted){
     M.greeted = true;
-    const snap = SHOP.snapshot(), L = S();
-    const hello = L.hello(L.noun[snap ? snap.pid : 'roman']);
+    const snap = SHOP.snapshot(), L = S(), g = GUIDED(pagePid());
+    const hello = g ? L.helloG : L.hello(L.noun[snap ? snap.pid : 'roman']);
     addMsg('m', hello);
     M.history.push({ role: 'assistant', text: hello });
     /* the first screen offers three ways in, as plain buttons */
     const st = document.createElement('div'); st.className = 'mira-starts';
-    st.innerHTML = L.starters.map((q, i) => '<button class="mira-start" type="button">' + svg(STARTER_ICON[i]) + '<span>' + esc(q) + '</span></button>').join('');
+    st.innerHTML = (g ? L.startersG : L.starters).map((q, i) => '<button class="mira-start" type="button"' + (g ? ' data-g="' + i + '"' : '') + '>' + svg((g ? STARTER_ICON_G : STARTER_ICON)[i]) + '<span>' + esc(q) + '</span></button>').join('');
     thread.appendChild(st);
+    if(g) input.placeholder = t('ph0G');
   }
   if(wide.matches) setTimeout(() => input.focus(), 350);
 }
@@ -2176,7 +2501,7 @@ async function send(text){
     retireColourCards();
     if(out.colourSet && (snap.pid === 'roman' || snap.pid === 'drapery')) Object.assign(colState(), out.colourSet);
   }
-  const extras = { priceBox: !!out.priceBox, tail: out.tail || '', picker: !!out.picker, colours: !!out.colourFor };
+  const extras = { priceBox: !!out.priceBox, tail: out.tail || '', picker: !!out.picker, colours: !!out.colourFor, tiers: out.tiers ? tierPrices((M.guide && M.guide.n) || 1) : null };
   /* sizes now, or the fabric first: two buttons under the new list */
   if(out.sizeAsk && M.project && !M.project.added){ lockCards(); M.project.setup.asking = true; extras.opts = M.project.setup.opts = sizeChoice(); }
   else if(M.project && M.project.setup.asking){ M.project.setup.asking = false; lockCards(); }       /* the talk moved on: that question is closed */
